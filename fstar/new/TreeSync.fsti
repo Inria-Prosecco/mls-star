@@ -5,16 +5,16 @@ open FStar.HyperStack.ST
 open FStar.HyperStack.All
 
 
+
 val bytes_t: eqtype
 
 (* Datastructures *)
+let array a = Seq.seq a
 let length a = Seq.length a
 let empty = Seq.empty
 let singleton x = Seq.create 1 x
 let append x y = Seq.append x y
 
-let array a = Seq.seq a
-let larray 'a sz = arr:array 'a{length arr == sz}
 
 
 (* Infix operators *)
@@ -99,6 +99,6 @@ val operation_t: datatype_t
 val apply: state_t -> operation_t -> option state_t
 
 (* Create an Operation *)
-val modify: g:state_t -> actor:index_t g
-	-> i:index_t g -> mi':option leaf_package_t
+val modify: s:state_t -> actor:index_t s
+	-> i:index_t s -> option leaf_package_t
 	-> option operation_t
