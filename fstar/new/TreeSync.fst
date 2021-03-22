@@ -137,6 +137,7 @@ type state_t: eqtype = {
 }
 
 let index_n (l:nat) = x:nat{x < pow2 l}
+let level_n = n:nat{pow2 n < pow2 32}
 
 let group_id g = g.st_group_id
 let max_size g = pow2 g.st_levels
