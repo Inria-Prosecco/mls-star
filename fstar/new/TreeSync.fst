@@ -5,24 +5,74 @@ module TreeSync
 type bytes_t = Seq.seq nat
 let empty_bytes = Seq.empty
 
+let pred_p = Type0
+let datatype_t = eqtype
+
+
+(* Cryptography*)
+let sign_key_t = bytes_t
+let verif_key_t = bytes_t
+
+
+(* Datastructures *)
+let array a = Seq.seq a
+let length a = Seq.length a
+let empty = Seq.empty
+let singleton x = Seq.create 1 x
+let append x y = Seq.append x y
+
+(* Infix operators *)
+let op_String_Access x y = Seq.index x y
+let op_String_Assignment x y z = Seq.upd x y z
+
 (* Datastructures operators *)
+let rec mapi (f:'a -> 'b) (x:array 'a) (i:nat{i <= length x}) : y:array 'b{length y = i} =
+  if i = 0 then empty else Seq.snoc (mapi f x (i-1)) (f x.[i-1])
+
+let map (f:'a -> 'b) (x:array 'a) = mapi f x (length x)
+
+
 val lemma_singleton: x:array 'a{length x = 1} -> i:nat{i<length x} ->
   Lemma (singleton x.[i] == x)
 	[SMTPat (singleton x.[i])]
 let lemma_singleton x i = Seq.lemma_eq_intro (singleton x.[i]) x
+
+val lemma_map_singleton: f:('a -> 'b) -> x:array 'a{length x = 1} ->
+    Lemma (singleton (f (x.[0])) == map f x)
+	  [SMTPatOr [
+	    [SMTPat (singleton (f (x.[0])));
+	     SMTPat (map f x)]]]
 let lemma_map_singleton f x = admit()
+
+val lemma_map_append: f:('a -> 'b) -> x:array 'a -> y:array 'a ->
+    Lemma (append (map f x) (map f y) == map f (append x y))
+	  [SMTPatOr [
+	    [SMTPat (append (map f x) (map f y));
+	     SMTPat (map f (append x y))]]]
 let lemma_map_append f x y = admit()
+
+
+let sub (x:array 'a) (i:nat{i < length x}) (l:nat{i+l <= length x}) = Seq.slice x i (i+l)
+
+let split (x:array 'a) (i:nat{i < length x}): res:(array 'a * array 'a){let (y,z) = res in x == append y z /\ length y = i} =
+  let s1 = sub x 0 i in
+  let s2 = sub x i (length x - i) in
+  Seq.lemma_eq_intro x (append s1 s2);
+  (s1,s2)
+
 
 let rec foldi (f:'a -> 'b -> 'a) (x:array 'b) (init:'a) (n:nat{n <= length x}) =
   if n = 0 then init
   else f (foldi f x init (n-1)) x.[n-1]
 
+val fold: f:('a -> 'b -> 'a) -> array 'b -> 'a -> 'a
 let fold f x a = foldi f x a (length x)
 
 
 type principal_t = string
 
-type credential_t : eqtype = {
+(* Identity and Credentials *)
+type credential_t: eqtype = {
   cred_name: principal_t;
   cred_sid: nat;
   cred_version: nat;
@@ -31,18 +81,37 @@ type credential_t : eqtype = {
   cred_signature: bytes_t;
 }
 
-
+val name: credential_t -> string
 let name c = c.cred_name
+
+val identity_key: credential_t -> verif_key_t
 let identity_key c = c.cred_identity_key
+
 assume val validate_: credential_t -> bool
+
+val valid_credential_p: credential_t -> pred_p
 let valid_credential_p c = validate_ c
 
 (* Secrets associated to a leaf *)
+
+
+type direction_t = | Left | Right
+
+let dual (d:direction_t) : direction_t =
+  match d with
+  | Left -> Right
+  | Right -> Left
+
+(* Secrets belonging to a Group Member  *)
 type leaf_secrets_t: eqtype = {
   identity_sig_key: sign_key_t;
 }
 
-type direction_t = | Left | Right
+(* Public Information about a Group Member *)
+type leaf_package_t = {
+  leaf_version: nat;
+  leaf_credential: credential_t;
+}
 
 type node_package_t = {
   node_from : direction_t;
@@ -73,12 +142,26 @@ let group_id g = g.st_group_id
 let max_size g = pow2 g.st_levels
 let epoch g = g.st_epoch
 
+
+(* Group State Data Structure *)
+(* val state_t: datatype_t *)
+(* val group_id: state_t -> nat *)
+(* val max_size: state_t -> nat *)
+(* val epoch: state_t -> nat *)
+
+type index_t (g:state_t) = i:nat{i < max_size g}
+
+type member_array_t (sz:nat) = a:array (option leaf_package_t){length a = sz}
+
+
+
 let rec membership_tree (l:nat) (t:tree_t l): member_array_t (pow2 l) =
   match t with
   | Leaf _ mi -> singleton mi
   | Node _ _ left right -> append (membership_tree (l-1) left)
 				 (membership_tree (l-1) right)
 
+val membership: g:state_t -> member_array_t (max_size g)
 let membership g = membership_tree g.st_levels g.st_tree
 
 val log2: sz:pos -> option nat
@@ -204,6 +287,9 @@ assume val hash_state: state_t -> bytes_t
 
 
 (* Create a new group state *)
+val create: gid:nat -> sz:pos -> init:member_array_t sz
+          -> entropy:bytes_t	-> option state_t
+
 let create gid sz init leaf_secret =
   match init.[0], log2 sz with
   | None,_ -> None
@@ -276,6 +362,7 @@ assume val hash_op: bytes_t -> operation_t -> bytes_t
 
 
 (* Apply an operation to a state *)
+val apply: state_t -> operation_t -> option state_t
 let apply g o =
   if o.op_level <> g.st_levels then None
   else let p1,p2 = o.op_path in
@@ -291,6 +378,10 @@ let update_leaf_package (lp:leaf_package_t) (nc:credential_t) = {
 }
 
 (* Create an operation that modifies the group state *)
+val modify: s:state_t -> actor:index_t s
+	-> i:index_t s -> option leaf_package_t
+	-> option operation_t
+
 let modify g actor i olp =
   match (membership g).[actor] with
   | None -> None
