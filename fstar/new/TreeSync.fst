@@ -16,7 +16,7 @@ let pred_p = Type0
 let datatype_t = eqtype
 
 
-(* Cryptography*)
+(* Cryptography *)
 let sign_key_t = bytes_t
 let verif_key_t = bytes_t
 
@@ -36,20 +36,11 @@ type credential_t: eqtype = {
   cred_enc_key: enc_key_t;
 }
 
-
 assume val validate_credential: credential_t -> bool
 
 val valid_credential_p: credential_t -> pred_p
 let valid_credential_p c = validate_credential c
 
-
-
-type direction_t = | Left | Right
-
-let dual (d:direction_t) : direction_t =
-  match d with
-  | Left -> Right
-  | Right -> Left
 
 (* Secrets belonging to a Group Member  *)
 type leaf_secrets_t: eqtype = {
@@ -149,6 +140,13 @@ let membership st = tree_membership st.st_levels st.st_tree
 
 
 (* Auxiliary tree functions *)
+type direction_t = | Left | Right
+
+let dual (d:direction_t) : direction_t =
+  match d with
+  | Left -> Right
+  | Right -> Left
+
 let child_index (l:pos) (i:index_n l) : index_n (l-1) & direction_t =
   if i < pow2 (l - 1) then (i, Left) else (i-pow2 (l-1), Right)
 
@@ -241,8 +239,8 @@ let create gid sz init =
   | _ -> None
   | Some actor,Some lvl ->
     let t = create_tree lvl actor init in
-	 let st0 = mk_initial_state gid lvl t in
-	 Some ({st0 with st_transcript = empty_bytes})
+	 let st = mk_initial_state gid lvl t in
+	 Some ({st with st_transcript = empty_bytes})
 
 
 (* Apply an operation to a state *)
@@ -257,7 +255,7 @@ let apply st op =
             st_transcript = Seq.snoc st.st_transcript op})
 
 
-(* Apply an joiner *)
+(* Add a new joiner *)
 val add: st:state_t -> actor:credential_t
   -> i:index_t st -> joiner:credential_t
   -> Tot (option (operation_t & state_t))
