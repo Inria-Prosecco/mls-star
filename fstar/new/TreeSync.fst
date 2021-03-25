@@ -4,6 +4,10 @@ open Lib.Array
 open Lib.Maths
 
 
+/// BB:
+/// Are we missing an extend operation for the tree?
+
+
 (* Base datatypes *)
 type bytes_t = Seq.seq nat
 let empty_bytes = Seq.empty
@@ -53,7 +57,7 @@ type leaf_secrets_t: eqtype = {
 }
 
 (* Public Information about a Group Member *)
-type leaf_package_t = {
+type leaf_package_t: eqtype = {
   leaf_credential: credential_t;
   leaf_version: nat;
   leaf_content: bytes_t;
@@ -76,17 +80,28 @@ type node_package_t = {
 }
 
 
+type index_n (l:nat) = x:nat{x < pow2 l}
+type level_n = n:nat{pow2 n < pow2 32}
+
+
 (* Tree and Paths definitions*)
 type tree_t (lev:nat) =
  | Leaf: actor:credential_t{lev=0} -> olp:option leaf_package_t -> tree_t lev
  | Node: actor:credential_t{lev>0} -> onp:option node_package_t ->
-         left:tree_t (lev - 1) -> right:tree_t (lev - 1) -> tree_t lev
+         left:tree_t (lev-1) -> right:tree_t (lev-1) -> tree_t lev
 
 type path_t (lev:nat) =
  | PLeaf: olp:option leaf_package_t{lev=0} -> path_t lev
  | PNode: onp:option node_package_t{lev>0} ->
 	       next:path_t (lev-1) -> path_t lev
 
+(* Operations on the state *)
+type operation_t: eqtype = {
+  op_level: nat;
+  op_index: index_n op_level;
+  op_actor: credential_t;
+  op_path: path_t op_level;
+}
 
 (* TreeSync state and accessors*)
 type state_t: eqtype = {
@@ -94,11 +109,14 @@ type state_t: eqtype = {
   st_levels: nat;
   st_tree: tree_t st_levels;
   st_version: nat;
-  st_transcript: bytes_t;
+  st_transcript: Seq.seq operation_t;
 }
 
-type index_n (l:nat) = x:nat{x < pow2 l}
-type level_n = n:nat{pow2 n < pow2 32}
+val mk_initial_state: gid:nat -> lvl:level_n -> tree_t lvl -> Tot state_t
+let mk_initial_state gid lvl t = {
+  st_group_id = gid; st_levels = lvl;
+  st_tree = t; st_version = 0;
+  st_transcript = empty}
 
 val group_id: state_t -> nat
 let group_id st = st.st_group_id
@@ -112,22 +130,21 @@ let epoch st = st.st_version
 type index_t (st:state_t) = i:nat{i < max_size st}
 
 
-
 (* Membership *)
 type member_array_t (sz:nat) = a:array (option credential_t){length a = sz}
 
-let rec membership_tree (l:nat) (t:tree_t l): member_array_t (pow2 l) =
+let rec tree_membership (l:nat) (t:tree_t l): member_array_t (pow2 l) =
   match t with
   | Leaf _ olp ->
     (match olp with
     | None -> singleton None
     | Some lp -> singleton (Some lp.leaf_credential))
-  | Node _ _ left right -> append (membership_tree (l-1) left)
-				 (membership_tree (l-1) right)
+  | Node _ _ left right -> append (tree_membership (l-1) left)
+				 (tree_membership (l-1) right)
 
 
 val membership: st:state_t -> member_array_t (max_size st)
-let membership st = membership_tree st.st_levels st.st_tree
+let membership st = tree_membership st.st_levels st.st_tree
 
 
 
@@ -142,7 +159,7 @@ let order_subtrees dir (l,r) = if dir = Left then (l,r) else (r,l)
 (* Create a new tree from a member array *)
 val create_tree: l:nat -> actor:credential_t ->
 		 init:member_array_t (pow2 l) ->
-		 t:tree_t l{membership_tree l t == init}
+		 t:tree_t l{tree_membership l t == init}
 
 let rec create_tree (l:nat) (actor:credential_t) (init:member_array_t (pow2 l)) =
   if l = 0 then
@@ -154,6 +171,7 @@ let rec create_tree (l:nat) (actor:credential_t) (init:member_array_t (pow2 l)) 
     let left = create_tree (l-1) actor init_l in
     let right = create_tree (l-1) actor init_r in
     Node actor None left right
+
 
 (* Apply a path to a tree *)
 let rec apply_path (l:nat) (i:nat{i<pow2 l}) (a:credential_t)
@@ -172,29 +190,46 @@ let rec blank_path (l:nat) (i:index_n l) (oc:option credential_t) : path_t l =
   if l = 0 then
     match oc with
     | None -> PLeaf None
-    | Some c -> PLeaf (Some (mk_initial_leaf_package c))
+    | Some c -> PLeaf (Some (mk_initial_leaf_package c)) // BB. This doesn't seem correct.
   else let (j,dir) = child_index l i in
     PNode None (blank_path (l-1) j oc)
 
+
+let rec mk_path_aux (l:nat) (i:index_n l) (sonp:Seq.seq (option node_package_t){l <= length sonp+1})
+                    (olp:option leaf_package_t): path_t l =
+   if l = 0 then PLeaf olp
+   else
+     let (j,dir) = child_index l i in
+     PNode None (mk_path_aux (l-1) j sonp olp)
 
 ///
 /// API
 ///
 
-(* Operations on the state *)
-type operation_t: eqtype = {
-  op_level: nat;
-  op_index: index_n op_level;
-  op_actor: credential_t;
-  op_path: path_t op_level;
-}
+(* Create a path for from a sequence of node packages *)
+val mk_path: l:nat -> Seq.seq (option node_package_t) -> option leaf_package_t
+  -> Tot (option (path_t l))
+
+let rec mk_path l sonp olp =
+  if l = 0 || length sonp + 1 <> l then None
+  else Some (mk_path_aux l 0 sonp olp)
+
 
 (* Create an operation that modifies the group state *)
 val mk_operation: st:state_t -> actor:credential_t
   -> i:index_t st -> p:path_t st.st_levels
   -> Tot (option operation_t)
 
-let mk_operation st actor i p = admit()
+let mk_operation st actor i p =
+  match (membership st).[i], (PLeaf?.olp p) with
+  | _ -> None
+  | Some mc, Some lp ->
+  if mc = lp.leaf_credential then None
+  else
+    Some ({op_level = st.st_levels;
+           op_index = i;
+           op_actor = actor;
+           op_path = p;})
 
 
 (* Create a new group state *)
@@ -204,13 +239,9 @@ val create: gid:nat -> sz:pos -> init:member_array_t sz
 let create gid sz init =
   match init.[0], log2 sz with
   | _ -> None
-  | Some actor,Some l ->
-    let t = create_tree l actor init in
-    let lp = {leaf_credential = actor;
-              leaf_version = 1; leaf_content = empty_bytes} in
-	 let st0 = {st_group_id = gid; st_levels = l;
-			     st_tree = t; st_version = 0;
-			     st_transcript = empty} in
+  | Some actor,Some lvl ->
+    let t = create_tree lvl actor init in
+	 let st0 = mk_initial_state gid lvl t in
 	 Some ({st0 with st_transcript = empty_bytes})
 
 
@@ -222,46 +253,35 @@ let apply st op =
   if op.op_level <> st.st_levels then None
   else
     let nt = apply_path op.op_level op.op_index op.op_actor st.st_tree op.op_path in
-    Some ({st with st_version = st.st_version + 1; st_tree = nt;
-  	                st_transcript = st.st_transcript})
+    Some ({ st with st_version = st.st_version + 1; st_tree = nt;
+            st_transcript = Seq.snoc st.st_transcript op})
 
 
-
-
-
-
+(* Apply an joiner *)
 val add: st:state_t -> actor:credential_t
   -> i:index_t st -> joiner:credential_t
   -> Tot (option (operation_t & state_t))
 
+let add st actor i joiner =
+  let p = blank_path st.st_levels i (Some joiner) in
+  match mk_operation st actor i p with
+  | None -> None
+  | Some op ->
+  match apply st op with
+  | None -> None
+  | Some st' -> Some (op,st')
 
+
+(* Remove a member *)
 val remove: st:state_t -> actor:credential_t -> i:index_t st
   -> Tot (option (operation_t & state_t))
 
-
-
-// Construct operation
-// Precondition guarantees that you cannot change the membership
-// Only provide keypackages from the leaf to the root.
-
-
-
-/// Are we missing an extend operation for the tree?
-
-
-(* let update_leaf_package (lp:leaf_package_t) (nc:credential_t) = { *)
-(*   lp with *)
-(*   leaf_version = lp.leaf_version + 1; *)
-(*   leaf_credential = nc *)
-(* } *)
-
-
-
-
-// TODO: Signature
-
-
-
-// If 2 principals have consistent transcript => Group State is the same.
-// Signatures: if the last actor is honest the transcript of the sender and recipients are the same = consistent
+let remove st actor i =
+  let p = blank_path st.st_levels i None in
+  match mk_operation st actor i p with
+  | None -> None
+  | Some op ->
+  match apply st op with
+  | None -> None
+  | Some st' -> Some (op,st')
 
