@@ -1,48 +1,55 @@
 module Crypto
 
-open Lib.Result
-
 open Spec.Agile.DH
 open Spec.Agile.AEAD
 open Spec.Agile.Hash
-open Lib.RandomSequence
+
+open Lib.Result
+open Lib.ByteSequence
+open Lib.IntTypes
 
 module DH = Spec.Agile.DH
 module AEAD = Spec.Agile.AEAD
 module Hash = Spec.Agile.Hash
-module Rand = Lib.RandomSequence
 
 (*** Ciphersuite ***)
 
 val ciphersuite: Type0
 
+(*** Cryptographic randomness ***)
+
+val entropy: nat -> Type0
+//TODO: better name?
+val consume_entropy: #n:nat -> entropy n -> len:nat{len <= n} -> (entropy (n-len) & entropy len)
+
 (*** KDF ***)
 
-val kdf_length: ciphersuite -> nat
+val kdf_length: ciphersuite -> size_nat
 
 val kdf_extract_tot: cs:ciphersuite -> key:bytes{Seq.length key < pow2 31} -> data:bytes{Seq.length data < pow2 60} -> lbytes (kdf_length cs)
 val kdf_expand_tot: cs:ciphersuite -> prk:bytes{kdf_length cs <= Seq.length prk /\ Seq.length prk <= pow2 31} -> info:bytes{Seq.length info <= pow2 60} -> len:nat{len <= 4080} -> lbytes len
 
 val kdf_extract: cs:ciphersuite -> key:bytes -> data:bytes -> result (lbytes (kdf_length cs))
-val kdf_expand: cs:ciphersuite -> prk:bytes -> info:bytes -> len:nat -> result (lbytes len)
+val kdf_expand: cs:ciphersuite -> prk:bytes -> info:bytes -> len:size_nat -> result (lbytes len)
 
 (*** HPKE ***)
 
-val hpke_public_key_length: ciphersuite -> nat
-val hpke_private_key_length: ciphersuite -> nat
-val hpke_kem_output_length: ciphersuite -> nat
+val hpke_public_key_length: ciphersuite -> size_nat
+val hpke_private_key_length: cs:ciphersuite -> n:size_nat{n <= kdf_length cs}
+val hpke_kem_output_length: ciphersuite -> size_nat
 
 type hpke_public_key (cs:ciphersuite) = lbytes (hpke_public_key_length cs)
 type hpke_private_key (cs:ciphersuite) = lbytes (hpke_private_key_length cs)
 type hpke_kem_output (cs:ciphersuite) = lbytes (hpke_kem_output_length cs)
 
-val hpke_encrypt: cs:ciphersuite -> Rand.entropy -> pkR:hpke_public_key cs -> info:bytes -> ad:bytes -> plaintext:bytes -> Rand.entropy & result (hpke_kem_output cs & bytes)
+val hpke_gen_keypair: cs:ciphersuite -> ikm:bytes{Seq.length ikm >= hpke_private_key_length cs} -> result (hpke_private_key cs & hpke_public_key cs)
+val hpke_encrypt: cs:ciphersuite -> pkR:hpke_public_key cs -> info:bytes -> ad:bytes -> plaintext:bytes -> entropy (hpke_private_key_length cs) -> result (hpke_kem_output cs & bytes)
 val hpke_decrypt: cs:ciphersuite -> enc:hpke_kem_output cs -> skR:hpke_private_key cs -> info:bytes -> ad:bytes -> ciphertext:bytes -> result bytes
 
 (*** String to bytes ***)
 
 let string_is_ascii (s:string) = List.Tot.for_all (fun x -> FStar.Char.int_of_char x < 256) (FStar.String.list_of_string s)
-val string_to_bytes: s:string{b2t (normalize_term (string_is_ascii s))} -> lbytes (String.strlen s)
+val string_to_bytes: s:string{b2t (normalize_term (string_is_ascii s && String.strlen s < max_size_t))} -> lbytes (String.strlen s)
 
 (*
 open FStar.Mul

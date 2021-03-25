@@ -1,8 +1,5 @@
 module Crypto
 
-open Lib.Sequence
-open Lib.ByteSequence
-open Lib.IntTypes
 
 open Spec.Agile.HKDF
 open FStar.Mul
@@ -13,6 +10,10 @@ open Spec.Agile.AEAD
 open Spec.Agile.Hash
 open Spec.Agile.HKDF
 open HPKE
+
+open Lib.Sequence
+open Lib.ByteSequence
+open Lib.IntTypes
 
 module DH = Spec.Agile.DH
 module AEAD = Spec.Agile.AEAD
@@ -42,6 +43,13 @@ let ciphersuite = cs:ciphersuite_t{is_valid_ciphersuite_t cs}
 val ciphersuite_to_hpke_ciphersuite: ciphersuite -> HPKE.ciphersuite
 let ciphersuite_to_hpke_ciphersuite cs =
   (cs.kem_dh, cs.kem_hash, HPKE.Seal cs.aead, cs.kdf_hash)
+
+(*** Cryptographic randomness ***)
+
+
+type entropy (n:nat) = b:bytes{Seq.length b == n}
+let consume_entropy #n e len =
+    (Seq.slice e len n, Seq.slice e 0 len)
 
 (*** KDF ***)
 
@@ -97,22 +105,26 @@ let hpke_public_key_length cs = HPKE.size_dh_public (ciphersuite_to_hpke_ciphers
 let hpke_private_key_length cs = HPKE.size_dh_key (ciphersuite_to_hpke_ciphersuite cs)
 let hpke_kem_output_length cs = HPKE.size_dh_public (ciphersuite_to_hpke_ciphersuite cs)
 
-let hpke_encrypt cs entropy pkR info ad plaintext =
-  let (new_entropy, random_bytes) = Rand.crypto_random entropy (hpke_private_key_length cs) in
-  match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) random_bytes with
-  | None -> (new_entropy, Error "hpke_encrypt: HPKE.derive_key_pair failed")
+let hpke_gen_keypair cs e =
+  match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) e with
+  | None -> Error "hpke_gen_keypair: HPKE.derive_key_pair failed"
+  | Some (sk, pk) -> Success (sk, pk)
+
+let hpke_encrypt cs pkR info ad plaintext e =
+  match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) e with
+  | None -> Error "hpke_encrypt: HPKE.derive_key_pair failed"
   | Some (skE, _) -> (
     let pkR = HPKE.deserialize_public_key (ciphersuite_to_hpke_ciphersuite cs) pkR in
     if not (Seq.length info <= max_length_info cs.kdf_hash) then
-      (new_entropy, Error "hpke_encrypt: info too long")
+      Error "hpke_encrypt: info too long"
     else if not (Seq.length ad <= AEAD.max_length cs.aead) then
-      (new_entropy, Error "hpke_encrypt: ad too long")
+      Error "hpke_encrypt: ad too long"
     else if not (Seq.length plaintext <= AEAD.max_length cs.aead) then
-      (new_entropy, Error "hpke_encrypt: plaintext too long")
+      Error "hpke_encrypt: plaintext too long"
     else (
       match HPKE.sealBase (ciphersuite_to_hpke_ciphersuite cs) skE pkR info ad plaintext with
-      | None -> (new_entropy, Error "hpke_encrypt: HPKE.sealBase failed")
-      | Some (kem_output, ciphertext) -> (new_entropy, Success (kem_output, ciphertext))
+      | None -> Error "hpke_encrypt: HPKE.sealBase failed"
+      | Some (kem_output, ciphertext) -> Success (kem_output, ciphertext)
     )
   )
 
@@ -135,7 +147,7 @@ let string_to_bytes s =
   let open FStar.String in
   let open FStar.Char in
   let open FStar.List.Tot in
-  let rec aux (l:list char{for_all (fun x -> int_of_char x < 256) l}): lbytes (length l) =
+  let rec aux (l:list char{for_all (fun x -> int_of_char x < 256) l /\ length l < max_size_t}): lbytes (length l) =
     match l with
     | [] -> bytes_empty
     | h::t -> FStar.Seq.append (create 1 (u8 (int_of_char h))) (aux t)
