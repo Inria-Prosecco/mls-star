@@ -61,21 +61,21 @@ type node_package_t = {
 
 (* Tree and Paths definitions*)
 type index_n (l:nat) = x:nat{x < pow2 l}
-type level_n = n:nat{pow2 n < pow2 32}
+type level_n = nat
 
-type tree_t (lev:nat) =
- | Leaf: actor:credential_t{lev=0} -> olp:option leaf_package_t -> tree_t lev
- | Node: actor:credential_t{lev>0} -> onp:option node_package_t ->
-         left:tree_t (lev-1) -> right:tree_t (lev-1) -> tree_t lev
+type tree_t (l:level_n) =
+ | Leaf: actor:credential_t{l=0} -> olp:option leaf_package_t -> tree_t l
+ | Node: actor:credential_t{l>0} -> onp:option node_package_t ->
+         left:tree_t (l-1) -> right:tree_t (l-1) -> tree_t l
 
-type path_t (lev:nat) =
- | PLeaf: olp:option leaf_package_t{lev=0} -> path_t lev
- | PNode: onp:option node_package_t{lev>0} ->
-	       next:path_t (lev-1) -> path_t lev
+type path_t (l:level_n) =
+ | PLeaf: olp:option leaf_package_t{l=0} -> path_t l
+ | PNode: onp:option node_package_t{l>0} ->
+	       next:path_t (l-1) -> path_t l
 
 (* Operations on the state *)
 type operation_t: eqtype = {
-  op_level: nat;
+  op_level: level_n;
   op_index: index_n op_level;
   op_actor: credential_t;
   op_path: path_t op_level;
@@ -84,7 +84,7 @@ type operation_t: eqtype = {
 (* TreeSync state and accessors*)
 type state_t: eqtype = {
   st_group_id: nat;
-  st_levels: nat;
+  st_levels: level_n;
   st_tree: tree_t st_levels;
   st_version: nat;
   st_initial_tree: tree_t st_levels;
@@ -141,11 +141,11 @@ let order_subtrees dir (l,r) = if dir = Left then (l,r) else (r,l)
 
 
 (* Create a new tree from a member array *)
-val create_tree: l:nat -> actor:credential_t ->
+val create_tree: l:level_n -> actor:credential_t ->
 		 init:member_array_t (pow2 l) ->
 		 t:tree_t l{tree_membership l t == init}
 
-let rec create_tree (l:nat) (actor:credential_t) (init:member_array_t (pow2 l)) =
+let rec create_tree (l:level_n) (actor:credential_t) (init:member_array_t (pow2 l)) =
   if l = 0 then
     match init.[0] with
     | None -> Leaf actor None
@@ -158,7 +158,7 @@ let rec create_tree (l:nat) (actor:credential_t) (init:member_array_t (pow2 l)) 
 
 
 (* Apply a path to a tree *)
-let rec apply_path (l:nat) (i:nat{i<pow2 l}) (a:credential_t)
+let rec apply_path (l:level_n) (i:nat{i<pow2 l}) (a:credential_t)
                    (t:tree_t l) (p:path_t l) : tree_t l =
   match t,p with
   | Leaf _ m, PLeaf m' -> Leaf a m'
@@ -170,7 +170,7 @@ let rec apply_path (l:nat) (i:nat{i<pow2 l}) (a:credential_t)
 
 
 (* Create a blank path after modifying a leaf *)
-let rec blank_path (l:nat) (i:index_n l) (oc:option credential_t) : path_t l =
+let rec blank_path (l:level_n) (i:index_n l) (oc:option credential_t) : path_t l =
   if l = 0 then
     match oc with
     | None -> PLeaf None
