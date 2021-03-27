@@ -1,11 +1,14 @@
 module TreeSync.Lemmas
 
 open Lib.Array
+open Lib.ByteSequence
 open TreeSync
 
 ///
 /// Internal lemmas
 ///
+
+let create_tree_lemma l actor init = ()
 
 let rec blank_path_lemma l i olp a t =
   match t with
@@ -24,6 +27,10 @@ let rec blank_path_lemma l i olp a t =
 /// API lemmas
 ///
 
-let mk_operation_lemma st actor i p = admit()
-
 let create_lemma gid sz init = ()
+
+let apply_lemma st op = admit()
+
+let apply_lemma_strong st op = admit()
+
+let mk_operation_lemma st actor i p = admit()
