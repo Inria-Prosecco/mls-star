@@ -24,14 +24,6 @@ let rec blank_path_lemma l i olp a t =
 /// API lemmas
 ///
 
+let mk_operation_lemma st actor i p = admit()
 
-
-
-
-(* val valid_credential_p: credential_t -> pred_p *)
-(* let valid_credential_p c = validate_credential c *)
-
-(* let initial_leaf_package_p (olp:option leaf_package_t) = *)
-(*   match olp with *)
-(*   | None -> True *)
-(*   | Some lp -> valid_credential_p lp.leaf_credential /\ lp.leaf_version = 0 *)
+let create_lemma gid sz init = ()

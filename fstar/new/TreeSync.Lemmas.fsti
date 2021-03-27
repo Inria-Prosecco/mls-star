@@ -1,6 +1,7 @@
 module TreeSync.Lemmas
 
 open Lib.Array
+open Lib.Maths
 open TreeSync
 
 ///
@@ -18,7 +19,7 @@ val blank_path_lemma: l:nat -> i:index_n l -> olp:option credential_t -> a:crede
 
 val mk_operation_lemma: st:state_t -> actor:credential_t
   -> i:index_t st -> p:path_t st.st_levels
-  -> Tot (oop:option operation_t{
+  -> Lemma (oop:option operation_t{
          match oop with
          | None -> True
          | Some op ->
@@ -30,3 +31,13 @@ val mk_operation_lemma: st:state_t -> actor:credential_t
 			           /\ (match op.op_path with
                       | PLeaf olp -> membership st' == membership st
                       | _ -> True)})
+
+
+val create_lemma: gid:nat -> sz:pos{Some? (log2 sz)} -> init:member_array_t sz{Some? init.[0]}
+  -> Lemma (match create gid sz init with
+	     | None -> True
+	     | Some st ->
+          group_id st == gid
+          /\ max_size st == sz
+          /\ epoch st == 0
+          /\ membership st == init)
