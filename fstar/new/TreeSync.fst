@@ -67,10 +67,10 @@ type path_t (l:level_n) =
 
 (* Operations on the state *)
 type operation_t = {
-  op_level: level_n;
-  op_index: index_n op_level;
+  op_levels: level_n;
+  op_index: index_n op_levels;
   op_actor: credential_t;
-  op_path: path_t op_level;
+  op_path: path_t op_levels;
 }
 
 (* TreeSync state and accessors*)
@@ -186,7 +186,7 @@ let mk_operation st actor i p =
   | Some mc, Some lp ->
   if mc = lp.leaf_credential then None
   else
-    Some ({op_level = st.st_levels;
+    Some ({op_levels = st.st_levels;
            op_index = i;
            op_actor = actor;
            op_path = p;})
@@ -211,9 +211,9 @@ val apply: state_t -> operation_t
   -> Tot (option state_t)
 
 let apply st op =
-  if op.op_level <> st.st_levels then None
+  if op.op_levels <> st.st_levels then None
   else
-    let nt = apply_path op.op_level op.op_index op.op_actor st.st_tree op.op_path in
+    let nt = apply_path op.op_levels op.op_index op.op_actor st.st_tree op.op_path in
     Some ({ st with st_version = st.st_version + 1; st_tree = nt;
             st_transcript = Seq.snoc st.st_transcript op})
 
