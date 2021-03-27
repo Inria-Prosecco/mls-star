@@ -2,34 +2,26 @@ module TreeSync
 
 open Lib.Array
 open Lib.Maths
-
-
-
-(* Base datatypes *)
-type bytes_t = Seq.seq nat
-let empty_bytes = Seq.empty
-
-let pred_p = Type0
-let datatype_t = eqtype
+open Lib.ByteSequence
 
 
 (* Cryptography *)
 let sign_key_t = bytes_t
-let verif_key_t = bytes_t
+let verif_key_t = pub_bytes_t
 
-let enc_key_t = bytes_t
+let enc_key_t = pub_bytes_t
 let dec_key_t = bytes_t
 
 
 (* Identity and Credentials *)
 type principal_t = string
 
-type credential_t: eqtype = {
+type credential_t = {
   cred_name: principal_t;
   cred_issuer: principal_t;
   cred_version: nat;
   cred_identity_key: verif_key_t;
-  cred_signature: bytes_t;
+  cred_signature: pub_bytes_t;
   cred_enc_key: enc_key_t;
 }
 
@@ -37,25 +29,25 @@ assume val validate_credential: credential_t -> bool
 
 
 (* Secrets belonging to a Group Member  *)
-type leaf_secrets_t: eqtype = {
+noeq type leaf_secrets_t = {
   identity_sig_key: sign_key_t;
 }
 
 (* Public Information about a Group Member *)
-type leaf_package_t: eqtype = {
+type leaf_package_t = {
   leaf_credential: credential_t;
   leaf_version: nat;
-  leaf_content: bytes_t;
+  leaf_content: pub_bytes_t;
 }
 
 let mk_initial_leaf_package (c:credential_t) =
   { leaf_credential = c;
     leaf_version = 0;
-    leaf_content = empty_bytes;}
+    leaf_content = pub_bytes_empty;}
 
 type node_package_t = {
   node_version: nat;
-  node_content: bytes_t
+  node_content: pub_bytes_t;
 }
 
 
@@ -74,7 +66,7 @@ type path_t (l:level_n) =
 	       next:path_t (l-1) -> path_t l
 
 (* Operations on the state *)
-type operation_t: eqtype = {
+type operation_t = {
   op_level: level_n;
   op_index: index_n op_level;
   op_actor: credential_t;
@@ -82,7 +74,7 @@ type operation_t: eqtype = {
 }
 
 (* TreeSync state and accessors*)
-type state_t: eqtype = {
+type state_t = {
   st_group_id: nat;
   st_levels: level_n;
   st_tree: tree_t st_levels;
@@ -211,7 +203,7 @@ let create gid sz init =
     let t = create_tree l actor init in
     let st = mk_initial_state gid l t in
     Some ({st with st_initial_tree = t;
-                   st_transcript = empty_bytes})
+                   st_transcript = bytes_empty})
 
 
 (* Apply an operation to a state *)
