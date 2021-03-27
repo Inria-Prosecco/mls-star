@@ -91,9 +91,9 @@ type state_t: eqtype = {
   st_transcript: Seq.seq operation_t;
 }
 
-val mk_initial_state: gid:nat -> lvl:level_n -> tree_t lvl -> Tot state_t
-let mk_initial_state gid lvl t = {
-  st_group_id = gid; st_levels = lvl;
+val mk_initial_state: gid:nat -> l:level_n -> tree_t l -> Tot state_t
+let mk_initial_state gid l t = {
+  st_group_id = gid; st_levels = l;
   st_tree = t; st_version = 0;
   st_initial_tree = t;
   st_transcript = empty;}
@@ -207,10 +207,10 @@ val create: gid:nat -> sz:pos -> init:member_array_t sz
 let create gid sz init =
   match init.[0], log2 sz with
   | _ -> None
-  | Some actor,Some lvl ->
-    let t = create_tree lvl actor init in
-	 let st = mk_initial_state gid lvl t in
-	 Some ({st with st_initial_tree = t;
+  | Some actor,Some l ->
+    let t = create_tree l actor init in
+    let st = mk_initial_state gid l t in
+    Some ({st with st_initial_tree = t;
                    st_transcript = empty_bytes})
 
 
