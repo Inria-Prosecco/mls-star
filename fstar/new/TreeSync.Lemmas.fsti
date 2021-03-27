@@ -25,10 +25,10 @@ val mk_operation_lemma: st:state_t -> actor:credential_t
          | Some op ->
          match apply st op with
          | None -> False
-		   | Some st' -> group_id st' == group_id st
-  		              /\ max_size st' == max_size st
-			           /\ epoch st' == epoch st + 1
-			           /\ (match op.op_path with
+         | Some st' -> group_id st' == group_id st
+                    /\ max_size st' == max_size st
+                    /\ epoch st' == epoch st + 1
+                    /\ (match op.op_path with
                       | PLeaf olp -> membership st' == membership st
                       | _ -> True)})
 
