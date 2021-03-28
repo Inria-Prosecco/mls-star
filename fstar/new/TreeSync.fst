@@ -35,19 +35,19 @@ noeq type leaf_secrets_t = {
 
 (* Public Information about a Group Member *)
 type leaf_package_t = {
-  leaf_credential: credential_t;
-  leaf_version: nat;
-  leaf_content: pub_bytes_t;
+  lp_credential: credential_t;
+  lp_version: nat;
+  lp_content: pub_bytes_t;
 }
 
 let mk_initial_leaf_package (c:credential_t) =
-  { leaf_credential = c;
-    leaf_version = 0;
-    leaf_content = pub_bytes_empty;}
+  { lp_credential = c;
+    lp_version = 0;
+    lp_content = pub_bytes_empty;}
 
 type node_package_t = {
-  node_version: nat;
-  node_content: pub_bytes_t;
+  np_version: nat;
+  np_content: pub_bytes_t;
 }
 
 
@@ -110,7 +110,7 @@ let rec tree_membership (l:nat) (t:tree_t l): member_array_t (pow2 l) =
   | Leaf _ olp ->
     (match olp with
     | None -> singleton None
-    | Some lp -> singleton (Some lp.leaf_credential))
+    | Some lp -> singleton (Some lp.lp_credential))
   | Node _ _ left right -> append (tree_membership (l-1) left)
 				 (tree_membership (l-1) right)
 
@@ -184,7 +184,7 @@ let mk_operation st actor i p =
   match (membership st).[i], (PLeaf?.olp p) with
   | _ -> None
   | Some mc, Some lp ->
-  if mc = lp.leaf_credential then None
+  if mc = lp.lp_credential then None
   else
     Some ({op_levels = st.st_levels;
            op_index = i;
