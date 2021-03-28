@@ -19,9 +19,10 @@ let rec mk_path_aux (l:nat) (i:index_n l) (sonp:Seq.seq (option node_package_t){
 /// Helpers
 ///
 
+(** Definition of an array of leaf packages *)
 type leaf_array_t (sz:nat) = a:array (option leaf_package_t){length a = sz}
 
-(* Retreives the array of leaf_packages from the tree *)
+(** Retreives the array of leaf packages from the tree *)
 let rec tree_leaf_packages (l:nat) (t:tree_t l): leaf_array_t (pow2 l) =
   match t with
   | Leaf _ olp ->
@@ -31,12 +32,12 @@ let rec tree_leaf_packages (l:nat) (t:tree_t l): leaf_array_t (pow2 l) =
   | Node _ _ left right -> append (tree_leaf_packages (l-1) left)
 				 (tree_leaf_packages (l-1) right)
 
-(* Retreives the array of leaf_packages from the state *)
+(** Retreives the array of leaf packages from the state *)
 val leaf_packages: st:state_t -> leaf_array_t (max_size st)
 let leaf_packages st = tree_leaf_packages st.st_levels st.st_tree
 
 
-(* Create a path for from a sequence of node packages *)
+(** Create a path for from a sequence of node packages *)
 val mk_path: l:nat -> Seq.seq (option node_package_t) -> option leaf_package_t
   -> Tot (option (path_t l))
 
