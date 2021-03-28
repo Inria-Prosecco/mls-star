@@ -31,7 +31,7 @@ let create_lemma gid sz init = ()
 
 let apply_lemma st op = ()
 
-let mk_operation_lemma st actor i p = admit()
+let mk_operation_lemma st actor i p = ()
 
 let add_lemma st actor i joiner = ()
 

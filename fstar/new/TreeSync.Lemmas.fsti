@@ -46,32 +46,24 @@ val apply_lemma: st:state_t -> op:operation_t{op.op_levels = st.st_levels}
 
 val mk_operation_lemma: st:state_t -> actor:credential_t
   -> i:index_t st -> p:path_t st.st_levels
-  -> Lemma (oop:option operation_t{
-         match oop with
-         | None -> True
-         | Some op ->
-         match apply st op with
-         | None -> False
-         | Some st' -> group_id st' == group_id st
-                    /\ max_size st' == max_size st
-                    /\ epoch st' == epoch st + 1
-                    /\ (match op.op_path with
-                      | PLeaf olp -> membership st' == membership st
-                      | _ -> True)})
+  -> Lemma (match mk_operation st actor i p with
+           | None -> True
+           | Some op ->
+           match apply st op with
+           | None -> True
+           | Some st' -> group_id st' == group_id st
+                      /\ max_size st' == max_size st
+                      /\ epoch st' == epoch st + 1
+                      /\ (match p with
+                        | PNode _ _ -> True
+                        | PLeaf olp -> (leaf_packages st') = ((leaf_packages st).[i] <- olp)))
 
 
 val add_lemma: st:state_t -> actor:credential_t
   -> i:index_t st -> joiner:credential_t
-  -> Lemma ( let ilp = mk_initial_leaf_package joiner in
-            match mk_path st.st_levels Seq.empty (Some ilp) with
+  -> Lemma ( match add st actor i joiner with
             | None -> True
-            | Some p ->
-            match mk_operation st actor i p with
-            | None -> True
-            | Some op ->
-            match apply st op with
-            | None -> True
-            | Some st' ->
+            | Some (op,st') ->
               let t' = apply_path op.op_levels op.op_index op.op_actor st.st_tree op.op_path in
               ( st'.st_levels = st.st_levels
               /\ st'.st_version = st.st_version + 1
@@ -80,16 +72,10 @@ val add_lemma: st:state_t -> actor:credential_t
               /\ ((membership st') = ((membership st).[i] <- (Some joiner)))))
 
 
-val remove: st:state_t -> actor:credential_t -> i:index_t st
-  -> Lemma ( match mk_path st.st_levels Seq.empty None with
+val remove_lemma: st:state_t -> actor:credential_t -> i:index_t st
+  -> Lemma ( match remove st actor i with
             | None -> True
-            | Some p ->
-            match mk_operation st actor i p with
-            | None -> True
-            | Some op ->
-            match apply st op with
-            | None -> True
-            | Some st' ->
+            | Some (op,st') ->
               let t' = apply_path op.op_levels op.op_index op.op_actor st.st_tree op.op_path in
               ( st'.st_levels = st.st_levels
               /\ st'.st_version = st.st_version + 1
