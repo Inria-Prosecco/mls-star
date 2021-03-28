@@ -29,8 +29,10 @@ let rec blank_path_lemma l i olp a t =
 
 let create_lemma gid sz init = ()
 
-let apply_lemma st op = admit()
-
-let apply_lemma_strong st op = admit()
+let apply_lemma st op = ()
 
 let mk_operation_lemma st actor i p = admit()
+
+let add_lemma st actor i joiner = ()
+
+let remove_lemma st actor i = ()
