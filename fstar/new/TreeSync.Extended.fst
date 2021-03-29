@@ -27,6 +27,8 @@ type credential_t = {
   cred_enc_key: enc_key_t;
 }
 
+assume val cred_empty: credential_t
+
 assume val validate_credential: credential_t -> bool
 
 
@@ -42,10 +44,11 @@ type leaf_package_t = {
   lp_content: pub_bytes_t;
 }
 
-let mk_initial_leaf_package (c:credential_t) =
-  { lp_credential = c;
-    lp_version = 0;
-    lp_content = pub_bytes_empty;}
+let mk_initial_leaf_package (c:credential_t) = {
+  lp_credential = c;
+  lp_version = 0;
+  lp_content = pub_bytes_empty;
+}
 
 
 (** Definition of a Node package *)
@@ -75,8 +78,8 @@ type tree_t (l:level_n) =
          left:tree_t (l-1) -> right:tree_t (l-1) -> tree_t l
 
 type path_t (l:level_n) =
- | PLeaf: olp:option leaf_package_t{l=0} -> path_t l
- | PNode: onp:option node_package_t{l>0} ->
+ | PLeaf: ap:actor_package_t{l=0} -> olp:option leaf_package_t -> path_t l
+ | PNode: ap:actor_package_t{l>0} -> onp:option node_package_t ->
 	       next:path_t (l-1) -> path_t l
 
 
@@ -93,15 +96,13 @@ let rec mk_tree_hash l t =
 
 
 val mk_actor_package: l:level_n -> actor:credential_t
-  -> sk:sign_key_t -> tree_t l
+  -> sk:sign_key_t -> hash:pub_bytes_t
   -> Tot actor_package_t
 
-let mk_actor_package l actor ask tree =
-  let aph = mk_tree_hash l tree in
-{
+let mk_actor_package l actor ask hash = {
   ap_credential = actor;
-  ap_hash = aph;
-  ap_signature = sign #pub_bytes_t #pub_bytes_t aph Seq.empty ask;
+  ap_hash = hash;
+  ap_signature = sign #pub_bytes_t #pub_bytes_t hash Seq.empty ask;
 }
 
 
@@ -181,48 +182,60 @@ let rec create_tree l actor ask init =
   if l = 0 then
     match init.[0] with
     | None ->
-      let ap = mk_actor_package l actor ask (Leaf ap_empty None) in
+      let lh = mk_tree_hash l (Leaf ap_empty None) in
+      let ap = mk_actor_package l actor ask lh in
       Leaf ap None
     | Some c ->
       let slp = Some (mk_initial_leaf_package c) in
-      let ap = mk_actor_package l actor ask (Leaf ap_empty slp) in
+      let lh = mk_tree_hash l (Leaf ap_empty slp) in
+      let ap = mk_actor_package l actor ask lh in
       Leaf ap slp
   else
     let init_l,init_r = split init (pow2 (l-1)) in
     let left = create_tree (l-1) actor ask init_l in
     let right = create_tree (l-1) actor ask init_r in
-    let ap = mk_actor_package l actor ask (Node ap_empty None left right) in
+    let onp = (Node ap_empty None left right) in
+    let nh = mk_tree_hash l onp in
+    let ap = mk_actor_package l actor ask nh in
     Node ap None left right
 
 
 (** Apply a path to a tree *)
-let rec apply_path (l:level_n) (i:nat{i<pow2 l}) (a:credential_t) (ask:sign_key_t)
+let rec apply_path (l:level_n) (i:nat{i<pow2 l}) (a:credential_t)
                    (t:tree_t l) (p:path_t l) : tree_t l =
   match t,p with
-  | Leaf _ olp, PLeaf olp' ->
-      let ap = mk_actor_package l a ask (Leaf ap_empty olp') in
-      Leaf ap olp'
-  | Node _ _ left right,PNode onp next ->
+  | Leaf _ olp, PLeaf ap olp' -> Leaf ap olp'
+  | Node _ _ left right,PNode ap onp next ->
       let (j,dir) = child_index l i in
       if dir = Left
-      then
-        let left' = apply_path (l-1) j a ask left next in
-        let ap = mk_actor_package l a ask (Node ap_empty onp left' right) in
-        Node ap onp left' right
-      else
-        let right' = apply_path (l-1) j a ask right next in
-        let ap = mk_actor_package l a ask (Node ap_empty onp left right') in
-        Node ap onp left right'
+      then Node ap onp (apply_path (l-1) j a left next) right
+      else Node ap onp left (apply_path (l-1) j a right next)
 
 
 (** Create a blank path after modifying a leaf *)
-let rec blank_path (l:level_n) (i:index_n l) (oc:option credential_t) : path_t l =
+let rec blank_path (l:level_n) (i:index_n l) (oc:option credential_t)
+                   (actor:credential_t) (ask:sign_key_t)
+                   (tree:tree_t l) : path_t l =
   if l = 0 then
     match oc with
-    | None -> PLeaf None
-    | Some c -> PLeaf (Some (mk_initial_leaf_package c))
-  else let (j,dir) = child_index l i in
-    PNode None (blank_path (l-1) j oc)
+    | None ->
+      let lh = mk_leaf_hash None  in
+      let ap = mk_actor_package l actor ask lh in
+      PLeaf ap None
+    | Some c ->
+      let slp = Some (mk_initial_leaf_package c) in
+      let lh = mk_leaf_hash slp in
+      let ap = mk_actor_package l actor ask lh in
+      PLeaf ap slp
+  else
+    let (j,dir) = child_index l i in
+    match tree with
+    | Node _ _ left right ->
+      let stree: tree_t (l-1) = if dir = Left then right else left in
+      let p' = blank_path (l-1) j oc actor ask stree in
+      let t' = apply_path l i actor tree p' in
+      let ap = mk_actor_package l actor ask (PNode ap_empty None p') in
+      PNode ap None p'
 
 
 ///
