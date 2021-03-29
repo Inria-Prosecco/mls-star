@@ -14,6 +14,10 @@ module Hash = Spec.Agile.Hash
 
 (*** Ciphersuite ***)
 
+type signature_algorithm =
+  | Ed_25519
+  | P_256
+
 val ciphersuite: Type0
 
 (*** Cryptographic randomness ***)
@@ -44,6 +48,20 @@ type hpke_kem_output (cs:ciphersuite) = lbytes (hpke_kem_output_length cs)
 val hpke_gen_keypair: cs:ciphersuite -> ikm:bytes{Seq.length ikm >= hpke_private_key_length cs} -> result (hpke_private_key cs & hpke_public_key cs)
 val hpke_encrypt: cs:ciphersuite -> pkR:hpke_public_key cs -> info:bytes -> ad:bytes -> plaintext:bytes -> randomness (hpke_private_key_length cs) -> result (hpke_kem_output cs & bytes)
 val hpke_decrypt: cs:ciphersuite -> enc:hpke_kem_output cs -> skR:hpke_private_key cs -> info:bytes -> ad:bytes -> ciphertext:bytes -> result bytes
+
+(*** Signature ***)
+
+val sign_public_key_length: ciphersuite -> size_nat
+val sign_private_key_length: ciphersuite -> size_nat
+val sign_nonce_length: ciphersuite -> size_nat
+val sign_signature_length: ciphersuite -> size_nat
+
+type sign_public_key (cs:ciphersuite) = lbytes (sign_public_key_length cs)
+type sign_private_key (cs:ciphersuite) = lbytes (sign_private_key_length cs)
+type sign_signature (cs:ciphersuite) = lbytes (sign_signature_length cs)
+
+val sign_sign: cs:ciphersuite -> sign_private_key cs -> bytes -> randomness (sign_nonce_length cs) -> result (sign_signature cs)
+val sign_verify: cs:ciphersuite -> sign_public_key cs -> bytes -> sign_signature cs -> bool
 
 (*** String to bytes ***)
 

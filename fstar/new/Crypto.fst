@@ -10,6 +10,7 @@ open Spec.Agile.AEAD
 open Spec.Agile.Hash
 open Spec.Agile.HKDF
 open HPKE
+open Spec.Ed25519
 
 open Lib.Sequence
 open Lib.ByteSequence
@@ -20,6 +21,7 @@ module AEAD = Spec.Agile.AEAD
 module Hash = Spec.Agile.Hash
 module HKDF = Spec.Agile.HKDF
 module HPKE = HPKE
+module Ed25519 = Spec.Ed25519
 
 (*** Ciphersuite ***)
 
@@ -28,7 +30,7 @@ type ciphersuite_t = {
   kem_hash: Hash.algorithm;
   aead: AEAD.alg;
   kdf_hash: Hash.algorithm;
-  //TODO: signature
+  signature: signature_algorithm
 }
 
 val is_valid_ciphersuite_t: ciphersuite_t -> bool
@@ -144,6 +146,47 @@ let hpke_decrypt cs enc skR info ad ciphertext =
     | None -> Error "hpke_decrypt: HPKE.openBase failed"
     | Some res -> Success res
   )
+
+(*** Signature ***)
+
+let sign_public_key_length cs =
+  match cs.signature with
+  | Ed_25519 -> 32
+  | P_256 -> 0 //TODO
+
+let sign_private_key_length cs =
+  match cs.signature with
+  | Ed_25519 -> 32
+  | P_256 -> 0 //TODO
+
+let sign_nonce_length cs =
+  match cs.signature with
+  | Ed_25519 -> 0
+  | P_256 -> 0 //TODO
+
+let sign_signature_length cs =
+  match cs.signature with
+  | Ed_25519 -> 64
+  | P_256 -> 0 //TODO
+
+
+let sign_sign cs sk msg rand =
+  match cs.signature with
+  | Ed_25519 ->
+    if not (64 + Seq.length msg <= max_size_t) then
+      Error "sign_sign: msg too long"
+    else
+      return (Ed25519.sign sk msg)
+  | P_256 -> Error "sign_sign: P_256 not implemented"
+
+let sign_verify cs pk msg signature =
+  match cs.signature with
+  | Ed_25519 ->
+    if not (64 + Seq.length msg <= max_size_t) then
+      false
+    else
+      Ed25519.verify pk msg signature
+  | P_256 -> false //TODO
 
 (*** String to bytes ***)
 
