@@ -86,14 +86,14 @@ let hpke_multirecipient_encrypt_entropy_length #cs pks =
   let open FStar.Mul in
   (List.Tot.length pks) * (hpke_private_key_length cs)
 
-val hpke_multirecipient_encrypt: #cs:ciphersuite -> pks:list (hpke_public_key cs) -> info:bytes -> ad:bytes -> plaintext:bytes -> entropy (hpke_multirecipient_encrypt_entropy_length pks) -> result (list (path_secret_ciphertext cs))
-let rec hpke_multirecipient_encrypt #cs public_keys info ad plaintext e =
+val hpke_multirecipient_encrypt: #cs:ciphersuite -> pks:list (hpke_public_key cs) -> info:bytes -> ad:bytes -> plaintext:bytes -> randomness (hpke_multirecipient_encrypt_entropy_length pks) -> result (list (path_secret_ciphertext cs))
+let rec hpke_multirecipient_encrypt #cs public_keys info ad plaintext rand =
   match public_keys with
   | [] -> return []
   | pk::pks ->
-    let (es, e0) = consume_entropy e (hpke_private_key_length cs) in
-    res_hd <-- hpke_encrypt cs pk info ad plaintext e0;
-    res_tl <-- hpke_multirecipient_encrypt pks info ad plaintext es;
+    let (rand_next, rand_cur) = split_randomness rand (hpke_private_key_length cs) in
+    res_hd <-- hpke_encrypt cs pk info ad plaintext rand_cur;
+    res_tl <-- hpke_multirecipient_encrypt pks info ad plaintext rand_next;
     return ({kem_output = fst res_hd; ciphertext = snd res_hd}::res_tl)
 
 //TODO: move the following next functions in Crypto.fst? Or is it too specific to MLS?
@@ -125,13 +125,13 @@ let rec update_path_entropy_length #cs #l t leaf_index =
     let (child, sibling) = order_subtrees dir (left, right) in
     hpke_multirecipient_encrypt_entropy_length (tree_resolution sibling) + update_path_entropy_length child new_leaf_index
 
-val update_path: #cs:ciphersuite -> #l:nat -> t:tree cs l -> leaf_index:index_l l -> leaf_secret:bytes -> ad:bytes -> entropy (update_path_entropy_length t leaf_index) -> Pure (result (path cs l & bytes))
+val update_path: #cs:ciphersuite -> #l:nat -> t:tree cs l -> leaf_index:index_l l -> leaf_secret:bytes -> ad:bytes -> randomness (update_path_entropy_length t leaf_index) -> Pure (result (path cs l & bytes))
   (requires Seq.length leaf_secret >= hpke_private_key_length cs)
   (ensures fun res -> match res with
     | Error _ -> True
     | Success (_, node_secret) -> Seq.length leaf_secret >= hpke_private_key_length cs
   )
-let rec update_path #cs #l t leaf_index leaf_secret ad e =
+let rec update_path #cs #l t leaf_index leaf_secret ad rand =
   match t with
   | Leaf None -> admit() //TODO: in the previous code, it fails in this case
   | Leaf _ ->
@@ -141,12 +141,12 @@ let rec update_path #cs #l t leaf_index leaf_secret ad e =
   | Node _ left right ->
     let (next_leaf_index, dir) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
-    let (entropy_next, entropy_cur) = consume_entropy e (hpke_multirecipient_encrypt_entropy_length (tree_resolution sibling)) in
-    recursive_call <-- update_path child next_leaf_index leaf_secret ad entropy_next;
+    let (rand_next, rand_cur) = split_randomness rand (hpke_multirecipient_encrypt_entropy_length (tree_resolution sibling)) in
+    recursive_call <-- update_path child next_leaf_index leaf_secret ad rand_next;
     let (child_path, child_path_secret) = recursive_call in
     node_path_secret <-- derive_next_path_secret cs child_path_secret;
     node_keys <-- derive_keypair_from_path_secret cs node_path_secret;
-    encrypted_path_secret <-- hpke_multirecipient_encrypt (tree_resolution sibling) bytes_empty ad node_path_secret entropy_cur;
+    encrypted_path_secret <-- hpke_multirecipient_encrypt (tree_resolution sibling) bytes_empty ad node_path_secret rand_cur;
     return (PNode (Some ({
       kp_public_key = snd node_keys;
       unmerged_leafs = [];

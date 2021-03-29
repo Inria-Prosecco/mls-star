@@ -47,8 +47,8 @@ let ciphersuite_to_hpke_ciphersuite cs =
 (*** Cryptographic randomness ***)
 
 
-type entropy (n:nat) = b:bytes{Seq.length b == n}
-let consume_entropy #n e len =
+type randomness (n:nat) = b:bytes{Seq.length b == n}
+let split_randomness #n e len =
     (Seq.slice e len n, Seq.slice e 0 len)
 
 (*** KDF ***)
@@ -105,13 +105,17 @@ let hpke_public_key_length cs = HPKE.size_dh_public (ciphersuite_to_hpke_ciphers
 let hpke_private_key_length cs = HPKE.size_dh_key (ciphersuite_to_hpke_ciphersuite cs)
 let hpke_kem_output_length cs = HPKE.size_dh_public (ciphersuite_to_hpke_ciphersuite cs)
 
-let hpke_gen_keypair cs e =
-  match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) e with
-  | None -> Error "hpke_gen_keypair: HPKE.derive_key_pair failed"
-  | Some (sk, pk) -> Success (sk, pk)
+let hpke_gen_keypair cs ikm =
+  if not (Seq.length ikm <= max_length_dkp_ikm (cs.kem_hash)) then
+    Error "hpke_gen_keypair: ikm too long"
+  else (
+    match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) ikm with
+    | None -> Error "hpke_gen_keypair: HPKE.derive_key_pair failed"
+    | Some (sk, pk) -> Success (sk, pk)
+  )
 
-let hpke_encrypt cs pkR info ad plaintext e =
-  match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) e with
+let hpke_encrypt cs pkR info ad plaintext rand =
+  match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) rand with
   | None -> Error "hpke_encrypt: HPKE.derive_key_pair failed"
   | Some (skE, _) -> (
     let pkR = HPKE.deserialize_public_key (ciphersuite_to_hpke_ciphersuite cs) pkR in

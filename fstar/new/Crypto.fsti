@@ -18,9 +18,8 @@ val ciphersuite: Type0
 
 (*** Cryptographic randomness ***)
 
-val entropy: nat -> Type0
-//TODO: better name?
-val consume_entropy: #n:nat -> entropy n -> len:nat{len <= n} -> (entropy (n-len) & entropy len)
+val randomness: nat -> Type0
+val split_randomness: #n:nat -> randomness n -> len:nat{len <= n} -> (randomness (n-len) & randomness len)
 
 (*** KDF ***)
 
@@ -43,7 +42,7 @@ type hpke_private_key (cs:ciphersuite) = lbytes (hpke_private_key_length cs)
 type hpke_kem_output (cs:ciphersuite) = lbytes (hpke_kem_output_length cs)
 
 val hpke_gen_keypair: cs:ciphersuite -> ikm:bytes{Seq.length ikm >= hpke_private_key_length cs} -> result (hpke_private_key cs & hpke_public_key cs)
-val hpke_encrypt: cs:ciphersuite -> pkR:hpke_public_key cs -> info:bytes -> ad:bytes -> plaintext:bytes -> entropy (hpke_private_key_length cs) -> result (hpke_kem_output cs & bytes)
+val hpke_encrypt: cs:ciphersuite -> pkR:hpke_public_key cs -> info:bytes -> ad:bytes -> plaintext:bytes -> randomness (hpke_private_key_length cs) -> result (hpke_kem_output cs & bytes)
 val hpke_decrypt: cs:ciphersuite -> enc:hpke_kem_output cs -> skR:hpke_private_key cs -> info:bytes -> ad:bytes -> ciphertext:bytes -> result bytes
 
 (*** String to bytes ***)
