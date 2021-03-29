@@ -116,6 +116,35 @@ let derive_next_path_secret cs path_secret =
   res <-- derive_secret cs path_secret (string_to_bytes "path");
   return (res <: bytes)
 
+val node_encap: #cs:ciphersuite -> l:nat -> child_secret:bytes -> ad:bytes -> direction -> pks:list (hpke_public_key cs) -> randomness (hpke_multirecipient_encrypt_entropy_length pks) -> result (key_package cs l & bytes)
+let node_encap #cs l child_secret ad dir pks rand =
+  node_secret <-- derive_next_path_secret cs child_secret;
+  node_keys <-- derive_keypair_from_path_secret cs node_secret;
+  ciphertext <-- hpke_multirecipient_encrypt pks bytes_empty ad node_secret rand;
+  return (
+    {
+      kp_public_key = snd node_keys;
+      unmerged_leafs = [];
+      path_secret_from = dir;
+      path_secret_ciphertext = ciphertext;
+    },
+    node_secret
+  )
+
+val node_decap: #cs:ciphersuite -> #l:nat -> child_secret:bytes -> ad:bytes -> i:nat -> dir:direction -> kp:key_package cs l{dir <> kp.path_secret_from ==> i < List.Tot.length kp.path_secret_ciphertext} -> result bytes
+let node_decap #cs #l child_secret ad i dir kp =
+  if dir = kp.path_secret_from then (
+    if i <> 0 then
+      Error "node_decap"
+    else
+      derive_next_path_secret cs child_secret
+  ) else (
+    let ciphertext = List.Tot.index kp.path_secret_ciphertext i in
+    child_keys <-- derive_keypair_from_path_secret cs child_secret;
+    let child_sk = fst child_keys in
+    hpke_decrypt cs ciphertext.kem_output child_sk bytes_empty ad ciphertext.ciphertext
+  )
+
 val update_path_entropy_length: #cs:ciphersuite -> #l:nat -> tree cs l -> index_l l -> nat
 let rec update_path_entropy_length #cs #l t leaf_index =
   match t with
@@ -144,15 +173,9 @@ let rec update_path #cs #l t leaf_index leaf_secret ad rand =
     let (rand_next, rand_cur) = split_randomness rand (hpke_multirecipient_encrypt_entropy_length (tree_resolution sibling)) in
     recursive_call <-- update_path child next_leaf_index leaf_secret ad rand_next;
     let (child_path, child_path_secret) = recursive_call in
-    node_path_secret <-- derive_next_path_secret cs child_path_secret;
-    node_keys <-- derive_keypair_from_path_secret cs node_path_secret;
-    encrypted_path_secret <-- hpke_multirecipient_encrypt (tree_resolution sibling) bytes_empty ad node_path_secret rand_cur;
-    return (PNode (Some ({
-      kp_public_key = snd node_keys;
-      unmerged_leafs = [];
-      path_secret_from = dir;
-      path_secret_ciphertext = encrypted_path_secret
-    })) child_path, (node_path_secret <: bytes))
+    node_encap_call <-- node_encap l child_path_secret ad dir (tree_resolution sibling) rand_cur;
+    let (node_kp, node_path_secret) = node_encap_call in
+    return (PNode (Some node_kp) child_path, node_path_secret)
 
 type nat_less (m:nat) = n:nat{n<m}
 
@@ -200,17 +223,11 @@ let rec root_secret #cs #l t leaf_index leaf_secret =
       let (child, sibling) = order_subtrees dir (left, right) in
       recursive_call <-- root_secret child next_leaf_index leaf_secret;
       let (child_path_secret, i) = recursive_call in
-      if dir = kp.path_secret_from then (
-        path_secret <-- derive_next_path_secret cs child_path_secret;
-        return (path_secret, (0 <: nat_less (List.Tot.length (tree_resolution t)) ))
+      if dir = kp.path_secret_from && i < List.Tot.length (kp.path_secret_ciphertext) then (
+        node_path_secret <-- node_decap child_path_secret todo_bytes i dir kp;
+        return (node_path_secret, (0 <: nat_less (List.Tot.length (tree_resolution t))))
       ) else (
-        child_keys <-- derive_keypair_from_path_secret cs child_path_secret;
-        let (sk, pk) = child_keys in
-        if i < List.Tot.length (kp.path_secret_ciphertext) then (
-          let path_ciphertext = List.Tot.index (kp.path_secret_ciphertext) i in
-          node_secret <-- hpke_decrypt cs (path_ciphertext.kem_output) sk bytes_empty todo_bytes (path_ciphertext.ciphertext);
-          return (node_secret, (0 <: nat_less (List.Tot.length (tree_resolution t)) ))
-        ) else Error ""
+        Error ""
       )
   end
   | Node None left right -> begin
