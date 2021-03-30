@@ -38,8 +38,6 @@ noeq type path (cs:ciphersuite) (lev:nat) =
 
 let child_index (l:pos) (i:index_l l) : index_l (l-1) & direction =
   if i < pow2 (l - 1) then (i,Left) else (i-pow2 (l-1),Right)
-//let key_index (l:nat) (i:index_l l) (sib:tree l) dir : index_l (l+1) =
-//  if dir = Left then i else i + length (pub_keys l sib)
 let order_subtrees dir (l,r) = if dir = Left then (l,r) else (r,l)
 
 val leaf_public_key: #cs:ciphersuite -> #l:nat -> tree cs l -> index_l l -> option (hpke_public_key cs)
@@ -69,6 +67,44 @@ let rec tree_resolution #cs #l t =
   | Leaf (Some mi) -> [mi.mi_public_key]
   | Node (Some kp) left right -> (kp.kp_public_key)::(unmerged_leafs_resolution t kp.unmerged_leafs)
   | Node None left right -> (tree_resolution left)@(tree_resolution right)
+
+type nat_less (m:nat) = n:nat{n<m}
+
+//TODO: move to Utils
+let rec find_index (#a:eqtype) (x:a) (l:list a): option (nat_less (List.Tot.length l)) =
+  match l with
+  | [] -> None
+  | h::t ->
+    if x=h then (
+      Some 0
+    ) else (
+      match find_index x t with
+      | Some res -> Some (res+1)
+      | None -> None
+    )
+
+val resolution_index: #cs:ciphersuite -> #l:nat -> t:tree cs l -> index_l l -> nat_less (List.Tot.length (tree_resolution t))
+let rec resolution_index #cs #l t leaf_index =
+  match t with
+  | Leaf (Some mi) -> 0
+  | Leaf None -> admit() //There should be a precondition that prevent this case
+  | Node (Some kp) left right -> (
+    match find_index leaf_index kp.unmerged_leafs with
+    | Some res ->
+      //That is currently not true because a node can contain an unmerged leaf which is actually blanked
+      assume (1+res < List.Tot.length (tree_resolution t));
+      1+res
+    | None -> 0
+  )
+  | Node None left right ->
+    let (child_leaf_index, child_dir) = child_index l leaf_index in
+    let (child, _) = order_subtrees child_dir (left, right) in
+    let child_resolution_index = resolution_index child child_leaf_index in
+    List.Tot.Properties.append_length (tree_resolution left) (tree_resolution right);
+    if child_dir = Left then
+      child_resolution_index
+    else
+      (List.Tot.length (tree_resolution left)) +child_resolution_index
 
 val apply_path: #cs:ciphersuite -> #l:nat -> index_l l -> tree cs l -> path cs l -> tree cs l
 let rec apply_path #cs #l leaf_index t p =
@@ -177,72 +213,27 @@ let rec update_path #cs #l t leaf_index leaf_secret ad rand =
     let (node_kp, node_path_secret) = node_encap_call in
     return (PNode (Some node_kp) child_path, node_path_secret)
 
-type nat_less (m:nat) = n:nat{n<m}
-
-let rec find_index (#a:eqtype) (x:a) (l:list a): option (nat_less (List.Tot.length l)) =
-  match l with
-  | [] -> None
-  | h::t ->
-    if x=h then (
-      Some 0
-    ) else (
-      match find_index x t with
-      | Some res -> Some (res+1)
-      | None -> None
-    )
-
-val find_unmerged_leaf: #cs:ciphersuite -> #l:nat -> tree cs l -> index_l l -> option nat
-let rec find_unmerged_leaf #cs #l t leaf_index =
-  match t with
-  | Leaf _ -> None
-  | Node (Some kp) _ _ -> begin
-    match find_index leaf_index kp.unmerged_leafs with
-    | Some res -> Some (1+res)
-    | None -> None
-  end
-  | Node None left right ->
-    let (next_leaf_index, dir) = child_index l leaf_index in
-    let (child, sibling) = order_subtrees dir (left, right) in
-    match find_unmerged_leaf child next_leaf_index with
-    | Some res -> Some (if dir = Left then res else List.Tot.length (tree_resolution left) + res)
-    | None -> None
-
-val root_secret: #cs:ciphersuite -> #l:nat -> t:tree cs l -> index_l l -> bytes -> result (bytes & nat_less (List.Tot.length (tree_resolution t)))
-let rec root_secret #cs #l t leaf_index leaf_secret =
+val root_secret: #cs:ciphersuite -> #l:nat -> t:tree cs l -> index_l l -> leaf_secret:bytes -> ad:bytes -> result (bytes)
+let rec root_secret #cs #l t leaf_index leaf_secret ad =
   match t with
   | Leaf None -> Error ""
-  | Leaf (Some _) -> return (leaf_secret, 0)
+  | Leaf (Some _) -> return leaf_secret
   | Node (Some kp) left right -> begin
-    let opt_unmerged_index = find_index leaf_index kp.unmerged_leafs in
-    match opt_unmerged_index with
-    | Some unmerged_index ->
-      assume (1+unmerged_index < List.Tot.length (tree_resolution t));
-      return (leaf_secret, 1+unmerged_index)
-    | None ->
+    if List.Tot.mem leaf_index kp.unmerged_leafs then (
+      return leaf_secret
+    ) else (
       let (next_leaf_index, dir) = child_index l leaf_index in
       let (child, sibling) = order_subtrees dir (left, right) in
-      recursive_call <-- root_secret child next_leaf_index leaf_secret;
-      let (child_path_secret, i) = recursive_call in
-      if dir = kp.path_secret_from && i < List.Tot.length (kp.path_secret_ciphertext) then (
-        node_path_secret <-- node_decap child_path_secret todo_bytes i dir kp;
-        return (node_path_secret, (0 <: nat_less (List.Tot.length (tree_resolution t))))
-      ) else (
-        Error ""
-      )
+      child_path_secret <-- root_secret child next_leaf_index leaf_secret ad;
+      //The condition is here becaus the `i` argument has not sense when dir = kp.path_secret_from.
+      //Maybe we should refactor `node_decap`?
+      let i = if dir = kp.path_secret_from then 0 else resolution_index child next_leaf_index in
+      assume (List.Tot.length (tree_resolution child) == List.Tot.length kp.path_secret_ciphertext);
+      node_decap child_path_secret ad i dir kp
+    )
   end
   | Node None left right -> begin
-    let opt_unmerged_index = find_unmerged_leaf t leaf_index in
-    match opt_unmerged_index with
-    | Some unmerged_index ->
-      assume (unmerged_index < List.Tot.length (tree_resolution t));
-      return (leaf_secret, unmerged_index)
-    | None -> begin
-      let (next_leaf_index, dir) = child_index l leaf_index in
-      let (child, sibling) = order_subtrees dir (left, right) in
-      recursive_call <-- root_secret child next_leaf_index leaf_secret;
-      let (child_path_secret, i) = recursive_call in
-      let new_i:nat = if dir = Left then i else i + List.Tot.length (tree_resolution left) in
-      assume (0 <= new_i /\ new_i < List.Tot.length (tree_resolution t));
-      return (child_path_secret, (new_i <: nat_less (List.Tot.length (tree_resolution t)) ))
-    end
+    let (next_leaf_index, dir) = child_index l leaf_index in
+    let (child, sibling) = order_subtrees dir (left, right) in
+    root_secret child next_leaf_index leaf_secret ad
   end
