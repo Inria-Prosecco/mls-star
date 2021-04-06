@@ -1,11 +1,6 @@
 module Parser
 
-module U8 = FStar.UInt8
-module U16 = FStar.UInt16
-module U32 = FStar.UInt32
-module U64 = FStar.UInt64
 module IT = Lib.IntTypes
-module E = FStar.Endianness
 open Lib.ByteSequence
 
 #set-options "--fuel 0 --ifuel 2"
@@ -135,68 +130,28 @@ let isomorphism #a b ps_a f g =
 
 (*** Parser for basic types ***)
 
-val hacl_u8_to_fstar_u8: IT.uint8 -> U8.t
-let hacl_u8_to_fstar_u8 x =
-  U8.uint_to_t (IT.v x)
-
-val fstar_u8_to_hacl_u8: U8.t -> IT.uint8
-let fstar_u8_to_hacl_u8 x =
-  IT.u8 (U8.v x)
-
-val seq_map: #a:Type -> #b:Type -> (a -> b) -> Seq.seq a -> Seq.seq b
-let seq_map #a #b f s =
-  Seq.init (Seq.length s) (fun i -> f (Seq.index s i))
-
-val hacl_bytes_to_fstar_bytes: bytes -> E.bytes
-let hacl_bytes_to_fstar_bytes b =
-  seq_map hacl_u8_to_fstar_u8 b
-
-val fstar_bytes_to_hacl_bytes: E.bytes -> bytes
-let fstar_bytes_to_hacl_bytes b =
-  seq_map fstar_u8_to_hacl_u8 b
-
-val fstar_hacl_fstar_bytes_lemma: x:E.bytes -> Lemma
-  (hacl_bytes_to_fstar_bytes (fstar_bytes_to_hacl_bytes x) == x)
-  [SMTPat (hacl_bytes_to_fstar_bytes (fstar_bytes_to_hacl_bytes x))]
-let fstar_hacl_fstar_bytes_lemma x =
-  assert(Seq.equal (hacl_bytes_to_fstar_bytes (fstar_bytes_to_hacl_bytes x)) x)
-
-val hacl_fstar_hacl_bytes_lemma: x:bytes -> Lemma
-  (fstar_bytes_to_hacl_bytes (hacl_bytes_to_fstar_bytes x) == x)
-  [SMTPat (fstar_bytes_to_hacl_bytes (hacl_bytes_to_fstar_bytes x))]
-let hacl_fstar_hacl_bytes_lemma x =
-  assert(Seq.equal (fstar_bytes_to_hacl_bytes (hacl_bytes_to_fstar_bytes x)) x)
-
-val ps_uint:
-  nbytes:pos ->
-  hacl_uint:Type -> fstar_uint:Type ->
-  hacl_to_fstar_uint:(hacl_uint -> fstar_uint) -> fstar_to_hacl_uint:(fstar_uint -> hacl_uint) ->
-  fstar_uint_to_be:(fstar_uint -> (b:E.bytes{Seq.length b == nbytes})) -> be_to_fstar_uint:((b:E.bytes{Seq.length b == nbytes}) -> fstar_uint) ->
-  Pure (parser_serializer hacl_uint)
-  (requires
-    (forall x. hacl_to_fstar_uint (fstar_to_hacl_uint x) == x) /\
-    (forall x. fstar_to_hacl_uint (hacl_to_fstar_uint x) == x) /\
-    (forall x. fstar_uint_to_be (be_to_fstar_uint x) == x) /\
-    (forall x. be_to_fstar_uint (fstar_uint_to_be x) == x)
-  )
-  (ensures fun _ -> True)
-let ps_uint nbytes hacl_uint fstar_uint hacl_to_fstar_uint fstar_to_hacl_uint fstar_uint_to_be be_to_fstar_uint =
-  let parse_uint (buf:bytes) =
+val ps_uint: t:IT.inttype{IT.unsigned t /\ ~(IT.U1? t)} -> parser_serializer (IT.uint_t t IT.SEC)
+let ps_uint t =
+  let nbytes = IT.numbytes t in
+  let parse_uint (buf:bytes): option (IT.uint_t t IT.SEC & consumed_length buf) =
     if Seq.length buf < nbytes then
       None
     else
       let b = Seq.slice buf 0 nbytes in
-      let x = be_to_fstar_uint (hacl_bytes_to_fstar_bytes b) in
-      Some (fstar_to_hacl_uint x, (nbytes <: consumed_length buf))
+      Some (uint_from_bytes_be b, (nbytes <: consumed_length buf))
   in
-  let serialize_uint (x:hacl_uint): non_empty_bytes =
-    fstar_bytes_to_hacl_bytes (fstar_uint_to_be (hacl_to_fstar_uint x))
+  let serialize_uint (x:IT.uint_t t IT.SEC): non_empty_bytes =
+    uint_to_bytes_be x
   in
   {
     parse = parse_uint;
     serialize = serialize_uint;
-    parse_serialize_inv = (fun x -> ());
-    serialize_parse_inv = (fun (buf:bytes) -> ());
+    parse_serialize_inv = (fun x -> lemma_uint_to_from_bytes_be_preserves_value x);
+    serialize_parse_inv = (fun (buf:bytes) ->
+      match parse_uint buf with
+      | None -> ()
+      | Some _ -> lemma_uint_from_to_bytes_be_preserves_value #t #IT.SEC (Seq.slice buf 0 nbytes)
+    );
     parse_no_lookahead = (fun (b1 b2:bytes) ->
       match parse_uint b1 with
       | None -> ()
@@ -204,62 +159,39 @@ let ps_uint nbytes hacl_uint fstar_uint hacl_to_fstar_uint fstar_to_hacl_uint fs
     )
   }
 
-val e_n_to_be_be_to_n_forall: len:nat -> Lemma (
-  let open FStar.Mul in
-  forall s. Seq.length s == len ==> (
-    E.be_to_n s < pow2 (8 * len) /\
-    E.n_to_be len (E.be_to_n s) == s
-  ))
-let e_n_to_be_be_to_n_forall len =
-  //Equivalent to E.n_to_be_be_to_n without the `requires` clause
-  let lemma (s:E.bytes): Lemma (
-    let open FStar.Mul in
-    Seq.length s == len ==> (
-      E.be_to_n s < pow2 (8 * len) /\
-      E.n_to_be len (E.be_to_n s) == s
-    )) =
-      if Seq.length s = len then E.n_to_be_be_to_n len s else () in
-  FStar.Classical.forall_intro lemma
-
-//Functions missing in FStar.Endianness, copy-pasted and modified from uint32_of_be
-let uint8_of_be (b: E.bytes { Seq.length b = 1 }) =
-  let n = E.be_to_n b in
-  E.lemma_be_to_n_is_bounded b;
-  U8.uint_to_t n
-
-let be_of_uint8 (x: U8.t): b:E.bytes{ Seq.length b = 1 } =
-  E.n_to_be 1 (U8.v x)
-
-let uint16_of_be (b: E.bytes { Seq.length b = 2 }) =
-  let n = E.be_to_n b in
-  E.lemma_be_to_n_is_bounded b;
-  U16.uint_to_t n
-
-let be_of_uint16 (x: U16.t): b:E.bytes{ Seq.length b = 2 } =
-  E.n_to_be 2 (U16.v x)
-
-
 val ps_u8: parser_serializer IT.uint8
-let ps_u8 =
-  e_n_to_be_be_to_n_forall 1;
-  ps_uint 1 IT.uint8 U8.t (fun x -> U8.uint_to_t (IT.v x)) (fun x -> IT.u8 (U8.v x)) be_of_uint8 uint8_of_be
-
+let ps_u8 = ps_uint IT.U8
 val ps_u16: parser_serializer IT.uint16
-let ps_u16 =
-  e_n_to_be_be_to_n_forall 2;
-  ps_uint 2 IT.uint16 U16.t (fun x -> U16.uint_to_t (IT.v x)) (fun x -> IT.u16 (U16.v x)) be_of_uint16 uint16_of_be
-
+let ps_u16 = ps_uint IT.U16
 val ps_u32: parser_serializer IT.uint32
-let ps_u32 =
-  e_n_to_be_be_to_n_forall 4;
-  ps_uint 4 IT.uint32 U32.t (fun x -> U32.uint_to_t (IT.v x)) (fun x -> IT.u32 (U32.v x)) E.be_of_uint32 E.uint32_of_be
-
+let ps_u32 = ps_uint IT.U32
 val ps_u64: parser_serializer IT.uint64
-let ps_u64 =
-  e_n_to_be_be_to_n_forall 8;
-  ps_uint 8 IT.uint64 U64.t (fun x -> U64.uint_to_t (IT.v x)) (fun x -> IT.u64 (U64.v x)) E.be_of_uint64 E.uint64_of_be
+let ps_u64 = ps_uint IT.U64
+val ps_u128: parser_serializer IT.uint128
+let ps_u128 = ps_uint IT.U128
 
-
+val ps_lbytes: n:IT.size_nat{1 <= n} -> parser_serializer (lbytes n)
+let ps_lbytes n =
+  let parse_lbytes (buf:bytes): option (lbytes n & consumed_length buf) =
+    if Seq.length buf < n then
+      None
+    else
+      Some (Seq.slice buf 0 n, (n <: consumed_length buf))
+  in
+  let serialize_lbytes (b:lbytes n): non_empty_bytes =
+    b
+  in
+  {
+    parse = parse_lbytes;
+    serialize = serialize_lbytes;
+    parse_serialize_inv = (fun x -> ());
+    serialize_parse_inv = (fun (buf:bytes) -> ());
+    parse_no_lookahead = (fun (b1 b2:bytes) ->
+      match parse_lbytes b1 with
+      | None -> ()
+      | Some _ -> assert(Seq.equal (Seq.slice b1 0 n) (Seq.slice b2 0 n))
+    )
+  }
 
 (*** Parser for variable-length lists ***)
 
@@ -502,3 +434,15 @@ let ps_list #a r ps_a =
     }
   in
   parser_serializer_exact_to_parser_serializer r pse_bllist_a
+
+type blseq (a:Type) (ps_a:parser_serializer a) (r:size_range) = l:Seq.seq a{in_range r (byte_length ps_a (Seq.seq_to_list l))}
+
+val ps_seq: #a:Type -> r:size_range -> ps_a:parser_serializer a -> parser_serializer (blseq a ps_a r)
+let ps_seq #a r ps_a =
+  FStar.Classical.forall_intro (Seq.lemma_list_seq_bij #a);
+  FStar.Classical.forall_intro (Seq.lemma_seq_list_bij #a);
+  isomorphism
+    (blseq a ps_a r)
+    (ps_list r ps_a)
+    (fun l -> Seq.seq_of_list l)
+    (fun s -> Seq.seq_to_list s)
