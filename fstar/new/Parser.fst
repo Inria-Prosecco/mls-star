@@ -394,3 +394,19 @@ let ps_seq #a r ps_a =
     (ps_list r ps_a)
     (fun l -> Seq.seq_of_list l)
     (fun s -> Seq.seq_to_list s)
+
+#push-options "--fuel 1"
+let ps_bytes r =
+  let rec lemma (b:bytes): Lemma (ensures byte_length ps_u8 (Seq.seq_to_list b) == Seq.length b) (decreases (Seq.length b)) [SMTPat (byte_length ps_u8 (Seq.seq_to_list b))] =
+    if Seq.length b = 0 then (
+      ()
+    ) else (
+      lemma (Seq.slice b 1 (Seq.length b))
+    )
+  in
+  isomorphism
+    (blbytes r)
+    (ps_seq r ps_u8)
+    (fun s -> s)
+    (fun b -> b)
+#pop-options

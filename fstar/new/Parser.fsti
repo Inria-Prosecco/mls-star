@@ -90,5 +90,7 @@ let rec byte_length (#a:Type) (ps_a:parser_serializer a) (l:list a) : nat =
   | [] -> 0
   | h::t -> Seq.length (ps_a.serialize h) + byte_length ps_a t
 
-type blseq (a:Type) (ps_a:parser_serializer a) (r:size_range) = l:Seq.seq a{in_range r (byte_length ps_a (Seq.seq_to_list l))}
+type blseq (a:Type) (ps_a:parser_serializer a) (r:size_range) = s:Seq.seq a{in_range r (byte_length ps_a (Seq.seq_to_list s))}
+type blbytes (r:size_range) = b:bytes{in_range r (Seq.length b)}
 val ps_seq: #a:Type -> r:size_range -> ps_a:parser_serializer a -> parser_serializer (blseq a ps_a r)
+val ps_bytes: r:size_range -> parser_serializer (blbytes r)
