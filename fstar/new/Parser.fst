@@ -33,7 +33,7 @@ let bind #a #b ps_a ps_b =
         Some ((|xa, xb|), la+lb)
     end
   in
-  let serialize_ab (x:(xa:a&(b xa))): non_empty_bytes =
+  let serialize_ab (x:(xa:a&(b xa))): bytes =
     let (|xa, xb|) = x in
     Seq.append (ps_a.serialize xa) ((ps_b xa).serialize xb)
   in
@@ -94,6 +94,15 @@ let isomorphism #a b ps_a f g =
 
 (*** Parser for basic types ***)
 
+let ps_unit =
+  {
+    parse = (fun _ -> Some ((), 0));
+    serialize = (fun _ -> bytes_empty);
+    parse_serialize_inv = (fun _ -> ());
+    serialize_parse_inv = (fun _ -> ());
+    parse_no_lookahead = (fun _ _ -> ());
+  }
+
 val ps_uint: t:IT.inttype{IT.unsigned t /\ ~(IT.U1? t)} -> parser_serializer (IT.uint_t t IT.SEC)
 let ps_uint t =
   let nbytes = IT.numbytes t in
@@ -104,7 +113,7 @@ let ps_uint t =
       let b = Seq.slice buf 0 nbytes in
       Some (uint_from_bytes_be b, (nbytes <: consumed_length buf))
   in
-  let serialize_uint (x:IT.uint_t t IT.SEC): non_empty_bytes =
+  let serialize_uint (x:IT.uint_t t IT.SEC): bytes =
     uint_to_bytes_be x
   in
   {
@@ -136,7 +145,7 @@ let ps_lbytes n =
     else
       Some (Seq.slice buf 0 n, (n <: consumed_length buf))
   in
-  let serialize_lbytes (b:lbytes n): non_empty_bytes =
+  let serialize_lbytes (b:lbytes n): bytes =
     b
   in
   {
@@ -182,9 +191,13 @@ let rec _parse_la #a ps_a buf =
     match ps_a.parse buf with
     | None -> None
     | Some (h, l) -> begin
-      match _parse_la ps_a (delete_prefix buf l) with
-      | None -> None
-      | Some t -> Some (h::t)
+      if l = 0 then (
+        None //Impossible case
+      ) else (
+        match _parse_la ps_a (delete_prefix buf l) with
+        | None -> None
+        | Some t -> Some (h::t)
+      )
     end
   )
 
@@ -203,10 +216,15 @@ let pse_list #a ps_a =
     match l with
     | [] -> ()
     | h::t ->
-      ps_a.parse_no_lookahead (ps_a.serialize h) (serialize_la (h::t));
-      ps_a.parse_serialize_inv h;
-      parse_serialize_inv_la t;
-      assert (Seq.equal (delete_prefix (serialize_la (h::t)) (Seq.length (ps_a.serialize h))) (serialize_la t))
+      if Seq.length (ps_a.serialize h) = 0 then (
+        ps_a.parse_serialize_inv h;
+        assert (Seq.equal (ps_a.serialize h) bytes_empty)
+      ) else (
+        ps_a.parse_no_lookahead (ps_a.serialize h) (serialize_la (h::t));
+        ps_a.parse_serialize_inv h;
+        parse_serialize_inv_la t;
+        assert (Seq.equal (delete_prefix (serialize_la (h::t)) (Seq.length (ps_a.serialize h))) (serialize_la t))
+      )
   in
   let rec serialize_parse_inv_la (buf:bytes): Lemma (ensures (match parse_la buf with | None -> True | Some l -> serialize_la l == buf)) (decreases (Seq.length buf)) =
     if Seq.length buf = 0 then (
@@ -271,7 +289,7 @@ let ps_nat_in_range r =
       else
         None
   in
-  let serialize (n:nat_in_range r): non_empty_bytes =
+  let serialize (n:nat_in_range r): bytes =
     ps_it.serialize (nat_to_it n)
   in
   {
@@ -308,7 +326,7 @@ let parser_serializer_exact_to_parser_serializer #a r pse_a =
       )
     end
   in
-  let serialize_a (x_a:a): non_empty_bytes =
+  let serialize_a (x_a:a): bytes =
     let x_serialized = pse_a.serialize_exact x_a in
     Seq.append (ps_nat.serialize (Seq.length x_serialized)) x_serialized
   in

@@ -5,12 +5,29 @@ open Lib.IntTypes
 
 (*** Basic definitions ***)
 
-type non_empty_bytes = b:bytes{0 < Seq.length b}
-type consumed_length (b:bytes) = n:nat{1 <= n /\ n <= Seq.length b}
+type consumed_length (b:bytes) = n:nat{n <= Seq.length b}
 type bare_parser (a:Type) = b:bytes -> option (a & consumed_length b)
-type bare_serializer (a:Type) = a -> non_empty_bytes
+type bare_serializer (a:Type) = a -> bytes
 
-noeq type parser_serializer (a:Type) = {
+/// What is the reason behind `parser_serializer_unit` and `parser_serializer`?
+/// In some functions (such as `pse_list` which is used to build `ps_seq` or `ps_bytes`),
+/// it is useful to know that `parse` will never consume 0 bytes, and `serialize` will never return `bytes_empty`.
+/// Such types only have one element, hence are isomorphic to `unit`. They are (anti-)recognized by the `is_not_unit` predicate.
+/// Thus they depend on a `parser_serializer` which doesn't serialize/parse a unit type.
+/// It is however very useful to be able to parse a unit type, in the example of an optional:
+///   struct {
+///       uint8 present;
+///       select (present) {
+///           case 0: struct{}; //<-- parsed with ps_unit!
+///           case 1: T value;
+///       }
+///   } optional<T>;
+/// In this interface, we tried to use `parser_serializer` for return types when possible,
+/// and to use `parser_serializer_unit` for argument types when possible.
+/// They are named `parser_serializer_unit` / `parser_serializer` and not `parser_serializer` / `parser_serializer_nonempty`
+/// because `parser_serializer_nonempty` is ugly, and it's the type that is the most used by the user.
+
+noeq type parser_serializer_unit (a:Type) = {
   parse: bare_parser a;
   serialize: bare_serializer a;
   parse_serialize_inv: x:a -> Lemma (
@@ -38,14 +55,19 @@ noeq type parser_serializer (a:Type) = {
     ))
 }
 
+let is_not_unit (#a:Type) (ps_a:parser_serializer_unit a) = ps_a.parse bytes_empty == None
+let parser_serializer (a:Type) = ps_a:parser_serializer_unit a{is_not_unit ps_a}
+
 (*** Parser combinators ***)
 
-val bind: #a:Type -> #b:(a -> Type) -> parser_serializer a -> (xa:a -> parser_serializer (b xa)) -> parser_serializer (xa:a&(b xa))
-val isomorphism: #a:Type -> b:Type -> parser_serializer a -> f:(a -> b) -> g:(b -> a) -> Pure (parser_serializer b)
+val bind: #a:Type -> #b:(a -> Type) -> parser_serializer a -> (xa:a -> parser_serializer_unit (b xa)) -> parser_serializer (xa:a&(b xa))
+val isomorphism: #a:Type -> b:Type -> ps_a:parser_serializer_unit a -> f:(a -> b) -> g:(b -> a) -> Pure (parser_serializer_unit b)
   (requires (forall xa. g (f xa) == xa) /\ (forall xb. f (g xb) == xb))
-  (ensures fun _ -> True)
+  (ensures fun res -> is_not_unit res <==> is_not_unit ps_a)
 
 (*** Parser for basic types ***)
+
+val ps_unit: parser_serializer_unit unit
 
 val ps_u8: parser_serializer uint8
 val ps_u16: parser_serializer uint16
@@ -72,8 +94,8 @@ noeq type parser_serializer_exact (a:Type) = {
   );
 }
 
-val ps_to_pse: #a:Type -> parser_serializer a -> parser_serializer_exact a
-val pse_list: #a:Type -> parser_serializer a -> parser_serializer_exact (list a)
+val ps_to_pse: #a:Type -> parser_serializer_unit a -> parser_serializer_exact a
+val pse_list: #a:Type -> ps_a:parser_serializer a -> parser_serializer_exact (list a)
 
 (*** Parser for variable-length lists ***)
 
