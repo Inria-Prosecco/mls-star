@@ -205,46 +205,126 @@ let ps_certificate =
     (fun x -> x)
     (fun x -> x)
 
+let get_credential_type (c:credential_type_nt) =
+  match c with
+  | CT_basic -> basic_credential_nt
+  | CT_x509 -> blseq certificate_nt ps_certificate ({min=1; max=(pow2 32)-1})
+  | _ -> unit
+
 noeq type credential_nt =
   | C_basic: basic_credential_nt -> credential_nt
   | C_x509: blseq certificate_nt ps_certificate ({min=1; max=(pow2 32)-1}) -> credential_nt
   | C_other: c:credential_type_nt{~(CT_basic? c \/ CT_x509? c)} -> credential_nt
 
-//val ps_credential: parser_serializer credential_nt
-//let ps_credential =
-//  isomorphism credential_nt
-//    (
-//      credential_type <-- ps_credential_type;
-//      ((
-//      match credential_type with
-//      | CT_basic -> ps_basic_credential
-//      | CT_x509 -> ps_seq _ ps_certificate
-//      | _ -> admit()
-//      ) <: (match credential_type with |CT_basic -> parser_serializer basic_credential_nt |CT_x509 -> parser_serializer (blseq certificate_nt ps_certificate ({min=1; max=(pow2 32)-1})) |_ -> admit()))
-//    )
-//  (fun _ -> admit())
-//  //(fun (|credential_type, credential|) ->
-//  //  match credential_type with
-//  //  | CT_basic -> C_basic credential
-//  //  | CT_x509 -> C_x509 credential
-//  //  | _ -> admit()
-//  //)
-//  (fun x -> admit())
+val ps_credential: parser_serializer credential_nt
+let ps_credential =
+  isomorphism credential_nt
+    (
+      bind #_ #get_credential_type
+      ps_credential_type (fun credential_type ->
+        match credential_type with
+        | CT_basic -> ps_basic_credential
+        | CT_x509 -> ps_seq ({min=1; max=(pow2 32)-1}) ps_certificate
+        | _ -> ps_unit
+      )
+    )
+  (fun (|credential_type, credential|) ->
+    match credential_type with
+    | CT_basic -> C_basic credential
+    | CT_x509 -> C_x509 credential
+    | _ -> C_other credential_type
+  )
+  (fun x ->
+    match x with
+    | C_basic cred -> (|CT_basic, cred|)
+    | C_x509 cred -> (|CT_x509, cred|)
+    | C_other ct -> (|ct, ()|)
+  )
 
-noeq type key_package_nt = {
-  //TODO
-  public_key: hpke_public_key_nt;
-  //TODO
+type extension_type_nt =
+  | ET_reserved: extension_type_nt
+  | ET_capabilities: extension_type_nt
+  | ET_lifetime: extension_type_nt
+  | ET_key_id: extension_type_nt
+  | ET_parent_hash: extension_type_nt
+  | ET_ratchet_tree: extension_type_nt
+  | ET_unknown: n:nat{6 <= n /\ n < 0xff00} -> extension_type_nt
+  | ET_reserved_private_use: n:nat{0xff00 <= n /\ n <= 0xffff} -> extension_type_nt
+
+val ps_extension_type: parser_serializer extension_type_nt
+let ps_extension_type =
+  isomorphism extension_type_nt
+    ps_u16
+    (fun n ->
+      match v n with
+      | 0x0000 -> ET_reserved
+      | 0x0001 -> ET_capabilities
+      | 0x0002 -> ET_lifetime
+      | 0x0003 -> ET_key_id
+      | 0x0004 -> ET_parent_hash
+      | 0x0005 -> ET_ratchet_tree
+      | vn ->
+        if vn < 0xff00 then ET_unknown vn
+        else ET_reserved_private_use vn
+    )
+    (fun x ->
+      match x with
+      | ET_reserved -> u16 0x0000
+      | ET_capabilities -> u16 0x0001
+      | ET_lifetime -> u16 0x0002
+      | ET_key_id -> u16 0x0003
+      | ET_parent_hash -> u16 0x0004
+      | ET_ratchet_tree -> u16 0x0005
+      | ET_unknown n -> u16 n
+      | ET_reserved_private_use n -> u16 n
+    )
+
+noeq type extension_nt = {
+  extension_type: extension_type_nt;
+  extension_data: blbytes ({min=0; max=(pow2 16)-1});
 }
 
+val ps_extension: parser_serializer extension_nt
+let ps_extension =
+  isomorphism extension_nt
+    (
+      _ <-- ps_extension_type;
+      ps_bytes _
+    )
+    (fun (|extension_type, extension_data|) -> {extension_type=extension_type; extension_data=extension_data;})
+    (fun x -> (|x.extension_type, x.extension_data|))
+
+noeq type key_package_nt = {
+  version: protocol_version_nt;
+  cipher_suite: cipher_suite_nt;
+  public_key: hpke_public_key_nt;
+  credential: credential_nt;
+  extensions: blseq extension_nt ps_extension ({min=8; max=(pow2 32)-1});
+  signature: blbytes ({min=0; max=(pow2 16)-1});
+}
+
+#push-options "--ifuel 4"
 val ps_key_package: parser_serializer key_package_nt
 let ps_key_package =
   isomorphism key_package_nt
     (
-      ps_hpke_public_key
+      _ <-- ps_protocol_version;
+      _ <-- ps_cipher_suite;
+      _ <-- ps_hpke_public_key;
+      _ <-- ps_credential;
+      _ <-- ps_seq _ ps_extension;
+      ps_bytes _
     )
-    (fun public_key -> {public_key=public_key})
-    (fun x -> x.public_key)
+    (fun (|version, (|cipher_suite, (|public_key, (|credential, (|extensions, signature|)|)|)|)|) -> {
+      version=version;
+      cipher_suite=cipher_suite;
+      public_key=public_key;
+      credential=credential;
+      extensions=extensions;
+      signature=signature;
+    })
+    (fun x -> (|x.version, (|x.cipher_suite, (|x.public_key, (|x.credential, (|x.extensions, x.signature|)|)|)|)|))
+#pop-options
 
 noeq type update_path_nt = {
   leaf_key_package: key_package_nt;
