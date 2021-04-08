@@ -1,9 +1,11 @@
 module TreeKEM
 
-open Lib.Result
 open Crypto
+open NetworkTypes
+open Parser
 open Lib.ByteSequence
 open Lib.IntTypes
+open Lib.Result
 
 let todo_bytes = bytes_empty
 
@@ -135,8 +137,22 @@ let rec hpke_multirecipient_encrypt #cs public_keys info ad plaintext rand =
 //TODO: move the following next functions in Crypto.fst? Or is it too specific to MLS?
 val expand_with_label: ciphersuite -> secret:bytes -> label:bytes -> context:bytes -> len:size_nat -> result (lbytes len)
 let expand_with_label cs secret label context len =
-  let kdf_label = todo_bytes in
-  kdf_expand cs secret kdf_label len
+  assert_norm (String.strlen "mls10 " == 6);
+  if not (len < pow2 16) then
+    Error "expand_with_label: len too high"
+  else if not (1 <= Seq.length label) then
+    Error "expand_with_label: label too short"
+  else if not (Seq.length label < 255-6) then
+    Error "expand_with_label: label too long"
+  else if not (Seq.length context < pow2 32) then
+    Error "expand_with_label: context too long"
+  else
+    let kdf_label = ps_kdf_label.serialize ({
+      length = u16 len;
+      label = Seq.append (string_to_bytes "mls10 ") label;
+      context = context;
+    }) in
+    kdf_expand cs secret kdf_label len
 
 val derive_secret: cs:ciphersuite -> secret:bytes -> label:bytes -> result (lbytes (kdf_length cs))
 let derive_secret cs secret label =
