@@ -139,13 +139,13 @@ val expand_with_label: ciphersuite -> secret:bytes -> label:bytes -> context:byt
 let expand_with_label cs secret label context len =
   assert_norm (String.strlen "mls10 " == 6);
   if not (len < pow2 16) then
-    Error "expand_with_label: len too high"
+    fail "expand_with_label: len too high"
   else if not (1 <= Seq.length label) then
-    Error "expand_with_label: label too short"
+    fail "expand_with_label: label too short"
   else if not (Seq.length label < 255-6) then
-    Error "expand_with_label: label too long"
+    fail "expand_with_label: label too long"
   else if not (Seq.length context < pow2 32) then
-    Error "expand_with_label: context too long"
+    fail "expand_with_label: context too long"
   else
     let kdf_label = ps_kdf_label.serialize ({
       kln_length = u16 len;
@@ -187,7 +187,7 @@ val node_decap: #cs:ciphersuite -> #l:nat -> child_secret:bytes -> ad:bytes -> i
 let node_decap #cs #l child_secret ad i dir kp =
   if dir = kp.path_secret_from then (
     if i <> 0 then
-      Error "node_decap"
+      fail "node_decap"
     else
       derive_next_path_secret cs child_secret
   ) else (
@@ -232,7 +232,7 @@ let rec update_path #cs #l t leaf_index leaf_secret ad rand =
 val root_secret: #cs:ciphersuite -> #l:nat -> t:tree cs l -> index_l l -> leaf_secret:bytes -> ad:bytes -> result (bytes)
 let rec root_secret #cs #l t leaf_index leaf_secret ad =
   match t with
-  | Leaf None -> Error ""
+  | Leaf None -> fail ""
   | Leaf (Some _) -> return leaf_secret
   | Node (Some kp) left right -> begin
     if List.Tot.mem leaf_index kp.unmerged_leafs then (

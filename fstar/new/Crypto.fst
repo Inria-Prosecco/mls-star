@@ -83,23 +83,23 @@ let kdf_expand_tot cs prk info len =
 
 let kdf_extract cs key data =
   if not (Seq.length key <= max_input_length cs.kdf_hash && Seq.length key + block_length cs.kdf_hash < pow2 32) then
-    Error "kdf_extract_dyn: bad key size"
+    fail "kdf_extract_dyn: bad key size"
   else if not (Seq.length data + block_length (cs.kdf_hash) <= max_input_length (cs.kdf_hash)) then
-    Error "kdf_extract_dyn: bad data size"
+    fail "kdf_extract_dyn: bad data size"
   else
-    Success (extract (cs.kdf_hash) key data)
+    return (extract (cs.kdf_hash) key data)
 
 let kdf_expand cs prk info len =
   if not (hash_length cs.kdf_hash <= Seq.length prk) then
-    Error "kdf_expand_dyn: prk too small"
+    fail "kdf_expand_dyn: prk too small"
   else if not (Seq.length prk <= max_input_length cs.kdf_hash && Seq.length prk + block_length cs.kdf_hash < pow2 32) then
-    Error "kdf_expand_dyn: prk too long"
+    fail "kdf_expand_dyn: prk too long"
   else if not (hash_length cs.kdf_hash + Seq.length info + 1 + block_length cs.kdf_hash <= max_input_length cs.kdf_hash) then
-    Error "kdf_expand_dyn: info too long"
+    fail "kdf_expand_dyn: info too long"
   else if not (len <= 255 * hash_length cs.kdf_hash) then
-    Error "kdf_expand_dyn: len too high"
+    fail "kdf_expand_dyn: len too high"
   else
-    Success (expand cs.kdf_hash prk info len)
+    return (expand cs.kdf_hash prk info len)
 
 (*** HPKE ***)
 
@@ -109,42 +109,42 @@ let hpke_kem_output_length cs = HPKE.size_dh_public (ciphersuite_to_hpke_ciphers
 
 let hpke_gen_keypair cs ikm =
   if not (Seq.length ikm <= max_length_dkp_ikm (cs.kem_hash)) then
-    Error "hpke_gen_keypair: ikm too long"
+    fail "hpke_gen_keypair: ikm too long"
   else (
     match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) ikm with
-    | None -> Error "hpke_gen_keypair: HPKE.derive_key_pair failed"
-    | Some (sk, pk) -> Success (sk, pk)
+    | None -> fail "hpke_gen_keypair: HPKE.derive_key_pair failed"
+    | Some (sk, pk) -> return (sk, pk)
   )
 
 let hpke_encrypt cs pkR info ad plaintext rand =
   match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) rand with
-  | None -> Error "hpke_encrypt: HPKE.derive_key_pair failed"
+  | None -> fail "hpke_encrypt: HPKE.derive_key_pair failed"
   | Some (skE, _) -> (
     let pkR = HPKE.deserialize_public_key (ciphersuite_to_hpke_ciphersuite cs) pkR in
     if not (Seq.length info <= max_length_info cs.kdf_hash) then
-      Error "hpke_encrypt: info too long"
+      fail "hpke_encrypt: info too long"
     else if not (Seq.length ad <= AEAD.max_length cs.aead) then
-      Error "hpke_encrypt: ad too long"
+      fail "hpke_encrypt: ad too long"
     else if not (Seq.length plaintext <= AEAD.max_length cs.aead) then
-      Error "hpke_encrypt: plaintext too long"
+      fail "hpke_encrypt: plaintext too long"
     else (
       match HPKE.sealBase (ciphersuite_to_hpke_ciphersuite cs) skE pkR info ad plaintext with
-      | None -> Error "hpke_encrypt: HPKE.sealBase failed"
-      | Some (kem_output, ciphertext) -> Success (kem_output, ciphertext)
+      | None -> fail "hpke_encrypt: HPKE.sealBase failed"
+      | Some (kem_output, ciphertext) -> return (kem_output, ciphertext)
     )
   )
 
 let hpke_decrypt cs enc skR info ad ciphertext =
   if not (Seq.length info <= max_length_info cs.kdf_hash) then
-    Error "hpke_decrypt: info too long"
+    fail "hpke_decrypt: info too long"
   else if not (Seq.length ad <= AEAD.max_length cs.aead) then
-    Error "hpke_decrypt: ad too long"
+    fail "hpke_decrypt: ad too long"
   else if not (Seq.length ciphertext >= AEAD.tag_length cs.aead) then
-    Error "hpke_decrypt: plaintext too short"
+    fail "hpke_decrypt: plaintext too short"
   else (
     match HPKE.openBase (ciphersuite_to_hpke_ciphersuite cs) enc skR info ad ciphertext with
-    | None -> Error "hpke_decrypt: HPKE.openBase failed"
-    | Some res -> Success res
+    | None -> fail "hpke_decrypt: HPKE.openBase failed"
+    | Some res -> return res
   )
 
 (*** Signature ***)
@@ -174,10 +174,10 @@ let sign_sign cs sk msg rand =
   match cs.signature with
   | Ed_25519 ->
     if not (64 + Seq.length msg <= max_size_t) then
-      Error "sign_sign: msg too long"
+      fail "sign_sign: msg too long"
     else
       return (Ed25519.sign sk msg)
-  | P_256 -> Error "sign_sign: P_256 not implemented"
+  | P_256 -> fail "sign_sign: P_256 not implemented"
 
 let sign_verify cs pk msg signature =
   match cs.signature with

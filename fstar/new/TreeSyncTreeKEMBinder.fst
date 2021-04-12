@@ -23,7 +23,7 @@ let dir_tk_to_ts (dir:TK.direction) =
 
 let encrypted_path_secret_nt_to_tk (cs:ciphersuite) (x:hpke_ciphertext_nt): result (TK.path_secret_ciphertext cs) =
   if not (Seq.length x.hcn_kem_output = hpke_kem_output_length cs) then
-    Error "kem_output has wrong length"
+    fail "kem_output has wrong length"
   else
     Success ({
       TK.kem_output = x.hcn_kem_output;
@@ -40,7 +40,7 @@ let rec treesync_to_treekem #l cs t =
     if Seq.length pk = hpke_public_key_length cs then
       return (TK.Leaf (Some ({TK.mi_public_key = pub_to_secret pk})))
     else
-      Error "cred_enc_key has wrong length"
+      fail "cred_enc_key has wrong length"
   | TS.Node _ onp left right -> begin
     tk_left <-- treesync_to_treekem cs left;
     tk_right <-- treesync_to_treekem cs right;
@@ -52,7 +52,7 @@ let rec treesync_to_treekem #l cs t =
         ((ps_to_pse ps_update_path_node).parse_exact (pub_to_secret np.TS.np_content));
       path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk cs) (Seq.seq_to_list content.upnn_encrypted_path_secret);
       if not (Seq.length content.upnn_public_key = hpke_public_key_length cs) then
-        Error ""
+        fail ""
       else (
         let kp: TK.key_package cs l = {
           TK.kp_public_key = content.upnn_public_key;

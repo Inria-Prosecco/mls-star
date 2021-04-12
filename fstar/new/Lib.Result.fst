@@ -9,6 +9,7 @@ type result 'a =
   | Error: string -> result 'a
 
 let return (a:'a) : result 'a = Success a
+let fail (#a:Type) (s:string): result a = Error s
 
 let bind (a:result 'a) (f:'a -> result 'b) : result 'b =
   match a with
