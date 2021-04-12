@@ -3,6 +3,7 @@ module TreeSync
 open Lib.Array
 open Lib.Maths
 open Lib.ByteSequence
+open Utils
 
 //Theophile: these types are needed on my computer
 let bytes_t = bytes
@@ -55,6 +56,7 @@ type direction_t = | Left | Right
 type node_package_t = {
   np_version: nat;
   np_content_dir: direction_t;
+  np_unmerged_leafs: list nat;
   np_content: pub_bytes_t;
 }
 
@@ -176,6 +178,21 @@ let rec blank_path (l:level_n) (i:index_n l) (oc:option credential_t) : path_t l
   else let (j,dir) = child_index l i in
     PNode None (blank_path (l-1) j oc)
 
+let rec unmerged_path (#l:level_n) (leaf_index:index_n l) (t:tree_t l) (cred:credential_t): path_t l =
+  match t with
+  | Leaf _ _ ->
+    PLeaf (Some (mk_initial_leaf_package cred))
+  | Node _ onp left right ->
+    let (new_leaf_index, dir) = child_index l leaf_index in
+    let (child, _) = order_subtrees dir (left, right) in
+    let path_next = unmerged_path new_leaf_index child cred in
+    match onp with
+    | None ->
+      PNode None path_next
+    | Some np ->
+      PNode (Some (
+        {np with np_unmerged_leafs = insert_sorted leaf_index np.np_unmerged_leafs}
+      )) path_next
 
 ///
 /// API
@@ -230,7 +247,7 @@ val add: st:state_t -> actor:credential_t
   -> Tot (option (operation_t & state_t))
 
 let add st actor i joiner =
-  let p = blank_path st.st_levels i (Some joiner) in
+  let p = unmerged_path i st.st_tree joiner in
   match mk_operation st actor i p with
   | None -> None
   | Some op ->

@@ -3,6 +3,7 @@ module TreeKEM
 open Crypto
 open NetworkTypes
 open Parser
+open Utils
 open Lib.ByteSequence
 open Lib.IntTypes
 open Lib.Result
@@ -69,21 +70,6 @@ let rec tree_resolution #cs #l t =
   | Leaf (Some mi) -> [mi.mi_public_key]
   | Node (Some kp) left right -> (kp.kp_public_key)::(unmerged_leafs_resolution t kp.unmerged_leafs)
   | Node None left right -> (tree_resolution left)@(tree_resolution right)
-
-type nat_less (m:nat) = n:nat{n<m}
-
-//TODO: move to Utils
-let rec find_index (#a:eqtype) (x:a) (l:list a): option (nat_less (List.Tot.length l)) =
-  match l with
-  | [] -> None
-  | h::t ->
-    if x=h then (
-      Some 0
-    ) else (
-      match find_index x t with
-      | Some res -> Some (res+1)
-      | None -> None
-    )
 
 val resolution_index: #cs:ciphersuite -> #l:nat -> t:tree cs l -> index_l l -> nat_less (List.Tot.length (tree_resolution t))
 let rec resolution_index #cs #l t leaf_index =
