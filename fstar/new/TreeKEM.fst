@@ -148,9 +148,9 @@ let expand_with_label cs secret label context len =
     Error "expand_with_label: context too long"
   else
     let kdf_label = ps_kdf_label.serialize ({
-      length = u16 len;
-      label = Seq.append (string_to_bytes "mls10 ") label;
-      context = context;
+      kln_length = u16 len;
+      kln_label = Seq.append (string_to_bytes "mls10 ") label;
+      kln_context = context;
     }) in
     kdf_expand cs secret kdf_label len
 

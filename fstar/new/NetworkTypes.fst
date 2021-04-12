@@ -10,9 +10,9 @@ val ps_hpke_public_key: parser_serializer hpke_public_key_nt
 let ps_hpke_public_key = ps_bytes _
 
 noeq type kdf_label_nt = {
-  length: uint16;
-  label: blbytes ({min=7; max=255});
-  context: blbytes ({min=0; max=(pow2 32)-1});
+  kln_length: uint16;
+  kln_label: blbytes ({min=7; max=255});
+  kln_context: blbytes ({min=0; max=(pow2 32)-1});
 }
 
 val ps_kdf_label: parser_serializer kdf_label_nt
@@ -23,12 +23,12 @@ let ps_kdf_label =
       _ <-- ps_bytes _;
       ps_bytes _
     )
-    (fun (|length, (|label, context|)|) -> {length=length; label=label; context=context;})
-    (fun x -> (|x.length, (|x.label, x.context|)|))
+    (fun (|length, (|label, context|)|) -> {kln_length=length; kln_label=label; kln_context=context;})
+    (fun x -> (|x.kln_length, (|x.kln_label, x.kln_context|)|))
 
 noeq type hpke_ciphertext_nt = {
-  kem_output: blbytes ({min=0; max=(pow2 16)-1});
-  ciphertext: blbytes ({min=0; max=(pow2 16)-1});
+  hcn_kem_output: blbytes ({min=0; max=(pow2 16)-1});
+  hcn_ciphertext: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 val ps_hpke_ciphertext: parser_serializer hpke_ciphertext_nt
@@ -38,13 +38,13 @@ let ps_hpke_ciphertext =
       _ <-- ps_bytes _;
       ps_bytes _
     )
-    (fun (|kem_output, ciphertext|) -> {kem_output=kem_output; ciphertext=ciphertext;})
-    (fun x -> (|x.kem_output, x.ciphertext|))
+    (fun (|kem_output, ciphertext|) -> {hcn_kem_output=kem_output; hcn_ciphertext=ciphertext;})
+    (fun x -> (|x.hcn_kem_output, x.hcn_ciphertext|))
 
 
 noeq type update_path_node_nt = {
-  public_key: hpke_public_key_nt;
-  encrypted_path_secret: blseq hpke_ciphertext_nt ps_hpke_ciphertext ({min=0; max=(pow2 32)-1});
+  upnn_public_key: hpke_public_key_nt;
+  upnn_encrypted_path_secret: blseq hpke_ciphertext_nt ps_hpke_ciphertext ({min=0; max=(pow2 32)-1});
 }
 
 val ps_update_path_node: parser_serializer update_path_node_nt
@@ -54,8 +54,8 @@ let ps_update_path_node =
       _ <-- ps_hpke_public_key;
       ps_seq _ ps_hpke_ciphertext
     )
-    (fun (|public_key, encrypted_path_secret|) -> {public_key=public_key; encrypted_path_secret=encrypted_path_secret;})
-    (fun x -> (|x.public_key, x.encrypted_path_secret|))
+    (fun (|public_key, encrypted_path_secret|) -> {upnn_public_key=public_key; upnn_encrypted_path_secret=encrypted_path_secret;})
+    (fun x -> (|x.upnn_public_key, x.upnn_encrypted_path_secret|))
 
 type protocol_version_nt =
   | PV_reserved: protocol_version_nt
@@ -180,9 +180,9 @@ let ps_credential_type =
     )
 
 noeq type basic_credential_nt = {
-  identity: blbytes ({min=0; max=(pow2 16)-1});
-  signature_scheme: signature_scheme_nt;
-  signature_key: blbytes ({min=0; max=(pow2 16)-1});
+  bcn_identity: blbytes ({min=0; max=(pow2 16)-1});
+  bcn_signature_scheme: signature_scheme_nt;
+  bcn_signature_key: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 val ps_basic_credential: parser_serializer basic_credential_nt
@@ -193,8 +193,8 @@ let ps_basic_credential =
       _ <-- ps_signature_scheme;
       ps_bytes _
     )
-    (fun (|identity, (|signature_scheme, signature_key|)|) -> ({identity=identity; signature_scheme=signature_scheme; signature_key=signature_key;}))
-    (fun x -> (|x.identity, (|x.signature_scheme, x.signature_key|)|))
+    (fun (|identity, (|signature_scheme, signature_key|)|) -> ({bcn_identity=identity; bcn_signature_scheme=signature_scheme; bcn_signature_key=signature_key;}))
+    (fun x -> (|x.bcn_identity, (|x.bcn_signature_scheme, x.bcn_signature_key|)|))
 
 type certificate_nt = blbytes ({min=0; max=(pow2 16)-1})
 
@@ -280,8 +280,8 @@ let ps_extension_type =
     )
 
 noeq type extension_nt = {
-  extension_type: extension_type_nt;
-  extension_data: blbytes ({min=0; max=(pow2 16)-1});
+  en_extension_type: extension_type_nt;
+  en_extension_data: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 val ps_extension: parser_serializer extension_nt
@@ -291,16 +291,16 @@ let ps_extension =
       _ <-- ps_extension_type;
       ps_bytes _
     )
-    (fun (|extension_type, extension_data|) -> {extension_type=extension_type; extension_data=extension_data;})
-    (fun x -> (|x.extension_type, x.extension_data|))
+    (fun (|extension_type, extension_data|) -> {en_extension_type=extension_type; en_extension_data=extension_data;})
+    (fun x -> (|x.en_extension_type, x.en_extension_data|))
 
 noeq type key_package_nt = {
-  version: protocol_version_nt;
-  cipher_suite: cipher_suite_nt;
-  public_key: hpke_public_key_nt;
-  credential: credential_nt;
-  extensions: blseq extension_nt ps_extension ({min=8; max=(pow2 32)-1});
-  signature: blbytes ({min=0; max=(pow2 16)-1});
+  kpn_version: protocol_version_nt;
+  kpn_cipher_suite: cipher_suite_nt;
+  kpn_public_key: hpke_public_key_nt;
+  kpn_credential: credential_nt;
+  kpn_extensions: blseq extension_nt ps_extension ({min=8; max=(pow2 32)-1});
+  kpn_signature: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 #push-options "--ifuel 4"
@@ -316,19 +316,19 @@ let ps_key_package =
       ps_bytes _
     )
     (fun (|version, (|cipher_suite, (|public_key, (|credential, (|extensions, signature|)|)|)|)|) -> {
-      version=version;
-      cipher_suite=cipher_suite;
-      public_key=public_key;
-      credential=credential;
-      extensions=extensions;
-      signature=signature;
+      kpn_version=version;
+      kpn_cipher_suite=cipher_suite;
+      kpn_public_key=public_key;
+      kpn_credential=credential;
+      kpn_extensions=extensions;
+      kpn_signature=signature;
     })
-    (fun x -> (|x.version, (|x.cipher_suite, (|x.public_key, (|x.credential, (|x.extensions, x.signature|)|)|)|)|))
+    (fun x -> (|x.kpn_version, (|x.kpn_cipher_suite, (|x.kpn_public_key, (|x.kpn_credential, (|x.kpn_extensions, x.kpn_signature|)|)|)|)|))
 #pop-options
 
 noeq type update_path_nt = {
-  leaf_key_package: key_package_nt;
-  nodes: blseq update_path_node_nt ps_update_path_node ({min=0; max=(pow2 32)-1});
+  upn_leaf_key_package: key_package_nt;
+  upn_nodes: blseq update_path_node_nt ps_update_path_node ({min=0; max=(pow2 32)-1});
 }
 
 val ps_update_path: parser_serializer update_path_nt
@@ -338,5 +338,5 @@ let ps_update_path =
       _ <-- ps_key_package;
       ps_seq _ ps_update_path_node
     )
-    (fun (|leaf_key_package, nodes|) -> {leaf_key_package=leaf_key_package; nodes=nodes})
-    (fun x -> (|x.leaf_key_package, x.nodes|))
+    (fun (|leaf_key_package, nodes|) -> {upn_leaf_key_package=leaf_key_package; upn_nodes=nodes})
+    (fun x -> (|x.upn_leaf_key_package, x.upn_nodes|))

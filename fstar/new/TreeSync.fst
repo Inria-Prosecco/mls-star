@@ -4,6 +4,10 @@ open Lib.Array
 open Lib.Maths
 open Lib.ByteSequence
 
+//Theophile: these types are needed on my computer
+let bytes_t = bytes
+let pub_bytes_t = pub_bytes
+let pub_bytes_empty: pub_bytes = Seq.empty
 
 (** Cryptography *)
 let sign_key_t = bytes_t
@@ -37,18 +41,20 @@ noeq type leaf_secrets_t = {
 type leaf_package_t = {
   lp_credential: credential_t;
   lp_version: nat;
-  lp_content: pub_bytes_t;
+  //lp_content: pub_bytes_t;
 }
 
 let mk_initial_leaf_package (c:credential_t) =
   { lp_credential = c;
     lp_version = 0;
-    lp_content = pub_bytes_empty;}
+    (* lp_content = pub_bytes_empty; *)}
 
 
 (** Definition of a Node package *)
+type direction_t = | Left | Right
 type node_package_t = {
   np_version: nat;
+  np_content_dir: direction_t;
   np_content: pub_bytes_t;
 }
 
@@ -121,8 +127,6 @@ let membership st = tree_membership st.st_levels st.st_tree
 
 
 (** Auxiliary tree functions *)
-type direction_t = | Left | Right
-
 let dual (d:direction_t) : direction_t =
   match d with
   | Left -> Right

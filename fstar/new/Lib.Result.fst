@@ -15,6 +15,19 @@ let bind (a:result 'a) (f:'a -> result 'b) : result 'b =
   | Error x -> Error x
   | Success x -> f x
 
+let from_option (s:string) (x:option 'a): result 'a =
+  match x with
+  | None -> Error s
+  | Some x -> Success x
+
+let rec mapM (f:('a -> result 'b)) (l:list 'a): result (list 'b) =
+  match l with
+  | [] -> Success []
+  | h::t ->
+    fh <-- f h;
+    ft <-- mapM f t;
+    return (fh::ft)
+
 let failure (e:string) : FStar.All.ML unit =
   IO.print_newline ();
   IO.print_string "Failure ! ";
