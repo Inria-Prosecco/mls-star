@@ -7,6 +7,7 @@ open Lib.ByteSequence
 open Lib.Result
 open TreeMath
 
+//TODO: use a common datastructure for every tree
 let index_l (l:nat) = x:nat{x < pow2 l}
 type direction = | Left | Right
 let child_index (l:pos) (i:index_l l) : index_l (l-1) & direction =
@@ -71,3 +72,46 @@ val secret_epoch_to_init: cs:ciphersuite -> bytes -> result (lbytes (kdf_length 
 let secret_epoch_to_init cs epoch_secret =
   derive_secret cs epoch_secret (string_to_bytes "init")
 
+noeq type ratchet_state (cs:ciphersuite) = {
+  rs_secret: lbytes (kdf_length cs);
+  rs_seq: nat;
+  rs_node: node_index 0;
+}
+
+noeq type ratchet_output (cs:ciphersuite) = {
+  ro_nonce: lbytes (aead_nonce_length cs);
+  ro_key: lbytes (aead_key_length cs);
+}
+
+val init_handshake_ratchet: cs:ciphersuite -> node_index 0 -> (lbytes (kdf_length cs)) -> result (ratchet_state cs)
+let init_handshake_ratchet cs node tree_node_secret =
+  ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "handshake") node 0 (kdf_length cs);
+  return ({
+    rs_secret = ratchet_secret;
+    rs_seq = 0;
+    rs_node = node;
+  })
+
+//TODO: this is a copy-paste of init_handeshake_ratchet, factorize?
+val init_application_ratchet: cs:ciphersuite -> node_index 0 -> (lbytes (kdf_length cs)) -> result (ratchet_state cs)
+let init_application_ratchet cs node tree_node_secret =
+  ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "application") node 0 (kdf_length cs);
+  return ({
+    rs_secret = ratchet_secret;
+    rs_seq = 0;
+    rs_node = node;
+  })
+
+val ratchet_next_key: #cs:ciphersuite -> ratchet_state cs -> result (ratchet_output cs & ratchet_state cs)
+let ratchet_next_key #cs st =
+  nonce <-- derive_tree_secret cs st.rs_secret (string_to_bytes "nonce") st.rs_node st.rs_seq (aead_nonce_length cs);
+  key <-- derive_tree_secret cs st.rs_secret (string_to_bytes "key") st.rs_node st.rs_seq (aead_key_length cs);
+  new_secret <-- derive_tree_secret cs st.rs_secret (string_to_bytes "secret") st.rs_node st.rs_seq (kdf_length cs);
+  return ({
+    ro_nonce = nonce;
+    ro_key = key;
+  },{
+    rs_secret = new_secret;
+    rs_seq = st.rs_seq + 1;
+    rs_node = st.rs_node;
+  })
