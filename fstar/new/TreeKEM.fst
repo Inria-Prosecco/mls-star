@@ -1,6 +1,6 @@
 module TreeKEM
 
-open Crypto
+open CryptoMLS
 open NetworkTypes
 open Parser
 open Utils
@@ -119,30 +119,6 @@ let rec hpke_multirecipient_encrypt #cs public_keys info ad plaintext rand =
     res_hd <-- hpke_encrypt cs pk info ad plaintext rand_cur;
     res_tl <-- hpke_multirecipient_encrypt pks info ad plaintext rand_next;
     return ({kem_output = fst res_hd; ciphertext = snd res_hd}::res_tl)
-
-//TODO: move the following next functions in Crypto.fst? Or is it too specific to MLS?
-val expand_with_label: ciphersuite -> secret:bytes -> label:bytes -> context:bytes -> len:size_nat -> result (lbytes len)
-let expand_with_label cs secret label context len =
-  assert_norm (String.strlen "mls10 " == 6);
-  if not (len < pow2 16) then
-    fail "expand_with_label: len too high"
-  else if not (1 <= Seq.length label) then
-    fail "expand_with_label: label too short"
-  else if not (Seq.length label < 255-6) then
-    fail "expand_with_label: label too long"
-  else if not (Seq.length context < pow2 32) then
-    fail "expand_with_label: context too long"
-  else
-    let kdf_label = ps_kdf_label.serialize ({
-      kln_length = u16 len;
-      kln_label = Seq.append (string_to_bytes "mls10 ") label;
-      kln_context = context;
-    }) in
-    kdf_expand cs secret kdf_label len
-
-val derive_secret: cs:ciphersuite -> secret:bytes -> label:bytes -> result (lbytes (kdf_length cs))
-let derive_secret cs secret label =
-  expand_with_label cs secret label bytes_empty (kdf_length cs)
 
 val derive_keypair_from_path_secret: cs:ciphersuite -> bytes -> result (hpke_private_key cs & hpke_public_key cs)
 let derive_keypair_from_path_secret cs path_secret =

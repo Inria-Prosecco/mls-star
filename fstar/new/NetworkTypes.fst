@@ -9,23 +9,6 @@ type hpke_public_key_nt = blbytes ({min=1; max=(pow2 16)-1})
 val ps_hpke_public_key: parser_serializer hpke_public_key_nt
 let ps_hpke_public_key = ps_bytes _
 
-noeq type kdf_label_nt = {
-  kln_length: uint16;
-  kln_label: blbytes ({min=7; max=255});
-  kln_context: blbytes ({min=0; max=(pow2 32)-1});
-}
-
-val ps_kdf_label: parser_serializer kdf_label_nt
-let ps_kdf_label =
-  isomorphism kdf_label_nt
-    (
-      _ <-- ps_u16;
-      _ <-- ps_bytes _;
-      ps_bytes _
-    )
-    (fun (|length, (|label, context|)|) -> {kln_length=length; kln_label=label; kln_context=context;})
-    (fun x -> (|x.kln_length, (|x.kln_label, x.kln_context|)|))
-
 noeq type hpke_ciphertext_nt = {
   hcn_kem_output: blbytes ({min=0; max=(pow2 16)-1});
   hcn_ciphertext: blbytes ({min=0; max=(pow2 16)-1});
