@@ -188,6 +188,34 @@ let sign_verify cs pk msg signature =
       Ed25519.verify pk msg signature
   | P_256 -> false //TODO
 
+(*** AEAD ***)
+
+let aead_nonce_length cs =
+  size_aead_nonce (ciphersuite_to_hpke_ciphersuite cs)
+
+let aead_key_length cs =
+  AEAD.key_length (cs.aead)
+
+let aead_encrypt cs key nonce ad plaintext =
+  if not (Seq.length ad <= AEAD.max_length (cs.aead)) then
+    fail "aead_encrypt: ad too long"
+  else if not (Seq.length plaintext <= AEAD.max_length (cs.aead)) then
+    fail "aead_encrypt: plaintext too long"
+  else
+    return (AEAD.encrypt #(cs.aead) key nonce ad plaintext)
+
+let aead_decrypt cs key nonce ad ciphertext =
+  if not (Seq.length ad <= AEAD.max_length (cs.aead)) then
+    fail "aead_decrypt: ad too long"
+  else if not (AEAD.tag_length (cs.aead) <= Seq.length ciphertext) then
+    fail "aead_decrypt: ciphertext too short"
+  else if not ( Seq.length ciphertext <= AEAD.max_length (cs.aead) + AEAD.tag_length (cs.aead)) then
+    fail "aead_decrypt: ciphertext too long"
+  else (
+    result <-- from_option "aead_decrypt: AEAD.decrypt failed" (AEAD.decrypt #(cs.aead) key nonce ad ciphertext);
+    return (result <: bytes)
+  )
+
 (*** String to bytes ***)
 
 let string_to_bytes s =
