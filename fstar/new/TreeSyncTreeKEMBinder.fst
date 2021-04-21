@@ -51,11 +51,12 @@ let rec treesync_to_treekem #l cs t =
   | TS.Leaf _ None ->
     return (TK.Leaf None)
   | TS.Leaf _ (Some lp) ->
-    let pk = lp.TS.lp_credential.TS.cred_enc_key in
+    pk <-- from_option "treesync_to_treekem: Couldn't parse HPKEPublicKey"
+      ((ps_to_pse ps_hpke_public_key).parse_exact (pub_to_secret lp.TS.lp_content));
     if Seq.length pk = hpke_public_key_length cs then
-      return (TK.Leaf (Some ({TK.mi_public_key = pub_to_secret pk})))
+      return (TK.Leaf (Some ({TK.mi_public_key = pk; TK.mi_version = lp.TS.lp_version})))
     else
-      fail "cred_enc_key has wrong length"
+      fail "treesync_to_treekem: public key has wrong length"
   | TS.Node _ onp left right -> begin
     tk_left <-- treesync_to_treekem cs left;
     tk_right <-- treesync_to_treekem cs right;
@@ -63,7 +64,7 @@ let rec treesync_to_treekem #l cs t =
     | None ->
       return (TK.Node None tk_left tk_right)
     | Some np ->
-      content <-- from_option "Couldn't parse UpdatePathNode"
+      content <-- from_option "treesync_to_treekem: Couldn't parse UpdatePathNode"
         ((ps_to_pse ps_update_path_node).parse_exact (pub_to_secret np.TS.np_content));
       path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk cs) (Seq.seq_to_list content.upnn_encrypted_path_secret);
       unmerged_leafs <-- mapM (nat_to_index_l l) (np.TS.np_unmerged_leafs);
@@ -72,9 +73,10 @@ let rec treesync_to_treekem #l cs t =
       else (
         let kp: TK.key_package cs l = {
           TK.kp_public_key = content.upnn_public_key;
-          TK.unmerged_leafs = unmerged_leafs;
-          TK.path_secret_from = dir_ts_to_tk (np.TS.np_content_dir);
-          TK.path_secret_ciphertext = path_secret_ciphertext;
+          TK.kp_version = np.TS.np_version;
+          TK.kp_unmerged_leafs = unmerged_leafs;
+          TK.kp_path_secret_from = dir_ts_to_tk (np.TS.np_content_dir);
+          TK.kp_path_secret_ciphertext = path_secret_ciphertext;
         } in
         return (TK.Node (Some kp) tk_left tk_right)
       )
@@ -95,25 +97,16 @@ let encrypted_path_secret_tk_to_nt (#cs:ciphersuite) (x:TK.path_secret_ciphertex
 val treekem_to_treesync: #l:nat -> #cs:ciphersuite -> TS.credential_t -> TK.path cs l -> result (TS.path_t l)
 let rec treekem_to_treesync #l #cs cred p =
   match p with
-  | TK.PLeaf None ->
-    return (TS.PLeaf None)
-  | TK.PLeaf (Some mi) ->
+  | TK.PLeaf mi ->
     return (TS.PLeaf (Some ({
-      TS.lp_credential = {cred with TS.cred_enc_key = secret_to_pub (mi.TK.mi_public_key)};
-      TS.lp_version = 0; //TODO
+      TS.lp_credential = cred;
+      TS.lp_version = mi.TK.mi_version;
+      TS.lp_content = secret_to_pub (ps_hpke_public_key.serialize mi.TK.mi_public_key);
     })))
-  | TK.PNode None p_next ->
+  | TK.PNode kp p_next ->
     next <-- treekem_to_treesync cred p_next;
-    return (TS.PNode None next)
-  | TK.PNode (Some kp) p_next ->
-    next <-- treekem_to_treesync cred p_next;
-    ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.TK.path_secret_ciphertext;
-    //TODO: the two following conditions could be theorems in Crypto
-    if not (1 <= Seq.length kp.TK.kp_public_key) then
-      fail "treekem_to_treesync: public_key too short"
-    else if not (Seq.length kp.TK.kp_public_key < pow2 16) then
-      fail "treekem_to_treesync: public_key too long"
-    else if not (byte_length ps_hpke_ciphertext ciphertexts < pow2 16) then
+    ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.TK.kp_path_secret_ciphertext;
+    if not (byte_length ps_hpke_ciphertext ciphertexts < pow2 16) then
       fail "treekem_to_treesync: ciphertexts too long"
     else begin
       Seq.lemma_list_seq_bij ciphertexts;
@@ -122,9 +115,9 @@ let rec treekem_to_treesync #l #cs cred p =
         upnn_encrypted_path_secret = Seq.seq_of_list ciphertexts;
       }) in
       let np = ({
-        TS.np_version = 0; //TODO
-        TS.np_content_dir = dir_tk_to_ts kp.TK.path_secret_from;
-        TS.np_unmerged_leafs = List.Tot.map (fun (x:TK.index_l l) -> (x<:nat)) kp.TK.unmerged_leafs;
+        TS.np_version = kp.TK.kp_version;
+        TS.np_content_dir = dir_tk_to_ts kp.TK.kp_path_secret_from;
+        TS.np_unmerged_leafs = List.Tot.map (fun (x:TK.index_l l) -> (x<:nat)) kp.TK.kp_unmerged_leafs;
         TS.np_content = secret_to_pub np_content;
       }) in
       return (TS.PNode (Some np) next)

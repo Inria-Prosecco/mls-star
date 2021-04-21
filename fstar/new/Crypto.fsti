@@ -37,7 +37,7 @@ val kdf_expand: cs:ciphersuite -> prk:bytes -> info:bytes -> len:size_nat -> res
 
 (*** HPKE ***)
 
-val hpke_public_key_length: ciphersuite -> size_nat
+val hpke_public_key_length: ciphersuite -> n:size_nat{1 <= n /\ n < pow2 16}
 val hpke_private_key_length: cs:ciphersuite -> n:size_nat{n <= kdf_length cs}
 val hpke_kem_output_length: ciphersuite -> size_nat
 

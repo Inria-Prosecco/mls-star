@@ -42,13 +42,13 @@ noeq type leaf_secrets_t = {
 type leaf_package_t = {
   lp_credential: credential_t;
   lp_version: nat;
-  //lp_content: pub_bytes_t;
+  lp_content: pub_bytes_t;
 }
 
 let mk_initial_leaf_package (c:credential_t) =
   { lp_credential = c;
     lp_version = 0;
-    (* lp_content = pub_bytes_empty; *)}
+    lp_content = pub_bytes_empty;}
 
 
 (** Definition of a Node package *)
