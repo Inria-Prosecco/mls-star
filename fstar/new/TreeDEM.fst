@@ -2,16 +2,11 @@ module TreeDEM
 
 open Parser
 open CryptoMLS
+open Tree
 open Lib.IntTypes
 open Lib.ByteSequence
 open Lib.Result
 open TreeMath
-
-//TODO: use a common datastructure for every tree
-let index_l (l:nat) = x:nat{x < pow2 l}
-type direction = | Left | Right
-let child_index (l:pos) (i:index_l l) : index_l (l-1) & direction =
-  if i < pow2 (l - 1) then (i,Left) else (i-pow2 (l-1),Right)
 
 noeq type tree_context_nt = {
   tc_node: uint32;
@@ -43,15 +38,17 @@ let derive_tree_secret cs secret label node generation len =
     }) in
     expand_with_label cs secret label tree_context len
 
-val leaf_kdf: #l:nat -> ciphersuite -> bytes -> node_index l -> index_l l -> result bytes
-let rec leaf_kdf #l cs encryption_secret root leaf_index =
+val leaf_kdf: #l:nat -> n:tree_size l -> ciphersuite -> bytes -> node_index l -> leaf_index n -> result bytes
+let rec leaf_kdf #l n cs encryption_secret root leaf_index =
   if l = 0 then (
     return encryption_secret
+  ) else if n <= pow2 (l-1) then (
+    leaf_kdf #(l-1) n cs encryption_secret (left root) leaf_index
   ) else (
-    let (new_leaf_index, dir) = child_index l leaf_index in
+    let (|dir, new_leaf_index|) = child_index l leaf_index in
     let new_root = (if dir = Left then left root else right root) in
     new_encryption_secret <-- derive_tree_secret cs encryption_secret (string_to_bytes "tree") new_root 0 (kdf_length cs);
-    leaf_kdf cs new_encryption_secret new_root new_leaf_index
+    leaf_kdf (if dir = Left then pow2 (l-1) else n - pow2 (l-1)) cs new_encryption_secret new_root new_leaf_index
   )
 
 val secret_init_to_joiner: cs:ciphersuite -> bytes -> bytes -> result (lbytes (kdf_length cs))

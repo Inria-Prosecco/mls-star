@@ -4,13 +4,12 @@ open CryptoMLS
 open NetworkTypes
 open Parser
 open Utils
+open Tree
 open Lib.ByteSequence
 open Lib.IntTypes
 open Lib.Result
 
 let todo_bytes = bytes_empty
-
-type direction = | Left | Right
 
 noeq type member_info (cs:ciphersuite) = {
   mi_public_key: hpke_public_key cs;
@@ -23,62 +22,57 @@ noeq type path_secret_ciphertext (cs:ciphersuite) = {
   ciphertext: bytes;
 }
 
-let index_l (l:nat) = x:nat{x < pow2 l}
-
-noeq type key_package (cs:ciphersuite) (l:nat) = {
+noeq type key_package (cs:ciphersuite) = {
   kp_public_key: hpke_public_key cs;
   kp_version: nat;
-  kp_unmerged_leafs: list (index_l l);
+  kp_unmerged_leafs: list nat;
   kp_path_secret_from: direction;
   kp_path_secret_ciphertext: list (path_secret_ciphertext cs);
 }
 
-noeq type tree (cs:ciphersuite) (lev:nat) =
-  | Leaf: mi:option (member_info cs){lev=0} -> tree cs lev
-  | Node: kp:option (key_package cs lev){lev>0} -> left:tree cs (lev - 1) -> right:tree cs (lev - 1) -> tree cs lev
+type treekem (cs:ciphersuite) (l:nat) (n:tree_size l) = tree l n (option (member_info cs)) (option (key_package cs))
+type pathkem (cs:ciphersuite) (l:nat) (n:tree_size l) (i:leaf_index n) = path l n i (member_info cs) (key_package cs)
 
-noeq type path (cs:ciphersuite) (lev:nat) =
-  | PLeaf: mi:(member_info cs){lev=0} -> path cs lev
-  | PNode: kp:(key_package cs lev){lev>0} -> next:path cs (lev-1) -> path cs lev
-
-let child_index (l:pos) (i:index_l l) : index_l (l-1) & direction =
-  if i < pow2 (l - 1) then (i,Left) else (i-pow2 (l-1),Right)
-let order_subtrees dir (l,r) = if dir = Left then (l,r) else (r,l)
-
-val leaf_public_key: #cs:ciphersuite -> #l:nat -> tree cs l -> index_l l -> option (hpke_public_key cs)
-let rec leaf_public_key #cs #l t leaf_index =
+val leaf_public_key: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> leaf_index n -> option (hpke_public_key cs)
+let rec leaf_public_key #cs #l #n t leaf_index =
   match t with
-  | Leaf None -> None
-  | Leaf (Some mi) -> Some (mi.mi_public_key)
-  | Node _ left right ->
-    let (new_leaf_index, dir) = child_index l leaf_index in
+  | TLeaf None -> None
+  | TLeaf (Some mi) -> Some (mi.mi_public_key)
+  | TSkip _ t' -> leaf_public_key t' leaf_index
+  | TNode _ left right ->
+    let (|dir, new_leaf_index|) = child_index l leaf_index in
     if dir = Left then
       leaf_public_key left new_leaf_index
     else
       leaf_public_key right new_leaf_index
 
-val unmerged_leafs_resolution: #cs:ciphersuite -> #l:nat -> tree cs l -> list (index_l l) -> list (hpke_public_key cs)
-let unmerged_leafs_resolution #cs #l t indexes =
-  List.Tot.concatMap (fun index ->
-    match leaf_public_key t index with
-    | None -> []
-    | Some res -> [res]
+val unmerged_leafs_resolution: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> list nat -> list (hpke_public_key cs)
+let unmerged_leafs_resolution #cs #l #n t indexes =
+  List.Tot.concatMap (fun (index:nat) ->
+    if index < n then
+      match leaf_public_key t index with
+      | None -> []
+      | Some res -> [res]
+    else
+      []
   ) indexes
 
-val tree_resolution: #cs:ciphersuite -> #l:nat -> tree cs l -> list (hpke_public_key cs)
+val tree_resolution: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> list (hpke_public_key cs)
 let rec tree_resolution #cs #l t =
   match t with
-  | Leaf None -> []
-  | Leaf (Some mi) -> [mi.mi_public_key]
-  | Node (Some kp) left right -> (kp.kp_public_key)::(unmerged_leafs_resolution t kp.kp_unmerged_leafs)
-  | Node None left right -> (tree_resolution left)@(tree_resolution right)
+  | TLeaf None -> []
+  | TLeaf (Some mi) -> [mi.mi_public_key]
+  | TSkip _ t' -> tree_resolution t'
+  | TNode (Some kp) left right -> (kp.kp_public_key)::(unmerged_leafs_resolution t kp.kp_unmerged_leafs)
+  | TNode None left right -> (tree_resolution left)@(tree_resolution right)
 
-val resolution_index: #cs:ciphersuite -> #l:nat -> t:tree cs l -> index_l l -> nat_less (List.Tot.length (tree_resolution t))
+val resolution_index: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> t:treekem cs l n -> leaf_index n -> nat_less (List.Tot.length (tree_resolution t))
 let rec resolution_index #cs #l t leaf_index =
   match t with
-  | Leaf (Some mi) -> 0
-  | Leaf None -> admit() //There should be a precondition that prevent this case
-  | Node (Some kp) left right -> (
+  | TLeaf (Some mi) -> 0
+  | TLeaf None -> admit() //There should be a precondition that prevent this case
+  | TSkip _ t' -> resolution_index t' leaf_index
+  | TNode (Some kp) left right -> (
     match find_index leaf_index kp.kp_unmerged_leafs with
     | Some res ->
       //That is currently not true because a node can contain an unmerged leaf which is actually blanked
@@ -86,8 +80,8 @@ let rec resolution_index #cs #l t leaf_index =
       1+res
     | None -> 0
   )
-  | Node None left right ->
-    let (child_leaf_index, child_dir) = child_index l leaf_index in
+  | TNode None left right ->
+    let (|child_dir, child_leaf_index|) = child_index l leaf_index in
     let (child, _) = order_subtrees child_dir (left, right) in
     let child_resolution_index = resolution_index child child_leaf_index in
     List.Tot.Properties.append_length (tree_resolution left) (tree_resolution right);
@@ -121,8 +115,8 @@ let derive_next_path_secret cs path_secret =
   res <-- derive_secret cs path_secret (string_to_bytes "path");
   return (res <: bytes)
 
-val node_encap: #cs:ciphersuite -> l:nat -> version:nat -> child_secret:bytes -> ad:bytes -> direction -> pks:list (hpke_public_key cs) -> randomness (hpke_multirecipient_encrypt_entropy_length pks) -> result (key_package cs l & bytes)
-let node_encap #cs l version child_secret ad dir pks rand =
+val node_encap: #cs:ciphersuite -> version:nat -> child_secret:bytes -> ad:bytes -> direction -> pks:list (hpke_public_key cs) -> randomness (hpke_multirecipient_encrypt_entropy_length pks) -> result (key_package cs & bytes)
+let node_encap #cs version child_secret ad dir pks rand =
   node_secret <-- derive_next_path_secret cs child_secret;
   node_keys <-- derive_keypair_from_path_secret cs node_secret;
   ciphertext <-- hpke_multirecipient_encrypt pks bytes_empty ad node_secret rand;
@@ -137,8 +131,8 @@ let node_encap #cs l version child_secret ad dir pks rand =
     node_secret
   )
 
-val node_decap: #cs:ciphersuite -> #l:nat -> child_secret:bytes -> ad:bytes -> i:nat -> dir:direction -> kp:key_package cs l{dir <> kp.kp_path_secret_from ==> i < List.Tot.length kp.kp_path_secret_ciphertext} -> result bytes
-let node_decap #cs #l child_secret ad i dir kp =
+val node_decap: #cs:ciphersuite -> child_secret:bytes -> ad:bytes -> i:nat -> dir:direction -> kp:key_package cs{dir <> kp.kp_path_secret_from ==> i < List.Tot.length kp.kp_path_secret_ciphertext} -> result bytes
+let node_decap #cs child_secret ad i dir kp =
   if dir = kp.kp_path_secret_from then (
     if i <> 0 then
       fail "node_decap"
@@ -151,53 +145,59 @@ let node_decap #cs #l child_secret ad i dir kp =
     hpke_decrypt cs ciphertext.kem_output child_sk bytes_empty ad ciphertext.ciphertext
   )
 
-val update_path_entropy_length: #cs:ciphersuite -> #l:nat -> tree cs l -> index_l l -> nat
-let rec update_path_entropy_length #cs #l t leaf_index =
+val update_path_entropy_length: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> leaf_index n -> nat
+let rec update_path_entropy_length #cs #l #n t leaf_index =
   match t with
-  | Leaf _ -> 0
-  | Node _ left right ->
-    let (new_leaf_index, dir) = child_index l leaf_index in
+  | TLeaf _ -> 0
+  | TSkip _ t' -> update_path_entropy_length t' leaf_index
+  | TNode _ left right ->
+    let (|dir, new_leaf_index|) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
     hpke_multirecipient_encrypt_entropy_length (tree_resolution sibling) + update_path_entropy_length child new_leaf_index
 
-val update_path: #cs:ciphersuite -> #l:nat -> t:tree cs l -> leaf_index:index_l l -> leaf_secret:bytes -> ad:bytes -> randomness (update_path_entropy_length t leaf_index) -> Pure (result (path cs l & bytes))
+val update_path: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> t:treekem cs l n -> leaf_index:leaf_index n -> leaf_secret:bytes -> ad:bytes -> randomness (update_path_entropy_length t leaf_index) -> Pure (result (pathkem cs l n leaf_index & bytes))
   (requires Seq.length leaf_secret >= hpke_private_key_length cs)
   (ensures fun res -> match res with
     | Error _ -> True
     | Success (_, node_secret) -> Seq.length leaf_secret >= hpke_private_key_length cs
   )
-let rec update_path #cs #l t leaf_index leaf_secret ad rand =
+let rec update_path #cs #l #n t leaf_index leaf_secret ad rand =
   match t with
-  | Leaf None -> admit() //TODO: in the previous code, it fails in this case
-  | Leaf (Some mi) ->
+  | TLeaf None -> admit() //TODO: in the previous code, it fails in this case
+  | TLeaf (Some mi) ->
     //TODO: in the previous code, it does some credential check here
     leaf_keys <-- derive_keypair_from_path_secret cs leaf_secret;
     return (PLeaf ({mi_public_key=snd leaf_keys; mi_version=mi.mi_version+1;}), leaf_secret)
-  | Node okp left right ->
+  | TSkip _ t' ->
+    result <-- update_path t' leaf_index leaf_secret ad rand;
+    let (result_path, result_secret) = result in
+    return (PSkip _ result_path, result_secret)
+  | TNode okp left right ->
     let version =
       match okp with
       | None -> 0
       | Some kp -> kp.kp_version+1
     in
-    let (next_leaf_index, dir) = child_index l leaf_index in
+    let (|dir, next_leaf_index|) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
     let (rand_next, rand_cur) = split_randomness rand (hpke_multirecipient_encrypt_entropy_length (tree_resolution sibling)) in
     recursive_call <-- update_path child next_leaf_index leaf_secret ad rand_next;
     let (child_path, child_path_secret) = recursive_call in
-    node_encap_call <-- node_encap l version child_path_secret ad dir (tree_resolution sibling) rand_cur;
+    node_encap_call <-- node_encap version child_path_secret ad dir (tree_resolution sibling) rand_cur;
     let (node_kp, node_path_secret) = node_encap_call in
     return (PNode node_kp child_path, node_path_secret)
 
-val root_secret: #cs:ciphersuite -> #l:nat -> t:tree cs l -> index_l l -> leaf_secret:bytes -> ad:bytes -> result (bytes)
-let rec root_secret #cs #l t leaf_index leaf_secret ad =
+val root_secret: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> t:treekem cs l n -> leaf_index n -> leaf_secret:bytes -> ad:bytes -> result (bytes)
+let rec root_secret #cs #l #n t leaf_index leaf_secret ad =
   match t with
-  | Leaf None -> fail ""
-  | Leaf (Some _) -> return leaf_secret
-  | Node (Some kp) left right -> begin
+  | TLeaf None -> fail ""
+  | TLeaf (Some _) -> return leaf_secret
+  | TSkip _ t' -> root_secret t' leaf_index leaf_secret ad
+  | TNode (Some kp) left right -> begin
     if List.Tot.mem leaf_index kp.kp_unmerged_leafs then (
       return leaf_secret
     ) else (
-      let (next_leaf_index, dir) = child_index l leaf_index in
+      let (|dir, next_leaf_index|) = child_index l leaf_index in
       let (child, sibling) = order_subtrees dir (left, right) in
       child_path_secret <-- root_secret child next_leaf_index leaf_secret ad;
       //The condition is here becaus the `i` argument has not sense when dir = kp.path_secret_from.
@@ -207,8 +207,8 @@ let rec root_secret #cs #l t leaf_index leaf_secret ad =
       node_decap child_path_secret ad i dir kp
     )
   end
-  | Node None left right -> begin
-    let (next_leaf_index, dir) = child_index l leaf_index in
+  | TNode None left right -> begin
+    let (|dir, next_leaf_index|) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
     root_secret child next_leaf_index leaf_secret ad
   end
