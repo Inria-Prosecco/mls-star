@@ -1,4 +1,4 @@
-module Crypto
+module Crypto.Builtins
 
 open Spec.Agile.DH
 open Spec.Agile.AEAD

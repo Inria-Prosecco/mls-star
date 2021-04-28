@@ -2,7 +2,7 @@ module NetworkTypes
 
 open Lib.IntTypes
 open Parser
-open Crypto
+open Crypto.Builtins
 
 type hpke_public_key_nt = blbytes ({min=1; max=(pow2 16)-1})
 
@@ -323,3 +323,32 @@ let ps_update_path =
     )
     (fun (|leaf_key_package, nodes|) -> {upn_leaf_key_package=leaf_key_package; upn_nodes=nodes})
     (fun x -> (|x.upn_leaf_key_package, x.upn_nodes|))
+
+noeq type group_context_nt = {
+  gcn_group_id: blbytes ({min=0; max=255});
+  gcn_epoch: uint64;
+  gcn_tree_hash: blbytes ({min=0; max=255});
+  gcn_confirmed_transcript_hash: blbytes ({min=0; max=255});
+  gcn_extensions: blseq extension_nt ps_extension ({min=0; max=(pow2 32)-1});
+}
+
+#push-options "--ifuel 4"
+val ps_group_context: parser_serializer group_context_nt
+let ps_group_context =
+  isomorphism group_context_nt
+    (
+      _ <-- ps_bytes _;
+      _ <-- ps_u64;
+      _ <-- ps_bytes _;
+      _ <-- ps_bytes _;
+      ps_seq _ ps_extension
+    )
+    (fun (|group_id, (|epoch, (|tree_hash, (|confirmed_transcript_hash, extensions|)|)|)|) -> {
+      gcn_group_id = group_id;
+      gcn_epoch = epoch;
+      gcn_tree_hash = tree_hash;
+      gcn_confirmed_transcript_hash = confirmed_transcript_hash;
+      gcn_extensions = extensions;
+    })
+    (fun x -> (|x.gcn_group_id, (|x.gcn_epoch, (|x.gcn_tree_hash, (|x.gcn_confirmed_transcript_hash, x.gcn_extensions|)|)|)|))
+#pop-options

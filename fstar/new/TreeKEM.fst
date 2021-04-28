@@ -1,6 +1,6 @@
 module TreeKEM
 
-open CryptoMLS
+open Crypto
 open NetworkTypes
 open Parser
 open Utils

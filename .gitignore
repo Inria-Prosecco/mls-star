@@ -5,6 +5,7 @@ mls-treekem.pdf
 *.cmx
 *.cmi
 *.cmo
+*.o
 
 ml-*
 

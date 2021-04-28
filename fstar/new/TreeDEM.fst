@@ -1,7 +1,7 @@
 module TreeDEM
 
 open Parser
-open CryptoMLS
+open Crypto
 open Tree
 open Lib.IntTypes
 open Lib.ByteSequence
@@ -56,14 +56,46 @@ let secret_init_to_joiner cs init_secret commit_secret =
   prk <-- kdf_extract cs init_secret commit_secret;
   derive_secret cs prk (string_to_bytes "joiner")
 
+val secret_joiner_to_welcome: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_joiner_to_welcome cs joiner_secret =
+  derive_secret cs joiner_secret (string_to_bytes "welcome")
+
 val secret_joiner_to_epoch: cs:ciphersuite -> bytes -> bytes -> bytes -> result (lbytes (kdf_length cs))
 let secret_joiner_to_epoch cs joiner_secret psk_secret group_context =
   prk <-- kdf_extract cs joiner_secret psk_secret;
   expand_with_label cs prk (string_to_bytes "epoch") group_context (kdf_length cs)
 
+val secret_epoch_to_sender_data: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_epoch_to_sender_data cs epoch_secret =
+  derive_secret cs epoch_secret (string_to_bytes "sender data")
+
 val secret_epoch_to_encryption: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
 let secret_epoch_to_encryption cs epoch_secret =
   derive_secret cs epoch_secret (string_to_bytes "encryption")
+
+val secret_epoch_to_exporter: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_epoch_to_exporter cs epoch_secret =
+  derive_secret cs epoch_secret (string_to_bytes "exporter")
+
+val secret_epoch_to_authentication: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_epoch_to_authentication cs epoch_secret =
+  derive_secret cs epoch_secret (string_to_bytes "authentication")
+
+val secret_epoch_to_external: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_epoch_to_external cs epoch_secret =
+  derive_secret cs epoch_secret (string_to_bytes "external")
+
+val secret_epoch_to_confirmation: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_epoch_to_confirmation cs epoch_secret =
+  derive_secret cs epoch_secret (string_to_bytes "confirm")
+
+val secret_epoch_to_membership: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_epoch_to_membership cs epoch_secret =
+  derive_secret cs epoch_secret (string_to_bytes "membership")
+
+val secret_epoch_to_resumption: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
+let secret_epoch_to_resumption cs epoch_secret =
+  derive_secret cs epoch_secret (string_to_bytes "resumption")
 
 val secret_epoch_to_init: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
 let secret_epoch_to_init cs epoch_secret =
