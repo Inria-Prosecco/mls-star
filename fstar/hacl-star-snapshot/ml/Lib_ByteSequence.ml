@@ -90,8 +90,8 @@ let (seq_mask_select :
                 b in
             res
 let (bytes_empty : FStar_UInt8.t Lib_Sequence.seq) = FStar_Seq_Base.empty ()
-let (lbytes_empty : (FStar_UInt8.t, unit) Lib_Sequence.lseq) =
-  Lib_Sequence.create Prims.int_zero (FStar_UInt8.uint_to_t Prims.int_zero)
+let (lbytes_empty : (Obj.t, unit) Lib_Sequence.lseq) =
+  Lib_Sequence.create Prims.int_zero (Lib_IntTypes.zeros Lib_IntTypes.U8 Lib_IntTypes.SEC)
 let rec (nat_from_intseq_be_ :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level -> Obj.t Lib_Sequence.seq -> Prims.nat)

@@ -311,7 +311,7 @@ let (default_psk : ciphersuite -> FStar_UInt8.t Lib_Sequence.seq) =
     Lib_Sequence.create (Spec_Hash_Definitions.size_hash (hash_of_cs cs))
       (FStar_UInt8.uint_to_t Prims.int_zero)
 let (default_pskId : FStar_UInt8.t Lib_Sequence.seq) =
-  Lib_ByteSequence.lbytes_empty
+  Lib_ByteSequence.bytes_empty
 let (build_context :
   mode ->
     ciphersuite ->
