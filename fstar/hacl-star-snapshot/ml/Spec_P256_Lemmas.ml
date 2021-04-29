@@ -35,8 +35,8 @@ let (modp_inv2 : Prims.nat -> unit elem) =
   fun x -> modp_inv2_prime x Spec_P256_Definitions.prime256
 let (modp_inv2_pow : Prims.nat -> unit elem) =
   fun x ->
-    (pow x (Spec_P256_Definitions.prime256 - (Prims.of_int (2)))) mod
-      Spec_P256_Definitions.prime256
+    exp Spec_P256_Definitions.prime256 (x mod Spec_P256_Definitions.prime256)
+      (Spec_P256_Definitions.prime256 - (Prims.of_int (2)))
 let (min_one_prime : Prims.pos -> Prims.int -> unit elem) =
   fun prime ->
     fun x -> let p = x mod prime in exp prime p (prime - Prims.int_one)

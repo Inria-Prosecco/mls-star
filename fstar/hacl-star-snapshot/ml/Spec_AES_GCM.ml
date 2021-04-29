@@ -37,8 +37,8 @@ let (ghash :
               (Lib_ByteSequence.nat_to_intseq_be_ Lib_IntTypes.U8
                  Lib_IntTypes.SEC (Prims.of_int (8))
                  (tlen * (Prims.of_int (8)))) in
-          let uu____159 = Spec_GF128.gf128_init gf_key in
-          match uu____159 with
+          let uu___ = Spec_GF128.gf128_init gf_key in
+          match uu___ with
           | (acc, r) ->
               let acc1 =
                 Spec_GF128.gf128_update (FStar_Seq_Base.append aad aad_pad)
@@ -78,8 +78,8 @@ let (aead_encrypt :
         fun m ->
           fun aad ->
             let mlen = Lib_Sequence.length m in
-            let uu____284 = aead_init v k n in
-            match uu____284 with
+            let uu___ = aead_init v k n in
+            match uu___ with
             | (st, gf_key, tag_key) ->
                 let c = Spec_AES.aes_ctr_encrypt_stream v st m in
                 let mac = ghash c aad gf_key tag_key in
@@ -100,8 +100,8 @@ let (aead_decrypt :
           fun c ->
             fun tag1 ->
               let clen = Lib_Sequence.length c in
-              let uu____374 = aead_init v k n in
-              match uu____374 with
+              let uu___ = aead_init v k n in
+              match uu___ with
               | (st, gf_key, tag_key) ->
                   let computed_tag = ghash c aad gf_key tag_key in
                   if

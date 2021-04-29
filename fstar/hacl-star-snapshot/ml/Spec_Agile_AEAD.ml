@@ -72,6 +72,8 @@ let (max_length : supported_alg -> Prims.int) =
           (Prims.of_int (16))
     | AES128_GCM -> (Prims.pow2 (Prims.of_int (32))) - Prims.int_one
     | AES256_GCM -> (Prims.pow2 (Prims.of_int (32))) - Prims.int_one
+let (cipher_max_length : supported_alg -> Prims.int) =
+  fun a -> (max_length a) + (tag_length a)
 type uint8 = FStar_UInt8.t
 type 'l lbytes = uint8 FStar_Seq_Base.seq
 type 'a kv = unit lbytes
@@ -83,13 +85,6 @@ let (cipher_length : supported_alg -> unit plain -> Prims.int) =
   fun a -> fun p -> (FStar_Seq_Base.length p) + (tag_length a)
 type ('a, 'p) encrypted = unit cipher
 type ('a, 'c) decrypted = unit plain
-let (vale_alg_of_alg : alg -> Vale_AES_AES_s.algorithm) =
-  fun a ->
-    match a with
-    | AES128_GCM -> Vale_AES_AES_s.AES_128
-    | AES256_GCM -> Vale_AES_AES_s.AES_256
-
-
 let (encrypt :
   supported_alg ->
     unit kv -> unit iv -> unit ad -> unit plain -> (unit, unit) encrypted)
@@ -102,39 +97,8 @@ let (encrypt :
             match a with
             | CHACHA20_POLY1305 ->
                 Spec_Chacha20Poly1305.aead_encrypt kv1 iv1 plain1 ad1
-            | AES128_GCM ->
-                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
-                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
-                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
-                let plain_nat =
-                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 plain1 in
-                let uu___ =
-                  Vale_AES_GCM_s.gcm_encrypt_LE (vale_alg_of_alg a) kv_nat
-                    iv_nat plain_nat ad_nat in
-                (match uu___ with
-                 | (cipher_nat, tag_nat) ->
-                     let cipher1 =
-                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 cipher_nat in
-                     let tag =
-                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 tag_nat in
-                     FStar_Seq_Base.append cipher1 tag)
-            | AES256_GCM ->
-                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
-                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
-                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
-                let plain_nat =
-                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 plain1 in
-                let uu___ =
-                  Vale_AES_GCM_s.gcm_encrypt_LE (vale_alg_of_alg a) kv_nat
-                    iv_nat plain_nat ad_nat in
-                (match uu___ with
-                 | (cipher_nat, tag_nat) ->
-                     let cipher1 =
-                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 cipher_nat in
-                     let tag =
-                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 tag_nat in
-                     FStar_Seq_Base.append cipher1 tag)
-
+            | AES128_GCM -> Spec_AES_GCM.aes128gcm_encrypt kv1 iv1 plain1 ad1
+            | AES256_GCM -> Spec_AES_GCM.aes256gcm_encrypt kv1 iv1 plain1 ad1
 let (decrypt :
   supported_alg ->
     unit kv ->
@@ -159,36 +123,6 @@ let (decrypt :
             | CHACHA20_POLY1305 ->
                 Spec_Chacha20Poly1305.aead_decrypt kv1 iv1 cipher2 tag ad1
             | AES128_GCM ->
-                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
-                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
-                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
-                let cipher_nat =
-                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 cipher2 in
-                let tag_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 tag in
-                let uu___ =
-                  Vale_AES_GCM_s.gcm_decrypt_LE (vale_alg_of_alg a) kv_nat
-                    iv_nat cipher_nat ad_nat tag_nat in
-                (match uu___ with
-                 | (plain_nat, success) ->
-                     let plain1 =
-                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 plain_nat in
-                     if success
-                     then FStar_Pervasives_Native.Some plain1
-                     else FStar_Pervasives_Native.None)
+                Spec_AES_GCM.aes128gcm_decrypt kv1 iv1 ad1 cipher2 tag
             | AES256_GCM ->
-                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
-                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
-                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
-                let cipher_nat =
-                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 cipher2 in
-                let tag_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 tag in
-                let uu___ =
-                  Vale_AES_GCM_s.gcm_decrypt_LE (vale_alg_of_alg a) kv_nat
-                    iv_nat cipher_nat ad_nat tag_nat in
-                (match uu___ with
-                 | (plain_nat, success) ->
-                     let plain1 =
-                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 plain_nat in
-                     if success
-                     then FStar_Pervasives_Native.Some plain1
-                     else FStar_Pervasives_Native.None)
+                Spec_AES_GCM.aes256gcm_decrypt kv1 iv1 ad1 cipher2 tag

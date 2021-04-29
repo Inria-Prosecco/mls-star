@@ -18,7 +18,6 @@ ALL_ML_FILES=\
 	ml/Spec_SHA2.ml \
 	ml/Spec_Agile_Hash.ml \
 	ml/Spec_Agile_HMAC.ml \
-	ml/Spec_HMAC_Test.ml \
 	ml/Vale_Lib_Seqs_s.ml \
 	ml/Vale_Def_Words_s.ml \
 	ml/Vale_Def_Words_Four_s.ml \
@@ -47,7 +46,6 @@ ALL_ML_FILES=\
 	ml/Vale_AES_GCM_helpers.ml \
 	ml/Vale_AES_GCTR.ml \
 	ml/Lib_Meta.ml \
-	ml/Spec_HMAC_DRBG_Test_Vectors.ml \
 	ml/Vale_Math_Poly2_Defs.ml \
 	ml/Spec_Frodo_Lemmas.ml \
 	ml/Spec_Matrix.ml \
@@ -55,7 +53,7 @@ ALL_ML_FILES=\
 	ml/Spec_SHA3_Constants.ml \
 	ml/Spec_GaloisField.ml \
 	ml/Spec_AES.ml \
-	ml/Spec_AES_Test.ml \
+	ml/Spec_GF128.ml \
 	ml/Spec_Frodo_Random.ml \
 	ml/Lib_Sequence_Lemmas.ml \
 	ml/Spec_SHA3.ml \
@@ -77,7 +75,6 @@ ALL_ML_FILES=\
 	ml/Spec_Poly1305.ml \
 	ml/Spec_Salsa20.ml \
 	ml/Spec_SecretBox.ml \
-	ml/Spec_SecretBox_Test.ml \
 	ml/Spec_Curve25519_Lemmas.ml \
 	ml/Vale_Math_Poly2_Lemmas.ml \
 	ml/Vale_Math_Poly2_Bits.ml \
@@ -87,35 +84,21 @@ ALL_ML_FILES=\
 	ml/Spec_RSAPSS.ml \
 	ml/Spec_Chacha20.ml \
 	ml/Spec_Chacha20Poly1305.ml \
-	ml/Spec_Chacha20Poly1305_Test.ml \
 	ml/Vale_AES_GCM_s.ml \
-	ml/Spec_Salsa20_Test.ml \
 	ml/Spec_Curve25519.ml \
 	ml/Spec_Ed25519.ml \
-	ml/Spec_Ed25519_Test.ml \
 	ml/Spec_HMAC_DRBG.ml \
-	ml/Spec_HMAC_DRBG_Test.ml \
-	ml/Spec_Curve25519_Test.ml \
 	ml/Vale_AES_OptPublic.ml \
 	ml/Spec_Agile_Cipher.ml \
 	ml/Spec_Cipher_Expansion.ml \
-	ml/Spec_Blake2_Test.ml \
 	ml/Spec_Box.ml \
-	ml/Spec_Box_Test.ml \
-	ml/Spec_SHA2_Test.ml \
 	ml/Spec_Hash_Lemmas.ml \
+	ml/Spec_AES_GCM.ml \
 	ml/Spec_Agile_AEAD.ml \
 	ml/Spec_Agile_DH.ml \
 	ml/Spec_Agile_HPKE.ml \
-	ml/Spec_HPKE_Test.ml \
 	ml/Spec_FFDHE.ml \
-	ml/Spec_Chacha20_Test.ml \
-	ml/Spec_HKDF_Test.ml \
-	ml/Spec_Hash_Test.ml \
-	ml/Spec_Poly1305_Test.ml \
-	ml/Spec_SHA3_Test.ml \
 	ml/Spec_Agile_CTR.ml \
-	ml/Spec_Frodo_Test.ml \
 	ml/Spec_GF128.ml
 
 TAC = $(shell which tac >/dev/null 2>&1 && echo "tac" || echo "tail -r")
