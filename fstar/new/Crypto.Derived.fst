@@ -21,10 +21,10 @@ let ciphersuite_from_nt cs =
   })
   | CS_mls10_128_dhkemp256_aes128gcm_sha256_p256 -> return ({
     kem_dh = DH.DH_P256;
-    kem_hash = admit();
-    aead = admit();
-    kdf_hash = admit();
-    signature = admit();
+    kem_hash = Hash.SHA2_256;
+    aead = AEAD.AES128_GCM;
+    kdf_hash = Hash.SHA2_256;
+    signature = P_256;
   })
   | CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> return ({
     kem_dh = DH.DH_Curve25519;

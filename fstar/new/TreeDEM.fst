@@ -56,9 +56,10 @@ let secret_init_to_joiner cs init_secret commit_secret =
   prk <-- kdf_extract cs init_secret commit_secret;
   derive_secret cs prk (string_to_bytes "joiner")
 
-val secret_joiner_to_welcome: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
-let secret_joiner_to_welcome cs joiner_secret =
-  derive_secret cs joiner_secret (string_to_bytes "welcome")
+val secret_joiner_to_welcome: cs:ciphersuite -> bytes -> bytes -> result (lbytes (kdf_length cs))
+let secret_joiner_to_welcome cs joiner_secret psk_secret =
+  prk <-- kdf_extract cs joiner_secret psk_secret;
+  derive_secret cs prk (string_to_bytes "welcome")
 
 val secret_joiner_to_epoch: cs:ciphersuite -> bytes -> bytes -> bytes -> result (lbytes (kdf_length cs))
 let secret_joiner_to_epoch cs joiner_secret psk_secret group_context =
@@ -100,6 +101,10 @@ let secret_epoch_to_resumption cs epoch_secret =
 val secret_epoch_to_init: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))
 let secret_epoch_to_init cs epoch_secret =
   derive_secret cs epoch_secret (string_to_bytes "init")
+
+val secret_external_to_keypair: cs:ciphersuite -> lbytes (kdf_length cs) -> result (hpke_private_key cs & hpke_public_key cs)
+let secret_external_to_keypair cs external_secret =
+  hpke_gen_keypair cs external_secret
 
 noeq type ratchet_state (cs:ciphersuite) = {
   rs_secret: lbytes (kdf_length cs);

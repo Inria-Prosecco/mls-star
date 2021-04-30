@@ -36,7 +36,7 @@ let gen_epoch_output cs group_id last_init_secret epoch inp =
   let group_context = gen_group_context group_id epoch inp in
   let last_init_secret = hex_string_to_bytes last_init_secret in
   let joiner_secret = extract_result (secret_init_to_joiner cs last_init_secret commit_secret) in
-  let welcome_secret = extract_result (secret_joiner_to_welcome cs joiner_secret) in
+  let welcome_secret = extract_result (secret_joiner_to_welcome cs joiner_secret psk_secret) in
   let epoch_secret = extract_result (secret_joiner_to_epoch cs joiner_secret psk_secret group_context) in
   let init_secret = extract_result (secret_epoch_to_init cs epoch_secret) in
   let sender_data_secret = extract_result (secret_epoch_to_sender_data cs epoch_secret) in
@@ -47,6 +47,7 @@ let gen_epoch_output cs group_id last_init_secret epoch inp =
   let confirmation_key = extract_result (secret_epoch_to_confirmation cs epoch_secret) in
   let membership_key = extract_result (secret_epoch_to_membership cs epoch_secret) in
   let resumption_secret = extract_result (secret_epoch_to_resumption cs epoch_secret) in
+  let external_pub = ps_hpke_public_key.serialize (snd (extract_result (secret_external_to_keypair cs external_secret))) in
 
   {
     group_context = bytes_to_hex_string group_context;
@@ -61,7 +62,7 @@ let gen_epoch_output cs group_id last_init_secret epoch inp =
     confirmation_key = bytes_to_hex_string confirmation_key;
     membership_key = bytes_to_hex_string membership_key;
     resumption_secret = bytes_to_hex_string resumption_secret;
-    external_pub = ""; //bytes_to_hex_string external_pub;
+    external_pub = bytes_to_hex_string external_pub;
   }
 
 val gen_list_epoch_output_aux: ciphersuite -> string -> string -> nat -> list keyschedule_test_epoch_input -> ML (list keyschedule_test_epoch_output)
@@ -100,8 +101,8 @@ let test_keyschedule_one t =
       let confirmation_key_ok = check_equal "confirmation_key" string_to_string e_out.confirmation_key o_out.confirmation_key in
       let membership_key_ok = check_equal "membership_key" string_to_string e_out.membership_key o_out.membership_key in
       let resumption_secret_ok = check_equal "resumption_secret" string_to_string e_out.resumption_secret o_out.resumption_secret in
-      //let external_pub_ok = check_equal "external_pub" string_to_string e_out.external_pub o_out.external_pub in
-      group_context_ok && joiner_secret_ok && welcome_secret_ok && init_secret_ok && sender_data_secret_ok && encryption_secret_ok && exporter_secret_ok && authentication_secret_ok && external_secret_ok && confirmation_key_ok && membership_key_ok && resumption_secret_ok //&& external_pub_ok
+      let external_pub_ok = check_equal "external_pub" string_to_string e_out.external_pub o_out.external_pub in
+      group_context_ok && joiner_secret_ok && welcome_secret_ok && init_secret_ok && sender_data_secret_ok && encryption_secret_ok && exporter_secret_ok && authentication_secret_ok && external_secret_ok && confirmation_key_ok && membership_key_ok && resumption_secret_ok && external_pub_ok
     ) expected_outputs our_outputs
   end
 
