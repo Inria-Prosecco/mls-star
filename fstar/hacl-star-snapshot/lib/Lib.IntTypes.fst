@@ -11,7 +11,7 @@ let pow2_127 _ = assert_norm (pow2 127 = 0x80000000000000000000000000000000)
 
 let bits_numbytes t = ()
 
-let sec_int_t t = pub_int_t t
+//let sec_int_t t = pub_int_t t
 
 let sec_int_v #t u = pub_int_v u
 

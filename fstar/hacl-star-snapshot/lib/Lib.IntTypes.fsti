@@ -130,7 +130,7 @@ type secrecy_level =
   | PUB
 
 inline_for_extraction
-val sec_int_t: inttype -> Type0
+let sec_int_t (t:inttype) = pub_int_t t
 
 val sec_int_v: #t:inttype -> sec_int_t t -> range_t t
 
