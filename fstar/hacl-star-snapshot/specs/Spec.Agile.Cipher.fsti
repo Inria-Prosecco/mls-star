@@ -24,25 +24,22 @@ type cipher_alg =
 
 /// The AES spec itself is agile; this is the same nested agility technique used
 /// for SHA2 vs. MD.
-///
-//let aes_alg_of_alg (a: cipher_alg { a = AES128 \/ a = AES256 }) =
-//  match a with
-//  | AES128 -> Spec.AES.AES128
-//  | AES256 -> Spec.AES.AES256
+let aes_alg_of_alg (a: cipher_alg { a = AES128 \/ a = AES256 }) =
+  match a with
+  | AES128 -> Spec.AES.AES128
+  | AES256 -> Spec.AES.AES256
 
 /// Trying to enforce conventions: lengths for nats (spec); len for machine
 /// integers (runtime).
 let key_length (a: cipher_alg): size_nat =
   match a with
-  | AES128 -> 16
-  | AES256 -> 32
-  | CHACHA20 -> 32
+  | AES128 | AES256 -> Spec.AES.key_size (aes_alg_of_alg a)
+  | CHACHA20 -> Spec.Chacha20.size_key
 
 let key (a: cipher_alg) =
   match a with
-  | AES128 -> lbytes 16
-  | AES256 -> lbytes 32
-  | CHACHA20 -> lbytes 32
+  | AES128 | AES256 -> Spec.AES.aes_key (aes_alg_of_alg a)
+  | CHACHA20 -> Spec.Chacha20.key
 
 let block_length (a:cipher_alg) =
   match a with
