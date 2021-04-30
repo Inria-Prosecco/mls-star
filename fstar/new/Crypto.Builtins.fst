@@ -4,13 +4,6 @@ open Spec.Agile.HKDF
 open FStar.Mul
 open Spec.Hash.Definitions
 
-open Spec.Agile.DH
-open Spec.Agile.AEAD
-open Spec.Agile.Hash
-open Spec.Agile.HKDF
-open HPKE
-open Spec.Ed25519
-
 open Lib.Sequence
 open Lib.ByteSequence
 open Lib.IntTypes
@@ -19,7 +12,7 @@ module DH = Spec.Agile.DH
 module AEAD = Spec.Agile.AEAD
 module Hash = Spec.Agile.Hash
 module HKDF = Spec.Agile.HKDF
-module HPKE = HPKE
+module HPKE = Spec.Agile.HPKE
 module Ed25519 = Spec.Ed25519
 
 (*** Ciphersuite ***)
@@ -107,7 +100,7 @@ let hpke_private_key_length cs = HPKE.size_dh_key (ciphersuite_to_hpke_ciphersui
 let hpke_kem_output_length cs = HPKE.size_dh_public (ciphersuite_to_hpke_ciphersuite cs)
 
 let hpke_gen_keypair cs ikm =
-  if not (Seq.length ikm <= max_length_dkp_ikm (cs.kem_hash)) then
+  if not (Seq.length ikm <= HPKE.max_length_dkp_ikm (cs.kem_hash)) then
     fail "hpke_gen_keypair: ikm too long"
   else (
     match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) ikm with
@@ -120,7 +113,7 @@ let hpke_encrypt cs pkR info ad plaintext rand =
   | None -> fail "hpke_encrypt: HPKE.derive_key_pair failed"
   | Some (skE, _) -> (
     let pkR = HPKE.deserialize_public_key (ciphersuite_to_hpke_ciphersuite cs) pkR in
-    if not (Seq.length info <= max_length_info cs.kdf_hash) then
+    if not (Seq.length info <= HPKE.max_length_info cs.kdf_hash) then
       fail "hpke_encrypt: info too long"
     else if not (Seq.length ad <= AEAD.max_length cs.aead) then
       fail "hpke_encrypt: ad too long"
@@ -134,12 +127,14 @@ let hpke_encrypt cs pkR info ad plaintext rand =
   )
 
 let hpke_decrypt cs enc skR info ad ciphertext =
-  if not (Seq.length info <= max_length_info cs.kdf_hash) then
+  if not (Seq.length info <= HPKE.max_length_info cs.kdf_hash) then
     fail "hpke_decrypt: info too long"
   else if not (Seq.length ad <= AEAD.max_length cs.aead) then
     fail "hpke_decrypt: ad too long"
   else if not (Seq.length ciphertext >= AEAD.tag_length cs.aead) then
-    fail "hpke_decrypt: plaintext too short"
+    fail "hpke_decrypt: ciphertext too short"
+  else if not (Seq.length ciphertext <= AEAD.cipher_max_length cs.aead) then
+    fail "hpke_decrypt: ciphertext too short"
   else (
     match HPKE.openBase (ciphersuite_to_hpke_ciphersuite cs) enc skR info ad ciphertext with
     | None -> fail "hpke_decrypt: HPKE.openBase failed"
@@ -190,7 +185,7 @@ let sign_verify cs pk msg signature =
 (*** AEAD ***)
 
 let aead_nonce_length cs =
-  size_aead_nonce (ciphersuite_to_hpke_ciphersuite cs)
+  HPKE.size_aead_nonce (ciphersuite_to_hpke_ciphersuite cs)
 
 let aead_key_length cs =
   AEAD.key_length (cs.aead)

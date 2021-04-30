@@ -10,7 +10,7 @@ include $(FSTAR_HOME)/ulib/ml/Makefile.include
 
 HACL_SNAPSHOT_DIR=../hacl-star-snapshot
 
-MLS_SPEC=TreeMath_Internal Lib_Result Parser Crypto_Builtins NetworkTypes Crypto_Derived
+MLS_SPEC=TreeMath_Internal TreeMath Lib_Result Parser Crypto_Builtins NetworkTypes Crypto_Derived Tree TreeDEM
 MLS_TEST=Test_Utils Test_TreeMath Test_KeySchedule Test
 MLS_SPEC_FILES=$(addprefix out/, $(addsuffix .ml, $(MLS_SPEC)))
 MLS_TEST_FILES=out/Test_Types.ml Test_Reader.ml $(addprefix out/, $(addsuffix .ml, $(MLS_TEST)))
@@ -20,7 +20,7 @@ MLS_TEST_FILES=out/Test_Types.ml Test_Reader.ml $(addprefix out/, $(addsuffix .m
 all: test
 
 #TODO: make it nicer and put the right dependencies
-test: out/Parser.ml out/Crypto_Builtins.ml out/Crypto_Derived.ml out/HPKE.ml Test.fst | bin out test_vectors
+test: out/Parser.ml out/Crypto_Builtins.ml out/Crypto_Derived.ml Test.fst | bin out test_vectors
 	$(FSTAR) $(FSTAR_DEFAULT_ARGS) --include $(HACL_SNAPSHOT_DIR)/lib --include $(HACL_SNAPSHOT_DIR)/specs --lax --odir out --codegen OCaml --extract '* -FStar -Spec' Test.fst
 	$(OCAMLOPT) -I out -I $(HACL_SNAPSHOT_DIR)/ml $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa $(MLS_SPEC_FILES) $(MLS_TEST_FILES) -o bin/test.exe
 	./bin/test.exe
@@ -33,9 +33,6 @@ out/Crypto_Builtins.ml: Crypto.Builtins.fsti Crypto.Builtins.fst | out
 
 out/Crypto_Derived.ml: Crypto.Derived.fsti Crypto.Derived.fst | out
 	$(FSTAR) $(FSTAR_DEFAULT_ARGS) --include $(HACL_SNAPSHOT_DIR)/lib --include $(HACL_SNAPSHOT_DIR)/specs --lax --odir out --codegen OCaml --extract 'Crypto.Derived' Crypto.Derived.fst
-
-out/HPKE.ml: HPKE.fsti HPKE.fst | out
-	$(FSTAR) $(FSTAR_DEFAULT_ARGS) --include $(HACL_SNAPSHOT_DIR)/lib --include $(HACL_SNAPSHOT_DIR)/specs --lax --odir out --codegen OCaml --extract 'HPKE' HPKE.fst
 
 out:
 	mkdir -p out
