@@ -23,6 +23,7 @@ val ciphersuite: Type0
 (*** Cryptographic randomness ***)
 
 val randomness: nat -> Type0
+val mk_randomness: #n:size_nat -> lbytes n -> randomness n
 val split_randomness: #n:nat -> randomness n -> len:nat{len <= n} -> (randomness (n-len) & randomness len)
 
 (*** KDF ***)

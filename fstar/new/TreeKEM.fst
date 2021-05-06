@@ -212,3 +212,65 @@ let rec root_secret #cs #l #n t leaf_index leaf_secret ad =
     let (child, sibling) = order_subtrees dir (left, right) in
     root_secret child next_leaf_index leaf_secret ad
   end
+
+val empty_path_secret_ciphertext: cs:ciphersuite -> path_secret_ciphertext cs
+let empty_path_secret_ciphertext cs = {
+    kem_output = Seq.create (hpke_kem_output_length cs) (u8 0);
+    ciphertext = bytes_empty;
+  }
+
+val mk_init_path_aux: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> update_index:leaf_index n -> result (pathkem cs l n update_index)
+let rec mk_init_path_aux #cs #l #n t update_index =
+  match t with
+  | TLeaf None -> fail "mk_init_path_aux: update leaf cannot be blanked"
+  | TLeaf (Some mi) -> return (PLeaf mi)
+  | TSkip _ t' ->
+    res <-- mk_init_path_aux t' update_index;
+    return (PSkip _ res)
+  | TNode None left right -> begin
+    fail "mk_init_path_aux: path from the root to update leaf cannot contain blank node"
+  end
+  | TNode (Some kp) left right -> begin
+    let (|update_dir, next_update_index|) = child_index l update_index in
+    let (child, sibling) = order_subtrees update_dir (left, right) in
+    let new_kp = { kp with
+      kp_path_secret_from = update_dir;
+    } in
+    next <-- mk_init_path_aux child next_update_index;
+    return (PNode new_kp next)
+  end
+
+val mk_init_path: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> my_index:leaf_index n -> update_index:leaf_index n{my_index <> update_index} -> path_secret:bytes -> ad:bytes -> result (pathkem cs l n update_index)
+let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
+  match t with
+  | TSkip _ t' ->
+    res <-- mk_init_path t' my_index update_index path_secret ad;
+    return (PSkip _ res)
+  | TNode None left right -> begin
+    fail "mk_init_path: path from the root to update leaf cannot contain blank node"
+  end
+  | TNode (Some kp) left right -> begin
+    let (|my_dir, next_my_index|) = child_index l my_index in
+    let (|update_dir, next_update_index|) = child_index l update_index in
+    let (child, sibling) = order_subtrees update_dir (left, right) in
+    if my_dir = update_dir then (
+      let new_kp = { kp with
+        kp_path_secret_from = update_dir;
+      } in
+      next <-- mk_init_path child next_my_index next_update_index path_secret ad;
+      return (PNode new_kp next)
+    ) else (
+      let resol_size = List.Tot.length (tree_resolution sibling) in
+      let resol_index = resolution_index sibling next_my_index in
+      let fake_randomness = mk_randomness (Seq.create (hpke_private_key_length cs) (u8 0)) in
+      my_pk <-- from_option "leaf at my_index is empty!" (leaf_public_key t my_index);
+      my_path_secret_ciphertext <-- hpke_encrypt cs my_pk bytes_empty ad path_secret fake_randomness;
+      let new_kp = { kp with
+        kp_path_secret_from = update_dir;
+        //TODO: put the {kem_output = ...; ...} in a separate function
+        kp_path_secret_ciphertext = Seq.seq_to_list (Seq.upd (Seq.create resol_size (empty_path_secret_ciphertext cs)) resol_index ({kem_output=fst my_path_secret_ciphertext; ciphertext = snd my_path_secret_ciphertext}));
+      } in
+      next <-- mk_init_path_aux child next_update_index;
+      return (PNode new_kp next)
+    )
+  end

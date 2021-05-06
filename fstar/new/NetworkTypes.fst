@@ -352,3 +352,119 @@ let ps_group_context =
     })
     (fun x -> (|x.gcn_group_id, (|x.gcn_epoch, (|x.gcn_tree_hash, (|x.gcn_confirmed_transcript_hash, x.gcn_extensions|)|)|)|))
 #pop-options
+
+noeq type parent_node_nt = {
+  pnn_public_key: hpke_public_key_nt;
+  pnn_parent_hash: blbytes ({min=0; max=255});
+  pnn_unmerged_leaves: blseq uint32 ps_u32 ({min=0; max=(pow2 32)-1});
+}
+
+val ps_parent_node: parser_serializer parent_node_nt
+let ps_parent_node =
+  isomorphism parent_node_nt
+    (
+      _ <-- ps_hpke_public_key;
+      _ <-- ps_bytes _;
+      ps_seq _ ps_u32
+    )
+    (fun (|public_key, (|parent_hash, unmerged_leaves|)|) -> {
+      pnn_public_key = public_key;
+      pnn_parent_hash = parent_hash;
+      pnn_unmerged_leaves = unmerged_leaves;
+    })
+    (fun x -> (|x.pnn_public_key, (|x.pnn_parent_hash, x.pnn_unmerged_leaves|)|))
+
+type node_type_nt =
+  | NT_reserved: node_type_nt
+  | NT_leaf: node_type_nt
+  | NT_parent: node_type_nt
+  | NT_unknown: n:nat{3 <= n /\ n <= 255} -> node_type_nt
+
+val ps_node_type: parser_serializer node_type_nt
+let ps_node_type =
+  isomorphism node_type_nt ps_u8
+    (fun x -> match v x with
+      | 0 -> NT_reserved
+      | 1 -> NT_leaf
+      | 2 -> NT_parent
+      | vx -> NT_unknown vx
+    )
+    (fun x -> match x with
+      | NT_reserved -> u8 0
+      | NT_leaf -> u8 1
+      | NT_parent -> u8 2
+      | NT_unknown n -> u8 n
+    )
+
+noeq type node_nt =
+  | N_reserved: node_nt
+  | N_leaf: key_package_nt -> node_nt
+  | N_parent: parent_node_nt -> node_nt
+  | N_unknown: n:nat{3 <= n /\ n <= 255} -> node_nt
+
+val ps_node: parser_serializer node_nt
+let ps_node =
+  let b_type (x:node_type_nt) =
+    match x with
+    | NT_leaf -> key_package_nt
+    | NT_parent -> parent_node_nt
+    | _ -> unit
+  in
+  isomorphism node_nt
+    (
+      bind #_ #b_type
+        ps_node_type (fun node_type ->
+          match node_type with
+          | NT_leaf -> ps_key_package
+          | NT_parent -> ps_parent_node
+          | _ -> ps_unit
+        )
+    )
+    (fun (|node_type, node|) ->
+      match node_type with
+      | NT_reserved -> N_reserved
+      | NT_leaf -> N_leaf node
+      | NT_parent -> N_parent node
+      | NT_unknown n -> N_unknown n
+    )
+    (fun x -> match x with
+      | N_reserved -> (|NT_reserved, ()|)
+      | N_leaf x -> (|NT_leaf, x|)
+      | N_parent x -> (|NT_parent, x|)
+      | N_unknown n -> (|NT_unknown n, ()|)
+    )
+
+type option_nt (a:Type) =
+  | None_nt: option_nt a
+  | Some_nt: a -> option_nt a
+  | Unknown_nt: n:nat{2 <= n /\ n <= 255} -> option_nt a
+
+val ps_option: #a:Type0 -> parser_serializer a -> parser_serializer (option_nt a)
+let ps_option #a ps_a =
+  let b_type (x:uint8): Type0 =
+    if v x = 1 then a else unit
+  in
+  isomorphism (option_nt a)
+    (
+      bind #_ #b_type ps_u8 (fun present ->
+        if v present = 1 then
+          ps_a
+        else
+          ps_unit
+      )
+    )
+  (fun (|present, x|) -> match v present with
+    | 0 -> None_nt
+    | 1 -> Some_nt x
+    | vpresent -> Unknown_nt vpresent
+  )
+  (fun x -> match x with
+    | None_nt -> (|u8 0, ()|)
+    | Some_nt x -> (|u8 1, x|)
+    | Unknown_nt n -> (|u8 n, ()|)
+  )
+
+type ratchet_tree_nt = blseq (option_nt node_nt) (ps_option ps_node) ({min=1; max=(pow2 32)-1})
+
+val ps_ratchet_tree: parser_serializer ratchet_tree_nt
+let ps_ratchet_tree = ps_seq _ (ps_option ps_node)

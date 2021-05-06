@@ -42,6 +42,7 @@ let ciphersuite_to_hpke_ciphersuite cs =
 
 
 type randomness (n:nat) = b:bytes{Seq.length b == n}
+let mk_randomness #n r = r
 let split_randomness #n e len =
     (Seq.slice e len n, Seq.slice e 0 len)
 

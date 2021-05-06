@@ -48,6 +48,23 @@ let parent x =
   let b = if is_left_node x then 0 else 1 in
   x + (pow2 k) - b*(pow2 (k+1))
 
+val log2_aux: x:nat -> k:nat -> Pure nat
+  (requires pow2 k <= x)
+  (ensures fun res -> pow2 res <= x /\ x < pow2 (res+1))
+  (decreases x-(pow2 k))
+let rec log2_aux x k =
+  if pow2 (k+1) <= x then
+    log2_aux x (k+1)
+  else
+    k
+
+val log2: x:pos -> Pure nat
+  (requires True)
+  (ensures fun res -> pow2 res <= x /\ x < pow2 (res+1))
+let log2 x =
+  log2_aux x 0
+
+
 //The proofs can be a little bit unstable
 #set-options "--quake 1/3"
 

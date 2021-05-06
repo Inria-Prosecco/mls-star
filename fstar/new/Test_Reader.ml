@@ -88,17 +88,56 @@ let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
   match json with
   | `Assoc [("cipher_suite", `Int cipher_suite); ("group_id", `String group_id); ("initial_init_secret", `String initial_init_secret); ("epochs", `List epochs)] ->
     {
-      cipher_suite = int_to_uint16 cipher_suite;
+      ks_cipher_suite = int_to_uint16 cipher_suite;
       group_id = group_id;
       initial_init_secret = initial_init_secret;
       epochs = List.map parse_keyschedule_test_epoch epochs;
     }
   | _ -> failwith "parse_keyschedule_test: incorrect test vector format"
 
+
+let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("ratchet_tree_before", `String ratchet_tree_before);
+    ("add_sender", `Int add_sender);
+    ("my_leaf_secret", `String my_leaf_secret);
+    ("my_key_package", `String my_key_package);
+    ("my_path_secret", `String my_path_secret);
+    ("update_sender", `Int update_sender);
+    ("update_path", `String update_path);
+    ("update_group_context", `String update_group_context);
+    ("tree_hash_before", `String tree_hash_before);
+    ("root_secret_after_add", `String root_secret_after_add);
+    ("root_secret_after_update", `String root_secret_after_update);
+    ("ratchet_tree_after", `String ratchet_tree_after);
+    ("tree_hash_after", `String tree_hash_after)
+  ] ->
+    ({
+      tk_cipher_suite = int_to_uint16 cipher_suite;
+      ratchet_tree_before = ratchet_tree_before;
+      add_sender = int_to_uint32 add_sender;
+      my_leaf_secret = my_leaf_secret;
+      my_key_package = my_key_package;
+      my_path_secret = my_path_secret;
+      update_sender = int_to_uint32 update_sender;
+      update_path = update_path;
+      update_group_context = update_group_context;
+      tree_hash_before = tree_hash_before;
+      root_secret_after_add = root_secret_after_add;
+      root_secret_after_update = root_secret_after_update;
+      ratchet_tree_after = ratchet_tree_after;
+      tree_hash_after = tree_hash_after;
+    })
+  | _ -> failwith "parse_treekem_test: incorrect test vector format"
+
+
 let get_filename (typ:test_type): string =
   match typ with
   | TreeMath -> "test_vectors/treemath.json"
   | KeySchedule -> "test_vectors/key_schedule.json"
+  | TreeKEM -> "test_vectors/treekem.json"
 
 let get_testsuite (typ:test_type): testsuite =
   let json = Yojson.Safe.from_channel (open_in (get_filename typ)) in
@@ -113,5 +152,11 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (KeySchedule_test (List.map parse_keyschedule_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | TreeKEM -> begin
+    match json with
+    | `List l ->
+      (TreeKEM_test (List.map parse_treekem_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end

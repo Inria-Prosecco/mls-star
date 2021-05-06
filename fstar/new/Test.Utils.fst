@@ -153,6 +153,12 @@ let rec hex_string_to_bytes s =
     Seq.append (Seq.create 1 b0) bs
   )
 
+val extract_option: #a:Type -> string -> option a -> ML a
+let extract_option s x =
+  match x with
+  | Some y -> y
+  | None -> failwith s
+
 val extract_result: #a:Type -> result a -> ML a
 let extract_result x =
   match x with
@@ -169,3 +175,16 @@ let uint16_to_ciphersuite x =
   match o_cs_nt with
   | None -> failwith "couldn't parse ciphersuite"
   | Some cs_nt -> ciphersuite_from_nt cs_nt
+
+val find_first: #a:Type -> (a -> bool) -> l:list a -> option (n:nat{n < List.Tot.length l})
+let rec find_first #a p l =
+  match l with
+  | [] -> None
+  | h::t ->
+    if p h then (
+      Some 0
+    ) else (
+      match find_first p t with
+      | Some v -> Some (v+1)
+      | None -> None
+    )

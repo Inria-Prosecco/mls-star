@@ -36,22 +36,6 @@ let real_right n x =
   else
     None
 
-val log2_aux: x:nat -> k:nat -> Pure nat
-  (requires pow2 k <= x)
-  (ensures fun res -> pow2 res <= x /\ x < pow2 (res+1))
-  (decreases x-(pow2 k))
-let rec log2_aux x k =
-  if pow2 (k+1) <= x then
-    log2_aux x (k+1)
-  else
-    k
-
-val log2: x:pos -> Pure nat
-  (requires True)
-  (ensures fun res -> pow2 res <= x /\ x < pow2 (res+1))
-let log2 x =
-  log2_aux x 0
-
 val go_up: n:pos -> x:nat -> Tot (option nat) (decreases log2 n - level x)
 let rec go_up n x =
   if x < n then (

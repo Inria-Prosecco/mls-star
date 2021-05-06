@@ -81,20 +81,22 @@ let encrypted_path_secret_tk_to_nt (#cs:ciphersuite) (x:TK.path_secret_ciphertex
     })
 
 
-val treekem_to_treesync: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> TS.credential_t -> TK.pathkem cs l n i -> result (TS.pathsync l n i)
-let rec treekem_to_treesync #l #cs cred p =
+val treekem_to_treesync: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> TS.leaf_package_t -> TK.pathkem cs l n i -> result (TS.pathsync l n i)
+let rec treekem_to_treesync #l #cs old_leaf_package p =
   match p with
   | PLeaf mi ->
     return (PLeaf (Some ({
-      TS.lp_credential = cred;
+      TS.lp_credential = old_leaf_package.TS.lp_credential;
       TS.lp_version = mi.TK.mi_version;
       TS.lp_content = secret_to_pub (ps_hpke_public_key.serialize mi.TK.mi_public_key);
+      TS.lp_extensions = old_leaf_package.TS.lp_extensions; //TODO probably the parent hash should change?
+      TS.lp_signature = old_leaf_package.TS.lp_signature; //TODO the signature definitely has to change
     })))
   | PSkip _ p' ->
-    result <-- treekem_to_treesync cred p';
+    result <-- treekem_to_treesync old_leaf_package p';
     return (PSkip _ result)
   | PNode kp p_next ->
-    next <-- treekem_to_treesync cred p_next;
+    next <-- treekem_to_treesync old_leaf_package p_next;
     ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.TK.kp_path_secret_ciphertext;
     if not (byte_length ps_hpke_ciphertext ciphertexts < pow2 16) then
       fail "treekem_to_treesync: ciphertexts too long"
@@ -112,3 +114,78 @@ let rec treekem_to_treesync #l #cs cred p =
       }) in
       return (PNode (Some np) next)
     end
+
+(*** ratchet_tree extension (11.3) ***)
+
+val key_package_to_treesync: key_package_nt -> result TS.leaf_package_t
+let key_package_to_treesync kp =
+  match kp.kpn_credential with
+  | C_basic cred ->
+    return ({
+      TS.lp_credential = {
+        TS.cred_version = 0;
+        TS.cred_identity = cred.bcn_identity;
+        TS.cred_signature_key = cred.bcn_signature_key;
+      };
+      TS.lp_version = 0;
+      TS.lp_content = ps_hpke_public_key.serialize kp.kpn_public_key;
+      TS.lp_extensions = (ps_seq _ ps_extension).serialize (kp.kpn_extensions);
+      TS.lp_signature = kp.kpn_signature;
+    })
+  | _ -> fail "key_package_to_treesync: credential type not supported"
+
+val dumb_credential: TS.credential_t
+let dumb_credential = {
+  TS.cred_version = 0;
+  TS.cred_identity = Seq.empty;
+  TS.cred_signature_key = Seq.empty;
+}
+
+val ratchet_tree_l_n: nodes:ratchet_tree_nt -> result (l:nat & n:tree_size l{Seq.length nodes == n+n-1})
+let ratchet_tree_l_n nodes =
+  let n_nodes = Seq.length nodes in
+  if n_nodes%2 = 0 then
+    fail "ratchet_tree_l_n: length must be odd"
+  else
+    let n = (n_nodes+1)/2 in
+    let l = (TreeMath.Internal.log2 n) + 1 in
+    return (|l, n|)
+
+val ratchet_tree_to_treesync: l:nat -> n:tree_size l -> nodes:Seq.seq (option_nt node_nt){Seq.length nodes = (n+n-1)} -> result (TS.treesync l n)
+let rec ratchet_tree_to_treesync l n nodes =
+  if l = 0 then (
+    assert (Seq.length nodes == 1);
+    match (Seq.index nodes 0) with
+    | Some_nt (N_leaf kp) ->
+      kp <-- key_package_to_treesync kp;
+      return (TLeaf (dumb_credential, Some kp))
+    | Some_nt _ -> fail "ratchet_tree_to_treesync_aux: node must be a leaf!"
+    | None_nt ->
+      return (TLeaf (dumb_credential, None))
+    | _ -> fail "ratchet_tree_to_treesync_aux: option is invalid"
+  ) else if n <= pow2 (l-1) then (
+    res <-- ratchet_tree_to_treesync (l-1) n nodes;
+    return (TSkip _ res)
+  ) else (
+    let left_nodes = Seq.slice nodes 0 ((pow2 l) - 1) in
+    let my_node = Seq.index nodes ((pow2 l) - 1) in
+    let right_nodes = Seq.slice nodes (pow2 l) (n+n-1) in
+    left_res <-- ratchet_tree_to_treesync (l-1) (pow2 (l-1)) left_nodes;
+    right_res <-- ratchet_tree_to_treesync (l-1) (n-pow2 (l-1)) right_nodes;
+    match my_node with
+    | Some_nt (N_parent pn) ->
+      let np = {
+        TS.np_version = 0;
+        TS.np_content_dir = Left; //We don't care I guess
+        TS.np_unmerged_leafs = List.Tot.map (fun x -> let open Lib.IntTypes in (v x <: nat)) (Seq.seq_to_list pn.pnn_unmerged_leaves);
+        TS.np_content = ps_update_path_node.serialize ({
+          upnn_public_key = pn.pnn_public_key;
+          upnn_encrypted_path_secret = Seq.empty;
+        });
+      } in
+      return (TNode (dumb_credential, Some np) left_res right_res)
+    | Some_nt _ -> fail "ratchet_tree_to_treesync_aux: node must be a parent!"
+    | None_nt ->
+      return (TNode (dumb_credential, None) left_res right_res)
+    | _ -> fail "ratchet_tree_to_treesync_aux: option is invalid"
+  )

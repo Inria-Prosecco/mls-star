@@ -1,7 +1,7 @@
 module Test.Types
 
-module U32 = FStar.UInt32
 module U16 = FStar.UInt16
+module U32 = FStar.UInt32
 
 type treemath_test = {
   n_leaves: U32.t;
@@ -40,16 +40,38 @@ type keyschedule_test_epoch_output = {
 }
 
 type keyschedule_test = {
-  cipher_suite: U16.t;
+  ks_cipher_suite: U16.t;
   group_id: string;
   initial_init_secret: string;
   epochs: list (keyschedule_test_epoch_input & keyschedule_test_epoch_output);
 }
 
+type treekem_test = {
+  tk_cipher_suite: U16.t;
+  ratchet_tree_before: string;
+
+  add_sender: U32.t;
+  my_leaf_secret: string;
+  my_key_package: string;
+  my_path_secret: string;
+
+  update_sender: U32.t;
+  update_path: string;
+  update_group_context: string;
+
+  tree_hash_before: string;
+  root_secret_after_add: string;
+  root_secret_after_update: string;
+  ratchet_tree_after: string;
+  tree_hash_after: string;
+}
+
 type test_type =
   | TreeMath
   | KeySchedule
+  | TreeKEM
 
 type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
+  | TreeKEM_test: list treekem_test -> testsuite

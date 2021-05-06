@@ -23,12 +23,9 @@ let dec_key_t = bytes_t
 type principal_t = string
 
 type credential_t = {
-  cred_name: principal_t;
-  cred_issuer: principal_t;
   cred_version: nat;
-  cred_identity_key: verif_key_t;
-  cred_signature: pub_bytes_t;
-  cred_enc_key: enc_key_t;
+  cred_identity: pub_bytes;
+  cred_signature_key: verif_key_t;
 }
 
 assume val validate_credential: credential_t -> bool
@@ -44,12 +41,16 @@ type leaf_package_t = {
   lp_credential: credential_t;
   lp_version: nat;
   lp_content: pub_bytes_t;
+  lp_extensions: pub_bytes_t;
+  lp_signature: pub_bytes_t;
 }
 
 let mk_initial_leaf_package (c:credential_t) =
   { lp_credential = c;
     lp_version = 0;
-    lp_content = pub_bytes_empty;}
+    lp_content = pub_bytes_empty;
+    lp_extensions = pub_bytes_empty;
+    lp_signature = admit();}
 
 
 (** Definition of a Node package *)
