@@ -1,13 +1,13 @@
 module TreeKEM
 
 open Crypto
-open NetworkTypes
-open Parser
 open Utils
 open Tree
 open Lib.ByteSequence
 open Lib.IntTypes
 open Lib.Result
+
+#set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 
 let todo_bytes = bytes_empty
 
