@@ -59,6 +59,7 @@ type node_package_t = {
   np_version: nat;
   np_content_dir: direction;
   np_unmerged_leafs: list nat;
+  np_parent_hash: pub_bytes_t;
   np_content: pub_bytes_t;
 }
 

@@ -10,7 +10,7 @@ include $(FSTAR_HOME)/ulib/ml/Makefile.include
 
 HACL_SNAPSHOT_DIR=../hacl-star-snapshot
 
-MLS_SPEC=Utils TreeMath_Internal TreeMath Lib_Result Parser Crypto_Builtins NetworkTypes Crypto_Derived Tree TreeDEM Lib_Array TreeSync TreeKEM TreeSyncTreeKEMBinder
+MLS_SPEC=Utils TreeMath_Internal TreeMath Lib_Result Parser Crypto_Builtins NetworkTypes Crypto_Derived Tree TreeDEM Lib_Array TreeSync TreeKEM TreeSyncTreeKEMBinder TreeSync_Hash
 MLS_TEST=Test_Utils Test_TreeMath Test_KeySchedule Test_TreeKEM Test
 MLS_SPEC_FILES=$(addprefix out/, $(addsuffix .ml, $(MLS_SPEC)))
 MLS_TEST_FILES=out/Test_Types.ml Test_Reader.ml $(addprefix out/, $(addsuffix .ml, $(MLS_TEST)))

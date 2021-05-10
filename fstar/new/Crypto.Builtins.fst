@@ -1,8 +1,6 @@
 module Crypto.Builtins
 
-open Spec.Agile.HKDF
 open FStar.Mul
-open Spec.Hash.Definitions
 
 open Lib.Sequence
 open Lib.ByteSequence
@@ -46,53 +44,64 @@ let mk_randomness #n r = r
 let split_randomness #n e len =
     (Seq.slice e len n, Seq.slice e 0 len)
 
+(*** Hash ***)
+
+let hash_length cs =
+  Hash.hash_length cs.kdf_hash
+
+let hash_hash cs buf =
+  if not (Seq.length buf <= Hash.max_input_length (cs.kdf_hash)) then
+    fail "aead_decrypt: ad too long"
+  else
+    return (Hash.hash cs.kdf_hash buf)
+
 (*** KDF ***)
 
-val max_input_length_bound: a:Hash.hash_alg -> Lemma (pow2 61 - 1 <= max_input_length a)
+val max_input_length_bound: a:Hash.hash_alg -> Lemma (pow2 61 - 1 <= Hash.max_input_length a)
 let max_input_length_bound a =
   FStar.Math.Lemmas.pow2_le_compat 128 61;
   FStar.Math.Lemmas.pow2_le_compat 125 61;
   FStar.Math.Lemmas.pow2_le_compat 64 61
 
-let kdf_length cs = hash_length cs.kdf_hash
+let kdf_length cs = Hash.hash_length cs.kdf_hash
 
 let kdf_extract_tot cs key data =
-  assert (block_length (cs.kdf_hash) <= 128);
+  assert (Hash.block_length (cs.kdf_hash) <= 128);
   max_input_length_bound (cs.kdf_hash);
   assert_norm (pow2 60 < pow2 61 - 129); //==> Seq.length data + block_length a <= max_input_length a
   assert_norm (pow2 31 < pow2 32 - 128); //==> keysized (Seq.length key)
   assert_norm (pow2 31 < pow2 61 - 1); //==> keysized (Seq.length key)
-  extract (cs.kdf_hash) key data
+  HKDF.extract (cs.kdf_hash) key data
 
 let kdf_expand_tot cs prk info len =
-  assert(16 <= hash_length cs.kdf_hash);
-  assert (hash_length cs.kdf_hash <= 64);
-  assert (block_length cs.kdf_hash <= 128);
+  assert(16 <= Hash.hash_length cs.kdf_hash);
+  assert (Hash.hash_length cs.kdf_hash <= 64);
+  assert (Hash.block_length cs.kdf_hash <= 128);
   max_input_length_bound cs.kdf_hash;
   assert_norm(pow2 60 < pow2 61 - 194); //==> hash_length a + Seq.length info + 1 + block_length a <= max_input_length a
   assert_norm(pow2 31 < pow2 32 - 128); //==> keysized (Seq.length prk)
   assert_norm(pow2 31 < pow2 61 - 1); //==> keysized (Seq.length prk)
-  expand cs.kdf_hash prk info len
+  HKDF.expand cs.kdf_hash prk info len
 
 let kdf_extract cs key data =
-  if not (Seq.length key <= max_input_length cs.kdf_hash && Seq.length key + block_length cs.kdf_hash < pow2 32) then
+  if not (Seq.length key <= Hash.max_input_length cs.kdf_hash && Seq.length key + Hash.block_length cs.kdf_hash < pow2 32) then
     fail "kdf_extract_dyn: bad key size"
-  else if not (Seq.length data + block_length (cs.kdf_hash) <= max_input_length (cs.kdf_hash)) then
+  else if not (Seq.length data + Hash.block_length (cs.kdf_hash) <= Hash.max_input_length (cs.kdf_hash)) then
     fail "kdf_extract_dyn: bad data size"
   else
-    return (extract (cs.kdf_hash) key data)
+    return (HKDF.extract (cs.kdf_hash) key data)
 
 let kdf_expand cs prk info len =
-  if not (hash_length cs.kdf_hash <= Seq.length prk) then
+  if not (Hash.hash_length cs.kdf_hash <= Seq.length prk) then
     fail "kdf_expand_dyn: prk too small"
-  else if not (Seq.length prk <= max_input_length cs.kdf_hash && Seq.length prk + block_length cs.kdf_hash < pow2 32) then
+  else if not (Seq.length prk <= Hash.max_input_length cs.kdf_hash && Seq.length prk + Hash.block_length cs.kdf_hash < pow2 32) then
     fail "kdf_expand_dyn: prk too long"
-  else if not (hash_length cs.kdf_hash + Seq.length info + 1 + block_length cs.kdf_hash <= max_input_length cs.kdf_hash) then
+  else if not (Hash.hash_length cs.kdf_hash + Seq.length info + 1 + Hash.block_length cs.kdf_hash <= Hash.max_input_length cs.kdf_hash) then
     fail "kdf_expand_dyn: info too long"
-  else if not (len <= 255 * hash_length cs.kdf_hash) then
+  else if not (len <= 255 * Hash.hash_length cs.kdf_hash) then
     fail "kdf_expand_dyn: len too high"
   else
-    return (expand cs.kdf_hash prk info len)
+    return (HKDF.expand cs.kdf_hash prk info len)
 
 (*** HPKE ***)
 

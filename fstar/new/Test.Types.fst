@@ -46,8 +46,7 @@ type keyschedule_test = {
   epochs: list (keyschedule_test_epoch_input & keyschedule_test_epoch_output);
 }
 
-type treekem_test = {
-  tk_cipher_suite: U16.t;
+type treekem_test_input = {
   ratchet_tree_before: string;
 
   add_sender: U32.t;
@@ -58,12 +57,20 @@ type treekem_test = {
   update_sender: U32.t;
   update_path: string;
   update_group_context: string;
+}
 
+type treekem_test_output = {
   tree_hash_before: string;
   root_secret_after_add: string;
   root_secret_after_update: string;
   ratchet_tree_after: string;
   tree_hash_after: string;
+}
+
+type treekem_test = {
+  tk_cipher_suite: U16.t;
+  tk_input: treekem_test_input;
+  tk_output: treekem_test_output;
 }
 
 type test_type =

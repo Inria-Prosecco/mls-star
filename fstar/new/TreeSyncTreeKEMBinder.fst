@@ -30,16 +30,39 @@ let encrypted_path_secret_nt_to_tk (cs:ciphersuite) (x:hpke_ciphertext_nt): resu
       TK.ciphertext = x.hcn_ciphertext;
     })
 
+noeq type leaf_package_content_nt = {
+  lpc_public_key: hpke_public_key_nt;
+}
+
+val ps_leaf_package_content: parser_serializer leaf_package_content_nt
+let ps_leaf_package_content =
+  isomorphism leaf_package_content_nt
+    ps_hpke_public_key
+    (fun public_key -> ({lpc_public_key = public_key}))
+    (fun x -> x.lpc_public_key)
+
+noeq type node_package_content_nt = {
+  npc_public_key: hpke_public_key_nt;
+  npc_encrypted_path_secret: blseq hpke_ciphertext_nt ps_hpke_ciphertext ({min=0; max=(pow2 32)-1});
+}
+
+val ps_node_package_content: parser_serializer node_package_content_nt
+let ps_node_package_content =
+  isomorphism node_package_content_nt
+    ps_update_path_node
+    (fun x -> ({npc_public_key = x.upnn_public_key; npc_encrypted_path_secret = x.upnn_encrypted_path_secret}))
+    (fun x -> ({upnn_public_key = x.npc_public_key; upnn_encrypted_path_secret = x.npc_encrypted_path_secret}))
+
 val treesync_to_treekem: #l:nat -> #n:tree_size l -> cs:ciphersuite -> TS.treesync l n -> result (TK.treekem cs l n)
 let rec treesync_to_treekem #l #n cs t =
   match t with
   | TLeaf (_, None) ->
     return (TLeaf None)
   | TLeaf (_, (Some lp)) ->
-    pk <-- from_option "treesync_to_treekem: Couldn't parse HPKEPublicKey"
-      ((ps_to_pse ps_hpke_public_key).parse_exact (pub_to_secret lp.TS.lp_content));
-    if Seq.length pk = hpke_public_key_length cs then
-      return (TLeaf (Some ({TK.mi_public_key = pk; TK.mi_version = lp.TS.lp_version})))
+    lpc <-- from_option "treesync_to_treekem: Couldn't parse leaf content"
+      ((ps_to_pse ps_leaf_package_content).parse_exact (pub_to_secret lp.TS.lp_content));
+    if Seq.length lpc.lpc_public_key = hpke_public_key_length cs then
+      return (TLeaf (Some ({TK.mi_public_key = lpc.lpc_public_key; TK.mi_version = lp.TS.lp_version})))
     else
       fail "treesync_to_treekem: public key has wrong length"
   | TSkip _ t' ->
@@ -52,14 +75,14 @@ let rec treesync_to_treekem #l #n cs t =
     | None ->
       return (TNode None tk_left tk_right)
     | Some np ->
-      content <-- from_option "treesync_to_treekem: Couldn't parse UpdatePathNode"
-        ((ps_to_pse ps_update_path_node).parse_exact (pub_to_secret np.TS.np_content));
-      path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk cs) (Seq.seq_to_list content.upnn_encrypted_path_secret);
-      if not (Seq.length content.upnn_public_key = hpke_public_key_length cs) then
+      content <-- from_option "treesync_to_treekem: Couldn't parse node content"
+        ((ps_to_pse ps_node_package_content).parse_exact (pub_to_secret np.TS.np_content));
+      path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk cs) (Seq.seq_to_list content.npc_encrypted_path_secret);
+      if not (Seq.length content.npc_public_key = hpke_public_key_length cs) then
         fail ""
       else (
         let kp: TK.key_package cs = {
-          TK.kp_public_key = content.upnn_public_key;
+          TK.kp_public_key = content.npc_public_key;
           TK.kp_version = np.TS.np_version;
           TK.kp_unmerged_leafs = np.TS.np_unmerged_leafs;
           TK.kp_path_secret_from = (np.TS.np_content_dir);
@@ -88,7 +111,9 @@ let rec treekem_to_treesync #l #cs old_leaf_package p =
     return (PLeaf (Some ({
       TS.lp_credential = old_leaf_package.TS.lp_credential;
       TS.lp_version = mi.TK.mi_version;
-      TS.lp_content = secret_to_pub (ps_hpke_public_key.serialize mi.TK.mi_public_key);
+      TS.lp_content = secret_to_pub (ps_leaf_package_content.serialize ({
+        lpc_public_key = mi.TK.mi_public_key;
+      }));
       TS.lp_extensions = old_leaf_package.TS.lp_extensions; //TODO probably the parent hash should change?
       TS.lp_signature = old_leaf_package.TS.lp_signature; //TODO the signature definitely has to change
     })))
@@ -102,14 +127,15 @@ let rec treekem_to_treesync #l #cs old_leaf_package p =
       fail "treekem_to_treesync: ciphertexts too long"
     else begin
       Seq.lemma_list_seq_bij ciphertexts;
-      let np_content = ps_update_path_node.serialize ({
-        upnn_public_key = kp.TK.kp_public_key;
-        upnn_encrypted_path_secret = Seq.seq_of_list ciphertexts;
+      let np_content = ps_node_package_content.serialize ({
+        npc_public_key = kp.TK.kp_public_key;
+        npc_encrypted_path_secret = Seq.seq_of_list ciphertexts;
       }) in
       let np = ({
         TS.np_version = kp.TK.kp_version;
         TS.np_content_dir = kp.TK.kp_path_secret_from;
         TS.np_unmerged_leafs = kp.TK.kp_unmerged_leafs;
+        TS.np_parent_hash = bytes_empty; //The parent hash needs to be recomputed
         TS.np_content = secret_to_pub np_content;
       }) in
       return (PNode (Some np) next)
@@ -128,11 +154,54 @@ let key_package_to_treesync kp =
         TS.cred_signature_key = cred.bcn_signature_key;
       };
       TS.lp_version = 0;
-      TS.lp_content = ps_hpke_public_key.serialize kp.kpn_public_key;
+      TS.lp_content = ps_leaf_package_content.serialize ({lpc_public_key = kp.kpn_public_key});
       TS.lp_extensions = (ps_seq _ ps_extension).serialize (kp.kpn_extensions);
       TS.lp_signature = kp.kpn_signature;
     })
   | _ -> fail "key_package_to_treesync: credential type not supported"
+
+val treesync_to_keypackage: ciphersuite -> TS.leaf_package_t -> result key_package_nt
+let treesync_to_keypackage cs lp =
+  if not (Seq.length lp.TS.lp_credential.TS.cred_identity < pow2 16) then
+    fail "treesync_to_keypackage: cred_identity too long"
+  else if not (Seq.length lp.TS.lp_credential.TS.cred_signature_key < pow2 16) then
+    fail "treesync_to_keypackage: cred_signature_key too long"
+  else if not (Seq.length lp.TS.lp_signature < pow2 16) then
+    fail "treesync_to_keypackage: signature too long"
+  else (
+    leaf_content <-- from_option "treesync_to_keypackage: can't parse leaf content" ((ps_to_pse ps_leaf_package_content).parse_exact lp.TS.lp_content);
+    extensions <-- from_option "treesync_to_keypackage: can't parse extensions" ((ps_to_pse (ps_seq _ ps_extension)).parse_exact lp.TS.lp_extensions);
+    cipher_suite <-- ciphersuite_to_nt cs;
+    return ({
+      kpn_version = PV_mls10;
+      kpn_cipher_suite = cipher_suite;
+      kpn_public_key = leaf_content.lpc_public_key;
+      kpn_credential = C_basic ({
+        bcn_identity = lp.TS.lp_credential.TS.cred_identity;
+        bcn_signature_scheme = SA_ed25519; //TODO
+        bcn_signature_key = lp.TS.lp_credential.TS.cred_signature_key;
+      });
+      kpn_extensions = extensions;
+      kpn_signature = lp.TS.lp_signature;
+    })
+  )
+
+val treesync_to_parent_node: TS.node_package_t -> result parent_node_nt
+let treesync_to_parent_node np =
+  unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (Lib.IntTypes.u32 x) else fail "") np.TS.np_unmerged_leafs;
+  if not (Seq.length np.TS.np_parent_hash < 256) then
+    fail "treesync_to_parent_node: parent_hash too long"
+  else if not ((byte_length ps_u32 unmerged_leaves) < pow2 32) then
+    fail "treesync_to_parent_node: unmerged_leaves too long"
+  else (
+    Seq.lemma_list_seq_bij unmerged_leaves;
+    node_content <-- from_option "treesync_to_parent_node: can't parse np_content" ((ps_to_pse ps_node_package_content).parse_exact np.TS.np_content);
+    return ({
+      pnn_public_key = node_content.npc_public_key;
+      pnn_parent_hash = np.TS.np_parent_hash;
+      pnn_unmerged_leaves = Seq.seq_of_list unmerged_leaves;
+    })
+  )
 
 val dumb_credential: TS.credential_t
 let dumb_credential = {
@@ -178,9 +247,10 @@ let rec ratchet_tree_to_treesync l n nodes =
         TS.np_version = 0;
         TS.np_content_dir = Left; //We don't care I guess
         TS.np_unmerged_leafs = List.Tot.map (fun x -> let open Lib.IntTypes in (v x <: nat)) (Seq.seq_to_list pn.pnn_unmerged_leaves);
-        TS.np_content = ps_update_path_node.serialize ({
-          upnn_public_key = pn.pnn_public_key;
-          upnn_encrypted_path_secret = Seq.empty;
+        TS.np_parent_hash = pn.pnn_parent_hash;
+        TS.np_content = ps_node_package_content.serialize ({
+          npc_public_key = pn.pnn_public_key;
+          npc_encrypted_path_secret = Seq.empty;
         });
       } in
       return (TNode (dumb_credential, Some np) left_res right_res)

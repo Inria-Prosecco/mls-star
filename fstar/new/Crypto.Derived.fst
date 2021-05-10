@@ -38,6 +38,34 @@ let ciphersuite_from_nt cs =
   | CS_mls10_256_dhkemx448_chacha20poly1305_sha512_ed448 -> fail "ciphersuite_from_nt: ciphersuite not available"
   | _ -> fail "ciphersuite_from_nt: bad ciphersuite"
 
+let ciphersuite_to_nt cs =
+  match cs.kem_dh, cs.kem_hash, cs.aead, cs.kdf_hash, cs.signature with
+  | DH.DH_Curve25519, Hash.SHA2_256, AEAD.AES128_GCM, Hash.SHA2_256, Ed_25519 -> return CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519
+  | DH.DH_P256, Hash.SHA2_256, AEAD.AES128_GCM, Hash.SHA2_256, P_256 -> return CS_mls10_128_dhkemp256_aes128gcm_sha256_p256
+  | DH.DH_Curve25519, Hash.SHA2_256, AEAD.CHACHA20_POLY1305, Hash.SHA2_256, Ed_25519 -> return CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+  | _ -> fail "ciphersuite_to_nt: invalid ciphersuite"
+
+//Inversion lemmas to make sure there is no error in the functions above
+val ciphersuite_from_to_lemma: cs:ciphersuite -> Lemma (
+  match ciphersuite_to_nt cs with
+  | Success cs' -> (
+     match ciphersuite_from_nt cs' with
+     | Success cs'' -> cs == cs''
+     | Error _ -> True
+  )
+  | Error _ -> True)
+let ciphersuite_from_to_lemma cs = ()
+
+val ciphersuite_to_from_lemma: cs:cipher_suite_nt -> Lemma (
+  match ciphersuite_from_nt cs with
+  | Success cs' -> (
+     match ciphersuite_to_nt cs' with
+     | Success cs'' -> cs == cs''
+     | Error _ -> True
+  )
+  | Error _ -> True)
+let ciphersuite_to_from_lemma cs = ()
+
 noeq type kdf_label_nt = {
   kln_length: uint16;
   kln_label: blbytes ({min=7; max=255});

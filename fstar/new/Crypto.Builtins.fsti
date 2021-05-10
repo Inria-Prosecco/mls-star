@@ -1,16 +1,8 @@
 module Crypto.Builtins
 
-open Spec.Agile.DH
-open Spec.Agile.AEAD
-open Spec.Agile.Hash
-
 open Lib.Result
 open Lib.ByteSequence
 open Lib.IntTypes
-
-module DH = Spec.Agile.DH
-module AEAD = Spec.Agile.AEAD
-module Hash = Spec.Agile.Hash
 
 (*** Ciphersuite ***)
 
@@ -25,6 +17,11 @@ val ciphersuite: Type0
 val randomness: nat -> Type0
 val mk_randomness: #n:size_nat -> lbytes n -> randomness n
 val split_randomness: #n:nat -> randomness n -> len:nat{len <= n} -> (randomness (n-len) & randomness len)
+
+(*** Hash ***)
+
+val hash_length: ciphersuite -> n:size_nat{n < 256}
+val hash_hash: cs:ciphersuite -> bytes -> result (lbytes (hash_length cs))
 
 (*** KDF ***)
 

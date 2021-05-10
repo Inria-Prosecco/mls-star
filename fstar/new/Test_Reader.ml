@@ -116,19 +116,23 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
   ] ->
     ({
       tk_cipher_suite = int_to_uint16 cipher_suite;
-      ratchet_tree_before = ratchet_tree_before;
-      add_sender = int_to_uint32 add_sender;
-      my_leaf_secret = my_leaf_secret;
-      my_key_package = my_key_package;
-      my_path_secret = my_path_secret;
-      update_sender = int_to_uint32 update_sender;
-      update_path = update_path;
-      update_group_context = update_group_context;
-      tree_hash_before = tree_hash_before;
-      root_secret_after_add = root_secret_after_add;
-      root_secret_after_update = root_secret_after_update;
-      ratchet_tree_after = ratchet_tree_after;
-      tree_hash_after = tree_hash_after;
+      tk_input = {
+        ratchet_tree_before = ratchet_tree_before;
+        add_sender = int_to_uint32 add_sender;
+        my_leaf_secret = my_leaf_secret;
+        my_key_package = my_key_package;
+        my_path_secret = my_path_secret;
+        update_sender = int_to_uint32 update_sender;
+        update_path = update_path;
+        update_group_context = update_group_context;
+      };
+      tk_output = {
+        tree_hash_before = tree_hash_before;
+        root_secret_after_add = root_secret_after_add;
+        root_secret_after_update = root_secret_after_update;
+        ratchet_tree_after = ratchet_tree_after;
+        tree_hash_after = tree_hash_after;
+      };
     })
   | _ -> failwith "parse_treekem_test: incorrect test vector format"
 
