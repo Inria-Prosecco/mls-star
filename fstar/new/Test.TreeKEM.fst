@@ -55,7 +55,7 @@ let gen_treekem_output cs t =
     let ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
     let ts1 = apply_path dumb_credential ts0 ups0 in
     let tk1 = extract_result (treesync_to_treekem cs ts1) in
-    let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret bytes_empty) in
+    let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;
       root_secret_after_add = bytes_to_hex_string root_secret_after_add;

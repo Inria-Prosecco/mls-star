@@ -25,6 +25,7 @@ noeq type path_secret_ciphertext (cs:ciphersuite) = {
 noeq type key_package (cs:ciphersuite) = {
   kp_public_key: hpke_public_key cs;
   kp_version: nat;
+  kp_last_group_context: bytes; //Related to version, correspond to the additional data used in the ciphertexts
   kp_unmerged_leafs: list nat;
   kp_path_secret_from: direction;
   kp_path_secret_ciphertext: list (path_secret_ciphertext cs);
@@ -124,6 +125,7 @@ let node_encap #cs version child_secret ad dir pks rand =
     {
       kp_public_key = snd node_keys;
       kp_version = version;
+      kp_last_group_context = ad;
       kp_unmerged_leafs = [];
       kp_path_secret_from = dir;
       kp_path_secret_ciphertext = ciphertext;
@@ -131,8 +133,8 @@ let node_encap #cs version child_secret ad dir pks rand =
     node_secret
   )
 
-val node_decap: #cs:ciphersuite -> child_secret:bytes -> ad:bytes -> i:nat -> dir:direction -> kp:key_package cs{dir <> kp.kp_path_secret_from ==> i < List.Tot.length kp.kp_path_secret_ciphertext} -> result bytes
-let node_decap #cs child_secret ad i dir kp =
+val node_decap: #cs:ciphersuite -> child_secret:bytes -> i:nat -> dir:direction -> kp:key_package cs{dir <> kp.kp_path_secret_from ==> i < List.Tot.length kp.kp_path_secret_ciphertext} -> result bytes
+let node_decap #cs child_secret i dir kp =
   if dir = kp.kp_path_secret_from then (
     if i <> 0 then
       fail "node_decap"
@@ -142,7 +144,7 @@ let node_decap #cs child_secret ad i dir kp =
     let ciphertext = List.Tot.index kp.kp_path_secret_ciphertext i in
     child_keys <-- derive_keypair_from_path_secret cs child_secret;
     let child_sk = fst child_keys in
-    hpke_decrypt cs ciphertext.kem_output child_sk bytes_empty ad ciphertext.ciphertext
+    hpke_decrypt cs ciphertext.kem_output child_sk bytes_empty (kp.kp_last_group_context) ciphertext.ciphertext
   )
 
 val update_path_entropy_length: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> leaf_index n -> nat
@@ -187,30 +189,30 @@ let rec update_path #cs #l #n t leaf_index leaf_secret ad rand =
     let (node_kp, node_path_secret) = node_encap_call in
     return (PNode node_kp child_path, node_path_secret)
 
-val root_secret: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> t:treekem cs l n -> leaf_index n -> leaf_secret:bytes -> ad:bytes -> result (bytes)
-let rec root_secret #cs #l #n t leaf_index leaf_secret ad =
+val root_secret: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> t:treekem cs l n -> leaf_index n -> leaf_secret:bytes -> result (bytes)
+let rec root_secret #cs #l #n t leaf_index leaf_secret =
   match t with
   | TLeaf None -> fail ""
   | TLeaf (Some _) -> return leaf_secret
-  | TSkip _ t' -> root_secret t' leaf_index leaf_secret ad
+  | TSkip _ t' -> root_secret t' leaf_index leaf_secret
   | TNode (Some kp) left right -> begin
     if List.Tot.mem leaf_index kp.kp_unmerged_leafs then (
       return leaf_secret
     ) else (
       let (|dir, next_leaf_index|) = child_index l leaf_index in
       let (child, sibling) = order_subtrees dir (left, right) in
-      child_path_secret <-- root_secret child next_leaf_index leaf_secret ad;
+      child_path_secret <-- root_secret child next_leaf_index leaf_secret;
       //The condition is here becaus the `i` argument has not sense when dir = kp.path_secret_from.
       //Maybe we should refactor `node_decap`?
       let i = if dir = kp.kp_path_secret_from then 0 else resolution_index child next_leaf_index in
       assume (List.Tot.length (tree_resolution child) == List.Tot.length kp.kp_path_secret_ciphertext);
-      node_decap child_path_secret ad i dir kp
+      node_decap child_path_secret i dir kp
     )
   end
   | TNode None left right -> begin
     let (|dir, next_leaf_index|) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
-    root_secret child next_leaf_index leaf_secret ad
+    root_secret child next_leaf_index leaf_secret
   end
 
 val empty_path_secret_ciphertext: cs:ciphersuite -> path_secret_ciphertext cs
@@ -267,6 +269,7 @@ let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
       my_path_secret_ciphertext <-- hpke_encrypt cs my_pk bytes_empty ad path_secret fake_randomness;
       let new_kp = { kp with
         kp_path_secret_from = update_dir;
+        kp_last_group_context = ad;
         //TODO: put the {kem_output = ...; ...} in a separate function
         kp_path_secret_ciphertext = Seq.seq_to_list (Seq.upd (Seq.create resol_size (empty_path_secret_ciphertext cs)) resol_index ({kem_output=fst my_path_secret_ciphertext; ciphertext = snd my_path_secret_ciphertext}));
       } in

@@ -44,14 +44,20 @@ let ps_leaf_package_content =
 noeq type node_package_content_nt = {
   npc_public_key: hpke_public_key_nt;
   npc_encrypted_path_secret: blseq hpke_ciphertext_nt ps_hpke_ciphertext ({min=0; max=(pow2 32)-1});
+  npc_last_group_context: blbytes ({min=0; max=(pow2 64) - 1});
 }
 
 val ps_node_package_content: parser_serializer node_package_content_nt
 let ps_node_package_content =
+  let open Parser in
   isomorphism node_package_content_nt
-    ps_update_path_node
-    (fun x -> ({npc_public_key = x.upnn_public_key; npc_encrypted_path_secret = x.upnn_encrypted_path_secret}))
-    (fun x -> ({upnn_public_key = x.npc_public_key; upnn_encrypted_path_secret = x.npc_encrypted_path_secret}))
+    (
+      _ <-- ps_hpke_public_key;
+      _ <-- ps_seq _ ps_hpke_ciphertext;
+      ps_bytes _
+    )
+    (fun (|public_key, (|encrypted_path_secret, last_group_context|)|) -> ({npc_public_key = public_key; npc_encrypted_path_secret = encrypted_path_secret; npc_last_group_context = last_group_context;}))
+    (fun x -> (|x.npc_public_key, (|x.npc_encrypted_path_secret, x.npc_last_group_context|)|))
 
 val treesync_to_treekem: #l:nat -> #n:tree_size l -> cs:ciphersuite -> TS.treesync l n -> result (TK.treekem cs l n)
 let rec treesync_to_treekem #l #n cs t =
@@ -84,6 +90,7 @@ let rec treesync_to_treekem #l #n cs t =
         let kp: TK.key_package cs = {
           TK.kp_public_key = content.npc_public_key;
           TK.kp_version = np.TS.np_version;
+          TK.kp_last_group_context = content.npc_last_group_context;
           TK.kp_unmerged_leafs = np.TS.np_unmerged_leafs;
           TK.kp_path_secret_from = (np.TS.np_content_dir);
           TK.kp_path_secret_ciphertext = path_secret_ciphertext;
@@ -125,11 +132,14 @@ let rec treekem_to_treesync #l #cs old_leaf_package p =
     ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.TK.kp_path_secret_ciphertext;
     if not (byte_length ps_hpke_ciphertext ciphertexts < pow2 16) then
       fail "treekem_to_treesync: ciphertexts too long"
+    else if not (Seq.length kp.TK.kp_last_group_context < pow2 64) then
+      fail "treekem_to_treesync: last group context too long (internal error)"
     else begin
       Seq.lemma_list_seq_bij ciphertexts;
       let np_content = ps_node_package_content.serialize ({
         npc_public_key = kp.TK.kp_public_key;
         npc_encrypted_path_secret = Seq.seq_of_list ciphertexts;
+        npc_last_group_context = kp.TK.kp_last_group_context;
       }) in
       let np = ({
         TS.np_version = kp.TK.kp_version;
@@ -141,7 +151,8 @@ let rec treekem_to_treesync #l #cs old_leaf_package p =
       return (PNode (Some np) next)
     end
 
-(*** ratchet_tree extension (11.3) ***)
+(*** NetworkTreeSyncBinder ***)
+//TODO move this in an other file
 
 val key_package_to_treesync: key_package_nt -> result TS.leaf_package_t
 let key_package_to_treesync kp =
@@ -203,6 +214,8 @@ let treesync_to_parent_node np =
     })
   )
 
+(*** ratchet_tree extension (11.3) ***)
+
 val dumb_credential: TS.credential_t
 let dumb_credential = {
   TS.cred_version = 0;
@@ -251,6 +264,7 @@ let rec ratchet_tree_to_treesync l n nodes =
         TS.np_content = ps_node_package_content.serialize ({
           npc_public_key = pn.pnn_public_key;
           npc_encrypted_path_secret = Seq.empty;
+          npc_last_group_context = bytes_empty;
         });
       } in
       return (TNode (dumb_credential, Some np) left_res right_res)
