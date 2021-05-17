@@ -24,3 +24,21 @@ val order_subtrees: #l:nat -> #n1:tree_size l -> #n2:tree_size l -> #leaf_t:Type
 let order_subtrees #l #n1 #n2 #leaf_t #node_t dir (left,right) =
   if dir = Left then (left,right) else (right,left)
 
+val get_leaf: #l:nat -> #n:tree_size l -> #leaf_t:Type -> #node_t:Type -> tree l n leaf_t node_t -> leaf_index n -> leaf_t
+let rec get_leaf #l #n #leaf_t #node_t t i =
+  match t with
+  | TLeaf data -> data
+  | TSkip _ t' -> get_leaf t' i
+  | TNode _ left right ->
+    let (|dir, next_i|) = child_index l i in
+    let (child, _) = order_subtrees dir (left, right) in
+    get_leaf child next_i
+
+val print_tree: #l:nat -> #n:tree_size l -> #leaf_t:Type -> #node_t:Type -> (leaf_t -> string) -> (node_t -> string) -> tree l n leaf_t node_t -> string
+let rec print_tree #l #n #leaf_t #node_t print_leaf print_node t =
+  match t with
+  | TLeaf data -> print_leaf data
+  | TSkip _ t' -> print_tree print_leaf print_node t'
+  | TNode data left right ->
+    "(" ^ print_tree print_leaf print_node left ^ ") " ^ print_node data ^ " (" ^ print_tree print_leaf print_node right ^ ")"
+

@@ -35,11 +35,14 @@ let find_my_index #l #n t kp =
 
 val gen_treekem_output: ciphersuite -> treekem_test_input -> ML treekem_test_output
 let gen_treekem_output cs t =
-  let my_key_package = extract_option "bad key package" ((ps_to_pse ps_key_package).parse_exact (hex_string_to_bytes t.my_key_package)) in
   let ratchet_tree = extract_option "bad ratchet tree" ((ps_to_pse ps_ratchet_tree).parse_exact (hex_string_to_bytes t.ratchet_tree_before)) in
-  let my_leaf_secret = (hex_string_to_bytes t.my_leaf_secret) in
-  let my_path_secret = (hex_string_to_bytes t.my_path_secret) in
   let add_sender = FStar.UInt32.v t.add_sender in
+  let my_leaf_secret = (hex_string_to_bytes t.my_leaf_secret) in
+  let my_key_package = extract_option "bad key package" ((ps_to_pse ps_key_package).parse_exact (hex_string_to_bytes t.my_key_package)) in
+  let my_path_secret = (hex_string_to_bytes t.my_path_secret) in
+  let update_sender = FStar.UInt32.v t.update_sender in
+  let update_path = extract_option "bad update path" ((ps_to_pse ps_update_path).parse_exact (hex_string_to_bytes t.update_path)) in
+  let update_group_context = hex_string_to_bytes t.update_group_context in
   let (|l, n|) = extract_result (ratchet_tree_l_n ratchet_tree) in
   let ts0 = extract_result (ratchet_tree_to_treesync l n ratchet_tree) in
   let tk0 = extract_result (treesync_to_treekem cs ts0) in
@@ -48,6 +51,8 @@ let gen_treekem_output cs t =
     failwith ("new leaf cannot be equal to add_sender: my_index=" ^ nat_to_string my_index ^ " add_sender=" ^ nat_to_string add_sender ^ "\n")
   else if not (add_sender < n) then
     failwith "add_sender is too big"
+  else if not (update_sender < n) then
+    failwith "update_sender is too big"
   else (
     let tree_hash_before = extract_result (tree_hash cs (TreeMath.root l) ts0) in
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret bytes_empty) in
@@ -56,10 +61,16 @@ let gen_treekem_output cs t =
     let ts1 = apply_path dumb_credential ts0 ups0 in
     let tk1 = extract_result (treesync_to_treekem cs ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
+    let upk1 = extract_result (update_path_to_treekem cs l n update_sender update_group_context update_path) in
+    let update_leaf_package = extract_option "leaf package for update sender is empty" (snd (get_leaf ts1 update_sender)) in
+    let ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
+    let ts2 = apply_path dumb_credential ts1 ups1 in
+    let tk2 = extract_result (treesync_to_treekem cs ts2) in
+    let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;
       root_secret_after_add = bytes_to_hex_string root_secret_after_add;
-      root_secret_after_update = "";
+      root_secret_after_update = bytes_to_hex_string root_secret_after_update;
       ratchet_tree_after = "";
       tree_hash_after = "";
     }
@@ -77,11 +88,11 @@ let test_treekem_one t =
     true
   end
   | Success cs -> begin
-    IO.print_string "Running test!!!\n";
     let our_output = gen_treekem_output cs t.tk_input in
     let tree_hash_before_ok = check_equal "tree_hash_before_ok" string_to_string t.tk_output.tree_hash_before our_output.tree_hash_before in
     let root_secret_after_add_ok = check_equal "root_secret_after_add" string_to_string t.tk_output.root_secret_after_add our_output.root_secret_after_add in
-    tree_hash_before_ok && root_secret_after_add_ok
+    let root_secret_after_update_ok = check_equal "root_secret_after_update" string_to_string t.tk_output.root_secret_after_update our_output.root_secret_after_update in
+    tree_hash_before_ok && root_secret_after_add_ok && root_secret_after_update_ok
   end
 
 val test_treekem: list treekem_test -> ML bool
