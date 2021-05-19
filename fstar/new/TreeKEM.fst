@@ -277,3 +277,76 @@ let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
       return (PNode new_kp next)
     )
   end
+
+open NetworkTypes
+open Parser
+
+noeq type parent_hash_input_nt = {
+  phin_public_key: hpke_public_key_nt;
+  phin_parent_hash: blbytes ({min=0;max=255});
+  phin_original_child_resolution: blseq hpke_public_key_nt ps_hpke_public_key ({min=0; max=(pow2 32)-1});
+}
+
+val ps_parent_hash_input: parser_serializer parent_hash_input_nt
+let ps_parent_hash_input =
+  isomorphism parent_hash_input_nt
+    (
+      _ <-- ps_hpke_public_key;
+      _ <-- ps_bytes _;
+      ps_seq _ ps_hpke_public_key
+    )
+  (fun (|public_key, (|parent_hash, original_child_resolution|)|) -> {
+    phin_public_key = public_key;
+    phin_parent_hash = parent_hash;
+    phin_original_child_resolution = original_child_resolution;
+  })
+  (fun x -> (|x.phin_public_key, (|x.phin_parent_hash, x.phin_original_child_resolution|)|))
+
+open Lib.Result
+
+type path_parent_hash (l:nat) (n:tree_size l) (i:leaf_index n) = path l n i bytes bytes
+
+val compute_parent_hash: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> hpke_public_key cs -> bytes -> treekem cs l n -> list (hpke_public_key cs) -> result (lbytes (hash_length cs))
+let compute_parent_hash #cs #l #n public_key parent_hash sibling forbidden_public_keys =
+  let sibling_resolution = tree_resolution sibling in
+  let original_child_resolution = List.Tot.filter (fun pk ->
+    //TODO: this should break secret independance?
+    not (List.Tot.mem pk forbidden_public_keys)
+  ) sibling_resolution in
+  let original_child_resolution_nt = List.Tot.map (fun (x:hpke_public_key cs) -> x <: hpke_public_key_nt) original_child_resolution in
+  if not (Seq.length parent_hash < 256) then
+    fail "compute_parent_hash: parent_hash too long"
+  else if not (byte_length ps_hpke_public_key original_child_resolution_nt < pow2 32) then
+    fail "compute_parent_hash: original_child_resolution too big"
+  else (
+    Seq.lemma_list_seq_bij original_child_resolution_nt;
+    hash_hash cs (ps_parent_hash_input.serialize ({
+      phin_public_key = public_key;
+      phin_parent_hash = parent_hash;
+      phin_original_child_resolution = Seq.seq_of_list original_child_resolution_nt;
+    }))
+  )
+
+val compute_parent_hash_path_aux: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> treekem cs l n -> pathkem cs l n i -> bytes -> result (path_parent_hash l n i)
+let rec compute_parent_hash_path_aux #cs #l #n #i tree path parent_hash =
+  match tree, path with
+  | TLeaf _, PLeaf _ -> return (PLeaf parent_hash)
+  | TSkip _ t', PSkip _ p' ->
+    result <-- compute_parent_hash_path_aux t' p' parent_hash;
+    return (PSkip _ result)
+  | TNode tree_onp left right, PNode path_np next ->
+    let (|dir, next_i|) = child_index l i in
+    let (child, sibling) = order_subtrees dir (left, right) in
+    let forbidden_keys =
+      match tree_onp with
+      | None -> []
+      | Some tree_np ->
+        unmerged_leafs_resolution tree tree_np.kp_unmerged_leafs
+    in
+    new_parent_hash <-- compute_parent_hash path_np.kp_public_key parent_hash sibling forbidden_keys;
+    new_next <-- compute_parent_hash_path_aux child next new_parent_hash;
+    return (PNode parent_hash new_next)
+
+val compute_parent_hash_path: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> treekem cs l n -> pathkem cs l n i -> result (path_parent_hash l n i)
+let compute_parent_hash_path #cs #l #n #i tree path =
+  compute_parent_hash_path_aux tree path bytes_empty

@@ -56,23 +56,29 @@ let gen_treekem_output cs t =
   else (
     let tree_hash_before = extract_result (tree_hash cs (TreeMath.root l) ts0) in
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret bytes_empty) in
-    let old_leaf_package = extract_result (key_package_to_treesync my_key_package) in
-    let ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
+    let old_leaf_package = extract_option "leaf package for add sender is empty" (snd (get_leaf ts0 add_sender)) in
+    let ph0 = extract_result (compute_parent_hash_path tk0 upk0) in
+    let ups0 = extract_result (treekem_to_treesync old_leaf_package upk0 ph0) in
     let ts1 = apply_path dumb_credential ts0 ups0 in
     let tk1 = extract_result (treesync_to_treekem cs ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let upk1 = extract_result (update_path_to_treekem cs l n update_sender update_group_context update_path) in
-    let update_leaf_package = extract_option "leaf package for update sender is empty" (snd (get_leaf ts1 update_sender)) in
-    let ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
+    let update_leaf_package = extract_result (key_package_to_treesync update_path.upn_leaf_key_package) in
+    let ph1 = extract_result (compute_parent_hash_path tk1 upk1) in
+    let ups1 = extract_result (treekem_to_treesync update_leaf_package upk1 ph1) in
     let ts2 = apply_path dumb_credential ts1 ups1 in
     let tk2 = extract_result (treesync_to_treekem cs ts2) in
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in
+    let ratchet_tree2 = extract_result (treesync_to_ratchet_tree cs ts2) in
+    let byte_length_ratchet_tree2 = byte_length (ps_option ps_node) (Seq.seq_to_list ratchet_tree2) in
+    let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 32 then ps_ratchet_tree.serialize ratchet_tree2 else bytes_empty in
+    let tree_hash_after = extract_result (tree_hash cs (TreeMath.root l) ts2) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;
       root_secret_after_add = bytes_to_hex_string root_secret_after_add;
       root_secret_after_update = bytes_to_hex_string root_secret_after_update;
-      ratchet_tree_after = "";
-      tree_hash_after = "";
+      ratchet_tree_after = bytes_to_hex_string ratchet_tree_after;
+      tree_hash_after = bytes_to_hex_string tree_hash_after;
     }
   )
 
@@ -92,7 +98,9 @@ let test_treekem_one t =
     let tree_hash_before_ok = check_equal "tree_hash_before_ok" string_to_string t.tk_output.tree_hash_before our_output.tree_hash_before in
     let root_secret_after_add_ok = check_equal "root_secret_after_add" string_to_string t.tk_output.root_secret_after_add our_output.root_secret_after_add in
     let root_secret_after_update_ok = check_equal "root_secret_after_update" string_to_string t.tk_output.root_secret_after_update our_output.root_secret_after_update in
-    tree_hash_before_ok && root_secret_after_add_ok && root_secret_after_update_ok
+    let ratchet_tree_after_ok = check_equal "ratchet_tree_after" string_to_string t.tk_output.ratchet_tree_after our_output.ratchet_tree_after in
+    let tree_hash_after_ok = check_equal "tree_hash_after" string_to_string t.tk_output.tree_hash_after our_output.tree_hash_after in
+    tree_hash_before_ok && root_secret_after_add_ok && root_secret_after_update_ok && ratchet_tree_after_ok && tree_hash_after_ok
   end
 
 val test_treekem: list treekem_test -> ML bool

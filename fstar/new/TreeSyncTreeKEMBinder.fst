@@ -122,12 +122,11 @@ let encrypted_path_secret_tk_to_nt (#cs:ciphersuite) (x:TK.path_secret_ciphertex
       hcn_ciphertext = x.TK.ciphertext;
     })
 
-
 #push-options "--z3rlimit 50"
-val treekem_to_treesync_aux: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> nat -> TS.leaf_package_t -> TK.pathkem cs l n i -> result (TS.pathsync l n i)
-let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves old_leaf_package p =
-  match p with
-  | PLeaf mi ->
+val treekem_to_treesync_aux: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> nat -> TS.leaf_package_t -> TK.pathkem cs l n i -> TK.path_parent_hash l n i -> result (TS.pathsync l n i)
+let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves old_leaf_package pk pph =
+  match pk, pph with
+  | PLeaf mi, PLeaf parent_hash ->
     return (PLeaf (Some ({
       TS.lp_credential = old_leaf_package.TS.lp_credential;
       TS.lp_version = mi.TK.mi_version;
@@ -137,13 +136,13 @@ let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves old_leaf_package p =
       TS.lp_extensions = old_leaf_package.TS.lp_extensions; //TODO probably the parent hash should change?
       TS.lp_signature = old_leaf_package.TS.lp_signature; //TODO the signature definitely has to change
     })))
-  | PSkip _ p' ->
-    result <-- treekem_to_treesync_aux nb_left_leaves old_leaf_package p';
+  | PSkip _ pk', PSkip _ pph' ->
+    result <-- treekem_to_treesync_aux nb_left_leaves old_leaf_package pk' pph';
     return (PSkip _ result)
-  | PNode kp p_next ->
+  | PNode kp pk_next, PNode parent_hash pph_next ->
     let (|dir, _|) = child_index l i in
     let new_left_leaves = (if dir = Left then nb_left_leaves else nb_left_leaves + pow2 (l-1)) in
-    next <-- treekem_to_treesync_aux new_left_leaves old_leaf_package p_next;
+    next <-- treekem_to_treesync_aux new_left_leaves old_leaf_package pk_next pph_next;
     ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.TK.kp_path_secret_ciphertext;
     if not (byte_length ps_hpke_ciphertext ciphertexts < pow2 16) then
       fail "treekem_to_treesync: ciphertexts too long"
@@ -160,16 +159,16 @@ let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves old_leaf_package p =
         TS.np_version = kp.TK.kp_version;
         TS.np_content_dir = kp.TK.kp_path_secret_from;
         TS.np_unmerged_leafs = List.Tot.map (fun (x:nat) -> (x + nb_left_leaves <: nat)) kp.TK.kp_unmerged_leafs;
-        TS.np_parent_hash = bytes_empty; //The parent hash needs to be recomputed
+        TS.np_parent_hash = parent_hash;
         TS.np_content = secret_to_pub np_content;
       }) in
       return (PNode (Some np) next)
     end
 #pop-options
 
-val treekem_to_treesync: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> TS.leaf_package_t -> TK.pathkem cs l n i -> result (TS.pathsync l n i)
-let treekem_to_treesync #l #n #i #cs old_leaf_package p =
-  treekem_to_treesync_aux 0 old_leaf_package p
+val treekem_to_treesync: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> TS.leaf_package_t -> TK.pathkem cs l n i -> TK.path_parent_hash l n i -> result (TS.pathsync l n i)
+let treekem_to_treesync #l #n #i #cs old_leaf_package pk pph =
+  treekem_to_treesync_aux 0 old_leaf_package pk pph
 
 (*** NetworkTreeSyncBinder ***)
 //TODO move this in an other file
@@ -234,6 +233,20 @@ let treesync_to_parent_node np =
     })
   )
 
+val parent_node_to_treesync: parent_node_nt -> result TS.node_package_t
+let parent_node_to_treesync pn =
+  return ({
+        TS.np_version = 0;
+        TS.np_content_dir = Left; //We don't care I guess
+        TS.np_unmerged_leafs = List.Tot.map (fun x -> let open Lib.IntTypes in (v x <: nat)) (Seq.seq_to_list pn.pnn_unmerged_leaves);
+        TS.np_parent_hash = pn.pnn_parent_hash;
+        TS.np_content = ps_node_package_content.serialize ({
+          npc_public_key = pn.pnn_public_key;
+          npc_encrypted_path_secret = Seq.empty;
+          npc_last_group_context = bytes_empty;
+        });
+      })
+
 val key_package_to_treekem: cs:ciphersuite -> key_package_nt -> result (TK.member_info cs)
 let key_package_to_treekem cs kp =
   if not (Seq.length kp.kpn_public_key = hpke_public_key_length cs) then
@@ -287,6 +300,8 @@ let rec update_path_to_treekem cs l n i group_context update_path =
       let update_path_length = (Seq.length update_path.upn_nodes) in
       let head_update_path_nodes = Seq.index update_path.upn_nodes (update_path_length-1) in
       let tail_update_path_nodes = Seq.slice update_path.upn_nodes 0 (update_path_length-1) in
+      //TODO this is an easy lemma
+      assume (byte_length ps_update_path_node (Seq.seq_to_list tail_update_path_nodes) <= byte_length ps_update_path_node (Seq.seq_to_list update_path.upn_nodes));
       let next_update_path = { update_path with upn_nodes = tail_update_path_nodes } in
       let (|dir, next_i|) = child_index l i in
       path_next <-- update_path_to_treekem cs (l-1) (if dir = Left then pow2 (l-1) else n - (pow2 (l-1))) next_i group_context next_update_path;
@@ -337,20 +352,32 @@ let rec ratchet_tree_to_treesync l n nodes =
     right_res <-- ratchet_tree_to_treesync (l-1) (n-pow2 (l-1)) right_nodes;
     match my_node with
     | Some_nt (N_parent pn) ->
-      let np = {
-        TS.np_version = 0;
-        TS.np_content_dir = Left; //We don't care I guess
-        TS.np_unmerged_leafs = List.Tot.map (fun x -> let open Lib.IntTypes in (v x <: nat)) (Seq.seq_to_list pn.pnn_unmerged_leaves);
-        TS.np_parent_hash = pn.pnn_parent_hash;
-        TS.np_content = ps_node_package_content.serialize ({
-          npc_public_key = pn.pnn_public_key;
-          npc_encrypted_path_secret = Seq.empty;
-          npc_last_group_context = bytes_empty;
-        });
-      } in
+      np <-- parent_node_to_treesync pn;
       return (TNode (dumb_credential, Some np) left_res right_res)
     | Some_nt _ -> fail "ratchet_tree_to_treesync_aux: node must be a parent!"
     | None_nt ->
       return (TNode (dumb_credential, None) left_res right_res)
     | _ -> fail "ratchet_tree_to_treesync_aux: option is invalid"
   )
+
+val treesync_to_ratchet_tree: #l:nat -> #n:tree_size l -> cs:ciphersuite -> TS.treesync l n -> result (Seq.seq (option_nt node_nt))
+let rec treesync_to_ratchet_tree #l #n cs t =
+  match t with
+  | TLeaf (_, None) ->
+    return (Seq.create 1 None_nt)
+  | TLeaf (_, Some lp) ->
+    key_package <-- treesync_to_keypackage cs lp;
+    return (Seq.create 1 (Some_nt (N_leaf (key_package))))
+  | TSkip _ t' ->
+    treesync_to_ratchet_tree cs t'
+  | TNode (_, onp) left right ->
+    parent_node <-- (
+      match onp with
+      | None -> return None_nt
+      | Some np ->
+        result <-- treesync_to_parent_node np;
+        return (Some_nt (N_parent result))
+    );
+    left_ratchet <-- treesync_to_ratchet_tree cs left;
+    right_ratchet <-- treesync_to_ratchet_tree cs right;
+    return (Seq.append left_ratchet (Seq.append (Seq.create 1 parent_node) right_ratchet))
