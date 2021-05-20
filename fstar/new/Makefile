@@ -11,7 +11,7 @@ include $(FSTAR_HOME)/ulib/ml/Makefile.include
 HACL_SNAPSHOT_DIR=../hacl-star-snapshot
 
 MLS_SPEC=Utils TreeMath_Internal TreeMath Lib_Result Parser Crypto_Builtins NetworkTypes Crypto_Derived Tree TreeDEM Lib_Array TreeSync TreeKEM TreeSyncTreeKEMBinder TreeSync_Hash
-MLS_TEST=Test_Utils Test_TreeMath Test_KeySchedule Test_TreeKEM Test
+MLS_TEST=Test_Utils Test_TreeMath Test_Encryption Test_KeySchedule Test_TreeKEM Test
 MLS_SPEC_FILES=$(addprefix out/, $(addsuffix .ml, $(MLS_SPEC)))
 MLS_TEST_FILES=out/Test_Types.ml Test_Reader.ml $(addprefix out/, $(addsuffix .ml, $(MLS_TEST)))
 
@@ -43,6 +43,7 @@ test_vectors:
 	mkdir -p test_vectors
 	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_treemath_openmls.json -O test_vectors/treemath.json
 	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_key_schedule_openmls.json -O test_vectors/key_schedule.json
+	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_encryption_openmls.json -O test_vectors/encryption.json
 
 clean:
 	rm -rf out bin test_vectors Test_Reader.o

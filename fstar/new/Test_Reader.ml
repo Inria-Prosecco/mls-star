@@ -40,6 +40,66 @@ let parse_treemath_test (json:Yojson.Safe.t): treemath_test =
     })
   | _ -> failwith "parse_treemath_test: incorrect test vector format"
 
+let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_sender_data_info_test =
+  match json with
+  | `Assoc [
+    ("ciphertext", `String ciphertext);
+    ("key", `String key);
+    ("nonce", `String nonce);
+  ] ->
+    ({
+      esdit_ciphertext = ciphertext;
+      esdit_key = key;
+      esdit_nonce = nonce;
+    })
+
+let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_generation_test =
+  match json with
+  | `Assoc [
+    ("key", `String key);
+    ("nonce", `String nonce);
+    ("plaintext", `String plaintext);
+    ("ciphertext", `String ciphertext);
+  ] ->
+    ({
+      elgt_key = key;
+      elgt_nonce = nonce;
+      elgt_plaintext = plaintext;
+      elgt_ciphertext = ciphertext;
+    })
+
+let parse_encryption_leaf_test (json:Yojson.Safe.t): encryption_leaf_test =
+  match json with
+  | `Assoc [
+    ("generations", `Int generations);
+    ("handshake", `List handshake);
+    ("application", `List application);
+  ] ->
+    ({
+      generations = int_to_uint32 generations;
+      handshake = List.map parse_encryption_leaf_generation_test handshake;
+      application = List.map parse_encryption_leaf_generation_test application;
+    })
+
+let parse_encryption_test (json:Yojson.Safe.t): encryption_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("n_leaves", `Int n_leaves);
+    ("encryption_secret", `String encryption_secret);
+    ("sender_data_secret", `String sender_data_secret);
+    ("sender_data_info", sender_data_info);
+    ("leaves", `List leaves)
+  ] ->
+    ({
+      et_cipher_suite = int_to_uint16 cipher_suite;
+      et_n_leaves = int_to_uint32 n_leaves;
+      et_encryption_secret = encryption_secret;
+      et_sender_data_secret = sender_data_secret;
+      et_sender_data_info = parse_encryption_sender_data_info_test sender_data_info;
+      et_leaves = List.map parse_encryption_leaf_test leaves;
+    })
+
 let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_input * keyschedule_test_epoch_output =
   match json with
   | `Assoc [
@@ -140,6 +200,7 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
 let get_filename (typ:test_type): string =
   match typ with
   | TreeMath -> "test_vectors/treemath.json"
+  | Encryption -> "test_vectors/encryption.json"
   | KeySchedule -> "test_vectors/key_schedule.json"
   | TreeKEM -> "test_vectors/treekem.json"
 
@@ -150,6 +211,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (TreeMath_test (List.map parse_treemath_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | Encryption -> begin
+    match json with
+    | `List l ->
+      (Encryption_test (List.map parse_encryption_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | KeySchedule -> begin

@@ -5,6 +5,7 @@ open FStar.All
 open Test.Types
 open Test.Reader
 open Test.TreeMath
+open Test.Encryption
 open Test.KeySchedule
 open Test.TreeKEM
 open Test.Utils
@@ -19,6 +20,18 @@ let run_treemath_tests () =
     )
   end
   | _ -> IO.print_string "TreeMath: got the wrong type of testsuite (internal error)\n"
+
+let run_encryption_tests () =
+  match get_testsuite Encryption with
+  | Encryption_test l -> begin
+    if test_encryption l then (
+      IO.print_string ("Encryption: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
+    ) else (
+      IO.print_string "Encryption: failure\n"
+    )
+  end
+  | _ -> IO.print_string "Encryption: got the wrong type of testsuite (internal error)\n"
+
 
 let run_keyschedule_tests () =
   match get_testsuite KeySchedule with
@@ -45,5 +58,7 @@ let run_treekem_tests () =
 
 let main =
   run_treemath_tests ();
+  run_encryption_tests();
   //run_keyschedule_tests ();
-  run_treekem_tests ()
+  //run_treekem_tests ();
+  ()

@@ -20,6 +20,34 @@ type keyschedule_test_epoch_input = {
   confirmed_transcript_hash: string;
 }
 
+type encryption_sender_data_info_test = {
+  esdit_ciphertext: string;
+  esdit_key: string;
+  esdit_nonce: string;
+}
+
+type encryption_leaf_generation_test = {
+  elgt_key: string;
+  elgt_nonce: string;
+  elgt_plaintext: string;
+  elgt_ciphertext: string;
+}
+
+type encryption_leaf_test = {
+  generations: U32.t;
+  handshake: list encryption_leaf_generation_test;
+  application: list encryption_leaf_generation_test;
+}
+
+type encryption_test = {
+  et_cipher_suite: U16.t;
+  et_n_leaves: U32.t;
+  et_encryption_secret: string;
+  et_sender_data_secret: string;
+  et_sender_data_info: encryption_sender_data_info_test;
+  et_leaves: list encryption_leaf_test;
+}
+
 type keyschedule_test_epoch_output = {
   group_context: string;
 
@@ -75,10 +103,12 @@ type treekem_test = {
 
 type test_type =
   | TreeMath
+  | Encryption
   | KeySchedule
   | TreeKEM
 
 type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
+  | Encryption_test: list encryption_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite

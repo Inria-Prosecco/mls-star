@@ -38,6 +38,16 @@ let derive_tree_secret cs secret label node generation len =
     }) in
     expand_with_label cs secret label tree_context len
 
+val leaf_kdf_aux_normalize_node: l:nat -> n:tree_size l -> node_index l -> nat
+let rec leaf_kdf_aux_normalize_node l n root =
+  if l = 0 then (
+    root
+  ) else if n <= pow2 (l-1) then (
+    leaf_kdf_aux_normalize_node (l-1) n (left root)
+  ) else (
+    root
+  )
+
 val leaf_kdf: #l:nat -> n:tree_size l -> ciphersuite -> bytes -> node_index l -> leaf_index n -> result bytes
 let rec leaf_kdf #l n cs encryption_secret root leaf_index =
   if l = 0 then (
@@ -47,8 +57,9 @@ let rec leaf_kdf #l n cs encryption_secret root leaf_index =
   ) else (
     let (|dir, new_leaf_index|) = child_index l leaf_index in
     let new_root = (if dir = Left then left root else right root) in
-    new_encryption_secret <-- derive_tree_secret cs encryption_secret (string_to_bytes "tree") new_root 0 (kdf_length cs);
-    leaf_kdf (if dir = Left then pow2 (l-1) else n - pow2 (l-1)) cs new_encryption_secret new_root new_leaf_index
+    let new_n = (if dir = Left then pow2 (l-1) else n - pow2 (l-1)) in
+    new_encryption_secret <-- derive_tree_secret cs encryption_secret (string_to_bytes "tree") (leaf_kdf_aux_normalize_node (l-1) new_n new_root) 0 (kdf_length cs);
+    leaf_kdf new_n cs new_encryption_secret new_root new_leaf_index
   )
 
 val secret_init_to_joiner: cs:ciphersuite -> bytes -> bytes -> result (lbytes (kdf_length cs))
@@ -117,7 +128,7 @@ noeq type ratchet_output (cs:ciphersuite) = {
   ro_key: lbytes (aead_key_length cs);
 }
 
-val init_handshake_ratchet: cs:ciphersuite -> node_index 0 -> (lbytes (kdf_length cs)) -> result (ratchet_state cs)
+val init_handshake_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result (ratchet_state cs)
 let init_handshake_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "handshake") node 0 (kdf_length cs);
   return ({
@@ -127,7 +138,7 @@ let init_handshake_ratchet cs node tree_node_secret =
   })
 
 //TODO: this is a copy-paste of init_handeshake_ratchet, factorize?
-val init_application_ratchet: cs:ciphersuite -> node_index 0 -> (lbytes (kdf_length cs)) -> result (ratchet_state cs)
+val init_application_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result (ratchet_state cs)
 let init_application_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "application") node 0 (kdf_length cs);
   return ({
