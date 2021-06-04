@@ -63,7 +63,7 @@ val sign_verify: cs:ciphersuite -> sign_public_key cs -> bytes -> sign_signature
 
 (*** AEAD ***)
 
-val aead_nonce_length: ciphersuite -> size_nat
+val aead_nonce_length: ciphersuite -> n:size_nat{4 <= n}
 val aead_key_length: ciphersuite -> size_nat
 
 type aead_key (cs:ciphersuite) = lbytes (aead_key_length cs)

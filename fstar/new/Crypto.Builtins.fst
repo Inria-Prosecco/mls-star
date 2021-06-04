@@ -51,7 +51,7 @@ let hash_length cs =
 
 let hash_hash cs buf =
   if not (Seq.length buf <= Hash.max_input_length (cs.kdf_hash)) then
-    fail "aead_decrypt: ad too long"
+    fail "hash_hash: buf too long"
   else
     return (Hash.hash cs.kdf_hash buf)
 

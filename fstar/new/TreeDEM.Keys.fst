@@ -1,4 +1,4 @@
-module TreeDEM
+module TreeDEM.Keys
 
 open Parser
 open Crypto
@@ -119,7 +119,7 @@ let secret_external_to_keypair cs external_secret =
 
 noeq type ratchet_state (cs:ciphersuite) = {
   rs_secret: lbytes (kdf_length cs);
-  rs_seq: nat;
+  rs_generation: nat;
   rs_node: node_index 0;
 }
 
@@ -133,7 +133,7 @@ let init_handshake_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "handshake") node 0 (kdf_length cs);
   return ({
     rs_secret = ratchet_secret;
-    rs_seq = 0;
+    rs_generation = 0;
     rs_node = node;
   })
 
@@ -143,20 +143,37 @@ let init_application_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "application") node 0 (kdf_length cs);
   return ({
     rs_secret = ratchet_secret;
-    rs_seq = 0;
+    rs_generation = 0;
     rs_node = node;
   })
 
-val ratchet_next_key: #cs:ciphersuite -> ratchet_state cs -> result (ratchet_output cs & ratchet_state cs)
-let ratchet_next_key #cs st =
-  nonce <-- derive_tree_secret cs st.rs_secret (string_to_bytes "nonce") st.rs_node st.rs_seq (aead_nonce_length cs);
-  key <-- derive_tree_secret cs st.rs_secret (string_to_bytes "key") st.rs_node st.rs_seq (aead_key_length cs);
-  new_secret <-- derive_tree_secret cs st.rs_secret (string_to_bytes "secret") st.rs_node st.rs_seq (kdf_length cs);
+val ratchet_get_key: #cs:ciphersuite -> ratchet_state cs -> result (ratchet_output cs)
+let ratchet_get_key #cs st =
+  nonce <-- derive_tree_secret cs st.rs_secret (string_to_bytes "nonce") st.rs_node st.rs_generation (aead_nonce_length cs);
+  key <-- derive_tree_secret cs st.rs_secret (string_to_bytes "key") st.rs_node st.rs_generation (aead_key_length cs);
   return ({
     ro_nonce = nonce;
     ro_key = key;
-  },{
+  })
+
+val ratchet_next_state: #cs:ciphersuite -> ratchet_state cs -> result (ratchet_state cs)
+let ratchet_next_state #cs st =
+  new_secret <-- derive_tree_secret cs st.rs_secret (string_to_bytes "secret") st.rs_node st.rs_generation (kdf_length cs);
+  return ({
     rs_secret = new_secret;
-    rs_seq = st.rs_seq + 1;
+    rs_generation = st.rs_generation + 1;
     rs_node = st.rs_node;
   })
+
+//#push-options "--fuel 1 --ifuel 1"
+val ratchet_get_generation_key: #cs:ciphersuite -> st:ratchet_state cs -> i:nat{st.rs_generation <= i} -> Tot (result (ratchet_output cs)) (decreases i-st.rs_generation)
+let rec ratchet_get_generation_key #cs st i =
+  if st.rs_generation = i then (
+    ratchet_get_key st
+  ) else (
+    //Here we have to break encapsulation provided by `result` so fstar knows that `ratchet_next_state` increments `rs_generation`
+    match ratchet_next_state st with
+    | Error s -> Error s
+    | Success next_st ->
+      ratchet_get_generation_key next_st i
+  )

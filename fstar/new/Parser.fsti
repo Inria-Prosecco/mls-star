@@ -60,7 +60,9 @@ let parser_serializer (a:Type) = ps_a:parser_serializer_unit a{is_not_unit ps_a}
 
 (*** Parser combinators ***)
 
-val bind: #a:Type -> #b:(a -> Type) -> parser_serializer a -> (xa:a -> parser_serializer_unit (b xa)) -> parser_serializer (xa:a&(b xa))
+val bind: #a:Type -> #b:(a -> Type) -> ps_a:parser_serializer_unit a -> ps_b:(xa:a -> parser_serializer_unit (b xa)) -> Pure (parser_serializer_unit (xa:a&(b xa)))
+  (requires True)
+  (ensures fun res -> is_not_unit res <==> is_not_unit ps_a \/ (forall xa. is_not_unit (ps_b xa)))
 val isomorphism: #a:Type -> b:Type -> ps_a:parser_serializer_unit a -> f:(a -> b) -> g:(b -> a) -> Pure (parser_serializer_unit b)
   (requires (forall xa. g (f xa) == xa) /\ (forall xb. f (g xb) == xb))
   (ensures fun res -> is_not_unit res <==> is_not_unit ps_a)

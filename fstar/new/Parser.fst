@@ -37,7 +37,23 @@ let bind #a #b ps_a ps_b =
     let (|xa, xb|) = x in
     Seq.append (ps_a.serialize xa) ((ps_b xa).serialize xb)
   in
-  {
+  let lemma_not_unit (): Lemma((parse_ab bytes_empty == None) <==> (ps_a.parse bytes_empty == None) \/ (forall xa. (ps_b xa).parse bytes_empty == None)) = begin
+    match parse_ab bytes_empty with
+    | None -> begin
+      match ps_a.parse bytes_empty with
+      | None -> ()
+      | Some (xa, la) ->
+        FStar.Classical.forall_intro (fun (x:a) -> (
+          assert (Seq.equal (delete_prefix bytes_empty la) bytes_empty);
+          ps_a.parse_serialize_inv x;
+          ps_a.parse_no_lookahead bytes_empty (ps_a.serialize x);
+          ()
+        ) <: Lemma (is_not_unit (ps_b x)))
+    end
+    | Some _ -> ()
+  end in
+  lemma_not_unit ();
+  ({
     parse = parse_ab;
     serialize = serialize_ab;
     parse_serialize_inv = (fun (x:(xa:a&(b xa))) ->
@@ -67,7 +83,8 @@ let bind #a #b ps_a ps_b =
         let (_, la2) = Some?.v (ps_a.parse b2) in
         (ps_b xa).parse_no_lookahead (delete_prefix b1 la1) (delete_prefix b2 la2)
     )
-  }
+  })
+
 
 let isomorphism #a b ps_a f g =
   let parse_b buf =

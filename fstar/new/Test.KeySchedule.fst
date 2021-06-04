@@ -11,7 +11,7 @@ open Lib.IntTypes
 open NetworkTypes
 open Parser
 open Crypto
-open TreeDEM
+open TreeDEM.Keys
 
 val gen_group_context: string -> nat -> keyschedule_test_epoch_input -> ML bytes
 let gen_group_context group_id epoch inp =

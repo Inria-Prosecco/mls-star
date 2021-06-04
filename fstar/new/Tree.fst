@@ -1,5 +1,7 @@
 module Tree
 
+open Lib.Result
+
 let tree_size (l:nat) = n:pos{n <= pow2 l}
 let leaf_index (n:nat) = x:nat{x < n}
 
@@ -42,3 +44,23 @@ let rec print_tree #l #n #leaf_t #node_t print_leaf print_node t =
   | TNode data left right ->
     "(" ^ print_tree print_leaf print_node left ^ ") " ^ print_node data ^ " (" ^ print_tree print_leaf print_node right ^ ")"
 
+
+type pre_path (leaf_t:Type) (node_t:Type) = (leaf_t & list node_t)
+
+val pre_path_to_path: #leaf_t:Type -> #node_t:Type -> l:nat -> n:tree_size l -> i:leaf_index n -> pre_path leaf_t node_t -> result (path l n i leaf_t node_t)
+let rec pre_path_to_path #leaf_t #node_t l n i (leaf_value, node_values) =
+  if l = 0 then (
+    match node_values with
+    | [] -> return (PLeaf leaf_value)
+    | _ -> fail "pre_path_to_path: node_values is too long"
+  ) else if (n <= pow2 (l-1)) then (
+    path_next <-- pre_path_to_path (l-1) n i (leaf_value, node_values);
+    return (PSkip _ path_next)
+  ) else (
+    match node_values with
+    | [] -> fail "pre_path_to_path: node_values is too short"
+    | h::t ->
+      let (|dir, next_i|) = child_index l i in
+      path_next <-- pre_path_to_path (l-1) (if dir = Left then pow2 (l-1) else n - (pow2 (l-1))) next_i (leaf_value, t);
+      return (PNode h path_next)
+  )
