@@ -7,6 +7,7 @@ open Test.Reader
 open Test.TreeMath
 open Test.Encryption
 open Test.KeySchedule
+open Test.CommitTranscript
 open Test.TreeKEM
 open Test.Utils
 
@@ -44,6 +45,19 @@ let run_keyschedule_tests () =
   end
   | _ -> IO.print_string "KeySchedule: got the wrong type of testsuite (internal error)\n"
 
+let run_commit_transcript_tests () =
+  IO.print_string "Starting commit / transcript\n";
+  match get_testsuite CommitTranscript with
+  | CommitTranscript_test l -> begin
+    if test_commit_transcript l then (
+      IO.print_string ("Commit / Transcript: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
+    ) else (
+      IO.print_string "Commit / Transcript: failure\n"
+    )
+  end
+  | _ -> IO.print_string "Commit / Transcript: got the wrong type of testsuite (internal error)\n"
+
+
 let run_treekem_tests () =
   IO.print_string "Starting treekem\n";
   match get_testsuite TreeKEM with
@@ -58,7 +72,8 @@ let run_treekem_tests () =
 
 let main =
   run_treemath_tests ();
-  run_encryption_tests();
+  //run_encryption_tests();
   //run_keyschedule_tests ();
   //run_treekem_tests ();
+  run_commit_transcript_tests ();
   ()

@@ -29,6 +29,11 @@ noeq type message = {
   m_message_content: message_content m_content_type;
 }
 
+noeq type message_auth = {
+  m_signature: bytes;
+  m_confirmation_tag: option bytes;
+}
+
 noeq type message_plaintext = {
   mp_group_id: bytes;
   mp_epoch: nat;
@@ -63,7 +68,7 @@ noeq type encrypted_sender_data_content = {
   esdc_reuse_guard: lbytes 4;
 }
 
-val message_plaintext_to_message: message_plaintext -> message
+val message_plaintext_to_message: message_plaintext -> message & message_auth
 let message_plaintext_to_message pt =
   ({
     m_group_id = pt.mp_group_id;
@@ -72,6 +77,9 @@ let message_plaintext_to_message pt =
     m_authenticated_data = pt.mp_authenticated_data;
     m_content_type = pt.mp_content_type;
     m_message_content = pt.mp_message_content;
+  }, {
+    m_signature = pt.mp_signature;
+    m_confirmation_tag = pt.mp_confirmation_tag;
   })
 
 val network_to_sender_type: sender_type_nt -> result sender_type
@@ -82,6 +90,13 @@ let network_to_sender_type s =
   | NetworkTypes.ST_new_member -> return ST_new_member
   | _ -> fail "network_to_sender_type: invalid sender type"
 
+val sender_type_to_network: sender_type -> sender_type_nt
+let sender_type_to_network s =
+  match s with
+  | ST_member -> NetworkTypes.ST_member
+  | ST_preconfigured -> NetworkTypes.ST_preconfigured
+  | ST_new_member -> NetworkTypes.ST_new_member
+
 val network_to_sender: sender_nt -> result sender
 let network_to_sender s =
   sender_type <-- network_to_sender_type s.sn_sender_type;
@@ -89,6 +104,17 @@ let network_to_sender s =
     s_sender_type = sender_type;
     s_sender_id = Lib.IntTypes.v s.sn_sender;
   })
+
+val sender_to_network: sender -> result sender_nt
+let sender_to_network s =
+  if not (s.s_sender_id < pow2 32) then (
+    fail "network_to_sender: sender_id too big"
+  ) else (
+    return ({
+      sn_sender_type = sender_type_to_network s.s_sender_type;
+      sn_sender = u32 s.s_sender_id;
+    })
+  )
 
 val opt_tag_to_opt_bytes: option_nt mac_nt -> result (option bytes)
 let opt_tag_to_opt_bytes mac =
@@ -98,6 +124,14 @@ let opt_tag_to_opt_bytes mac =
     | None -> (None <: option bytes)
     | Some m -> Some (m.mn_mac_value)
   )
+
+val opt_bytes_to_opt_tag: option bytes -> result (option_nt mac_nt)
+let opt_bytes_to_opt_tag mac =
+  optmac <-- (match mac with
+    | None -> (return None)
+    | Some m -> if Seq.length m < 256 then return (Some ({mn_mac_value = m})) else fail "opt_bytes_to_opt_tag: mac too long"
+  );
+  return (option_to_network optmac)
 
 val network_to_message_plaintext: mls_plaintext_nt -> result message_plaintext
 let network_to_message_plaintext pt =
@@ -210,7 +244,7 @@ let network_to_message_ciphertext ct =
     mc_ciphertext = ct.mcn_ciphertext;
   })
 
-val message_ciphertext_to_message: #cs:ciphersuite -> (nat -> result (ratchet_output cs)) -> bytes -> message_ciphertext -> result message
+val message_ciphertext_to_message: #cs:ciphersuite -> (nat -> result (ratchet_output cs)) -> bytes -> message_ciphertext -> result (message & message_auth)
 let message_ciphertext_to_message #cs get_key_nonce sender_data_secret ct =
   sender_data <-- decrypt_sender_data cs ct sender_data_secret;
   let sender_data = network_to_encrypted_sender_data sender_data in
@@ -230,4 +264,7 @@ let message_ciphertext_to_message #cs get_key_nonce sender_data_secret ct =
     m_authenticated_data = ct.mc_authenticated_data;
     m_content_type = ct.mc_content_type;
     m_message_content = ciphertext_content.mcc_message_content;
+  }, {
+    m_signature = ciphertext_content.mcc_signature;
+    m_confirmation_tag = ciphertext_content.mcc_confirmation_tag;
   })

@@ -10,15 +10,29 @@ let int_to_uint16 (x:int): FStar_UInt16.t =
     failwith "int_to_uint32: number of out bounds"
 
 let int_to_uint32 (x:int): FStar_UInt32.t =
-  if 0 <= x && x < pow2 32 then
+  (* an int is always < pow2 32 *)
+  if 0 <= x (*&& x < pow2 32*) then
     FStar_UInt32.uint_to_t (Z.of_int x)
   else
     failwith "int_to_uint32: number of out bounds"
+
+let int_to_uint64 (x:int): FStar_UInt64.t =
+  (* an int is always < pow2 64 *)
+  if 0 <= x (* && x < pow2 64 *) then
+    FStar_UInt64.uint_to_t (Z.of_int x)
+  else
+    failwith "int_to_uint64: number of out bounds"
 
 let parse_uint32 (json:Yojson.Safe.t): FStar_UInt32.t =
   match json with
   | `Int x -> int_to_uint32 x
   | _ -> failwith "parse_uint32: not an int"
+
+let parse_uint64 (json:Yojson.Safe.t): FStar_UInt64.t =
+  match json with
+  | `Int x -> int_to_uint64 x
+  | `Intlit x -> FStar_UInt64.uint_to_t (Z.of_string x)
+  | _ -> failwith "parse_uint64: not an int"
 
 let parse_optional_uint32 (json:Yojson.Safe.t): FStar_UInt32.t option =
   match json with
@@ -155,6 +169,37 @@ let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
     }
   | _ -> failwith "parse_keyschedule_test: incorrect test vector format"
 
+let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("group_id", `String group_id);
+    ("epoch", epoch);
+    ("tree_hash_before", `String tree_hash_before);
+    ("confirmed_transcript_hash_before", `String confirmed_transcript_hash_before);
+    ("interim_transcript_hash_before", `String interim_transcript_hash_before);
+    ("membership_key", `String membership_key);
+    ("confirmation_key", `String confirmation_key);
+    ("commit", `String commit);
+    ("group_context", `String group_context);
+    ("confirmed_transcript_hash_after", `String confirmed_transcript_hash_after);
+    ("interim_transcript_hash_after", `String interim_transcript_hash_after);
+  ] ->
+    ({
+      ctt_cipher_suite = int_to_uint16 cipher_suite;
+      ctt_group_id = group_id;
+      ctt_epoch = parse_uint64 epoch;
+      ctt_tree_hash_before = tree_hash_before;
+      ctt_confirmed_transcript_hash_before = confirmed_transcript_hash_before;
+      ctt_interim_transcript_hash_before = interim_transcript_hash_before;
+      ctt_membership_key = membership_key;
+      ctt_confirmation_key = confirmation_key;
+      ctt_commit = commit;
+      ctt_group_context = group_context;
+      ctt_confirmed_transcript_hash_after = confirmed_transcript_hash_after;
+      ctt_interim_transcript_hash_after = interim_transcript_hash_after;
+    })
+  | _ -> failwith "parse_commit_transcript_test: incorrect test vector format"
 
 let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
   match json with
@@ -202,6 +247,7 @@ let get_filename (typ:test_type): string =
   | TreeMath -> "test_vectors/treemath.json"
   | Encryption -> "test_vectors/encryption.json"
   | KeySchedule -> "test_vectors/key_schedule.json"
+  | CommitTranscript -> "test_vectors/commit_transcript.json"
   | TreeKEM -> "test_vectors/treekem.json"
 
 let get_testsuite (typ:test_type): testsuite =
@@ -223,6 +269,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (KeySchedule_test (List.map parse_keyschedule_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | CommitTranscript -> begin
+    match json with
+    | `List l ->
+      (CommitTranscript_test (List.map parse_commit_transcript_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | TreeKEM -> begin

@@ -1,9 +1,12 @@
 module TreeDEM.Message.Content
 
 open Lib.ByteSequence
+open Lib.IntTypes
 open NetworkTypes
 open NetworkBinder
 open Lib.Result
+
+module Crypto = Crypto //So it is not resolved to FStar.Crypto
 
 type message_content_type =
   | CT_application
@@ -129,3 +132,63 @@ let network_to_message_content_pair content =
     return (make_message_content_pair res)
   | _ -> fail "network_to_message_content_pair: invalid content type"
 
+val proposal_to_network: Crypto.ciphersuite -> proposal -> result proposal_nt
+let proposal_to_network cs p =
+  match p with
+  | Add lp ->
+    kp <-- TreeSyncTreeKEMBinder.treesync_to_keypackage cs lp;
+    return (P_add ({an_key_package = kp}))
+  | Update lp ->
+    kp <-- TreeSyncTreeKEMBinder.treesync_to_keypackage cs lp;
+    return (P_update ({un_key_package = kp}))
+  | Remove id ->
+    if not (id < pow2 32) then
+      fail "proposal_to_network: remove id too big"
+    else
+      return (P_remove ({rn_removed = u32 id}))
+  | PreSharedKey x -> return (P_psk ({pskn_psk = x}))
+  | ReInit x -> return (P_reinit x)
+  | ExternalInit x -> return (P_external_init x)
+  | AppAck x -> return (P_app_ack x)
+
+val proposal_or_ref_to_network: Crypto.ciphersuite -> proposal_or_ref -> result proposal_or_ref_nt
+let proposal_or_ref_to_network cs por =
+  match por with
+  | Proposal p ->
+    res <-- proposal_to_network cs p;
+    return (POR_proposal res)
+  | Reference ref ->
+    if not (Seq.length ref < 256) then
+      fail "proposal_or_ref_to_network: reference too long"
+    else
+      return (POR_reference ref)
+
+val commit_to_network: Crypto.ciphersuite -> commit -> result commit_nt
+let commit_to_network cs c =
+  proposals <-- mapM (proposal_or_ref_to_network cs) c.c_proposals;
+  Seq.lemma_list_seq_bij proposals;
+  if not (Parser.byte_length ps_proposal_or_ref proposals < pow2 32) then
+    fail "commit_to_network: proposals too long"
+  else (
+    return ({
+      cn_proposals = Seq.seq_of_list proposals;
+      cn_path = option_to_network c.c_path;
+    })
+  )
+
+val message_content_to_network: #content_type:message_content_type -> Crypto.ciphersuite -> message_content content_type -> result mls_content_nt
+let message_content_to_network #content_type cs msg =
+  match content_type with
+  | CT_application -> begin
+    let msg: bytes = msg in
+    if not (Seq.length msg < pow2 32) then
+      fail "message_content_to_network: application message too long"
+    else
+      return (MC_application msg)
+  end
+  | CT_proposal ->
+    proposal <-- proposal_to_network cs msg;
+    return (MC_proposal proposal)
+  | CT_commit ->
+    commit <-- commit_to_network cs msg;
+    return (MC_commit commit)

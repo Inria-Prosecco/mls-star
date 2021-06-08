@@ -2,6 +2,7 @@ module Test.Types
 
 module U16 = FStar.UInt16
 module U32 = FStar.UInt32
+module U64 = FStar.UInt64
 
 type treemath_test = {
   n_leaves: U32.t;
@@ -74,6 +75,23 @@ type keyschedule_test = {
   epochs: list (keyschedule_test_epoch_input & keyschedule_test_epoch_output);
 }
 
+type commit_transcript_test = {
+  ctt_cipher_suite: U16.t;
+  ctt_group_id: string;
+  ctt_epoch: U64.t;
+  ctt_tree_hash_before: string;
+  ctt_confirmed_transcript_hash_before: string;
+  ctt_interim_transcript_hash_before: string;
+
+  ctt_membership_key: string;
+  ctt_confirmation_key: string;
+  ctt_commit: string;
+  ctt_group_context: string;
+
+  ctt_confirmed_transcript_hash_after: string;
+  ctt_interim_transcript_hash_after: string;
+}
+
 type treekem_test_input = {
   ratchet_tree_before: string;
 
@@ -105,10 +123,12 @@ type test_type =
   | TreeMath
   | Encryption
   | KeySchedule
+  | CommitTranscript
   | TreeKEM
 
 type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
   | Encryption_test: list encryption_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
+  | CommitTranscript_test: list commit_transcript_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite

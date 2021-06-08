@@ -29,7 +29,7 @@ let test_leaf_generation #cs sender_data_secret r_state test =
   let message_1 = message_plaintext_to_message message_plaintext in
   let message_2 = extract_result (message_ciphertext_to_message (fun i -> if r_state.rs_generation <= i then ratchet_get_generation_key r_state i else fail "ratchet: generation not available") sender_data_secret message_ciphertext) in
   let plaintext_eq_ciphertext_ok = test_equality message_1 message_2 in
-  let sender_ok = message_1.m_sender.s_sender_type = TreeDEM.Message.Framing.ST_member && (let open FStar.Mul in 2*message_1.m_sender.s_sender_id = r_state.rs_node) in
+  let sender_ok = (fst message_1).m_sender.s_sender_type = TreeDEM.Message.Framing.ST_member && (let open FStar.Mul in 2*(fst message_1).m_sender.s_sender_id = r_state.rs_node) in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)
 
 val test_leaf_generations: #cs:ciphersuite -> bytes -> ratchet_state cs -> list encryption_leaf_generation_test -> ML bool

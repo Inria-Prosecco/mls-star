@@ -12,6 +12,7 @@ module Hash = Spec.Agile.Hash
 module HKDF = Spec.Agile.HKDF
 module HPKE = Spec.Agile.HPKE
 module Ed25519 = Spec.Ed25519
+module HMAC = Spec.Agile.HMAC
 
 (*** Ciphersuite ***)
 
@@ -218,6 +219,17 @@ let aead_decrypt cs key nonce ad ciphertext =
   else (
     result <-- from_option "aead_decrypt: AEAD.decrypt failed" (AEAD.decrypt #(cs.aead) key nonce ad ciphertext);
     return (result <: bytes)
+  )
+
+(*** HMAC ***)
+
+let hmac_hmac cs key data =
+  if not (let l = Seq.length key in l < Hash.max_input_length cs.kdf_hash && l + Hash.block_length cs.kdf_hash < pow2 32) then (
+    fail "hmac_hmac: wrong key size"
+  ) else if not (Seq.length data + Hash.block_length cs.kdf_hash < Hash.max_input_length cs.kdf_hash) then (
+    fail "hmac_hmac: data too long"
+  ) else (
+    return (HMAC.hmac cs.kdf_hash key data)
   )
 
 (*** String to bytes ***)

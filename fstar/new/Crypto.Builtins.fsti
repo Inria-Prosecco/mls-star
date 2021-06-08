@@ -72,6 +72,10 @@ type aead_nonce (cs:ciphersuite) = lbytes (aead_nonce_length cs)
 val aead_encrypt: cs:ciphersuite -> aead_key cs -> aead_nonce cs -> ad:bytes -> plaintext:bytes -> result bytes
 val aead_decrypt: cs:ciphersuite -> aead_key cs -> aead_nonce cs -> ad:bytes -> ciphertext:bytes -> result bytes
 
+(*** HMAC ***)
+
+val hmac_hmac: cs:ciphersuite -> key:bytes -> data:bytes -> result (lbytes (hash_length cs))
+
 (*** String to bytes ***)
 
 let string_is_ascii (s:string) = List.Tot.for_all (fun x -> FStar.Char.int_of_char x < 256) (FStar.String.list_of_string s)

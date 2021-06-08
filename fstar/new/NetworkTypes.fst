@@ -1150,3 +1150,99 @@ let ps_mls_sender_data_aad =
       msdan_content_type = content_type;
     }))
     (fun x -> (|x.msdan_group_id, (|x.msdan_epoch, x.msdan_content_type|)|))
+
+//Structure used for confirmed transcript hash
+noeq type mls_plaintext_commit_content_nt = {
+  mpccn_group_id: blbytes ({min=0; max=255});
+  mpccn_epoch: uint64;
+  mpccn_sender: sender_nt;
+  mpccn_authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
+  mpccn_content: mls_content_nt; //is a commit
+  mpccn_signature: blbytes ({min=0; max=(pow2 16)-1});
+}
+
+#push-options "--ifuel 4"
+val ps_mls_plaintext_commit_content: parser_serializer mls_plaintext_commit_content_nt
+let ps_mls_plaintext_commit_content =
+  isomorphism mls_plaintext_commit_content_nt
+    (
+      _ <-- ps_bytes _;
+      _ <-- ps_u64;
+      _ <-- ps_sender;
+      _ <-- ps_bytes _;
+      _ <-- ps_mls_content;
+      ps_bytes _
+    )
+    (fun (|group_id, (|epoch, (|sender, (|authenticated_data, (|content, signature|)|)|)|)|) -> ({
+      mpccn_group_id = group_id;
+      mpccn_epoch = epoch;
+      mpccn_sender = sender;
+      mpccn_authenticated_data = authenticated_data;
+      mpccn_content = content;
+      mpccn_signature = signature;
+    }))
+    (fun x -> (|x.mpccn_group_id, (|x.mpccn_epoch, (|x.mpccn_sender, (|x.mpccn_authenticated_data, (|x.mpccn_content, x.mpccn_signature|)|)|)|)|))
+#pop-options
+
+//Structure used for interim transcript hash
+noeq type mls_plaintext_commit_auth_data_nt = {
+  mpcadn_confirmation_tag: option_nt mac_nt;
+}
+
+val ps_mls_plaintext_commit_auth_data: parser_serializer mls_plaintext_commit_auth_data_nt
+let ps_mls_plaintext_commit_auth_data =
+  isomorphism mls_plaintext_commit_auth_data_nt (ps_option ps_mac)
+    (fun confirmation_tag -> {mpcadn_confirmation_tag = confirmation_tag})
+    (fun x -> x.mpcadn_confirmation_tag)
+
+//Warning: you have to prepend the group context if sender.sender_type is ST_member!
+noeq type mls_plaintext_tbs_nt = {
+  mptbsn_group_id: blbytes ({min=0; max=255});
+  mptbsn_epoch: uint64;
+  mptbsn_sender: sender_nt;
+  mptbsn_authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
+  mptbsn_content: mls_content_nt;
+}
+
+#push-options "--ifuel 3"
+val ps_mls_plaintext_tbs: parser_serializer mls_plaintext_tbs_nt
+let ps_mls_plaintext_tbs =
+  isomorphism mls_plaintext_tbs_nt
+    (
+      _ <-- ps_bytes _;
+      _ <-- ps_u64;
+      _ <-- ps_sender;
+      _ <-- ps_bytes _;
+      ps_mls_content
+    )
+    (fun (|group_id, (|epoch, (|sender, (|authenticated_data, content|)|)|)|) -> ({
+      mptbsn_group_id = group_id;
+      mptbsn_epoch = epoch;
+      mptbsn_sender = sender;
+      mptbsn_authenticated_data = authenticated_data;
+      mptbsn_content = content;
+    }))
+    (fun x -> (|x.mptbsn_group_id, (|x.mptbsn_epoch, (|x.mptbsn_sender, (|x.mptbsn_authenticated_data, x.mptbsn_content|)|)|)|))
+#pop-options
+
+//Warning: you have to prepend the group context if tbs.sender.sender_type is ST_member!
+noeq type mls_plaintext_tbm_nt = {
+  mptbmn_tbs: mls_plaintext_tbs_nt;
+  mptbmn_signature: blbytes ({min=0; max=(pow2 16)-1});
+  mptbmn_confirmation_tag: option_nt mac_nt;
+}
+
+val ps_mls_plaintext_tbm: parser_serializer mls_plaintext_tbm_nt
+let ps_mls_plaintext_tbm =
+  isomorphism mls_plaintext_tbm_nt
+    (
+      _ <-- ps_mls_plaintext_tbs;
+      _ <-- ps_bytes _;
+      ps_option ps_mac
+    )
+    (fun (|tbs, (|signature, confirmation_tag|)|) -> ({
+      mptbmn_tbs = tbs;
+      mptbmn_signature = signature;
+      mptbmn_confirmation_tag = confirmation_tag;
+    }))
+    (fun x -> (|x.mptbmn_tbs, (|x.mptbmn_signature, x.mptbmn_confirmation_tag|)|))
