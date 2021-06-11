@@ -1,50 +1,85 @@
 ifndef FSTAR_HOME
-	FSTAR_HOME=$(dir $(shell which fstar.exe))/..
+	FSTAR_HOME = $(dir $(shell which fstar.exe))/..
 endif
 ifndef Z3
-	Z3=$(shell which z3)
+	Z3 = $(shell which z3)
 endif
 
 include $(FSTAR_HOME)/ulib/gmake/fstar.mk
 include $(FSTAR_HOME)/ulib/ml/Makefile.include
 
-HACL_SNAPSHOT_DIR=../hacl-star-snapshot
+HACL_SNAPSHOT_DIR = ../hacl-star-snapshot
+SOURCE_DIR = .
 
-MLS_SPEC=Utils TreeMath_Internal TreeMath Lib_Result Parser Crypto_Builtins NetworkTypes Crypto_Derived NetworkBinder Tree Lib_Array TreeSync TreeKEM TreeSyncTreeKEMBinder TreeSync_Hash TreeDEM_Keys TreeDEM_Message_Content TreeDEM_Message_Framing TreeDEM_Message_Transcript TreeDEM_Message_Auth
-MLS_TEST=Test_Utils Test_TreeMath Test_Encryption Test_KeySchedule Test_CommitTranscript Test_TreeKEM Test
-MLS_SPEC_FILES=$(addprefix out/, $(addsuffix .ml, $(MLS_SPEC)))
-MLS_TEST_FILES=out/Test_Types.ml Test_Reader.ml Test_Equality.ml $(addprefix out/, $(addsuffix .ml, $(MLS_TEST)))
+INCLUDE_DIRS = $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs
+FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
+
+FSTAR_EXTRACT = --extract '-* +MLS'
+FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --admit_smt_queries true --warn_error '+241@247+285' --odir out --cmi
 
 .PHONY: all clean
 
-all: test
-
-#TODO: make it nicer and put the right dependencies
-test: out/Parser.ml out/Crypto_Builtins.ml out/Crypto_Derived.ml Test.fst | bin out test_vectors
-	$(FSTAR) $(FSTAR_DEFAULT_ARGS) --include $(HACL_SNAPSHOT_DIR)/lib --include $(HACL_SNAPSHOT_DIR)/specs --lax --admit_smt_queries true --odir out --codegen OCaml --extract '* -FStar -Spec' Test.fst
-	$(OCAMLOPT) -I out -I $(HACL_SNAPSHOT_DIR)/ml $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa $(MLS_SPEC_FILES) $(MLS_TEST_FILES) -o bin/test.exe
-	./bin/test.exe
-
-out/Parser.ml: Parser.fsti Parser.fst | out
-	$(FSTAR) $(FSTAR_DEFAULT_ARGS) --include $(HACL_SNAPSHOT_DIR)/lib --include $(HACL_SNAPSHOT_DIR)/specs --lax --odir out --codegen OCaml --extract 'Parser' Parser.fst
-
-out/Crypto_Builtins.ml: Crypto.Builtins.fsti Crypto.Builtins.fst | out
-	$(FSTAR) $(FSTAR_DEFAULT_ARGS) --include $(HACL_SNAPSHOT_DIR)/lib --include $(HACL_SNAPSHOT_DIR)/specs --lax --odir out --codegen OCaml --extract 'Crypto.Builtins' Crypto.Builtins.fst
-
-out/Crypto_Derived.ml: Crypto.Derived.fsti Crypto.Derived.fst | out
-	$(FSTAR) $(FSTAR_DEFAULT_ARGS) --include $(HACL_SNAPSHOT_DIR)/lib --include $(HACL_SNAPSHOT_DIR)/specs --lax --odir out --codegen OCaml --extract 'Crypto.Derived' Crypto.Derived.fst
-
-out:
-	mkdir -p out
-bin:
-	mkdir -p bin
-
-test_vectors:
-	mkdir -p test_vectors
-	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_treemath_openmls.json -O test_vectors/treemath.json
-	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_key_schedule_openmls.json -O test_vectors/key_schedule.json
-	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_encryption_openmls.json -O test_vectors/encryption.json
-	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_transcripts.json -O test_vectors/commit_transcript.json
+all: bin/test.exe
 
 clean:
-	rm -rf out bin test_vectors Test_Reader.o
+	rm -rf hints out bin obj *.checked
+
+# Dependency analysis
+
+FSTAR_ROOTS = \
+  $(wildcard $(addsuffix /*.fsti,$(SOURCE_DIR))) \
+  $(wildcard $(addsuffix /*.fst,$(SOURCE_DIR)))
+
+ifndef MAKE_RESTARTS
+.depend: .FORCE
+	$(FSTAR) $(FSTAR_FLAGS) --dep full $(FSTAR_EXTRACT) $(notdir $(FSTAR_ROOTS)) > $@
+
+.PHONY: .FORCE
+.FORCE:
+endif
+
+include .depend
+
+# Verification
+
+hints:
+	mkdir $@
+
+obj:
+	mkdir $@
+
+
+%.checked: FSTAR_RULE_FLAGS=
+
+%.checked: | hints obj
+	$(FSTAR) $(FSTAR_FLAGS) $(FSTAR_RULE_FLAGS) $< && touch -c $@
+
+# Extraction
+
+.PRECIOUS: out/%.ml
+out/%.ml:
+	$(FSTAR) $(FSTAR_FLAGS) $(notdir $(subst .checked,,$<)) --codegen OCaml \
+	--extract_module $(basename $(notdir $(subst .checked,,$<)))
+out/MLS_Test_Reader.ml: MLS_Test_Reader.ml
+	cp $< $@
+out/MLS_Test_Equality.ml: MLS_Test_Equality.ml
+	cp $< $@
+
+# OCaml compilation
+
+.PRECIOUS: out/%.cmx
+out/%.cmx: out/%.ml
+	$(OCAMLOPT) -I out -I $(HACL_SNAPSHOT_DIR)/ml $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa -c $< -o $@
+
+out/MLS_Test_Reader.cmx: out/MLS_Test_Reader.ml out/MLS_Test_Types.cmx
+out/MLS_Test_Equality.cmx: out/MLS_Test_Equality.ml
+
+# Final binary
+
+ALL_CMX_FILES=out/MLS_Test_Reader.cmx out/MLS_Test_Equality.cmx $(subst .ml,.cmx,$(ALL_ML_FILES))
+
+bin/test.exe: out/MLS_Test.cmx | bin
+	$(OCAMLOPT) -I out $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa $(ALL_CMX_FILES) -o bin/test.exe
+
+bin:
+	mkdir $@
