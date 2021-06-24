@@ -15,14 +15,14 @@ INCLUDE_DIRS = $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs
 FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
 
 FSTAR_EXTRACT = --extract '-* +MLS'
-FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --admit_smt_queries true --warn_error '+241@247+285' --odir out --cmi
+FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --admit_smt_queries true --warn_error '+241@247+285' --cache_dir obj --odir obj --cmi
 
 .PHONY: all clean
 
 all: bin/test.exe
 
 clean:
-	rm -rf hints out bin obj *.checked
+	rm -rf hints bin obj
 
 # Dependency analysis
 
@@ -56,30 +56,40 @@ obj:
 
 # Extraction
 
-.PRECIOUS: out/%.ml
-out/%.ml:
+.PRECIOUS: obj/%.ml
+obj/%.ml:
 	$(FSTAR) $(FSTAR_FLAGS) $(notdir $(subst .checked,,$<)) --codegen OCaml \
 	--extract_module $(basename $(notdir $(subst .checked,,$<)))
-out/MLS_Test_Reader.ml: MLS_Test_Reader.ml
+obj/MLS_Test_Reader.ml: MLS_Test_Reader.ml
 	cp $< $@
-out/MLS_Test_Equality.ml: MLS_Test_Equality.ml
+obj/MLS_Test_Equality.ml: MLS_Test_Equality.ml
 	cp $< $@
 
 # OCaml compilation
 
-.PRECIOUS: out/%.cmx
-out/%.cmx: out/%.ml
-	$(OCAMLOPT) -I out -I $(HACL_SNAPSHOT_DIR)/ml $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa -c $< -o $@
+.PRECIOUS: obj/%.cmx
+obj/%.cmx: obj/%.ml
+	$(OCAMLOPT) -I obj -I $(HACL_SNAPSHOT_DIR)/ml $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa -c $< -o $@
 
-out/MLS_Test_Reader.cmx: out/MLS_Test_Reader.ml out/MLS_Test_Types.cmx
-out/MLS_Test_Equality.cmx: out/MLS_Test_Equality.ml
+obj/MLS_Test_Reader.cmx: obj/MLS_Test_Reader.ml obj/MLS_Test_Types.cmx
+obj/MLS_Test_Equality.cmx: obj/MLS_Test_Equality.ml
 
 # Final binary
 
-ALL_CMX_FILES=out/MLS_Test_Reader.cmx out/MLS_Test_Equality.cmx $(subst .ml,.cmx,$(ALL_ML_FILES))
+ALL_CMX_FILES=obj/MLS_Test_Reader.cmx obj/MLS_Test_Equality.cmx $(subst .ml,.cmx,$(ALL_ML_FILES))
 
-bin/test.exe: out/MLS_Test.cmx | bin
-	$(OCAMLOPT) -I out $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa $(ALL_CMX_FILES) -o bin/test.exe
+bin/test.exe: obj/MLS_Test.cmx | bin
+	$(OCAMLOPT) -I obj $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa $(ALL_CMX_FILES) -o bin/test.exe
 
 bin:
 	mkdir $@
+
+# Test vectors
+
+test_vectors:
+	mkdir -p test_vectors
+	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_treemath_openmls.json -O test_vectors/treemath.json
+	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_key_schedule_openmls.json -O test_vectors/key_schedule.json
+	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_encryption_openmls.json -O test_vectors/encryption.json
+	wget https://raw.githubusercontent.com/openmls/openmls/main/test_vectors/kat_transcripts.json -O test_vectors/commit_transcript.json
+
