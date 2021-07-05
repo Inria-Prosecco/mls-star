@@ -137,21 +137,25 @@ let hex_string_to_byte s =
   let d2 = hex_string_to_hex_digit (String.sub s 1 1) in
   16*d1 + d2
 
-val hex_string_to_bytes: string -> ML bytes
-let rec hex_string_to_bytes s =
+//We do recursion on lists, because recursing on a string is slow
+val hex_list_char_to_list_u8: list char -> ML (list Lib.IntTypes.uint8)
+let rec hex_list_char_to_list_u8 l =
   let open Lib.IntTypes in
-  if strlen s = 0 then
-    Seq.empty
-  else if strlen s = 1 then
-    failwith "string_to_bytes: size is not a multiple of two"
-  else (
-    let s0 = String.sub s 0 2 in
-    let ss = String.sub s 2 (strlen s - 2) in
-    let cur_digit = hex_string_to_byte s0 in
+  match l with
+  | [] -> []
+  | [h] -> failwith "string_to_bytes: size is not a multiple of two"
+  | h1::h2::t ->
+    list_of_string_of_list [h1; h2];
+    let cur_digit = hex_string_to_byte (string_of_list [h1; h2]) in
     let b0 = u8 cur_digit in
-    let bs = hex_string_to_bytes ss in
-    Seq.append (Seq.create 1 b0) bs
-  )
+    let bs = hex_list_char_to_list_u8 t in
+    b0::bs
+
+val hex_string_to_bytes: string -> ML bytes
+let hex_string_to_bytes s =
+  //For some reason, introducing this let helps F*'s type system
+  let res = hex_list_char_to_list_u8 (list_of_string s) in
+  Seq.seq_of_list res
 
 val extract_option: #a:Type -> string -> option a -> ML a
 let extract_option s x =
