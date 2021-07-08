@@ -28,9 +28,9 @@ val derive_tree_secret: cs:ciphersuite -> secret:bytes -> label:bytes -> node:na
 let derive_tree_secret cs secret label node generation len =
   let open MLS.Parser in
   if not (node < pow2 32) then
-    fail "derive_tree_secret: node too high"
+    internal_failure "derive_tree_secret: node too high"
   else if not (generation < pow2 32) then
-    fail "derive_tree_secret: generation too high"
+    internal_failure "derive_tree_secret: generation too high"
   else
     let tree_context = ps_tree_context.serialize ({
       tc_node = u32 node;
@@ -173,7 +173,8 @@ let rec ratchet_get_generation_key #cs st i =
   ) else (
     //Here we have to break encapsulation provided by `result` so fstar knows that `ratchet_next_state` increments `rs_generation`
     match ratchet_next_state st with
-    | Error s -> Error s
+    | InternalError s -> InternalError s
+    | ProtocolError s -> ProtocolError s
     | Success next_st ->
       ratchet_get_generation_key next_st i
   )

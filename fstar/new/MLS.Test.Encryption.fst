@@ -25,7 +25,7 @@ let test_leaf_generation #cs sender_data_secret r_state test =
   let message_plaintext = extract_result (network_to_message_plaintext message_plaintext_network) in
   let message_ciphertext = extract_result (network_to_message_ciphertext message_ciphertext_network) in
   let message_1 = message_plaintext_to_message message_plaintext in
-  let message_2 = extract_result (message_ciphertext_to_message (fun i -> if r_state.rs_generation <= i then ratchet_get_generation_key r_state i else fail "ratchet: generation not available") sender_data_secret message_ciphertext) in
+  let message_2 = extract_result (message_ciphertext_to_message (fun i -> if r_state.rs_generation <= i then ratchet_get_generation_key r_state i else internal_failure "ratchet: generation not available") sender_data_secret message_ciphertext) in
   let plaintext_eq_ciphertext_ok = test_equality message_1 message_2 in
   let sender_ok = (fst message_1).m_sender.s_sender_type = MLS.TreeDEM.Message.Framing.ST_member && (let open FStar.Mul in 2*(fst message_1).m_sender.s_sender_id = r_state.rs_node) in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)
@@ -69,9 +69,13 @@ let test_encryption_one t =
     true
   ) else (
     match uint16_to_ciphersuite t.et_cipher_suite with
-    | Error s -> begin
+    | ProtocolError s -> begin
       IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
       true
+    end
+    | InternalError s -> begin
+      IO.print_string ("Internal error! '" ^ s ^ "'\n");
+      false
     end
     | Success cs -> begin
       let n_leaves = UInt32.v t.et_n_leaves in

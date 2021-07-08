@@ -167,7 +167,8 @@ val extract_result: #a:Type -> result a -> ML a
 let extract_result x =
   match x with
   | Success y -> y
-  | Error s -> failwith s
+  | ProtocolError s -> failwith ("Protocol error: " ^ s)
+  | InternalError s -> failwith ("Internal error (this shouldn't be possible!): " ^ s)
 
 val uint16_to_ciphersuite: UInt16.t -> ML (result ciphersuite)
 let uint16_to_ciphersuite x =

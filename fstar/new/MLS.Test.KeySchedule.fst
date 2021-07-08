@@ -81,9 +81,13 @@ let gen_list_epoch_output cs group_id initial_init_secret l =
 val test_keyschedule_one: keyschedule_test -> ML bool
 let test_keyschedule_one t =
   match uint16_to_ciphersuite t.ks_cipher_suite with
-  | Error s -> begin
+  | ProtocolError s -> begin
     IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
     true
+  end
+  | InternalError s -> begin
+    IO.print_string ("Internal error! '" ^ s ^ "'\n");
+    false
   end
   | Success cs -> begin
     let (inputs, expected_outputs) = List.Tot.unzip t.epochs in

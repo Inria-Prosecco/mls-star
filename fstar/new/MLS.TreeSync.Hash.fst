@@ -72,7 +72,7 @@ let rec tree_hash #l #n cs ind t =
         return (Some_nt res)
     );
     if not (ind < pow2 32) then
-      fail "tree_hash: node_index too big"
+      internal_failure "tree_hash: node_index too big"
     else
       hash_hash cs (ps_leaf_node_tree_hash_input.serialize ({
         lnthi_node_index = u32 ind;
@@ -89,7 +89,7 @@ let rec tree_hash #l #n cs ind t =
     left_hash <-- tree_hash cs (TM.left ind) left;
     right_hash <-- tree_hash cs (TM.right ind) right;
     if not (ind < pow2 32) then
-      fail "tree_hash: node_index too big"
+      internal_failure "tree_hash: node_index too big"
     else
       hash_hash cs (ps_parent_node_tree_hash_input.serialize ({
         pnthi_node_index = u32 ind;

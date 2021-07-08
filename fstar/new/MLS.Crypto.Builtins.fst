@@ -52,7 +52,7 @@ let hash_length cs =
 
 let hash_hash cs buf =
   if not (Seq.length buf <= Hash.max_input_length (cs.kdf_hash)) then
-    fail "hash_hash: buf too long"
+    internal_failure "hash_hash: buf too long"
   else
     return (Hash.hash cs.kdf_hash buf)
 
@@ -86,21 +86,21 @@ let kdf_expand_tot cs prk info len =
 
 let kdf_extract cs key data =
   if not (Seq.length key <= Hash.max_input_length cs.kdf_hash && Seq.length key + Hash.block_length cs.kdf_hash < pow2 32) then
-    fail "kdf_extract_dyn: bad key size"
+    internal_failure "kdf_extract: bad key size"
   else if not (Seq.length data + Hash.block_length (cs.kdf_hash) <= Hash.max_input_length (cs.kdf_hash)) then
-    fail "kdf_extract_dyn: bad data size"
+    internal_failure "kdf_extract: bad data size"
   else
     return (HKDF.extract (cs.kdf_hash) key data)
 
 let kdf_expand cs prk info len =
   if not (Hash.hash_length cs.kdf_hash <= Seq.length prk) then
-    fail "kdf_expand_dyn: prk too small"
+    internal_failure "kdf_expand: prk too small"
   else if not (Seq.length prk <= Hash.max_input_length cs.kdf_hash && Seq.length prk + Hash.block_length cs.kdf_hash < pow2 32) then
-    fail "kdf_expand_dyn: prk too long"
+    internal_failure "kdf_expand: prk too long"
   else if not (Hash.hash_length cs.kdf_hash + Seq.length info + 1 + Hash.block_length cs.kdf_hash <= Hash.max_input_length cs.kdf_hash) then
-    fail "kdf_expand_dyn: info too long"
+    internal_failure "kdf_expand: info too long"
   else if not (len <= 255 * Hash.hash_length cs.kdf_hash) then
-    fail "kdf_expand_dyn: len too high"
+    internal_failure "kdf_expand: len too high"
   else
     return (HKDF.expand cs.kdf_hash prk info len)
 
@@ -112,43 +112,43 @@ let hpke_kem_output_length cs = HPKE.size_dh_public (ciphersuite_to_hpke_ciphers
 
 let hpke_gen_keypair cs ikm =
   if not (Seq.length ikm <= HPKE.max_length_dkp_ikm (cs.kem_hash)) then
-    fail "hpke_gen_keypair: ikm too long"
+    internal_failure "hpke_gen_keypair: ikm too long"
   else (
     match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) ikm with
-    | None -> fail "hpke_gen_keypair: HPKE.derive_key_pair failed"
+    | None -> internal_failure "hpke_gen_keypair: HPKE.derive_key_pair failed"
     | Some (sk, pk) -> return (sk, pk)
   )
 
 let hpke_encrypt cs pkR info ad plaintext rand =
   match HPKE.derive_key_pair (ciphersuite_to_hpke_ciphersuite cs) rand with
-  | None -> fail "hpke_encrypt: HPKE.derive_key_pair failed"
+  | None -> internal_failure "hpke_encrypt: HPKE.derive_key_pair failed"
   | Some (skE, _) -> (
     let pkR = HPKE.deserialize_public_key (ciphersuite_to_hpke_ciphersuite cs) pkR in
     if not (Seq.length info <= HPKE.max_length_info cs.kdf_hash) then
-      fail "hpke_encrypt: info too long"
+      internal_failure "hpke_encrypt: info too long"
     else if not (Seq.length ad <= AEAD.max_length cs.aead) then
-      fail "hpke_encrypt: ad too long"
+      internal_failure "hpke_encrypt: ad too long"
     else if not (Seq.length plaintext <= AEAD.max_length cs.aead) then
-      fail "hpke_encrypt: plaintext too long"
+      internal_failure "hpke_encrypt: plaintext too long"
     else (
       match HPKE.sealBase (ciphersuite_to_hpke_ciphersuite cs) skE pkR info ad plaintext with
-      | None -> fail "hpke_encrypt: HPKE.sealBase failed"
+      | None -> internal_failure "hpke_encrypt: HPKE.sealBase failed"
       | Some (kem_output, ciphertext) -> return (kem_output, ciphertext)
     )
   )
 
 let hpke_decrypt cs enc skR info ad ciphertext =
   if not (Seq.length info <= HPKE.max_length_info cs.kdf_hash) then
-    fail "hpke_decrypt: info too long"
+    internal_failure "hpke_decrypt: info too long"
   else if not (Seq.length ad <= AEAD.max_length cs.aead) then
-    fail "hpke_decrypt: ad too long"
+    internal_failure "hpke_decrypt: ad too long"
   else if not (Seq.length ciphertext >= AEAD.tag_length cs.aead) then
-    fail "hpke_decrypt: ciphertext too short"
+    error "hpke_decrypt: ciphertext too short"
   else if not (Seq.length ciphertext <= AEAD.cipher_max_length cs.aead) then
-    fail "hpke_decrypt: ciphertext too short"
+    error "hpke_decrypt: ciphertext too long"
   else (
     match HPKE.openBase (ciphersuite_to_hpke_ciphersuite cs) enc skR info ad ciphertext with
-    | None -> fail "hpke_decrypt: HPKE.openBase failed"
+    | None -> error "hpke_decrypt: HPKE.openBase failed"
     | Some res -> return res
   )
 
@@ -179,10 +179,10 @@ let sign_sign cs sk msg rand =
   match cs.signature with
   | Ed_25519 ->
     if not (64 + Seq.length msg <= max_size_t) then
-      fail "sign_sign: msg too long"
+      internal_failure "sign_sign: msg too long"
     else
       return (Ed25519.sign sk msg)
-  | P_256 -> fail "sign_sign: P_256 not implemented"
+  | P_256 -> internal_failure "sign_sign: P_256 not implemented"
 
 let sign_verify cs pk msg signature =
   match cs.signature with
@@ -203,19 +203,19 @@ let aead_key_length cs =
 
 let aead_encrypt cs key nonce ad plaintext =
   if not (Seq.length ad <= AEAD.max_length (cs.aead)) then
-    fail "aead_encrypt: ad too long"
+    internal_failure "aead_encrypt: ad too long"
   else if not (Seq.length plaintext <= AEAD.max_length (cs.aead)) then
-    fail "aead_encrypt: plaintext too long"
+    internal_failure "aead_encrypt: plaintext too long"
   else
     return (AEAD.encrypt #(cs.aead) key nonce ad plaintext)
 
 let aead_decrypt cs key nonce ad ciphertext =
   if not (Seq.length ad <= AEAD.max_length (cs.aead)) then
-    fail "aead_decrypt: ad too long"
+    internal_failure "aead_decrypt: ad too long"
   else if not (AEAD.tag_length (cs.aead) <= Seq.length ciphertext) then
-    fail "aead_decrypt: ciphertext too short"
+    error "aead_decrypt: ciphertext too short"
   else if not ( Seq.length ciphertext <= AEAD.max_length (cs.aead) + AEAD.tag_length (cs.aead)) then
-    fail "aead_decrypt: ciphertext too long"
+    error "aead_decrypt: ciphertext too long"
   else (
     result <-- from_option "aead_decrypt: AEAD.decrypt failed" (AEAD.decrypt #(cs.aead) key nonce ad ciphertext);
     return (result <: bytes)
@@ -225,9 +225,9 @@ let aead_decrypt cs key nonce ad ciphertext =
 
 let hmac_hmac cs key data =
   if not (let l = Seq.length key in l < Hash.max_input_length cs.kdf_hash && l + Hash.block_length cs.kdf_hash < pow2 32) then (
-    fail "hmac_hmac: wrong key size"
+    internal_failure "hmac_hmac: wrong key size"
   ) else if not (Seq.length data + Hash.block_length cs.kdf_hash < Hash.max_input_length cs.kdf_hash) then (
-    fail "hmac_hmac: data too long"
+    internal_failure "hmac_hmac: data too long"
   ) else (
     return (HMAC.hmac cs.kdf_hash key data)
   )

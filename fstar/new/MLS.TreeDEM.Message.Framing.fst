@@ -90,7 +90,7 @@ let network_to_sender_type s =
   | NT.ST_member -> return ST_member
   | NT.ST_preconfigured -> return ST_preconfigured
   | NT.ST_new_member -> return ST_new_member
-  | _ -> fail "network_to_sender_type: invalid sender type"
+  | _ -> error "network_to_sender_type: invalid sender type"
 
 val sender_type_to_network: sender_type -> sender_type_nt
 let sender_type_to_network s =
@@ -110,7 +110,7 @@ let network_to_sender s =
 val sender_to_network: sender -> result sender_nt
 let sender_to_network s =
   if not (s.s_sender_id < pow2 32) then (
-    fail "network_to_sender: sender_id too big"
+    internal_failure "network_to_sender: sender_id too big"
   ) else (
     return ({
       sn_sender_type = sender_type_to_network s.s_sender_type;
@@ -131,7 +131,7 @@ val opt_bytes_to_opt_tag: option bytes -> result (option_nt mac_nt)
 let opt_bytes_to_opt_tag mac =
   optmac <-- (match mac with
     | None -> (return None)
-    | Some m -> if Seq.length m < 256 then return (Some ({mn_mac_value = m})) else fail "opt_bytes_to_opt_tag: mac too long"
+    | Some m -> if Seq.length m < 256 then return (Some ({mn_mac_value = m})) else internal_failure "opt_bytes_to_opt_tag: mac too long"
   );
   return (option_to_network optmac)
 
@@ -175,9 +175,9 @@ let get_ciphertext_sample cs ct =
 val decrypt_sender_data: ciphersuite -> message_ciphertext -> bytes -> result mls_sender_data_nt
 let decrypt_sender_data cs ct sender_data_secret =
   if not (Seq.length ct.mc_group_id < 256) then (
-    fail "decrypt_sender_data: group_id too long"
+    internal_failure "decrypt_sender_data: group_id too long"
   ) else if not (ct.mc_epoch < pow2 64) then (
-    fail "decrypt_sender_data: epoch too big"
+    internal_failure "decrypt_sender_data: epoch too big"
   ) else (
     let ciphertext_sample = get_ciphertext_sample cs ct.mc_ciphertext in
     sender_data_key <-- expand_with_label cs sender_data_secret (string_to_bytes "key") ciphertext_sample (aead_key_length cs);
@@ -194,11 +194,11 @@ let decrypt_sender_data cs ct sender_data_secret =
 val decrypt_ciphertext_content: cs:ciphersuite -> ct:message_ciphertext -> aead_key cs -> aead_nonce cs -> result (mls_ciphertext_content_nt (message_content_type_to_network ct.mc_content_type))
 let decrypt_ciphertext_content cs ct key nonce =
   if not (Seq.length ct.mc_group_id < 256) then (
-    fail "decrypt_ciphertext_content: group_id too long"
+    internal_failure "decrypt_ciphertext_content: group_id too long"
   ) else if not (ct.mc_epoch < pow2 64) then (
-    fail "decrypt_ciphertext_content: epoch too big"
+    internal_failure "decrypt_ciphertext_content: epoch too big"
   ) else if not (Seq.length ct.mc_authenticated_data < pow2 32) then (
-    fail "decrypt_ciphertext_content: authenticated_data too long"
+    internal_failure "decrypt_ciphertext_content: authenticated_data too long"
   ) else (
     let content_type = message_content_type_to_network ct.mc_content_type in
     let ad = ps_mls_ciphertext_content_aad.serialize ({

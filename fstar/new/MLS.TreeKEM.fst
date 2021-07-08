@@ -137,7 +137,7 @@ val node_decap: #cs:ciphersuite -> child_secret:bytes -> i:nat -> dir:direction 
 let node_decap #cs child_secret i dir kp =
   if dir = kp.kp_path_secret_from then (
     if i <> 0 then
-      fail "node_decap"
+      internal_failure "node_decap"
     else
       derive_next_path_secret cs child_secret
   ) else (
@@ -160,8 +160,8 @@ let rec update_path_entropy_length #cs #l #n t leaf_index =
 val update_path: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> t:treekem cs l n -> leaf_index:leaf_index n -> leaf_secret:bytes -> ad:bytes -> randomness (update_path_entropy_length t leaf_index) -> Pure (result (pathkem cs l n leaf_index & bytes))
   (requires Seq.length leaf_secret >= hpke_private_key_length cs)
   (ensures fun res -> match res with
-    | Error _ -> True
     | Success (_, node_secret) -> Seq.length leaf_secret >= hpke_private_key_length cs
+    | _ -> True
   )
 let rec update_path #cs #l #n t leaf_index leaf_secret ad rand =
   match t with
@@ -192,7 +192,7 @@ let rec update_path #cs #l #n t leaf_index leaf_secret ad rand =
 val root_secret: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> t:treekem cs l n -> leaf_index n -> leaf_secret:bytes -> result (bytes)
 let rec root_secret #cs #l #n t leaf_index leaf_secret =
   match t with
-  | TLeaf None -> fail ""
+  | TLeaf None -> internal_failure "root_secret: leaf_index corresponds to an empty leaf"
   | TLeaf (Some _) -> return leaf_secret
   | TSkip _ t' -> root_secret t' leaf_index leaf_secret
   | TNode (Some kp) left right -> begin
@@ -224,13 +224,13 @@ let empty_path_secret_ciphertext cs = {
 val mk_init_path_aux: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> update_index:leaf_index n -> result (pathkem cs l n update_index)
 let rec mk_init_path_aux #cs #l #n t update_index =
   match t with
-  | TLeaf None -> fail "mk_init_path_aux: update leaf cannot be blanked"
+  | TLeaf None -> error "mk_init_path_aux: update leaf cannot be blanked"
   | TLeaf (Some mi) -> return (PLeaf mi)
   | TSkip _ t' ->
     res <-- mk_init_path_aux t' update_index;
     return (PSkip _ res)
   | TNode None left right -> begin
-    fail "mk_init_path_aux: path from the root to update leaf cannot contain blank node"
+    error "mk_init_path_aux: path from the root to update leaf cannot contain blank node"
   end
   | TNode (Some kp) left right -> begin
     let (|update_dir, next_update_index|) = child_index l update_index in
@@ -249,7 +249,7 @@ let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
     res <-- mk_init_path t' my_index update_index path_secret ad;
     return (PSkip _ res)
   | TNode None left right -> begin
-    fail "mk_init_path: path from the root to update leaf cannot contain blank node"
+    error "mk_init_path: path from the root to update leaf cannot contain blank node"
   end
   | TNode (Some kp) left right -> begin
     let (|my_dir, next_my_index|) = child_index l my_index in
@@ -315,9 +315,9 @@ let compute_parent_hash #cs #l #n public_key parent_hash sibling forbidden_publi
   ) sibling_resolution in
   let original_child_resolution_nt = List.Tot.map (fun (x:hpke_public_key cs) -> x <: hpke_public_key_nt) original_child_resolution in
   if not (Seq.length parent_hash < 256) then
-    fail "compute_parent_hash: parent_hash too long"
+    internal_failure "compute_parent_hash: parent_hash too long"
   else if not (byte_length ps_hpke_public_key original_child_resolution_nt < pow2 32) then
-    fail "compute_parent_hash: original_child_resolution too big"
+    internal_failure "compute_parent_hash: original_child_resolution too big"
   else (
     Seq.lemma_list_seq_bij original_child_resolution_nt;
     hash_hash cs (ps_parent_hash_input.serialize ({

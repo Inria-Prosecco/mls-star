@@ -33,7 +33,7 @@ let network_to_message_content_type content_type =
   if valid_network_message_content_type content_type then
     return (network_to_message_content_type_tot content_type)
   else
-    fail "network_to_message_content_type: invalid content type"
+    error "network_to_message_content_type: invalid content type"
 
 val message_content_type_to_network: message_content_type -> content_type_nt
 let message_content_type_to_network content_type =
@@ -86,7 +86,7 @@ let network_to_proposal p =
     return (ExternalInit external_init)
   | P_app_ack app_ack ->
     return (AppAck app_ack)
-  | _ -> fail "network_to_proposal: invalid proposal"
+  | _ -> error "network_to_proposal: invalid proposal"
 
 val network_to_proposal_or_ref: proposal_or_ref_nt -> result proposal_or_ref
 let network_to_proposal_or_ref por =
@@ -96,7 +96,7 @@ let network_to_proposal_or_ref por =
     return (Proposal res)
   | POR_reference r ->
     return (Reference r)
-  | _ -> fail "network_to_proposal_or_ref: invalid proposal or ref"
+  | _ -> error "network_to_proposal_or_ref: invalid proposal or ref"
 
 val network_to_commit: commit_nt -> result commit
 let network_to_commit c =
@@ -130,7 +130,7 @@ let network_to_message_content_pair content =
   | MC_commit msg ->
     res <-- network_to_message_content msg;
     return (make_message_content_pair res)
-  | _ -> fail "network_to_message_content_pair: invalid content type"
+  | _ -> error "network_to_message_content_pair: invalid content type"
 
 val proposal_to_network: MLS.Crypto.ciphersuite -> proposal -> result proposal_nt
 let proposal_to_network cs p =
@@ -143,7 +143,7 @@ let proposal_to_network cs p =
     return (P_update ({un_key_package = kp}))
   | Remove id ->
     if not (id < pow2 32) then
-      fail "proposal_to_network: remove id too big"
+      internal_failure "proposal_to_network: remove id too big"
     else
       return (P_remove ({rn_removed = u32 id}))
   | PreSharedKey x -> return (P_psk ({pskn_psk = x}))
@@ -159,7 +159,7 @@ let proposal_or_ref_to_network cs por =
     return (POR_proposal res)
   | Reference ref ->
     if not (Seq.length ref < 256) then
-      fail "proposal_or_ref_to_network: reference too long"
+      internal_failure "proposal_or_ref_to_network: reference too long"
     else
       return (POR_reference ref)
 
@@ -168,7 +168,7 @@ let commit_to_network cs c =
   proposals <-- mapM (proposal_or_ref_to_network cs) c.c_proposals;
   Seq.lemma_list_seq_bij proposals;
   if not (MLS.Parser.byte_length ps_proposal_or_ref proposals < pow2 32) then
-    fail "commit_to_network: proposals too long"
+    internal_failure "commit_to_network: proposals too long"
   else (
     return ({
       cn_proposals = Seq.seq_of_list proposals;
@@ -182,7 +182,7 @@ let message_content_to_network #content_type cs msg =
   | CT_application -> begin
     let msg: bytes = msg in
     if not (Seq.length msg < pow2 32) then
-      fail "message_content_to_network: application message too long"
+      internal_failure "message_content_to_network: application message too long"
     else
       return (MC_application msg)
   end

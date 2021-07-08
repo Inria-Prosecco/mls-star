@@ -6,30 +6,28 @@ open Lib.Sequence
 
 type result 'a =
   | Success: v:'a -> result 'a
-  | Error: string -> result 'a
+  | InternalError: string -> result 'a
+  | ProtocolError: string -> result 'a
 
 let return (a:'a) : result 'a = Success a
-let fail (#a:Type) (s:string): result a = Error s
+let internal_failure (#a:Type) (s:string): result a = InternalError s
+let error (#a:Type) (s:string): result a = ProtocolError s
 
 let bind (a:result 'a) (f:'a -> result 'b) : result 'b =
   match a with
-  | Error x -> Error x
   | Success x -> f x
+  | InternalError x -> InternalError x
+  | ProtocolError x -> ProtocolError x
 
 let from_option (s:string) (x:option 'a): result 'a =
   match x with
-  | None -> Error s
+  | None -> ProtocolError s
   | Some x -> Success x
 
 let rec mapM (f:('a -> result 'b)) (l:list 'a): result (list 'b) =
   match l with
-  | [] -> Success []
+  | [] -> return []
   | h::t ->
     fh <-- f h;
     ft <-- mapM f t;
     return (fh::ft)
-
-let failure (e:string) : FStar.All.ML unit =
-  IO.print_newline ();
-  IO.print_string "Failure ! ";
-  IO.print_string e

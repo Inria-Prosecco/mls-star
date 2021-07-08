@@ -20,9 +20,13 @@ let test_confirmed_transcript_hash cs t =
 val test_commit_transcript_one: commit_transcript_test -> ML bool
 let test_commit_transcript_one t =
   match uint16_to_ciphersuite t.ctt_cipher_suite with
-  | Error s -> begin
+  | ProtocolError s -> begin
     IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
     true
+  end
+  | InternalError s -> begin
+    IO.print_string ("Internal error! '" ^ s ^ "'\n");
+    false
   end
   | Success cs -> begin
     let commit_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_plaintext).parse_exact (hex_string_to_bytes t.ctt_commit)) in

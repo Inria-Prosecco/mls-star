@@ -25,7 +25,7 @@ let secret_to_pub b =
 
 let encrypted_path_secret_nt_to_tk (cs:ciphersuite) (x:hpke_ciphertext_nt): result (TK.path_secret_ciphertext cs) =
   if not (Seq.length x.hcn_kem_output = hpke_kem_output_length cs) then
-    fail "encrypted_path_secret_nt_to_tk: kem_output has wrong length"
+    internal_failure "encrypted_path_secret_nt_to_tk: kem_output has wrong length"
   else
     return ({
       TK.kem_output = x.hcn_kem_output;
@@ -72,7 +72,7 @@ let rec treesync_to_treekem_aux #l #n cs nb_left_leaves t =
     if Seq.length lpc.lpc_public_key = hpke_public_key_length cs then
       return (TLeaf (Some ({TK.mi_public_key = lpc.lpc_public_key; TK.mi_version = lp.TS.lp_version})))
     else
-      fail "treesync_to_treekem: public key has wrong length"
+      error "treesync_to_treekem: public key has wrong length"
   | TSkip _ t' ->
     result <-- treesync_to_treekem_aux cs nb_left_leaves t';
     return (TSkip _ result)
@@ -88,12 +88,12 @@ let rec treesync_to_treekem_aux #l #n cs nb_left_leaves t =
       path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk cs) (Seq.seq_to_list content.npc_encrypted_path_secret);
       unmerged_leaves <-- mapM (fun (unmerged_leaf:nat) ->
         if not (nb_left_leaves <= unmerged_leaf) then
-          fail "treesync_to_treekem: unmerged_leaf index too big"
+          error "treesync_to_treekem: unmerged_leaf index too small"
         else
           return ((unmerged_leaf - nb_left_leaves) <: nat)
       ) np.TS.np_unmerged_leafs;
       if not (Seq.length content.npc_public_key = hpke_public_key_length cs) then
-        fail ""
+        error "treesync_to_treekem: public key has wrong length"
       else (
         let kp: TK.key_package cs = {
           TK.kp_public_key = content.npc_public_key;
@@ -113,9 +113,9 @@ let treesync_to_treekem #l #n cs t =
 
 let encrypted_path_secret_tk_to_nt (#cs:ciphersuite) (x:TK.path_secret_ciphertext cs): result (hpke_ciphertext_nt) =
   if not (Seq.length x.TK.kem_output < pow2 16) then
-    fail "encrypted_path_secret_tk_to_nt: kem_output too long"
+    internal_failure "encrypted_path_secret_tk_to_nt: kem_output too long"
   else if not (Seq.length x.TK.ciphertext < pow2 16) then
-    fail "encrypted_path_secret_tk_to_nt: ciphertext too long"
+    internal_failure "encrypted_path_secret_tk_to_nt: ciphertext too long"
   else
     return ({
       hcn_kem_output = x.TK.kem_output;
@@ -145,9 +145,9 @@ let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves old_leaf_package pk 
     next <-- treekem_to_treesync_aux new_left_leaves old_leaf_package pk_next pph_next;
     ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.TK.kp_path_secret_ciphertext;
     if not (byte_length ps_hpke_ciphertext ciphertexts < pow2 16) then
-      fail "treekem_to_treesync: ciphertexts too long"
+      internal_failure "treekem_to_treesync: ciphertexts too long"
     else if not (Seq.length kp.TK.kp_last_group_context < pow2 64) then
-      fail "treekem_to_treesync: last group context too long (internal error)"
+      internal_failure "treekem_to_treesync: last group context too long (internal error)"
     else begin
       Seq.lemma_list_seq_bij ciphertexts;
       let np_content = ps_node_package_content.serialize ({
@@ -188,16 +188,16 @@ let key_package_to_treesync kp =
       TS.lp_extensions = (ps_seq _ ps_extension).serialize (kp.kpn_extensions);
       TS.lp_signature = kp.kpn_signature;
     })
-  | _ -> fail "key_package_to_treesync: credential type not supported"
+  | _ -> error "key_package_to_treesync: credential type not supported"
 
 val treesync_to_keypackage: ciphersuite -> TS.leaf_package_t -> result key_package_nt
 let treesync_to_keypackage cs lp =
   if not (Seq.length lp.TS.lp_credential.TS.cred_identity < pow2 16) then
-    fail "treesync_to_keypackage: cred_identity too long"
+    error "treesync_to_keypackage: cred_identity too long"
   else if not (Seq.length lp.TS.lp_credential.TS.cred_signature_key < pow2 16) then
-    fail "treesync_to_keypackage: cred_signature_key too long"
+    error "treesync_to_keypackage: cred_signature_key too long"
   else if not (Seq.length lp.TS.lp_signature < pow2 16) then
-    fail "treesync_to_keypackage: signature too long"
+    error "treesync_to_keypackage: signature too long"
   else (
     leaf_content <-- from_option "treesync_to_keypackage: can't parse leaf content" ((ps_to_pse ps_leaf_package_content).parse_exact lp.TS.lp_content);
     extensions <-- from_option "treesync_to_keypackage: can't parse extensions" ((ps_to_pse (ps_seq _ ps_extension)).parse_exact lp.TS.lp_extensions);
@@ -218,11 +218,11 @@ let treesync_to_keypackage cs lp =
 
 val treesync_to_parent_node: TS.node_package_t -> result parent_node_nt
 let treesync_to_parent_node np =
-  unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (Lib.IntTypes.u32 x) else fail "") np.TS.np_unmerged_leafs;
+  unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (Lib.IntTypes.u32 x) else internal_failure "") np.TS.np_unmerged_leafs;
   if not (Seq.length np.TS.np_parent_hash < 256) then
-    fail "treesync_to_parent_node: parent_hash too long"
+    internal_failure "treesync_to_parent_node: parent_hash too long"
   else if not ((byte_length ps_u32 unmerged_leaves) < pow2 32) then
-    fail "treesync_to_parent_node: unmerged_leaves too long"
+    internal_failure "treesync_to_parent_node: unmerged_leaves too long"
   else (
     Seq.lemma_list_seq_bij unmerged_leaves;
     node_content <-- from_option "treesync_to_parent_node: can't parse np_content" ((ps_to_pse ps_node_package_content).parse_exact np.TS.np_content);
@@ -250,7 +250,7 @@ let parent_node_to_treesync pn =
 val key_package_to_treekem: cs:ciphersuite -> key_package_nt -> result (TK.member_info cs)
 let key_package_to_treekem cs kp =
   if not (Seq.length kp.kpn_public_key = hpke_public_key_length cs) then
-    fail "key_package_to_treekem: public key has wrong length"
+    error "key_package_to_treekem: public key has wrong length"
   else
     return ({
       TK.mi_public_key = kp.kpn_public_key;
@@ -260,11 +260,11 @@ let key_package_to_treekem cs kp =
 val update_path_node_to_treekem: cs:ciphersuite -> bytes -> direction -> update_path_node_nt -> result (TK.key_package cs)
 let update_path_node_to_treekem cs group_context dir update_path_node =
   if not (Seq.length update_path_node.upnn_public_key = hpke_public_key_length cs) then
-    fail "update_path_node_to_treekem: public key has wrong length"
+    error "update_path_node_to_treekem: public key has wrong length"
   else (
     path_secret_ciphertext <-- mapM (fun hpke_ciphertext ->
       if not (Seq.length hpke_ciphertext.hcn_kem_output = hpke_kem_output_length cs) then
-        fail "update_path_node_to_treekem: kem output has wrong length"
+        error "update_path_node_to_treekem: kem output has wrong length"
       else
         return ({
           TK.kem_output = hpke_ciphertext.hcn_kem_output;
@@ -281,11 +281,12 @@ let update_path_node_to_treekem cs group_context dir update_path_node =
     })
   )
 
+#push-options "--z3rlimit 30"
 val update_path_to_treekem: cs:ciphersuite -> l:nat -> n:tree_size l -> i:leaf_index n -> bytes -> update_path:update_path_nt -> result (TK.pathkem cs l n i)
 let rec update_path_to_treekem cs l n i group_context update_path =
   if l = 0 then (
     if not (Seq.length update_path.upn_nodes = 0) then
-      fail "update_path_to_treekem: update_path.nodes is too long"
+      internal_failure "update_path_to_treekem: update_path.nodes is too long"
     else (
       leaf_package <-- key_package_to_treekem cs update_path.upn_leaf_key_package;
       return (PLeaf leaf_package)
@@ -295,7 +296,7 @@ let rec update_path_to_treekem cs l n i group_context update_path =
     return (PSkip _ path_next)
   ) else (
     if not (Seq.length update_path.upn_nodes > 0) then
-      fail "update_path_to_treekem: update_path.nodes is too short"
+      internal_failure "update_path_to_treekem: update_path.nodes is too short"
     else (
       let update_path_length = (Seq.length update_path.upn_nodes) in
       let head_update_path_nodes = Seq.index update_path.upn_nodes (update_path_length-1) in
@@ -309,6 +310,7 @@ let rec update_path_to_treekem cs l n i group_context update_path =
       return (PNode path_data path_next)
     )
   )
+#pop-options
 
 (*** ratchet_tree extension (11.3) ***)
 
@@ -323,7 +325,7 @@ val ratchet_tree_l_n: nodes:ratchet_tree_nt -> result (l:nat & n:tree_size l{Seq
 let ratchet_tree_l_n nodes =
   let n_nodes = Seq.length nodes in
   if n_nodes%2 = 0 then
-    fail "ratchet_tree_l_n: length must be odd"
+    error "ratchet_tree_l_n: length must be odd"
   else
     let n = (n_nodes+1)/2 in
     let l = (TreeMath.Internal.log2 n) + 1 in
@@ -337,10 +339,10 @@ let rec ratchet_tree_to_treesync l n nodes =
     | Some_nt (N_leaf kp) ->
       kp <-- key_package_to_treesync kp;
       return (TLeaf (dumb_credential, Some kp))
-    | Some_nt _ -> fail "ratchet_tree_to_treesync_aux: node must be a leaf!"
+    | Some_nt _ -> error "ratchet_tree_to_treesync_aux: node must be a leaf!"
     | None_nt ->
       return (TLeaf (dumb_credential, None))
-    | _ -> fail "ratchet_tree_to_treesync_aux: option is invalid"
+    | _ -> error "ratchet_tree_to_treesync_aux: option is invalid"
   ) else if n <= pow2 (l-1) then (
     res <-- ratchet_tree_to_treesync (l-1) n nodes;
     return (TSkip _ res)
@@ -354,10 +356,10 @@ let rec ratchet_tree_to_treesync l n nodes =
     | Some_nt (N_parent pn) ->
       np <-- parent_node_to_treesync pn;
       return (TNode (dumb_credential, Some np) left_res right_res)
-    | Some_nt _ -> fail "ratchet_tree_to_treesync_aux: node must be a parent!"
+    | Some_nt _ -> error "ratchet_tree_to_treesync_aux: node must be a parent!"
     | None_nt ->
       return (TNode (dumb_credential, None) left_res right_res)
-    | _ -> fail "ratchet_tree_to_treesync_aux: option is invalid"
+    | _ -> error "ratchet_tree_to_treesync_aux: option is invalid"
   )
 
 val treesync_to_ratchet_tree: #l:nat -> #n:tree_size l -> cs:ciphersuite -> TS.treesync l n -> result (Seq.seq (option_nt node_nt))

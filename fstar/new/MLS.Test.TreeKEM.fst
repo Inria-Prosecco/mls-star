@@ -87,9 +87,13 @@ let test_treekem_one t =
     true
   ) else
   match uint16_to_ciphersuite t.tk_cipher_suite with
-  | Error s -> begin
+  | ProtocolError s -> begin
     IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
     true
+  end
+  | InternalError s -> begin
+    IO.print_string ("Internal error! '" ^ s ^ "'\n");
+    false
   end
   | Success cs -> begin
     let our_output = gen_treekem_output cs t.tk_input in

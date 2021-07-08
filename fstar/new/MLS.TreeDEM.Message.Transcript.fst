@@ -12,13 +12,13 @@ open MLS.Crypto
 val compute_confirmed_transcript_hash: cs:ciphersuite -> message -> bytes -> bytes -> result (lbytes (hash_length cs))
 let compute_confirmed_transcript_hash cs msg signature interim_transcript_hash =
   if not (Seq.length msg.m_group_id < 256) then
-    fail "compute_confirmed_transcript_hash: group_id too long"
+    internal_failure "compute_confirmed_transcript_hash: group_id too long"
   else if not (msg.m_epoch < pow2 64) then
-    fail "compute_confirmed_transcript_hash: epoch too big"
+    internal_failure "compute_confirmed_transcript_hash: epoch too big"
   else if not (Seq.length msg.m_authenticated_data < pow2 32) then
-    fail "compute_confirmed_transcript_hash: authenticated_data too long"
+    internal_failure "compute_confirmed_transcript_hash: authenticated_data too long"
   else if not (Seq.length signature < pow2 16) then
-    fail "compute_confirmed_transcript_hash: signature too long"
+    internal_failure "compute_confirmed_transcript_hash: signature too long"
   else (
     sender <-- sender_to_network msg.m_sender;
     content <-- message_content_to_network cs msg.m_message_content;

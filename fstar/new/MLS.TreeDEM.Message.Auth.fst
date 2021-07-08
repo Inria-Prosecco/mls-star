@@ -16,11 +16,11 @@ let compute_message_confirmation_tag cs confirmation_key confirmed_transcript_ha
 val compute_tbs: ciphersuite -> message -> result (mls_plaintext_tbs_nt)
 let compute_tbs cs msg =
   if not (Seq.length msg.m_group_id < 256) then
-    fail "compute_tbs: group_id too long"
+    internal_failure "compute_tbs: group_id too long"
   else if not (msg.m_epoch < pow2 64) then
-    fail "compute_tbs: epoch too big"
+    internal_failure "compute_tbs: epoch too big"
   else if not (Seq.length msg.m_authenticated_data < pow2 32) then
-    fail "compute_tbs: authenticated_data too long"
+    internal_failure "compute_tbs: authenticated_data too long"
   else (
     sender <-- sender_to_network msg.m_sender;
     content <-- message_content_to_network cs msg.m_message_content;
@@ -36,7 +36,7 @@ let compute_tbs cs msg =
 val compute_tbm: ciphersuite -> message -> message_auth -> result (mls_plaintext_tbm_nt)
 let compute_tbm cs msg auth =
   if not (Seq.length auth.m_signature < pow2 16) then
-    fail "compute_tbm: signature too long"
+    error "compute_tbm: signature too long"
   else (
     tbs <-- compute_tbs cs msg;
     confirmation_tag' <-- opt_bytes_to_opt_tag auth.m_confirmation_tag;
