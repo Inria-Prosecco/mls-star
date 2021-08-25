@@ -5,6 +5,7 @@ open FStar.All
 open MLS.Test.Types
 open MLS.Test.Utils
 open MLS.Tree
+open MLS.TreeSync.Types
 open MLS.TreeSync
 open MLS.TreeSync.Hash
 open MLS.TreeKEM

@@ -43,8 +43,8 @@ let message_content_type_to_network content_type =
   | CT_commit -> NT.CT_commit
 
 noeq type proposal =
-  | Add: MLS.TreeSync.leaf_package_t -> proposal
-  | Update: MLS.TreeSync.leaf_package_t -> proposal
+  | Add: MLS.TreeSync.Types.leaf_package_t -> proposal
+  | Update: MLS.TreeSync.Types.leaf_package_t -> proposal
   | Remove: nat -> proposal
   | PreSharedKey: pre_shared_key_id_nt -> proposal
   | ReInit: reinit_nt -> proposal

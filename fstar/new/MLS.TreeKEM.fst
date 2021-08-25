@@ -5,34 +5,12 @@ open MLS.Utils
 open MLS.Tree
 open Lib.ByteSequence
 open Lib.IntTypes
+open MLS.TreeKEM.Types
 open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 
 let todo_bytes = bytes_empty
-
-noeq type member_info (cs:ciphersuite) = {
-  mi_public_key: hpke_public_key cs;
-  mi_version: nat;
-}
-
-//TODO: move this in Crypto.fsti?
-noeq type path_secret_ciphertext (cs:ciphersuite) = {
-  kem_output: hpke_kem_output cs;
-  ciphertext: bytes;
-}
-
-noeq type key_package (cs:ciphersuite) = {
-  kp_public_key: hpke_public_key cs;
-  kp_version: nat;
-  kp_last_group_context: bytes; //Related to version, correspond to the additional data used in the ciphertexts
-  kp_unmerged_leafs: list nat;
-  kp_path_secret_from: direction;
-  kp_path_secret_ciphertext: list (path_secret_ciphertext cs);
-}
-
-type treekem (cs:ciphersuite) (l:nat) (n:tree_size l) = tree l n (option (member_info cs)) (option (key_package cs))
-type pathkem (cs:ciphersuite) (l:nat) (n:tree_size l) (i:leaf_index n) = path l n i (member_info cs) (key_package cs)
 
 val leaf_public_key: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> leaf_index n -> option (hpke_public_key cs)
 let rec leaf_public_key #cs #l #n t leaf_index =
@@ -303,8 +281,6 @@ let ps_parent_hash_input =
   (fun x -> (|x.phin_public_key, (|x.phin_parent_hash, x.phin_original_child_resolution|)|))
 
 open MLS.Result
-
-type path_parent_hash (l:nat) (n:tree_size l) (i:leaf_index n) = path l n i bytes bytes
 
 val compute_parent_hash: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> hpke_public_key cs -> bytes -> treekem cs l n -> list (hpke_public_key cs) -> result (lbytes (hash_length cs))
 let compute_parent_hash #cs #l #n public_key parent_hash sibling forbidden_public_keys =

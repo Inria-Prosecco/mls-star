@@ -6,8 +6,8 @@ open MLS.Parser
 open MLS.NetworkTypes
 open MLS.Tree
 open MLS.NetworkBinder
-module TS = MLS.TreeSync
-module TK = MLS.TreeKEM
+module TS = MLS.TreeSync.Types
+module TK = MLS.TreeKEM.Types
 open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"

@@ -6,8 +6,8 @@ open MLS.Crypto
 open MLS.Parser
 open MLS.Result
 open MLS.Tree
-module TS = MLS.TreeSync
-module TK = MLS.TreeKEM
+module TS = MLS.TreeSync.Types
+module TK = MLS.TreeKEM.Types
 
 val network_to_option: #a:Type -> option_nt a -> result (option a)
 let network_to_option #a opt =

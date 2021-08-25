@@ -1,7 +1,7 @@
 module MLS.TreeSync.Hash
 
 open MLS.Tree
-open MLS.TreeSync
+open MLS.TreeSync.Types
 open MLS.Crypto
 module TM = MLS.TreeMath
 open MLS.NetworkTypes
