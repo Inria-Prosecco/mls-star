@@ -9,7 +9,7 @@ open MLS.Parser
 open Lib.ByteSequence
 open Lib.IntTypes
 open MLS.Result
-open MLS.TreeSyncTreeKEMBinder
+open MLS.NetworkBinder
 
 #set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 

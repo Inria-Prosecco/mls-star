@@ -47,17 +47,26 @@ let compute_tbm cs msg auth =
     })
   )
 
-val compute_message_signature: cs:ciphersuite -> sign_private_key cs -> randomness (sign_nonce_length cs) -> message -> bytes -> result (sign_signature cs)
-let compute_message_signature cs sk rand msg group_context =
+val compute_tbs_bytes: ciphersuite -> message -> bytes -> result bytes
+let compute_tbs_bytes cs msg group_context =
   tbs <-- compute_tbs cs msg;
   let partial_serialized_bytes = ps_mls_plaintext_tbs.serialize tbs in
-  let serialized_bytes =
+  return (
     if msg.m_sender.s_sender_type = ST_member then
       Seq.append group_context partial_serialized_bytes
     else
       partial_serialized_bytes
-  in
-  sign_sign cs sk serialized_bytes rand
+  )
+
+val compute_message_signature: cs:ciphersuite -> sign_private_key cs -> randomness (sign_nonce_length cs) -> message -> bytes -> result (sign_signature cs)
+let compute_message_signature cs sk rand msg group_context =
+  serialized_tbs <-- compute_tbs_bytes cs msg group_context;
+  sign_sign cs sk serialized_tbs rand
+
+val check_message_signature: cs:ciphersuite -> sign_public_key cs -> sign_signature cs -> message -> bytes -> result bool
+let check_message_signature cs pk signature msg group_context =
+  serialized_tbs <-- compute_tbs_bytes cs msg group_context;
+  return (sign_verify cs pk serialized_tbs signature)
 
 val compute_message_membership_tag: cs:ciphersuite -> bytes -> message -> message_auth -> bytes -> result (lbytes (hash_length cs))
 let compute_message_membership_tag cs membership_key msg auth group_context =

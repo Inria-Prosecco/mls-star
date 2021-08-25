@@ -11,11 +11,8 @@ open MLS.Parser
 open MLS.TreeDEM.Message.Framing
 open MLS.TreeDEM.Message.Transcript
 open MLS.TreeDEM.Message.Auth
+open MLS.NetworkTypes
 open MLS.Result
-
-val test_confirmed_transcript_hash: ciphersuite -> commit_transcript_test -> bool
-let test_confirmed_transcript_hash cs t =
-  true
 
 val test_commit_transcript_one: commit_transcript_test -> ML bool
 let test_commit_transcript_one t =
@@ -29,6 +26,7 @@ let test_commit_transcript_one t =
     false
   end
   | Success cs -> begin
+    let ciphersuite_network = extract_option "malformed credential" ((ps_to_pse ps_credential).parse_exact (hex_string_to_bytes t.ctt_credential)) in
     let commit_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_plaintext).parse_exact (hex_string_to_bytes t.ctt_commit)) in
     let commit_plaintext = extract_result (network_to_message_plaintext commit_network) in
     let (commit_message, commit_auth) = message_plaintext_to_message commit_plaintext in
@@ -54,7 +52,20 @@ let test_commit_transcript_one t =
         IO.print_string "Missing membership tag\n";
         false
     in
-    confirmed_transcript_hash_ok && interim_transcript_hash_ok && confirmation_tag_ok && membership_tag_ok
+    let signature_ok =
+      if not (let cs_int = Lib.IntTypes.v t.ctt_cipher_suite in cs_int = 1 || cs_int = 3) then (
+        IO.print_string "Skipping signature check because only Ed25519 is supported\n";
+        true
+      ) else (
+        match ciphersuite_network with
+        | C_basic cred ->
+          if not (Seq.length cred.bcn_signature_key = sign_public_key_length cs) then false
+          else if not (Seq.length commit_auth.m_signature = sign_signature_length cs) then false
+          else extract_result (check_message_signature cs cred.bcn_signature_key commit_auth.m_signature commit_message (hex_string_to_bytes t.ctt_group_context))
+        | _ -> false
+      )
+    in
+    confirmed_transcript_hash_ok && interim_transcript_hash_ok && confirmation_tag_ok && membership_tag_ok && signature_ok
   end
 
 val test_commit_transcript: list commit_transcript_test -> ML bool

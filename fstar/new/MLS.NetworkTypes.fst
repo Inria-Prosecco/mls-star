@@ -265,7 +265,7 @@ let ps_extension_type =
 
 noeq type extension_nt = {
   en_extension_type: extension_type_nt;
-  en_extension_data: blbytes ({min=0; max=(pow2 16)-1});
+  en_extension_data: blbytes ({min=0; max=(pow2 32)-1});
 }
 
 val ps_extension: parser_serializer extension_nt

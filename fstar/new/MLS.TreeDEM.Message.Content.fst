@@ -71,10 +71,10 @@ val network_to_proposal: proposal_nt -> result proposal
 let network_to_proposal p =
   match p with
   | P_add add ->
-    kp <-- MLS.TreeSyncTreeKEMBinder.key_package_to_treesync add.an_key_package;
+    kp <-- key_package_to_treesync add.an_key_package;
     return (Add kp)
   | P_update update ->
-    kp <-- MLS.TreeSyncTreeKEMBinder.key_package_to_treesync update.un_key_package;
+    kp <-- key_package_to_treesync update.un_key_package;
     return (Update kp)
   | P_remove remove ->
     return (Remove (Lib.IntTypes.v remove.rn_removed))
@@ -136,10 +136,10 @@ val proposal_to_network: MLS.Crypto.ciphersuite -> proposal -> result proposal_n
 let proposal_to_network cs p =
   match p with
   | Add lp ->
-    kp <-- MLS.TreeSyncTreeKEMBinder.treesync_to_keypackage cs lp;
+    kp <-- treesync_to_keypackage cs lp;
     return (P_add ({an_key_package = kp}))
   | Update lp ->
-    kp <-- MLS.TreeSyncTreeKEMBinder.treesync_to_keypackage cs lp;
+    kp <-- treesync_to_keypackage cs lp;
     return (P_update ({un_key_package = kp}))
   | Remove id ->
     if not (id < pow2 32) then

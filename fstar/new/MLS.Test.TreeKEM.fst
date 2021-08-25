@@ -9,6 +9,7 @@ open MLS.TreeSync
 open MLS.TreeSync.Hash
 open MLS.TreeKEM
 open MLS.TreeSyncTreeKEMBinder
+open MLS.NetworkBinder
 open MLS.NetworkTypes
 open MLS.Parser
 open MLS.Result
@@ -96,6 +97,19 @@ let test_treekem_one t =
     false
   end
   | Success cs -> begin
+    let sanitize_hash h = if String.length h = 66 then String.sub h 2 64 else h in
+    let input = {t.tk_input with
+      my_leaf_secret = sanitize_hash t.tk_input.my_leaf_secret;
+      my_path_secret = sanitize_hash t.tk_input.my_path_secret;
+    } in
+    let output = {t.tk_output with
+      root_secret_after_add = sanitize_hash t.tk_output.root_secret_after_add;
+      root_secret_after_update = sanitize_hash t.tk_output.root_secret_after_update;
+    } in
+    let t = {t with
+      tk_input = input;
+      tk_output = output;
+    } in
     let our_output = gen_treekem_output cs t.tk_input in
     let tree_hash_before_ok = check_equal "tree_hash_before_ok" string_to_string t.tk_output.tree_hash_before our_output.tree_hash_before in
     let root_secret_after_add_ok = check_equal "root_secret_after_add" string_to_string t.tk_output.root_secret_after_add our_output.root_secret_after_add in

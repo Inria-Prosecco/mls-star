@@ -6,17 +6,12 @@ open Lib.ByteSequence
 open MLS.Utils
 open MLS.Tree
 
-//Theophile: these types are needed on my computer
-let bytes_t = bytes
-let pub_bytes_t = pub_bytes
-let pub_bytes_empty: pub_bytes = Seq.empty
-
 (** Cryptography *)
-let sign_key_t = bytes_t
-let verif_key_t = pub_bytes_t
+let sign_key_t = bytes
+let verif_key_t = pub_bytes
 
-let enc_key_t = pub_bytes_t
-let dec_key_t = bytes_t
+let enc_key_t = pub_bytes
+let dec_key_t = bytes
 
 
 (** Identity and Credentials *)
@@ -40,45 +35,34 @@ noeq type leaf_secrets_t = {
 type leaf_package_t = {
   lp_credential: credential_t;
   lp_version: nat;
-  lp_content: pub_bytes_t;
-  lp_extensions: pub_bytes_t;
-  lp_signature: pub_bytes_t;
+  lp_content: pub_bytes;
+  lp_extensions: pub_bytes;
+  lp_signature: pub_bytes;
 }
 
 let mk_initial_leaf_package (c:credential_t) =
   { lp_credential = c;
     lp_version = 0;
-    lp_content = pub_bytes_empty;
-    lp_extensions = pub_bytes_empty;
+    lp_content = Seq.empty;
+    lp_extensions = Seq.empty;
     lp_signature = admit();}
 
 
 (** Definition of a Node package *)
-//type direction_t = | Left | Right
 type node_package_t = {
   np_version: nat;
   np_content_dir: direction;
   np_unmerged_leafs: list nat;
-  np_parent_hash: pub_bytes_t;
-  np_content: pub_bytes_t;
+  np_parent_hash: pub_bytes;
+  np_content: pub_bytes;
 }
 
 
 (** Tree and Paths definitions *)
-//type index_n (l:nat) = x:nat{x < pow2 l}
 type level_n = nat
 
 type treesync (l:level_n) (n:tree_size l) = tree l n (credential_t & option leaf_package_t) (credential_t & option node_package_t)
 type pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option leaf_package_t) (option node_package_t)
-//type tree_t (l:level_n) =
-// | Leaf: actor:credential_t{l=0} -> olp:option leaf_package_t -> tree_t l
-// | Node: actor:credential_t{l>0} -> onp:option node_package_t ->
-//         left:tree_t (l-1) -> right:tree_t (l-1) -> tree_t l
-
-//type path_t (l:level_n) =
-// | PLeaf: olp:option leaf_package_t{l=0} -> path_t l
-// | PNode: onp:option node_package_t{l>0} ->
-//	       next:path_t (l-1) -> path_t l
 
 (** Operations on the state *)
 type operation_t = {
@@ -135,19 +119,6 @@ let rec tree_membership (#l:nat) (#n:tree_size l) (t:treesync l n): member_array
 
 val membership: st:state_t -> member_array_t (st.st_treesize)
 let membership st = tree_membership st.st_tree
-
-
-(** Auxiliary tree functions *)
-let dual (d:direction) : direction =
-  match d with
-  | Left -> Right
-  | Right -> Left
-
-//let child_index (l:pos) (i:index_n l) : index_n (l-1) & direction_t =
-//  if i < pow2 (l - 1) then (i, Left) else (i-pow2 (l-1), Right)
-
-//let order_subtrees dir (l,r) = if dir = Left then (l,r) else (r,l)
-
 
 (** Create a new tree from a member array *)
 val create_tree: l:level_n -> n:tree_size l -> actor:credential_t ->

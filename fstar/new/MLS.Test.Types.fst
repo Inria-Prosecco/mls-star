@@ -82,6 +82,7 @@ type commit_transcript_test = {
   ctt_tree_hash_before: string;
   ctt_confirmed_transcript_hash_before: string;
   ctt_interim_transcript_hash_before: string;
+  ctt_credential: string;
 
   ctt_membership_key: string;
   ctt_confirmation_key: string;

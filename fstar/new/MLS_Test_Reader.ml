@@ -178,6 +178,7 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
     ("tree_hash_before", `String tree_hash_before);
     ("confirmed_transcript_hash_before", `String confirmed_transcript_hash_before);
     ("interim_transcript_hash_before", `String interim_transcript_hash_before);
+    ("credential", `String credential);
     ("membership_key", `String membership_key);
     ("confirmation_key", `String confirmation_key);
     ("commit", `String commit);
@@ -192,6 +193,7 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
       ctt_tree_hash_before = tree_hash_before;
       ctt_confirmed_transcript_hash_before = confirmed_transcript_hash_before;
       ctt_interim_transcript_hash_before = interim_transcript_hash_before;
+      ctt_credential = credential;
       ctt_membership_key = membership_key;
       ctt_confirmation_key = confirmation_key;
       ctt_commit = commit;

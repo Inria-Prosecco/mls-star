@@ -72,8 +72,8 @@ let run_treekem_tests () =
 
 let main =
   run_treemath_tests ();
-  //run_encryption_tests();
-  //run_keyschedule_tests ();
-  //run_treekem_tests ();
+  run_encryption_tests();
+  run_keyschedule_tests ();
+  run_treekem_tests ();
   run_commit_transcript_tests ();
   ()
