@@ -27,5 +27,3 @@ noeq type key_package (cs:ciphersuite) = {
 
 type treekem (cs:ciphersuite) (l:nat) (n:tree_size l) = tree l n (option (member_info cs)) (option (key_package cs))
 type pathkem (cs:ciphersuite) (l:nat) (n:tree_size l) (i:leaf_index n) = path l n i (member_info cs) (key_package cs)
-
-type path_parent_hash (l:nat) (n:tree_size l) (i:leaf_index n) = path l n i bytes bytes

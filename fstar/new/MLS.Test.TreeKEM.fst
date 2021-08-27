@@ -6,6 +6,7 @@ open MLS.Test.Types
 open MLS.Test.Utils
 open MLS.Tree
 open MLS.TreeSync.Types
+open MLS.TreeSync.ParentHash
 open MLS.TreeSync
 open MLS.TreeSync.Hash
 open MLS.TreeKEM
@@ -57,15 +58,15 @@ let gen_treekem_output cs t =
     let tree_hash_before = extract_result (tree_hash cs (MLS.TreeMath.root l) ts0) in
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret bytes_empty) in
     let old_leaf_package = extract_option "leaf package for add sender is empty" (snd (get_leaf ts0 add_sender)) in
-    let ph0 = extract_result (compute_parent_hash_path tk0 upk0) in
-    let ups0 = extract_result (treekem_to_treesync old_leaf_package upk0 ph0) in
+    let ext_ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
+    let ups0 = extract_result (external_pathsync_to_pathsync cs ts0 ext_ups0) in
     let ts1 = apply_path dumb_credential ts0 ups0 in
     let tk1 = extract_result (treesync_to_treekem cs ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let upk1 = extract_result (update_path_to_treekem cs l n update_sender update_group_context update_path) in
     let update_leaf_package = extract_result (key_package_to_treesync update_path.upn_leaf_key_package) in
-    let ph1 = extract_result (compute_parent_hash_path tk1 upk1) in
-    let ups1 = extract_result (treekem_to_treesync update_leaf_package upk1 ph1) in
+    let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
+    let ups1 = extract_result (external_pathsync_to_pathsync cs ts1 ext_ups1) in
     let ts2 = apply_path dumb_credential ts1 ups1 in
     let tk2 = extract_result (treesync_to_treekem cs ts2) in
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in

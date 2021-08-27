@@ -55,12 +55,15 @@ type node_package_t = {
   np_content: pub_bytes;
 }
 
-
 (** Tree and Paths definitions *)
 type level_n = nat
 
 type treesync (l:level_n) (n:tree_size l) = tree l n (credential_t & option leaf_package_t) (credential_t & option node_package_t)
 type pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option leaf_package_t) (option node_package_t)
+
+//Data coming from TreeKEM
+type external_node_package_t = np:node_package_t{np.np_parent_hash == Seq.empty}
+type external_pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i leaf_package_t external_node_package_t
 
 (** Operations on the state *)
 type operation_t = {
