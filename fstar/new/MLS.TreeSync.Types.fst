@@ -58,6 +58,7 @@ type node_package_t = {
 (** Tree and Paths definitions *)
 type level_n = nat
 
+//TODO: clarify the use of credential_t
 type treesync (l:level_n) (n:tree_size l) = tree l n (credential_t & option leaf_package_t) (credential_t & option node_package_t)
 type pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option leaf_package_t) (option node_package_t)
 
