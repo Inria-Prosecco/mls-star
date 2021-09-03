@@ -18,6 +18,28 @@ open MLS.Result
 open MLS.Test.Utils
 open Lib.ByteSequence
 open MLS.Crypto
+open MLS.TreeSync.IntegrityCheck
+
+val leaf_integrity_error_to_string: leaf_integrity_error -> string
+let leaf_integrity_error_to_string err =
+  match err with
+  | LIE_BadSignature -> "BadSignature"
+  | LIE_NoCapabilities -> "NoCapabilities"
+  | LIE_ExtensionsNotInCapabilities -> "ExtensionsNotInCapabilities"
+  | LIE_NoLifetime -> "NoLifetime"
+
+val node_integrity_error_to_string: node_integrity_error -> string
+let node_integrity_error_to_string err =
+  match err with
+  | NIE_BadParentHash -> "BadParentHash"
+
+val integrity_error_to_string: integrity_error -> string
+let integrity_error_to_string ie =
+  match ie with
+  | IE_LeafError err ind ->
+    leaf_integrity_error_to_string err ^ " " ^ nat_to_string ind
+  | IE_NodeError err left lev ->
+    node_integrity_error_to_string err ^ " " ^ nat_to_string left ^ " " ^ nat_to_string lev
 
 val find_my_index: #l:nat -> #n:tree_size l -> treesync l n -> key_package_nt -> ML (res:nat{res<n})
 let find_my_index #l #n t kp =
@@ -46,6 +68,12 @@ let gen_treekem_output cs t =
   let update_group_context = hex_string_to_bytes t.update_group_context in
   let (|l, n|) = extract_result (ratchet_tree_l_n ratchet_tree) in
   let ts0 = extract_result (ratchet_tree_to_treesync l n ratchet_tree) in
+  let ts0_valid = extract_result (check_treesync cs ts0) in
+  (
+    match ts0_valid with
+    | IE_Good -> ()
+    | IE_Errors lerr -> IO.print_string ("ratchet_tree_before is not valid: " ^ list_to_string integrity_error_to_string lerr ^ "\n")
+  );
   let tk0 = extract_result (treesync_to_treekem cs ts0) in
   let my_index = find_my_index ts0 my_key_package in
   if not (my_index <> add_sender) then

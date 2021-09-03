@@ -287,28 +287,42 @@ noeq type key_package_nt = {
   kpn_signature: blbytes ({min=0; max=(pow2 16)-1});
 }
 
-#push-options "--ifuel 4"
-val ps_key_package: parser_serializer key_package_nt
-let ps_key_package =
-  isomorphism key_package_nt
+type key_package_tbs_nt = kp:key_package_nt{kp.kpn_signature == Seq.empty}
+
+val key_package_get_tbs: key_package_nt -> key_package_tbs_nt
+let key_package_get_tbs kp = { kp with kpn_signature = Seq.empty }
+
+#push-options "--ifuel 3"
+val ps_key_package_tbs: parser_serializer key_package_tbs_nt
+let ps_key_package_tbs =
+  isomorphism key_package_tbs_nt
     (
       _ <-- ps_protocol_version;
       _ <-- ps_cipher_suite;
       _ <-- ps_hpke_public_key;
       _ <-- ps_credential;
-      _ <-- ps_seq _ ps_extension;
-      ps_bytes _
+      ps_seq _ ps_extension
     )
-    (fun (|version, (|cipher_suite, (|public_key, (|credential, (|extensions, signature|)|)|)|)|) -> {
+    (fun (|version, (|cipher_suite, (|public_key, (|credential, extensions|)|)|)|) -> {
       kpn_version=version;
       kpn_cipher_suite=cipher_suite;
       kpn_public_key=public_key;
       kpn_credential=credential;
       kpn_extensions=extensions;
-      kpn_signature=signature;
+      kpn_signature=Seq.empty;
     })
-    (fun x -> (|x.kpn_version, (|x.kpn_cipher_suite, (|x.kpn_public_key, (|x.kpn_credential, (|x.kpn_extensions, x.kpn_signature|)|)|)|)|))
+    (fun x -> (|x.kpn_version, (|x.kpn_cipher_suite, (|x.kpn_public_key, (|x.kpn_credential, x.kpn_extensions|)|)|)|))
 #pop-options
+
+val ps_key_package: parser_serializer key_package_nt
+let ps_key_package =
+  isomorphism key_package_nt
+    (
+      _ <-- ps_key_package_tbs;
+      ps_bytes _
+    )
+    (fun (|tbs, signature|) -> { tbs with kpn_signature=signature })
+    (fun x -> (|key_package_get_tbs x, x.kpn_signature|))
 
 noeq type update_path_nt = {
   upn_leaf_key_package: key_package_nt;
