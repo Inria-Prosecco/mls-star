@@ -66,6 +66,11 @@ type pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option 
 type external_node_package_t = np:node_package_t{np.np_parent_hash == Seq.empty}
 type external_pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i leaf_package_t external_node_package_t
 
+(*
+This way to describe operations doesn't work well in practice:
+- the number of leaves in the tree is needed for the type of `op_path` (because the number of nodes to update depends on the level, the tree size and the index)
+- operations such as Add, Remove change the tree size
+- therefore we can't pre-compute a bunch of operations and then apply them to the tree, because some operations will be converted with a wrong tree size
 (** Operations on the state *)
 type operation_t = {
   op_levels: level_n;
@@ -74,6 +79,13 @@ type operation_t = {
   op_actor: credential_t;
   op_path: pathsync op_levels op_treesize op_index;
 }
+*)
+
+type operation_t =
+  | Op_Add: actor:credential_t -> lp:leaf_package_t -> operation_t
+  | Op_Update: actor:credential_t -> lp:leaf_package_t -> operation_t
+  | Op_Remove: actor:credential_t -> ind:nat -> operation_t
+  | Op_UpdatePath: actor:credential_t -> l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync l n i -> operation_t
 
 (** TreeSync state and accessors *)
 type state_t = {
@@ -82,7 +94,7 @@ type state_t = {
   st_treesize: tree_size st_levels;
   st_tree: treesync st_levels st_treesize;
   st_version: nat;
-  st_initial_tree: treesync st_levels st_treesize;
+  //st_initial_tree: treesync st_levels st_treesize;
   st_transcript: Seq.seq operation_t;
 }
 
@@ -91,7 +103,7 @@ let mk_initial_state gid l n t = {
   st_group_id = gid; st_levels = l;
   st_treesize = n;
   st_tree = t; st_version = 0;
-  st_initial_tree = t;
+  //st_initial_tree = t;
   st_transcript = empty;}
 
 val group_id: state_t -> nat
