@@ -149,13 +149,9 @@ let check_internal_node #l #n cs nb_left_leaves t =
   match onp with
   | None -> return IE_Good
   | Some np -> (
-    public_key <-- (
-      kem_node_package <-- treesync_to_treekem_node_package cs nb_left_leaves np;
-      return kem_node_package.kp_public_key
-    );
     parent_hash_from_left_ok <-- (
       let real_parent_hash = get_parent_hash left in
-      computed_parent_hash <-- compute_parent_hash_from_dir cs public_key np.np_parent_hash nb_left_leaves t Left;
+      computed_parent_hash <-- compute_parent_hash_from_dir cs np.np_content np.np_parent_hash nb_left_leaves t Left;
       return (real_parent_hash = Some computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
@@ -163,7 +159,7 @@ let check_internal_node #l #n cs nb_left_leaves t =
       | None -> return false
       | Some (|_, _, original_right|) -> (
         let real_parent_hash = get_parent_hash original_right in
-        computed_parent_hash <-- compute_parent_hash_from_dir cs public_key np.np_parent_hash nb_left_leaves t Right;
+        computed_parent_hash <-- compute_parent_hash_from_dir cs np.np_content np.np_parent_hash nb_left_leaves t Right;
         return (real_parent_hash = Some computed_parent_hash)
       )
     );
