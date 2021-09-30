@@ -96,9 +96,8 @@ let convert_opt_leaf_error_to_either opt leaf_index =
   | None -> IE_Good
   | Some x -> IE_Errors [IE_LeafError x leaf_index]
 
-val check_leaf: #l:nat -> #n:tree_size l -> ciphersuite -> nat -> t:treesync l n{TLeaf? t} -> result integrity_either
-let check_leaf #l #n cs leaf_index t =
-  let (TLeaf (_, olp)) = t in
+val check_leaf: ciphersuite -> nat -> olp:option leaf_package_t -> result integrity_either
+let check_leaf cs leaf_index olp =
   match olp with
   | None -> return IE_Good
   | Some lp -> (
@@ -181,8 +180,8 @@ let rec check_treesync_aux #l #n cs nb_left_leaves t =
     return (left_ok &&& cur_ok &&& right_ok)
   | TSkip _ t' ->
     check_treesync_aux cs nb_left_leaves t'
-  | TLeaf _ ->
-    check_leaf cs nb_left_leaves t
+  | TLeaf (_, olp) ->
+    check_leaf cs nb_left_leaves olp
 #pop-options
 
 val check_treesync: #l:nat -> #n:tree_size l -> ciphersuite -> treesync l n -> result integrity_either
