@@ -84,6 +84,9 @@ bin/test.exe: obj/MLS_Test.cmx | bin
 bin:
 	mkdir $@
 
+test: bin/test.exe test_vectors
+	time $<
+
 # Test vectors
 
 test_vectors:
