@@ -50,14 +50,14 @@ let integrity_either_to_bool ie =
 
 val check_signature: ciphersuite -> leaf_package_t -> result (option leaf_integrity_error)
 let check_signature cs lp =
-  if not (Seq.length lp.lp_credential.cred_signature_key = sign_public_key_length cs) then
+  if not (Seq.length lp.credential.signature_key = sign_public_key_length cs) then
     error "check_leaf_package: signature key has wrong length"
-  else if not (Seq.length lp.lp_signature = sign_signature_length cs) then
+  else if not (Seq.length lp.signature = sign_signature_length cs) then
     error "check_leaf_package: signature has wrong length"
   else (
     key_package <-- treesync_to_keypackage cs lp;
     let leaf_package_bytes = ps_key_package_tbs.serialize (key_package_get_tbs key_package) in
-    if sign_verify cs lp.lp_credential.cred_signature_key leaf_package_bytes lp.lp_signature then
+    if sign_verify cs lp.credential.signature_key leaf_package_bytes lp.signature then
       return None
     else
       return (Some LIE_BadSignature)
@@ -65,15 +65,15 @@ let check_signature cs lp =
 
 val check_capabilities: leaf_package_t -> result (option leaf_integrity_error)
 let check_capabilities lp =
-  extensions_list <-- get_extension_list lp.lp_extensions;
-  let opt_capabilities_extension = get_capabilities_extension lp.lp_extensions in
+  extensions_list <-- get_extension_list lp.extensions;
+  let opt_capabilities_extension = get_capabilities_extension lp.extensions in
   return (
     match opt_capabilities_extension with
     | None -> Some LIE_NoCapabilities
     | Some capabilities ->
       let extension_inclusion = (
         List.Tot.for_all (fun ext_type ->
-          List.Tot.mem ext_type (Seq.seq_to_list capabilities.cen_extensions)
+          List.Tot.mem ext_type (Seq.seq_to_list capabilities.extensions)
         ) extensions_list
       ) in
       if extension_inclusion then None
@@ -82,7 +82,7 @@ let check_capabilities lp =
 
 val check_lifetime: leaf_package_t -> result (option leaf_integrity_error)
 let check_lifetime lp =
-  let opt_lifetime_extension = get_lifetime_extension lp.lp_extensions in
+  let opt_lifetime_extension = get_lifetime_extension lp.extensions in
   return (
     match opt_lifetime_extension with
     | None -> Some LIE_NoLifetime
@@ -131,12 +131,12 @@ val get_parent_hash: #l:nat -> #n:tree_size l -> treesync l n -> option bytes
 let get_parent_hash #l #n t =
   match t with
   | TNode (_, None) _ _ -> None
-  | TNode (_, Some np) _ _ -> Some np.np_parent_hash
+  | TNode (_, Some np) _ _ -> Some np.parent_hash
   | TSkip _ _ -> None
   | TLeaf (_, None) -> None
   | TLeaf (_, Some lp) -> (
-    match get_parent_hash_extension lp.lp_extensions with
-    | Some parent_hash_ext -> Some (parent_hash_ext.phen_parent_hash)
+    match get_parent_hash_extension lp.extensions with
+    | Some parent_hash_ext -> Some (parent_hash_ext.parent_hash)
     | None -> None
   )
 #pop-options
@@ -150,7 +150,7 @@ let check_internal_node #l #n cs nb_left_leaves t =
   | Some np -> (
     parent_hash_from_left_ok <-- (
       let real_parent_hash = get_parent_hash left in
-      computed_parent_hash <-- compute_parent_hash_from_dir cs np.np_content np.np_parent_hash nb_left_leaves t Left;
+      computed_parent_hash <-- compute_parent_hash_from_dir cs np.content np.parent_hash nb_left_leaves t Left;
       return (real_parent_hash = Some computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
@@ -158,7 +158,7 @@ let check_internal_node #l #n cs nb_left_leaves t =
       | None -> return false
       | Some (|_, _, original_right|) -> (
         let real_parent_hash = get_parent_hash original_right in
-        computed_parent_hash <-- compute_parent_hash_from_dir cs np.np_content np.np_parent_hash nb_left_leaves t Right;
+        computed_parent_hash <-- compute_parent_hash_from_dir cs np.content np.parent_hash nb_left_leaves t Right;
         return (real_parent_hash = Some computed_parent_hash)
       )
     );

@@ -5,6 +5,7 @@ friend MLS.Crypto.Builtins
 open MLS.Parser
 open MLS.NetworkTypes
 open Lib.IntTypes
+open MLS.Crypto.Builtins
 
 module DH = Spec.Agile.DH
 module AEAD = Spec.Agile.AEAD
@@ -67,9 +68,9 @@ val ciphersuite_to_from_lemma: cs:cipher_suite_nt -> Lemma (
 let ciphersuite_to_from_lemma cs = ()
 
 noeq type kdf_label_nt = {
-  kln_length: uint16;
-  kln_label: blbytes ({min=7; max=255});
-  kln_context: blbytes ({min=0; max=(pow2 32)-1});
+  length: uint16;
+  label: blbytes ({min=7; max=255});
+  context: blbytes ({min=0; max=(pow2 32)-1});
 }
 
 val ps_kdf_label: parser_serializer kdf_label_nt
@@ -80,8 +81,8 @@ let ps_kdf_label =
       _ <-- ps_bytes _;
       ps_bytes _
     )
-    (fun (|length, (|label, context|)|) -> {kln_length=length; kln_label=label; kln_context=context;})
-    (fun x -> (|x.kln_length, (|x.kln_label, x.kln_context|)|))
+    (fun (|length, (|label, context|)|) -> {length=length; label=label; context=context;})
+    (fun x -> (|x.length, (|x.label, x.context|)|))
 
 let expand_with_label cs secret label context len =
   assert_norm (String.strlen "mls10 " == 6);
@@ -95,9 +96,9 @@ let expand_with_label cs secret label context len =
     internal_failure "expand_with_label: context too long"
   else
     let kdf_label = ps_kdf_label.serialize ({
-      kln_length = u16 len;
-      kln_label = Seq.append (string_to_bytes "mls10 ") label;
-      kln_context = context;
+      length = u16 len;
+      label = Seq.append (string_to_bytes "mls10 ") label;
+      context = context;
     }) in
     kdf_expand cs secret kdf_label len
 

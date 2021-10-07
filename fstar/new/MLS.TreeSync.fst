@@ -15,13 +15,13 @@ let rec tree_membership (#l:nat) (#n:tree_size l) (t:treesync l n): member_array
   | TLeaf (_, olp) ->
     (match olp with
     | None -> singleton None
-    | Some lp -> singleton (Some lp.lp_credential))
+    | Some lp -> singleton (Some lp.credential))
   | TSkip _ t' -> tree_membership t'
   | TNode (_,_) left right -> append (tree_membership left)
 				 (tree_membership right)
 
-val membership: st:state_t -> member_array_t (st.st_treesize)
-let membership st = tree_membership st.st_tree
+val membership: st:state_t -> member_array_t (st.treesize)
+let membership st = tree_membership st.tree
 
 (** Create a new tree from a member array *)
 val create_tree: l:level_n -> n:tree_size l -> actor:credential_t ->
@@ -80,7 +80,7 @@ let rec unmerged_path (#l:level_n) (#n:tree_size l) (leaf_index:leaf_index n) (t
       PNode None path_next
     | Some np ->
       PNode (Some (
-        {np with np_unmerged_leafs = insert_sorted leaf_index np.np_unmerged_leafs}
+        {np with unmerged_leafs = insert_sorted leaf_index np.unmerged_leafs}
       )) path_next
 
 // Helper functions to truncate the tree
@@ -178,8 +178,8 @@ let create gid sz init =
   | Some actor,Some l ->
     let t = create_tree l sz actor init in
     let st = mk_initial_state gid l sz t in
-    Some ({st with //st_initial_tree = t;
-                   st_transcript = bytes_empty})
+    Some ({st with //initial_tree = t;
+                   transcript = bytes_empty})
 
 
 (*
@@ -188,37 +188,37 @@ val apply: state_t -> operation_t
   -> Tot (option state_t)
 
 let apply st op =
-  if op.op_levels <> st.st_levels || op.op_treesize <> st.st_treesize then None
+  if op.op_levels <> st.levels || op.op_treesize <> st.treesize then None
   else
-    let nt = apply_path op.op_actor st.st_tree op.op_path in
-    Some ({ st with st_version = st.st_version + 1; st_tree = nt;
-            st_transcript = Seq.snoc st.st_transcript op})
+    let nt = apply_path op.op_actor st.tree op.op_path in
+    Some ({ st with version = st.version + 1; tree = nt;
+            transcript = Seq.snoc st.transcript op})
 *)
 
 val state_update_tree: #l:level_n -> #n:tree_size l -> state_t -> treesync l n -> state_t
 let state_update_tree #l #n st new_tree =
   ({ st with
-    st_levels = l;
-    st_treesize = n;
-    st_version = st.st_version + 1;
-    st_tree = new_tree;
-    //st_transcript = Seq.snoc st.st_transcript op //TODO
+    levels = l;
+    treesize = n;
+    version = st.version + 1;
+    tree = new_tree;
+    //transcript = Seq.snoc st.transcript op //TODO
   })
 
 val add: state_t -> credential_t -> leaf_package_t -> state_t
 let add st actor lp =
-  match find_empty_leaf st.st_tree with
+  match find_empty_leaf st.tree with
   | Some i ->
-    let p = unmerged_path i st.st_tree lp in
-    state_update_tree st (apply_path actor st.st_tree p)
+    let p = unmerged_path i st.tree lp in
+    state_update_tree st (apply_path actor st.tree p)
   | None ->
-    let new_l = if st.st_treesize = pow2 st.st_levels then st.st_levels+1 else st.st_levels in
-    let new_n = st.st_treesize+1 in
+    let new_l = if st.treesize = pow2 st.levels then st.levels+1 else st.levels in
+    let new_n = st.treesize+1 in
     let augmented_tree: treesync new_l new_n =
-      if st.st_treesize = pow2 st.st_levels then
-        add_one_level actor st.st_tree
+      if st.treesize = pow2 st.levels then
+        add_one_level actor st.tree
       else
-        add_one_leaf actor st.st_tree
+        add_one_leaf actor st.tree
     in
     let i = Some?.v (find_empty_leaf augmented_tree) in
     let p = unmerged_path i augmented_tree lp in
@@ -226,12 +226,12 @@ let add st actor lp =
 
 val update: st:state_t -> credential_t -> leaf_package_t -> index_t st -> state_t
 let update st actor lp i =
-  let p = blank_path st.st_levels st.st_treesize i (Some lp) in
-  state_update_tree st (apply_path actor st.st_tree p)
+  let p = blank_path st.levels st.treesize i (Some lp) in
+  state_update_tree st (apply_path actor st.tree p)
 
 val remove: st:state_t -> credential_t -> i:index_t st -> state_t
 let remove st actor i =
-  let p = blank_path st.st_levels st.st_treesize i None in
-  let blanked_tree = (apply_path actor st.st_tree p) in
+  let p = blank_path st.levels st.treesize i None in
+  let blanked_tree = (apply_path actor st.tree p) in
   let (|_, _, reduced_tree|) = canonicalize_tree blanked_tree in
   state_update_tree st reduced_tree

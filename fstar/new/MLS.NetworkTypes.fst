@@ -11,8 +11,8 @@ val ps_hpke_public_key: parser_serializer hpke_public_key_nt
 let ps_hpke_public_key = ps_bytes _
 
 noeq type hpke_ciphertext_nt = {
-  hcn_kem_output: blbytes ({min=0; max=(pow2 16)-1});
-  hcn_ciphertext: blbytes ({min=0; max=(pow2 16)-1});
+  kem_output: blbytes ({min=0; max=(pow2 16)-1});
+  ciphertext: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 val ps_hpke_ciphertext: parser_serializer hpke_ciphertext_nt
@@ -22,13 +22,13 @@ let ps_hpke_ciphertext =
       _ <-- ps_bytes _;
       ps_bytes _
     )
-    (fun (|kem_output, ciphertext|) -> {hcn_kem_output=kem_output; hcn_ciphertext=ciphertext;})
-    (fun x -> (|x.hcn_kem_output, x.hcn_ciphertext|))
+    (fun (|kem_output, ciphertext|) -> {kem_output=kem_output; ciphertext=ciphertext;})
+    (fun x -> (|x.kem_output, x.ciphertext|))
 
 
 noeq type update_path_node_nt = {
-  upnn_public_key: hpke_public_key_nt;
-  upnn_encrypted_path_secret: blseq hpke_ciphertext_nt ps_hpke_ciphertext ({min=0; max=(pow2 32)-1});
+  public_key: hpke_public_key_nt;
+  encrypted_path_secret: blseq hpke_ciphertext_nt ps_hpke_ciphertext ({min=0; max=(pow2 32)-1});
 }
 
 val ps_update_path_node: parser_serializer update_path_node_nt
@@ -38,8 +38,8 @@ let ps_update_path_node =
       _ <-- ps_hpke_public_key;
       ps_seq _ ps_hpke_ciphertext
     )
-    (fun (|public_key, encrypted_path_secret|) -> {upnn_public_key=public_key; upnn_encrypted_path_secret=encrypted_path_secret;})
-    (fun x -> (|x.upnn_public_key, x.upnn_encrypted_path_secret|))
+    (fun (|public_key, encrypted_path_secret|) -> {public_key=public_key; encrypted_path_secret=encrypted_path_secret;})
+    (fun x -> (|x.public_key, x.encrypted_path_secret|))
 
 type protocol_version_nt =
   | PV_reserved: protocol_version_nt
@@ -164,9 +164,9 @@ let ps_credential_type =
     )
 
 noeq type basic_credential_nt = {
-  bcn_identity: blbytes ({min=0; max=(pow2 16)-1});
-  bcn_signature_scheme: signature_scheme_nt;
-  bcn_signature_key: blbytes ({min=0; max=(pow2 16)-1});
+  identity: blbytes ({min=0; max=(pow2 16)-1});
+  signature_scheme: signature_scheme_nt;
+  signature_key: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 val ps_basic_credential: parser_serializer basic_credential_nt
@@ -177,8 +177,8 @@ let ps_basic_credential =
       _ <-- ps_signature_scheme;
       ps_bytes _
     )
-    (fun (|identity, (|signature_scheme, signature_key|)|) -> ({bcn_identity=identity; bcn_signature_scheme=signature_scheme; bcn_signature_key=signature_key;}))
-    (fun x -> (|x.bcn_identity, (|x.bcn_signature_scheme, x.bcn_signature_key|)|))
+    (fun (|identity, (|signature_scheme, signature_key|)|) -> ({identity=identity; signature_scheme=signature_scheme; signature_key=signature_key;}))
+    (fun x -> (|x.identity, (|x.signature_scheme, x.signature_key|)|))
 
 type certificate_nt = blbytes ({min=0; max=(pow2 16)-1})
 
@@ -264,8 +264,8 @@ let ps_extension_type =
     )
 
 noeq type extension_nt = {
-  en_extension_type: extension_type_nt;
-  en_extension_data: blbytes ({min=0; max=(pow2 32)-1});
+  extension_type: extension_type_nt;
+  extension_data: blbytes ({min=0; max=(pow2 32)-1});
 }
 
 val ps_extension: parser_serializer extension_nt
@@ -275,22 +275,22 @@ let ps_extension =
       _ <-- ps_extension_type;
       ps_bytes _
     )
-    (fun (|extension_type, extension_data|) -> {en_extension_type=extension_type; en_extension_data=extension_data;})
-    (fun x -> (|x.en_extension_type, x.en_extension_data|))
+    (fun (|extension_type, extension_data|) -> {extension_type=extension_type; extension_data=extension_data;})
+    (fun x -> (|x.extension_type, x.extension_data|))
 
 noeq type key_package_nt = {
-  kpn_version: protocol_version_nt;
-  kpn_cipher_suite: cipher_suite_nt;
-  kpn_public_key: hpke_public_key_nt;
-  kpn_credential: credential_nt;
-  kpn_extensions: blseq extension_nt ps_extension ({min=8; max=(pow2 32)-1});
-  kpn_signature: blbytes ({min=0; max=(pow2 16)-1});
+  version: protocol_version_nt;
+  cipher_suite: cipher_suite_nt;
+  public_key: hpke_public_key_nt;
+  credential: credential_nt;
+  extensions: blseq extension_nt ps_extension ({min=8; max=(pow2 32)-1});
+  signature: blbytes ({min=0; max=(pow2 16)-1});
 }
 
-type key_package_tbs_nt = kp:key_package_nt{kp.kpn_signature == Seq.empty}
+type key_package_tbs_nt = kp:key_package_nt{kp.signature == Seq.empty}
 
 val key_package_get_tbs: key_package_nt -> key_package_tbs_nt
-let key_package_get_tbs kp = { kp with kpn_signature = Seq.empty }
+let key_package_get_tbs kp = { kp with signature = Seq.empty }
 
 #push-options "--ifuel 3"
 val ps_key_package_tbs: parser_serializer key_package_tbs_nt
@@ -304,14 +304,14 @@ let ps_key_package_tbs =
       ps_seq _ ps_extension
     )
     (fun (|version, (|cipher_suite, (|public_key, (|credential, extensions|)|)|)|) -> {
-      kpn_version=version;
-      kpn_cipher_suite=cipher_suite;
-      kpn_public_key=public_key;
-      kpn_credential=credential;
-      kpn_extensions=extensions;
-      kpn_signature=Seq.empty;
+      version=version;
+      cipher_suite=cipher_suite;
+      public_key=public_key;
+      credential=credential;
+      extensions=extensions;
+      signature=Seq.empty;
     })
-    (fun x -> (|x.kpn_version, (|x.kpn_cipher_suite, (|x.kpn_public_key, (|x.kpn_credential, x.kpn_extensions|)|)|)|))
+    (fun x -> (|x.version, (|x.cipher_suite, (|x.public_key, (|x.credential, x.extensions|)|)|)|))
 #pop-options
 
 val ps_key_package: parser_serializer key_package_nt
@@ -321,12 +321,12 @@ let ps_key_package =
       _ <-- ps_key_package_tbs;
       ps_bytes _
     )
-    (fun (|tbs, signature|) -> { tbs with kpn_signature=signature })
-    (fun x -> (|key_package_get_tbs x, x.kpn_signature|))
+    (fun (|tbs, signature|) -> { tbs with signature=signature })
+    (fun x -> (|key_package_get_tbs x, x.signature|))
 
 noeq type update_path_nt = {
-  upn_leaf_key_package: key_package_nt;
-  upn_nodes: blseq update_path_node_nt ps_update_path_node ({min=0; max=(pow2 32)-1});
+  leaf_key_package: key_package_nt;
+  nodes: blseq update_path_node_nt ps_update_path_node ({min=0; max=(pow2 32)-1});
 }
 
 val ps_update_path: parser_serializer update_path_nt
@@ -336,15 +336,15 @@ let ps_update_path =
       _ <-- ps_key_package;
       ps_seq _ ps_update_path_node
     )
-    (fun (|leaf_key_package, nodes|) -> {upn_leaf_key_package=leaf_key_package; upn_nodes=nodes})
-    (fun x -> (|x.upn_leaf_key_package, x.upn_nodes|))
+    (fun (|leaf_key_package, nodes|) -> {leaf_key_package=leaf_key_package; nodes=nodes})
+    (fun x -> (|x.leaf_key_package, x.nodes|))
 
 noeq type group_context_nt = {
-  gcn_group_id: blbytes ({min=0; max=255});
-  gcn_epoch: uint64;
-  gcn_tree_hash: blbytes ({min=0; max=255});
-  gcn_confirmed_transcript_hash: blbytes ({min=0; max=255});
-  gcn_extensions: blseq extension_nt ps_extension ({min=0; max=(pow2 32)-1});
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  tree_hash: blbytes ({min=0; max=255});
+  confirmed_transcript_hash: blbytes ({min=0; max=255});
+  extensions: blseq extension_nt ps_extension ({min=0; max=(pow2 32)-1});
 }
 
 #push-options "--ifuel 4"
@@ -359,19 +359,19 @@ let ps_group_context =
       ps_seq _ ps_extension
     )
     (fun (|group_id, (|epoch, (|tree_hash, (|confirmed_transcript_hash, extensions|)|)|)|) -> {
-      gcn_group_id = group_id;
-      gcn_epoch = epoch;
-      gcn_tree_hash = tree_hash;
-      gcn_confirmed_transcript_hash = confirmed_transcript_hash;
-      gcn_extensions = extensions;
+      group_id = group_id;
+      epoch = epoch;
+      tree_hash = tree_hash;
+      confirmed_transcript_hash = confirmed_transcript_hash;
+      extensions = extensions;
     })
-    (fun x -> (|x.gcn_group_id, (|x.gcn_epoch, (|x.gcn_tree_hash, (|x.gcn_confirmed_transcript_hash, x.gcn_extensions|)|)|)|))
+    (fun x -> (|x.group_id, (|x.epoch, (|x.tree_hash, (|x.confirmed_transcript_hash, x.extensions|)|)|)|))
 #pop-options
 
 noeq type parent_node_nt = {
-  pnn_public_key: hpke_public_key_nt;
-  pnn_parent_hash: blbytes ({min=0; max=255});
-  pnn_unmerged_leaves: blseq uint32 ps_u32 ({min=0; max=(pow2 32)-1});
+  public_key: hpke_public_key_nt;
+  parent_hash: blbytes ({min=0; max=255});
+  unmerged_leaves: blseq uint32 ps_u32 ({min=0; max=(pow2 32)-1});
 }
 
 val ps_parent_node: parser_serializer parent_node_nt
@@ -383,11 +383,11 @@ let ps_parent_node =
       ps_seq _ ps_u32
     )
     (fun (|public_key, (|parent_hash, unmerged_leaves|)|) -> {
-      pnn_public_key = public_key;
-      pnn_parent_hash = parent_hash;
-      pnn_unmerged_leaves = unmerged_leaves;
+      public_key = public_key;
+      parent_hash = parent_hash;
+      unmerged_leaves = unmerged_leaves;
     })
-    (fun x -> (|x.pnn_public_key, (|x.pnn_parent_hash, x.pnn_unmerged_leaves|)|))
+    (fun x -> (|x.public_key, (|x.parent_hash, x.unmerged_leaves|)|))
 
 type node_type_nt =
   | NT_reserved: node_type_nt
@@ -571,63 +571,63 @@ let ps_pre_shared_key_id =
     )
 
 noeq type pre_shared_keys_nt = {
-  pskn_psks: blseq pre_shared_key_id_nt ps_pre_shared_key_id ({min=0; max=(pow2 16)-1});
+  psks: blseq pre_shared_key_id_nt ps_pre_shared_key_id ({min=0; max=(pow2 16)-1});
 }
 
 val ps_pre_shared_keys: parser_serializer pre_shared_keys_nt
 let ps_pre_shared_keys =
   isomorphism pre_shared_keys_nt
     (ps_seq _ ps_pre_shared_key_id)
-    (fun psks -> {pskn_psks = psks})
-    (fun x -> x.pskn_psks)
+    (fun psks -> {psks = psks})
+    (fun x -> x.psks)
 
 (*** Proposals ***)
 
 noeq type add_nt = {
-  an_key_package: key_package_nt;
+  key_package: key_package_nt;
 }
 
 val ps_add: parser_serializer add_nt
 let ps_add =
   isomorphism add_nt ps_key_package
-    (fun key_package -> ({ an_key_package = key_package }))
-    (fun x -> x.an_key_package)
+    (fun key_package -> ({ key_package = key_package }))
+    (fun x -> x.key_package)
 
 noeq type update_nt = {
-  un_key_package: key_package_nt;
+  key_package: key_package_nt;
 }
 
 val ps_update: parser_serializer update_nt
 let ps_update =
   isomorphism update_nt ps_key_package
-    (fun key_package -> ({ un_key_package = key_package }))
-    (fun x -> x.un_key_package)
+    (fun key_package -> ({ key_package = key_package }))
+    (fun x -> x.key_package)
 
 noeq type remove_nt = {
-  rn_removed: uint32;
+  removed: uint32;
 }
 
 val ps_remove: parser_serializer remove_nt
 let ps_remove =
   isomorphism remove_nt ps_u32
-    (fun removed -> ({ rn_removed = removed }))
-    (fun x -> x.rn_removed)
+    (fun removed -> ({ removed = removed }))
+    (fun x -> x.removed)
 
 noeq type pre_shared_key_nt = {
-  pskn_psk: pre_shared_key_id_nt;
+  psk: pre_shared_key_id_nt;
 }
 
 val ps_pre_shared_key: parser_serializer pre_shared_key_nt
 let ps_pre_shared_key =
   isomorphism pre_shared_key_nt ps_pre_shared_key_id
-    (fun psk -> {pskn_psk = psk})
-    (fun x -> x.pskn_psk)
+    (fun psk -> {psk = psk})
+    (fun x -> x.psk)
 
 noeq type reinit_nt = {
-  rin_group_id: blbytes ({min=0; max=255});
-  rin_version: protocol_version_nt;
-  rin_cipher_suite: cipher_suite_nt;
-  rin_extensions: blseq extension_nt ps_extension ({min=0; max=(pow2 32)-1})
+  group_id: blbytes ({min=0; max=255});
+  version: protocol_version_nt;
+  cipher_suite: cipher_suite_nt;
+  extensions: blseq extension_nt ps_extension ({min=0; max=(pow2 32)-1})
 }
 
 val ps_reinit: parser_serializer reinit_nt
@@ -640,28 +640,28 @@ let ps_reinit =
       ps_seq _ ps_extension
     )
     (fun (|group_id, (|version, (|cipher_suite, extensions|)|)|) -> ({
-      rin_group_id = group_id;
-      rin_version = version;
-      rin_cipher_suite = cipher_suite;
-      rin_extensions = extensions;
+      group_id = group_id;
+      version = version;
+      cipher_suite = cipher_suite;
+      extensions = extensions;
     }))
-    (fun x -> (|x.rin_group_id, (|x.rin_version, (|x.rin_cipher_suite, x.rin_extensions|)|)|))
+    (fun x -> (|x.group_id, (|x.version, (|x.cipher_suite, x.extensions|)|)|))
 
 noeq type external_init_nt = {
-  ein_kem_output: blbytes ({min=0; max=(pow2 16)-1})
+  kem_output: blbytes ({min=0; max=(pow2 16)-1})
 }
 
 val ps_external_init: parser_serializer external_init_nt
 let ps_external_init =
   isomorphism external_init_nt
     (ps_bytes _)
-    (fun kem_output -> {ein_kem_output = kem_output})
-    (fun x -> x.ein_kem_output)
+    (fun kem_output -> {kem_output = kem_output})
+    (fun x -> x.kem_output)
 
 noeq type message_range_nt = {
-  mrn_sender: uint32;
-  mrn_first_generation: uint32;
-  mrn_last_generation: uint32;
+  sender: uint32;
+  first_generation: uint32;
+  last_generation: uint32;
 }
 
 val ps_message_range: parser_serializer message_range_nt
@@ -673,22 +673,22 @@ let ps_message_range =
       ps_u32
     )
     (fun (|sender, (|first_generation, last_generation|)|) -> ({
-      mrn_sender = sender;
-      mrn_first_generation = first_generation;
-      mrn_last_generation = last_generation;
+      sender = sender;
+      first_generation = first_generation;
+      last_generation = last_generation;
     }))
-    (fun x -> (|x.mrn_sender, (|x.mrn_first_generation, x.mrn_last_generation|)|))
+    (fun x -> (|x.sender, (|x.first_generation, x.last_generation|)|))
 
 noeq type app_ack_nt = {
-  aan_received_ranges: blseq message_range_nt ps_message_range ({min=0; max=(pow2 32)-1})
+  received_ranges: blseq message_range_nt ps_message_range ({min=0; max=(pow2 32)-1})
 }
 
 val ps_app_ack: parser_serializer app_ack_nt
 let ps_app_ack =
   isomorphism app_ack_nt
     (ps_seq _ ps_message_range)
-    (fun received_ranges -> {aan_received_ranges = received_ranges})
-    (fun x -> x.aan_received_ranges)
+    (fun received_ranges -> {received_ranges = received_ranges})
+    (fun x -> x.received_ranges)
 
 type proposal_type_nt =
   | PT_reserved: proposal_type_nt
@@ -857,8 +857,8 @@ let ps_proposal_or_ref =
     )
 
 noeq type commit_nt = {
-  cn_proposals: blseq proposal_or_ref_nt ps_proposal_or_ref ({min=0; max=(pow2 32)-1});
-  cn_path: option_nt (update_path_nt);
+  proposals: blseq proposal_or_ref_nt ps_proposal_or_ref ({min=0; max=(pow2 32)-1});
+  path: option_nt (update_path_nt);
 }
 
 val ps_commit: parser_serializer commit_nt
@@ -869,10 +869,10 @@ let ps_commit =
       ps_option ps_update_path
     )
     (fun (|proposals, path|) -> ({
-      cn_proposals = proposals;
-      cn_path = path;
+      proposals = proposals;
+      path = path;
     }))
-    (fun x -> (|x.cn_proposals, x.cn_path|))
+    (fun x -> (|x.proposals, x.path|))
 
 type sender_type_nt =
   | ST_reserved: sender_type_nt
@@ -900,8 +900,8 @@ let ps_sender_type =
     )
 
 type sender_nt = {
-  sn_sender_type: sender_type_nt;
-  sn_sender: uint32;
+  sender_type: sender_type_nt;
+  sender: uint32;
 }
 
 val ps_sender: parser_serializer sender_nt
@@ -912,20 +912,20 @@ let ps_sender =
       ps_u32
     )
     (fun (|sender_type, sender|) -> ({
-      sn_sender_type = sender_type;
-      sn_sender = sender;
+      sender_type = sender_type;
+      sender = sender;
     }))
-    (fun x -> (|x.sn_sender_type, x.sn_sender|))
+    (fun x -> (|x.sender_type, x.sender|))
 
 type mac_nt = {
-  mn_mac_value: blbytes ({min=0; max=255});
+  mac_value: blbytes ({min=0; max=255});
 }
 
 val ps_mac: parser_serializer mac_nt
 let ps_mac =
   isomorphism mac_nt (ps_bytes _)
-    (fun mac_value -> {mn_mac_value = mac_value})
-    (fun x -> x.mn_mac_value)
+    (fun mac_value -> {mac_value = mac_value})
+    (fun x -> x.mac_value)
 
 //CT_reserved and CT_unknown already exist in credential_type_nt...
 type content_type_nt =
@@ -999,14 +999,14 @@ let ps_mls_content =
       )
 
 noeq type mls_plaintext_nt = {
-  mpn_group_id: blbytes ({min=0; max=255});
-  mpn_epoch: uint64;
-  mpn_sender: sender_nt;
-  mpn_authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
-  mpn_content: mls_content_nt;
-  mpn_signature: blbytes ({min=0; max=(pow2 16)-1});
-  mpn_confirmation_tag: option_nt mac_nt;
-  mpn_membership_tag: option_nt mac_nt;
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  sender: sender_nt;
+  authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
+  content: mls_content_nt;
+  signature: blbytes ({min=0; max=(pow2 16)-1});
+  confirmation_tag: option_nt mac_nt;
+  membership_tag: option_nt mac_nt;
 }
 
 #push-options "--ifuel 6"
@@ -1024,25 +1024,25 @@ let ps_mls_plaintext =
       ps_option ps_mac
     )
     (fun (|group_id, (|epoch, (|sender, (|authenticated_data, (|content, (|signature, (|confirmation_tag, membership_tag|)|)|)|)|)|)|) -> ({
-      mpn_group_id = group_id;
-      mpn_epoch = epoch;
-      mpn_sender = sender;
-      mpn_authenticated_data = authenticated_data;
-      mpn_content = content;
-      mpn_signature = signature;
-      mpn_confirmation_tag = confirmation_tag;
-      mpn_membership_tag = membership_tag;
+      group_id = group_id;
+      epoch = epoch;
+      sender = sender;
+      authenticated_data = authenticated_data;
+      content = content;
+      signature = signature;
+      confirmation_tag = confirmation_tag;
+      membership_tag = membership_tag;
     }))
-    (fun x -> (|x.mpn_group_id, (|x.mpn_epoch, (|x.mpn_sender, (|x.mpn_authenticated_data, (|x.mpn_content, (|x.mpn_signature, (|x.mpn_confirmation_tag, x.mpn_membership_tag|)|)|)|)|)|)|))
+    (fun x -> (|x.group_id, (|x.epoch, (|x.sender, (|x.authenticated_data, (|x.content, (|x.signature, (|x.confirmation_tag, x.membership_tag|)|)|)|)|)|)|))
 #pop-options
 
 noeq type mls_ciphertext_nt = {
-  mcn_group_id: blbytes ({min=0; max=255});
-  mcn_epoch: uint64;
-  mcn_content_type: content_type_nt;
-  mcn_authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
-  mcn_encrypted_sender_data: blbytes ({min=0; max=255});
-  mcn_ciphertext: blbytes ({min=0; max=(pow2 32)-1});
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  content_type: content_type_nt;
+  authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
+  encrypted_sender_data: blbytes ({min=0; max=255});
+  ciphertext: blbytes ({min=0; max=(pow2 32)-1});
 }
 
 #push-options "--ifuel 4"
@@ -1058,21 +1058,21 @@ let ps_mls_ciphertext =
       ps_bytes _
     )
     (fun (|group_id, (|epoch, (|content_type, (|authenticated_data, (|encrypted_sender_data, ciphertext|)|)|)|)|) -> ({
-      mcn_group_id = group_id;
-      mcn_epoch = epoch;
-      mcn_content_type = content_type;
-      mcn_authenticated_data = authenticated_data;
-      mcn_encrypted_sender_data = encrypted_sender_data;
-      mcn_ciphertext = ciphertext;
+      group_id = group_id;
+      epoch = epoch;
+      content_type = content_type;
+      authenticated_data = authenticated_data;
+      encrypted_sender_data = encrypted_sender_data;
+      ciphertext = ciphertext;
     }))
-    (fun x -> (|x.mcn_group_id, (|x.mcn_epoch, (|x.mcn_content_type, (|x.mcn_authenticated_data, (|x.mcn_encrypted_sender_data, x.mcn_ciphertext|)|)|)|)|))
+    (fun x -> (|x.group_id, (|x.epoch, (|x.content_type, (|x.authenticated_data, (|x.encrypted_sender_data, x.ciphertext|)|)|)|)|))
 #pop-options
 
 noeq type mls_ciphertext_content_nt (content_type: content_type_nt) = {
-  mccn_content: get_content_type content_type;
-  mccn_signature: blbytes ({min=0; max=(pow2 16)-1});
-  mccn_confirmation_tag: option_nt mac_nt;
-  mccn_padding: blbytes ({min=0; max=(pow2 16)-1});
+  content: get_content_type content_type;
+  signature: blbytes ({min=0; max=(pow2 16)-1});
+  confirmation_tag: option_nt mac_nt;
+  padding: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 val ps_mls_ciphertext_content: content_type:content_type_nt -> parser_serializer (mls_ciphertext_content_nt content_type)
@@ -1092,18 +1092,18 @@ let ps_mls_ciphertext_content content_type =
       ps_bytes _
     )
     (fun (|content, (|signature, (|confirmation_tag, padding|)|)|) -> ({
-      mccn_content = content;
-      mccn_signature = signature;
-      mccn_confirmation_tag = confirmation_tag;
-      mccn_padding = padding;
+      content = content;
+      signature = signature;
+      confirmation_tag = confirmation_tag;
+      padding = padding;
     }))
-    (fun x -> (|x.mccn_content, (|x.mccn_signature, (|x.mccn_confirmation_tag, x.mccn_padding|)|)|))
+    (fun x -> (|x.content, (|x.signature, (|x.confirmation_tag, x.padding|)|)|))
 
 noeq type mls_ciphertext_content_aad_nt = {
-  mccan_group_id: blbytes ({min=0; max=255});
-  mccan_epoch: uint64;
-  mccan_content_type: content_type_nt;
-  mccan_authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  content_type: content_type_nt;
+  authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
 }
 
 val ps_mls_ciphertext_content_aad: parser_serializer mls_ciphertext_content_aad_nt
@@ -1116,17 +1116,17 @@ let ps_mls_ciphertext_content_aad =
       ps_bytes _
     )
     (fun (|group_id, (|epoch, (|content_type, authenticated_data|)|)|) -> ({
-      mccan_group_id = group_id;
-      mccan_epoch = epoch;
-      mccan_content_type = content_type;
-      mccan_authenticated_data = authenticated_data;
+      group_id = group_id;
+      epoch = epoch;
+      content_type = content_type;
+      authenticated_data = authenticated_data;
     }))
-    (fun x -> (|x.mccan_group_id, (|x.mccan_epoch, (|x.mccan_content_type, x.mccan_authenticated_data|)|)|))
+    (fun x -> (|x.group_id, (|x.epoch, (|x.content_type, x.authenticated_data|)|)|))
 
 noeq type mls_sender_data_nt = {
-  msdn_sender: uint32;
-  msdn_generation: uint32;
-  msdn_reuse_guard: lbytes 4;
+  sender: uint32;
+  generation: uint32;
+  reuse_guard: lbytes 4;
 }
 
 val ps_mls_sender_data: parser_serializer mls_sender_data_nt
@@ -1138,16 +1138,16 @@ let ps_mls_sender_data =
       ps_lbytes 4
     )
     (fun (|sender, (|generation, reuse_guard|)|) -> ({
-      msdn_sender = sender;
-      msdn_generation = generation;
-      msdn_reuse_guard = reuse_guard;
+      sender = sender;
+      generation = generation;
+      reuse_guard = reuse_guard;
     }))
-    (fun x -> (|x.msdn_sender, (|x.msdn_generation, x.msdn_reuse_guard|)|))
+    (fun x -> (|x.sender, (|x.generation, x.reuse_guard|)|))
 
 noeq type mls_sender_data_aad_nt = {
-  msdan_group_id: blbytes ({min=0; max=255});
-  msdan_epoch: uint64;
-  msdan_content_type: content_type_nt;
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  content_type: content_type_nt;
 }
 
 val ps_mls_sender_data_aad: parser_serializer mls_sender_data_aad_nt
@@ -1159,20 +1159,20 @@ let ps_mls_sender_data_aad =
       ps_content_type
     )
     (fun (|group_id, (|epoch, content_type|)|) -> ({
-      msdan_group_id = group_id;
-      msdan_epoch = epoch;
-      msdan_content_type = content_type;
+      group_id = group_id;
+      epoch = epoch;
+      content_type = content_type;
     }))
-    (fun x -> (|x.msdan_group_id, (|x.msdan_epoch, x.msdan_content_type|)|))
+    (fun x -> (|x.group_id, (|x.epoch, x.content_type|)|))
 
 //Structure used for confirmed transcript hash
 noeq type mls_plaintext_commit_content_nt = {
-  mpccn_group_id: blbytes ({min=0; max=255});
-  mpccn_epoch: uint64;
-  mpccn_sender: sender_nt;
-  mpccn_authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
-  mpccn_content: mls_content_nt; //is a commit
-  mpccn_signature: blbytes ({min=0; max=(pow2 16)-1});
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  sender: sender_nt;
+  authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
+  content: mls_content_nt; //is a commit
+  signature: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 #push-options "--ifuel 4"
@@ -1188,34 +1188,34 @@ let ps_mls_plaintext_commit_content =
       ps_bytes _
     )
     (fun (|group_id, (|epoch, (|sender, (|authenticated_data, (|content, signature|)|)|)|)|) -> ({
-      mpccn_group_id = group_id;
-      mpccn_epoch = epoch;
-      mpccn_sender = sender;
-      mpccn_authenticated_data = authenticated_data;
-      mpccn_content = content;
-      mpccn_signature = signature;
+      group_id = group_id;
+      epoch = epoch;
+      sender = sender;
+      authenticated_data = authenticated_data;
+      content = content;
+      signature = signature;
     }))
-    (fun x -> (|x.mpccn_group_id, (|x.mpccn_epoch, (|x.mpccn_sender, (|x.mpccn_authenticated_data, (|x.mpccn_content, x.mpccn_signature|)|)|)|)|))
+    (fun x -> (|x.group_id, (|x.epoch, (|x.sender, (|x.authenticated_data, (|x.content, x.signature|)|)|)|)|))
 #pop-options
 
 //Structure used for interim transcript hash
 noeq type mls_plaintext_commit_auth_data_nt = {
-  mpcadn_confirmation_tag: option_nt mac_nt;
+  confirmation_tag: option_nt mac_nt;
 }
 
 val ps_mls_plaintext_commit_auth_data: parser_serializer mls_plaintext_commit_auth_data_nt
 let ps_mls_plaintext_commit_auth_data =
   isomorphism mls_plaintext_commit_auth_data_nt (ps_option ps_mac)
-    (fun confirmation_tag -> {mpcadn_confirmation_tag = confirmation_tag})
-    (fun x -> x.mpcadn_confirmation_tag)
+    (fun confirmation_tag -> {confirmation_tag = confirmation_tag})
+    (fun x -> x.confirmation_tag)
 
 //Warning: you have to prepend the group context if sender.sender_type is ST_member!
 noeq type mls_plaintext_tbs_nt = {
-  mptbsn_group_id: blbytes ({min=0; max=255});
-  mptbsn_epoch: uint64;
-  mptbsn_sender: sender_nt;
-  mptbsn_authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
-  mptbsn_content: mls_content_nt;
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  sender: sender_nt;
+  authenticated_data: blbytes ({min=0; max=(pow2 32)-1});
+  content: mls_content_nt;
 }
 
 #push-options "--ifuel 3"
@@ -1230,20 +1230,20 @@ let ps_mls_plaintext_tbs =
       ps_mls_content
     )
     (fun (|group_id, (|epoch, (|sender, (|authenticated_data, content|)|)|)|) -> ({
-      mptbsn_group_id = group_id;
-      mptbsn_epoch = epoch;
-      mptbsn_sender = sender;
-      mptbsn_authenticated_data = authenticated_data;
-      mptbsn_content = content;
+      group_id = group_id;
+      epoch = epoch;
+      sender = sender;
+      authenticated_data = authenticated_data;
+      content = content;
     }))
-    (fun x -> (|x.mptbsn_group_id, (|x.mptbsn_epoch, (|x.mptbsn_sender, (|x.mptbsn_authenticated_data, x.mptbsn_content|)|)|)|))
+    (fun x -> (|x.group_id, (|x.epoch, (|x.sender, (|x.authenticated_data, x.content|)|)|)|))
 #pop-options
 
 //Warning: you have to prepend the group context if tbs.sender.sender_type is ST_member!
 noeq type mls_plaintext_tbm_nt = {
-  mptbmn_tbs: mls_plaintext_tbs_nt;
-  mptbmn_signature: blbytes ({min=0; max=(pow2 16)-1});
-  mptbmn_confirmation_tag: option_nt mac_nt;
+  tbs: mls_plaintext_tbs_nt;
+  signature: blbytes ({min=0; max=(pow2 16)-1});
+  confirmation_tag: option_nt mac_nt;
 }
 
 val ps_mls_plaintext_tbm: parser_serializer mls_plaintext_tbm_nt
@@ -1255,8 +1255,8 @@ let ps_mls_plaintext_tbm =
       ps_option ps_mac
     )
     (fun (|tbs, (|signature, confirmation_tag|)|) -> ({
-      mptbmn_tbs = tbs;
-      mptbmn_signature = signature;
-      mptbmn_confirmation_tag = confirmation_tag;
+      tbs = tbs;
+      signature = signature;
+      confirmation_tag = confirmation_tag;
     }))
-    (fun x -> (|x.mptbmn_tbs, (|x.mptbmn_signature, x.mptbmn_confirmation_tag|)|))
+    (fun x -> (|x.tbs, (|x.signature, x.confirmation_tag|)|))

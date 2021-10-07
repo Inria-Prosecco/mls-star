@@ -71,15 +71,15 @@ val network_to_proposal: proposal_nt -> result proposal
 let network_to_proposal p =
   match p with
   | P_add add ->
-    kp <-- key_package_to_treesync add.an_key_package;
+    kp <-- key_package_to_treesync add.key_package;
     return (Add kp)
   | P_update update ->
-    kp <-- key_package_to_treesync update.un_key_package;
+    kp <-- key_package_to_treesync update.key_package;
     return (Update kp)
   | P_remove remove ->
-    return (Remove (Lib.IntTypes.v remove.rn_removed))
+    return (Remove (Lib.IntTypes.v remove.removed))
   | P_psk psk ->
-    return (PreSharedKey psk.pskn_psk)
+    return (PreSharedKey psk.psk)
   | P_reinit reinit ->
     return (ReInit reinit)
   | P_external_init external_init ->
@@ -100,8 +100,8 @@ let network_to_proposal_or_ref por =
 
 val network_to_commit: commit_nt -> result commit
 let network_to_commit c =
-  proposals <-- mapM network_to_proposal_or_ref (Seq.seq_to_list c.cn_proposals);
-  path <-- network_to_option c.cn_path;
+  proposals <-- mapM network_to_proposal_or_ref (Seq.seq_to_list c.proposals);
+  path <-- network_to_option c.path;
   return ({
     c_proposals = proposals;
     c_path = path;
@@ -137,16 +137,16 @@ let proposal_to_network cs p =
   match p with
   | Add lp ->
     kp <-- treesync_to_keypackage cs lp;
-    return (P_add ({an_key_package = kp}))
+    return (P_add ({key_package = kp}))
   | Update lp ->
     kp <-- treesync_to_keypackage cs lp;
-    return (P_update ({un_key_package = kp}))
+    return (P_update ({key_package = kp}))
   | Remove id ->
     if not (id < pow2 32) then
       internal_failure "proposal_to_network: remove id too big"
     else
-      return (P_remove ({rn_removed = u32 id}))
-  | PreSharedKey x -> return (P_psk ({pskn_psk = x}))
+      return (P_remove ({removed = u32 id}))
+  | PreSharedKey x -> return (P_psk ({psk = x}))
   | ReInit x -> return (P_reinit x)
   | ExternalInit x -> return (P_external_init x)
   | AppAck x -> return (P_app_ack x)
@@ -171,8 +171,8 @@ let commit_to_network cs c =
     internal_failure "commit_to_network: proposals too long"
   else (
     return ({
-      cn_proposals = Seq.seq_of_list proposals;
-      cn_path = option_to_network c.c_path;
+      proposals = Seq.seq_of_list proposals;
+      path = option_to_network c.c_path;
     })
   )
 

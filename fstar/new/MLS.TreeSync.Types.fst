@@ -16,9 +16,9 @@ let dec_key_t = bytes
 type principal_t = string
 
 type credential_t = {
-  cred_version: nat;
-  cred_identity: pub_bytes;
-  cred_signature_key: verif_key_t;
+  version: nat;
+  identity: pub_bytes;
+  signature_key: verif_key_t;
 }
 
 assume val validate_credential: credential_t -> bool
@@ -31,28 +31,28 @@ noeq type leaf_secrets_t = {
 
 (** Definition of a Leaf package *)
 type leaf_package_t = {
-  lp_credential: credential_t;
-  lp_version: nat;
-  lp_content: pub_bytes;
-  lp_extensions: pub_bytes;
-  lp_signature: pub_bytes;
+  credential: credential_t;
+  version: nat;
+  content: pub_bytes;
+  extensions: pub_bytes;
+  signature: pub_bytes;
 }
 
 let mk_initial_leaf_package (c:credential_t) =
-  { lp_credential = c;
-    lp_version = 0;
-    lp_content = Seq.empty;
-    lp_extensions = Seq.empty;
-    lp_signature = admit();}
+  { credential = c;
+    version = 0;
+    content = Seq.empty;
+    extensions = Seq.empty;
+    signature = admit();}
 
 
 (** Definition of a Node package *)
 type node_package_t = {
-  np_version: nat;
-  np_content_dir: direction;
-  np_unmerged_leafs: list nat;
-  np_parent_hash: pub_bytes;
-  np_content: pub_bytes;
+  version: nat;
+  content_dir: direction;
+  unmerged_leafs: list nat;
+  parent_hash: pub_bytes;
+  content: pub_bytes;
 }
 
 (** Tree and Paths definitions *)
@@ -63,7 +63,7 @@ type treesync (l:level_n) (n:tree_size l) = tree l n (credential_t & option leaf
 type pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option leaf_package_t) (option node_package_t)
 
 //Data coming from TreeKEM
-type external_node_package_t = np:node_package_t{np.np_parent_hash == Seq.empty}
+type external_node_package_t = np:node_package_t{np.parent_hash == Seq.empty}
 type external_pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i leaf_package_t external_node_package_t
 
 (*
@@ -89,30 +89,30 @@ type operation_t =
 
 (** TreeSync state and accessors *)
 type state_t = {
-  st_group_id: nat;
-  st_levels: level_n;
-  st_treesize: tree_size st_levels;
-  st_tree: treesync st_levels st_treesize;
-  st_version: nat;
-  //st_initial_tree: treesync st_levels st_treesize;
-  st_transcript: Seq.seq operation_t;
+  group_id: nat;
+  levels: level_n;
+  treesize: tree_size levels;
+  tree: treesync levels treesize;
+  version: nat;
+  //initial_tree: treesync levels treesize;
+  transcript: Seq.seq operation_t;
 }
 
 val mk_initial_state: gid:nat -> l:level_n -> n:tree_size l -> treesync l n -> Tot state_t
 let mk_initial_state gid l n t = {
-  st_group_id = gid; st_levels = l;
-  st_treesize = n;
-  st_tree = t; st_version = 0;
-  //st_initial_tree = t;
-  st_transcript = empty;}
+  group_id = gid; levels = l;
+  treesize = n;
+  tree = t; version = 0;
+  //initial_tree = t;
+  transcript = empty;}
 
 val group_id: state_t -> nat
-let group_id st = st.st_group_id
+let group_id st = st.group_id
 
 val max_size: state_t -> nat
-let max_size st = pow2 st.st_levels
+let max_size st = pow2 st.levels
 
 val epoch: state_t -> nat
-let epoch st = st.st_version
+let epoch st = st.version
 
-type index_t (st:state_t) = i:nat{i < st.st_treesize}
+type index_t (st:state_t) = i:nat{i < st.treesize}

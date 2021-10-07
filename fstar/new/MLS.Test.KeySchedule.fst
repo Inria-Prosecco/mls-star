@@ -20,11 +20,11 @@ let gen_group_context group_id epoch inp =
   let confirmed_transcript_hash = hex_string_to_bytes inp.confirmed_transcript_hash in
   if Seq.length group_id <= 255 && epoch < (pow2 64) && Seq.length tree_hash <= 255 && Seq.length confirmed_transcript_hash <= 255 then
     ps_group_context.serialize ({
-      gcn_group_id = group_id;
-      gcn_epoch = u64 epoch;
-      gcn_tree_hash = tree_hash;
-      gcn_confirmed_transcript_hash = confirmed_transcript_hash;
-      gcn_extensions = Seq.empty;
+      group_id = group_id;
+      epoch = u64 epoch;
+      tree_hash = tree_hash;
+      confirmed_transcript_hash = confirmed_transcript_hash;
+      extensions = Seq.empty;
     })
   else
     failwith ""
@@ -80,7 +80,7 @@ let gen_list_epoch_output cs group_id initial_init_secret l =
 
 val test_keyschedule_one: keyschedule_test -> ML bool
 let test_keyschedule_one t =
-  match uint16_to_ciphersuite t.ks_cipher_suite with
+  match uint16_to_ciphersuite t.cipher_suite with
   | ProtocolError s -> begin
     IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
     true
@@ -92,7 +92,7 @@ let test_keyschedule_one t =
   | Success cs -> begin
     let (inputs, expected_outputs) = List.Tot.unzip t.epochs in
     let our_outputs = gen_list_epoch_output cs t.group_id t.initial_init_secret inputs in
-    List.forall2 (fun e_out o_out ->
+    List.forall2 (fun (e_out:keyschedule_test_epoch_output) (o_out:keyschedule_test_epoch_output) ->
       let group_context_ok = check_equal "group_context" string_to_string e_out.group_context o_out.group_context in
       let joiner_secret_ok = check_equal "joiner_secret" string_to_string e_out.joiner_secret o_out.joiner_secret in
       let welcome_secret_ok = check_equal "welcome_secret" string_to_string e_out.welcome_secret o_out.welcome_secret in

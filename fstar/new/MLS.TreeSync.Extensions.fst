@@ -12,9 +12,9 @@ open MLS.Result
 (*** Extensions parser ***)
 
 type capabilities_ext_nt = {
-  cen_versions: blseq protocol_version_nt ps_protocol_version ({min=0; max=255});
-  cen_ciphersuites: blseq cipher_suite_nt ps_cipher_suite ({min=0; max=255});
-  cen_extensions: blseq extension_type_nt ps_extension_type ({min=0; max=255});
+  versions: blseq protocol_version_nt ps_protocol_version ({min=0; max=255});
+  ciphersuites: blseq cipher_suite_nt ps_cipher_suite ({min=0; max=255});
+  extensions: blseq extension_type_nt ps_extension_type ({min=0; max=255});
 }
 
 #push-options "--ifuel 1"
@@ -28,16 +28,16 @@ let ps_capabilities_ext =
       ps_seq _ ps_extension_type
     )
     (fun (|versions, (|ciphersuites, extensions|)|) -> {
-      cen_versions = versions;
-      cen_ciphersuites = ciphersuites;
-      cen_extensions = extensions;
+      versions = versions;
+      ciphersuites = ciphersuites;
+      extensions = extensions;
     })
-    (fun x -> (|x.cen_versions, (|x.cen_ciphersuites, x.cen_extensions|)|))
+    (fun x -> (|x.versions, (|x.ciphersuites, x.extensions|)|))
 #pop-options
 
 type lifetime_ext_nt = {
-  len_not_before: uint64;
-  len_not_after: uint64;
+  not_before: uint64;
+  not_after: uint64;
 }
 
 val ps_lifetime_ext: parser_serializer lifetime_ext_nt
@@ -49,39 +49,39 @@ let ps_lifetime_ext =
       ps_u64
     )
     (fun (|not_before, not_after|) -> {
-      len_not_before = not_before;
-      len_not_after = not_after;
+      not_before = not_before;
+      not_after = not_after;
     })
-    (fun x -> (|x.len_not_before, x.len_not_after|))
+    (fun x -> (|x.not_before, x.not_after|))
 
 type key_package_identifier_ext_nt = {
-  kpien_key_id: blbytes ({min=0; max=(pow2 16)-1});
+  key_id: blbytes ({min=0; max=(pow2 16)-1});
 }
 
 val ps_key_package_identifier_ext: parser_serializer key_package_identifier_ext_nt
 let ps_key_package_identifier_ext =
   let open MLS.Parser in
   isomorphism key_package_identifier_ext_nt (ps_bytes _)
-    (fun key_id -> {kpien_key_id = key_id})
-    (fun x -> x.kpien_key_id)
+    (fun key_id -> {key_id = key_id})
+    (fun x -> x.key_id)
 
 type parent_hash_ext_nt = {
-  phen_parent_hash: blbytes ({min=0; max=255});
+  parent_hash: blbytes ({min=0; max=255});
 }
 
 val ps_parent_hash_ext: parser_serializer parent_hash_ext_nt
 let ps_parent_hash_ext =
   let open MLS.Parser in
   isomorphism parent_hash_ext_nt (ps_bytes _)
-    (fun key_id -> {phen_parent_hash = key_id})
-    (fun x -> x.phen_parent_hash)
+    (fun key_id -> {parent_hash = key_id})
+    (fun x -> x.parent_hash)
 
 (*** Utility functions ***)
 
 val find_extension_index: extension_type_nt -> extensions:Seq.seq extension_nt -> option (i:nat{i < Seq.length extensions})
 let find_extension_index t extensions =
   repeati (Seq.length extensions) (fun i acc ->
-    if (Seq.index extensions i).en_extension_type = t then
+    if (Seq.index extensions i).extension_type = t then
       Some i
     else
       acc
@@ -94,7 +94,7 @@ let get_extension t extensions_buf =
   | Some extensions ->
     match find_extension_index t extensions with
     | None -> None
-    | Some i -> Some ((Seq.index extensions i).en_extension_data)
+    | Some i -> Some ((Seq.index extensions i).extension_data)
 
 val set_extension: extension_type_nt -> bytes -> bytes -> result bytes
 let set_extension t extensions_buf data =
@@ -102,7 +102,7 @@ let set_extension t extensions_buf data =
   if not (Seq.length data < pow2 16) then
     error "set_extension: data is too long"
   else (
-    let ext = ({en_extension_type = t; en_extension_data = data;}) in
+    let ext = ({extension_type = t; extension_data = data;}) in
     let new_extensions: Seq.seq extension_nt =
       match find_extension_index t extensions with
       | None -> Seq.append extensions (Seq.create 1 ext)
@@ -134,7 +134,7 @@ let mk_set_extension #a ext_type ps_a buf ext_content =
 val get_extension_list: bytes -> result (list extension_type_nt)
 let get_extension_list extensions_buf =
   extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse (ps_seq ({min=8; max=(pow2 32)-1}) ps_extension)).parse_exact extensions_buf);
-  return (List.Tot.map (fun x -> x.en_extension_type) (Seq.seq_to_list extensions))
+  return (List.Tot.map (fun x -> x.extension_type) (Seq.seq_to_list extensions))
 
 val get_capabilities_extension: bytes -> option capabilities_ext_nt
 let get_capabilities_extension = mk_get_extension ET_capabilities ps_capabilities_ext

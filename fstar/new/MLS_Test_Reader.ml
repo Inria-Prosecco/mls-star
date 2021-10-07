@@ -62,9 +62,9 @@ let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_send
     ("nonce", `String nonce);
   ] ->
     ({
-      esdit_ciphertext = ciphertext;
-      esdit_key = key;
-      esdit_nonce = nonce;
+      ciphertext = ciphertext;
+      key = key;
+      nonce = nonce;
     })
 
 let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_generation_test =
@@ -76,10 +76,10 @@ let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_
     ("ciphertext", `String ciphertext);
   ] ->
     ({
-      elgt_key = key;
-      elgt_nonce = nonce;
-      elgt_plaintext = plaintext;
-      elgt_ciphertext = ciphertext;
+      key1 = key;
+      nonce1 = nonce;
+      plaintext = plaintext;
+      ciphertext1 = ciphertext;
     })
 
 let parse_encryption_leaf_test (json:Yojson.Safe.t): encryption_leaf_test =
@@ -106,12 +106,12 @@ let parse_encryption_test (json:Yojson.Safe.t): encryption_test =
     ("leaves", `List leaves)
   ] ->
     ({
-      et_cipher_suite = int_to_uint16 cipher_suite;
-      et_n_leaves = int_to_uint32 n_leaves;
-      et_encryption_secret = encryption_secret;
-      et_sender_data_secret = sender_data_secret;
-      et_sender_data_info = parse_encryption_sender_data_info_test sender_data_info;
-      et_leaves = List.map parse_encryption_leaf_test leaves;
+      cipher_suite = int_to_uint16 cipher_suite;
+      n_leaves1 = int_to_uint32 n_leaves;
+      encryption_secret = encryption_secret;
+      sender_data_secret = sender_data_secret;
+      sender_data_info = parse_encryption_sender_data_info_test sender_data_info;
+      leaves = List.map parse_encryption_leaf_test leaves;
     })
 
 let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_input * keyschedule_test_epoch_output =
@@ -145,8 +145,8 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
       joiner_secret = joiner_secret;
       welcome_secret = welcome_secret;
       init_secret = init_secret;
-      sender_data_secret = sender_data_secret;
-      encryption_secret = encryption_secret;
+      sender_data_secret1 = sender_data_secret;
+      encryption_secret1 = encryption_secret;
       exporter_secret = exporter_secret;
       authentication_secret = authentication_secret;
       external_secret = external_secret;
@@ -162,7 +162,7 @@ let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
   match json with
   | `Assoc [("cipher_suite", `Int cipher_suite); ("group_id", `String group_id); ("initial_init_secret", `String initial_init_secret); ("epochs", `List epochs)] ->
     {
-      ks_cipher_suite = int_to_uint16 cipher_suite;
+      cipher_suite1 = int_to_uint16 cipher_suite;
       group_id = group_id;
       initial_init_secret = initial_init_secret;
       epochs = List.map parse_keyschedule_test_epoch epochs;
@@ -187,19 +187,19 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
     ("interim_transcript_hash_after", `String interim_transcript_hash_after);
   ] ->
     ({
-      ctt_cipher_suite = int_to_uint16 cipher_suite;
-      ctt_group_id = group_id;
-      ctt_epoch = parse_uint64 epoch;
-      ctt_tree_hash_before = tree_hash_before;
-      ctt_confirmed_transcript_hash_before = confirmed_transcript_hash_before;
-      ctt_interim_transcript_hash_before = interim_transcript_hash_before;
-      ctt_credential = credential;
-      ctt_membership_key = membership_key;
-      ctt_confirmation_key = confirmation_key;
-      ctt_commit = commit;
-      ctt_group_context = group_context;
-      ctt_confirmed_transcript_hash_after = confirmed_transcript_hash_after;
-      ctt_interim_transcript_hash_after = interim_transcript_hash_after;
+      cipher_suite2 = int_to_uint16 cipher_suite;
+      group_id1 = group_id;
+      epoch = parse_uint64 epoch;
+      tree_hash_before = tree_hash_before;
+      confirmed_transcript_hash_before = confirmed_transcript_hash_before;
+      interim_transcript_hash_before = interim_transcript_hash_before;
+      credential = credential;
+      membership_key1 = membership_key;
+      confirmation_key1 = confirmation_key;
+      commit = commit;
+      group_context1 = group_context;
+      confirmed_transcript_hash_after = confirmed_transcript_hash_after;
+      interim_transcript_hash_after = interim_transcript_hash_after;
     })
   | _ -> failwith "parse_commit_transcript_test: incorrect test vector format"
 
@@ -222,8 +222,8 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
     ("tree_hash_after", `String tree_hash_after)
   ] ->
     ({
-      tk_cipher_suite = int_to_uint16 cipher_suite;
-      tk_input = {
+      cipher_suite3 = int_to_uint16 cipher_suite;
+      input = {
         ratchet_tree_before = ratchet_tree_before;
         add_sender = int_to_uint32 add_sender;
         my_leaf_secret = my_leaf_secret;
@@ -233,8 +233,8 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
         update_path = update_path;
         update_group_context = update_group_context;
       };
-      tk_output = {
-        tree_hash_before = tree_hash_before;
+      output = {
+        tree_hash_before1 = tree_hash_before;
         root_secret_after_add = root_secret_after_add;
         root_secret_after_update = root_secret_after_update;
         ratchet_tree_after = ratchet_tree_after;

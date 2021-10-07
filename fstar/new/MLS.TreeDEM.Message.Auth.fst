@@ -15,35 +15,35 @@ let compute_message_confirmation_tag cs confirmation_key confirmed_transcript_ha
 
 val compute_tbs: ciphersuite -> message -> result (mls_plaintext_tbs_nt)
 let compute_tbs cs msg =
-  if not (Seq.length msg.m_group_id < 256) then
+  if not (Seq.length msg.group_id < 256) then
     internal_failure "compute_tbs: group_id too long"
-  else if not (msg.m_epoch < pow2 64) then
+  else if not (msg.epoch < pow2 64) then
     internal_failure "compute_tbs: epoch too big"
-  else if not (Seq.length msg.m_authenticated_data < pow2 32) then
+  else if not (Seq.length msg.authenticated_data < pow2 32) then
     internal_failure "compute_tbs: authenticated_data too long"
   else (
-    sender <-- sender_to_network msg.m_sender;
-    content <-- message_content_to_network cs msg.m_message_content;
+    sender <-- sender_to_network msg.sender;
+    content <-- message_content_to_network cs msg.message_content;
     return ({
-      mptbsn_group_id = msg.m_group_id;
-      mptbsn_epoch = u64 msg.m_epoch;
-      mptbsn_sender = sender;
-      mptbsn_authenticated_data = msg.m_authenticated_data;
-      mptbsn_content = content;
-    })
+      group_id = msg.group_id;
+      epoch = u64 msg.epoch;
+      sender = sender;
+      authenticated_data = msg.authenticated_data;
+      content = content;
+    } <: mls_plaintext_tbs_nt)
   )
 
 val compute_tbm: ciphersuite -> message -> message_auth -> result (mls_plaintext_tbm_nt)
 let compute_tbm cs msg auth =
-  if not (Seq.length auth.m_signature < pow2 16) then
+  if not (Seq.length auth.signature < pow2 16) then
     error "compute_tbm: signature too long"
   else (
     tbs <-- compute_tbs cs msg;
-    confirmation_tag' <-- opt_bytes_to_opt_tag auth.m_confirmation_tag;
+    confirmation_tag' <-- opt_bytes_to_opt_tag auth.confirmation_tag;
     return ({
-      mptbmn_tbs = tbs;
-      mptbmn_signature = auth.m_signature;
-      mptbmn_confirmation_tag = confirmation_tag';
+      tbs = tbs;
+      signature = auth.signature;
+      confirmation_tag = confirmation_tag';
     })
   )
 
@@ -52,7 +52,7 @@ let compute_tbs_bytes cs msg group_context =
   tbs <-- compute_tbs cs msg;
   let partial_serialized_bytes = ps_mls_plaintext_tbs.serialize tbs in
   return (
-    if msg.m_sender.s_sender_type = ST_member then
+    if msg.sender.sender_type = ST_member then
       Seq.append group_context partial_serialized_bytes
     else
       partial_serialized_bytes
@@ -73,7 +73,7 @@ let compute_message_membership_tag cs membership_key msg auth group_context =
   tbm <-- compute_tbm cs msg auth;
   let partial_serialized_bytes = ps_mls_plaintext_tbm.serialize tbm in
   let serialized_bytes =
-    if msg.m_sender.s_sender_type = ST_member then
+    if msg.sender.sender_type = ST_member then
       Seq.append group_context partial_serialized_bytes
     else
       partial_serialized_bytes

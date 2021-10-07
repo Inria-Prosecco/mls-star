@@ -14,9 +14,9 @@ open MLS.Result
 #set-options "--ifuel 1 --fuel 1"
 
 noeq type parent_hash_input_nt = {
-  phin_public_key: hpke_public_key_nt;
-  phin_parent_hash: blbytes ({min=0;max=255});
-  phin_original_child_resolution: blseq hpke_public_key_nt ps_hpke_public_key ({min=0; max=(pow2 32)-1});
+  public_key: hpke_public_key_nt;
+  parent_hash: blbytes ({min=0;max=255});
+  original_child_resolution: blseq hpke_public_key_nt ps_hpke_public_key ({min=0; max=(pow2 32)-1});
 }
 
 val ps_parent_hash_input: parser_serializer parent_hash_input_nt
@@ -29,11 +29,11 @@ let ps_parent_hash_input =
       ps_seq _ ps_hpke_public_key
     )
   (fun (|public_key, (|parent_hash, original_child_resolution|)|) -> {
-    phin_public_key = public_key;
-    phin_parent_hash = parent_hash;
-    phin_original_child_resolution = original_child_resolution;
+    public_key = public_key;
+    parent_hash = parent_hash;
+    original_child_resolution = original_child_resolution;
   })
-  (fun x -> (|x.phin_public_key, (|x.phin_parent_hash, x.phin_original_child_resolution|)|))
+  (fun x -> (|x.public_key, (|x.parent_hash, x.original_child_resolution|)|))
 
 val compute_parent_hash_treekem: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> hpke_public_key_nt -> bytes -> treekem cs l n -> list (hpke_public_key cs) -> result (lbytes (hash_length cs))
 let compute_parent_hash_treekem #cs #l #n public_key parent_hash sibling forbidden_public_keys =
@@ -50,9 +50,9 @@ let compute_parent_hash_treekem #cs #l #n public_key parent_hash sibling forbidd
   else (
     Seq.lemma_list_seq_bij original_child_resolution_nt;
     hash_hash cs (ps_parent_hash_input.serialize ({
-      phin_public_key = public_key;
-      phin_parent_hash = parent_hash;
-      phin_original_child_resolution = Seq.seq_of_list original_child_resolution_nt;
+      public_key = public_key;
+      parent_hash = parent_hash;
+      original_child_resolution = Seq.seq_of_list original_child_resolution_nt;
     }))
   )
 
@@ -61,7 +61,7 @@ let get_public_key_from_content content =
   let open MLS.NetworkBinder in
   content <-- from_option "get_public_key_from_content: Couldn't parse node content"
     ((ps_to_pse ps_node_package_content).parse_exact content);
-  return content.npc_public_key
+  return content.public_key
 
 //TODO possible performance optimisation: no need to convert root from treesync to treekem: we only need to convert its content
 val compute_parent_hash_from_sibling: #l:nat -> #ls:nat -> #n:tree_size l -> #ns:tree_size ls -> cs:ciphersuite -> content:bytes -> parent_parent_hash:bytes -> nat -> treesync l n -> nat -> treesync ls ns -> result (lbytes (hash_length cs))
@@ -80,7 +80,7 @@ let compute_parent_hash_from_sibling #l #ls #n #ns cs content parent_parent_hash
     match root_kem_onp with
     | None -> []
     | Some root_np ->
-      unmerged_leafs_resolution root_kem root_np.kp_unmerged_leafs
+      unmerged_leafs_resolution root_kem root_np.unmerged_leafs
   in
   compute_parent_hash_treekem public_key parent_parent_hash sibling_kem forbidden_keys
 

@@ -9,8 +9,8 @@ open MLS.Result
 open MLS.TreeMath
 
 noeq type tree_context_nt = {
-  tc_node: uint32;
-  tc_generation: uint32;
+  node: uint32;
+  generation: uint32;
 }
 
 val ps_tree_context: parser_serializer tree_context_nt
@@ -21,8 +21,8 @@ let ps_tree_context =
       _ <-- ps_u32;
       ps_u32
     )
-    (fun (|node, generation|) -> {tc_node=node; tc_generation=generation})
-    (fun x -> (|x.tc_node, x.tc_generation|))
+    (fun (|node, generation|) -> {node=node; generation=generation})
+    (fun x -> (|x.node, x.generation|))
 
 val derive_tree_secret: cs:ciphersuite -> secret:bytes -> label:bytes -> node:nat -> generation:nat -> len:size_nat -> result (lbytes len)
 let derive_tree_secret cs secret label node generation len =
@@ -33,8 +33,8 @@ let derive_tree_secret cs secret label node generation len =
     internal_failure "derive_tree_secret: generation too high"
   else
     let tree_context = ps_tree_context.serialize ({
-      tc_node = u32 node;
-      tc_generation = u32 generation;
+      node = u32 node;
+      generation = u32 generation;
     }) in
     expand_with_label cs secret label tree_context len
 
@@ -118,23 +118,23 @@ let secret_external_to_keypair cs external_secret =
   hpke_gen_keypair cs external_secret
 
 noeq type ratchet_state (cs:ciphersuite) = {
-  rs_secret: lbytes (kdf_length cs);
-  rs_generation: nat;
-  rs_node: node_index 0;
+  secret: lbytes (kdf_length cs);
+  generation: nat;
+  node: node_index 0;
 }
 
 noeq type ratchet_output (cs:ciphersuite) = {
-  ro_nonce: lbytes (aead_nonce_length cs);
-  ro_key: lbytes (aead_key_length cs);
+  nonce: lbytes (aead_nonce_length cs);
+  key: lbytes (aead_key_length cs);
 }
 
 val init_handshake_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result (ratchet_state cs)
 let init_handshake_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "handshake") node 0 (kdf_length cs);
   return ({
-    rs_secret = ratchet_secret;
-    rs_generation = 0;
-    rs_node = node;
+    secret = ratchet_secret;
+    generation = 0;
+    node = node;
   })
 
 //TODO: this is a copy-paste of init_handeshake_ratchet, factorize?
@@ -142,36 +142,36 @@ val init_application_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result 
 let init_application_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "application") node 0 (kdf_length cs);
   return ({
-    rs_secret = ratchet_secret;
-    rs_generation = 0;
-    rs_node = node;
+    secret = ratchet_secret;
+    generation = 0;
+    node = node;
   })
 
 val ratchet_get_key: #cs:ciphersuite -> ratchet_state cs -> result (ratchet_output cs)
 let ratchet_get_key #cs st =
-  nonce <-- derive_tree_secret cs st.rs_secret (string_to_bytes "nonce") st.rs_node st.rs_generation (aead_nonce_length cs);
-  key <-- derive_tree_secret cs st.rs_secret (string_to_bytes "key") st.rs_node st.rs_generation (aead_key_length cs);
+  nonce <-- derive_tree_secret cs st.secret (string_to_bytes "nonce") st.node st.generation (aead_nonce_length cs);
+  key <-- derive_tree_secret cs st.secret (string_to_bytes "key") st.node st.generation (aead_key_length cs);
   return ({
-    ro_nonce = nonce;
-    ro_key = key;
+    nonce = nonce;
+    key = key;
   })
 
 val ratchet_next_state: #cs:ciphersuite -> ratchet_state cs -> result (ratchet_state cs)
 let ratchet_next_state #cs st =
-  new_secret <-- derive_tree_secret cs st.rs_secret (string_to_bytes "secret") st.rs_node st.rs_generation (kdf_length cs);
+  new_secret <-- derive_tree_secret cs st.secret (string_to_bytes "secret") st.node st.generation (kdf_length cs);
   return ({
-    rs_secret = new_secret;
-    rs_generation = st.rs_generation + 1;
-    rs_node = st.rs_node;
+    secret = new_secret;
+    generation = st.generation + 1;
+    node = st.node;
   })
 
 //#push-options "--fuel 1 --ifuel 1"
-val ratchet_get_generation_key: #cs:ciphersuite -> st:ratchet_state cs -> i:nat{st.rs_generation <= i} -> Tot (result (ratchet_output cs)) (decreases i-st.rs_generation)
+val ratchet_get_generation_key: #cs:ciphersuite -> st:ratchet_state cs -> i:nat{st.generation <= i} -> Tot (result (ratchet_output cs)) (decreases i-st.generation)
 let rec ratchet_get_generation_key #cs st i =
-  if st.rs_generation = i then (
+  if st.generation = i then (
     ratchet_get_key st
   ) else (
-    //Here we have to break encapsulation provided by `result` so fstar knows that `ratchet_next_state` increments `rs_generation`
+    //Here we have to break encapsulation provided by `result` so fstar knows that `ratchet_next_state` increments `generation`
     match ratchet_next_state st with
     | InternalError s -> InternalError s
     | ProtocolError s -> ProtocolError s

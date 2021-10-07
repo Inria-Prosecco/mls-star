@@ -45,14 +45,14 @@ let integrity_error_to_string ie =
 val find_my_index: #l:nat -> #n:tree_size l -> treesync l n -> key_package_nt -> ML (res:nat{res<n})
 let find_my_index #l #n t kp =
   let my_signature_key =
-    match kp.kpn_credential with
-    | C_basic c -> secret_to_pub c.bcn_signature_key
+    match kp.credential with
+    | C_basic c -> secret_to_pub c.signature_key
     | _ -> failwith "unsupported credential!"; bytes_empty
   in
   let test (oc: option credential_t) =
     match oc with
     | None -> false
-    | Some c -> c.cred_signature_key = my_signature_key
+    | Some c -> c.signature_key = my_signature_key
   in
   let res = extract_option "couldn't find my_index" (find_first test (Seq.seq_to_list (tree_membership t))) in
   res
@@ -93,7 +93,7 @@ let gen_treekem_output cs t =
     let tk1 = extract_result (treesync_to_treekem cs ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let upk1 = extract_result (update_path_to_treekem cs l n update_sender update_group_context update_path) in
-    let update_leaf_package = extract_result (key_package_to_treesync update_path.upn_leaf_key_package) in
+    let update_leaf_package = extract_result (key_package_to_treesync update_path.leaf_key_package) in
     let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
     let ups1 = extract_result (external_pathsync_to_pathsync cs None ts1 ext_ups1) in
     let ts2 = apply_path dumb_credential ts1 ups1 in
@@ -114,11 +114,11 @@ let gen_treekem_output cs t =
 
 val test_treekem_one: treekem_test -> ML bool
 let test_treekem_one t =
-  if FStar.UInt16.v t.tk_cipher_suite <> 3 then (
+  if FStar.UInt16.v t.cipher_suite <> 3 then (
     IO.print_string "Skipping test because only Chacha20Poly1305 is supported\n";
     true
   ) else
-  match uint16_to_ciphersuite t.tk_cipher_suite with
+  match uint16_to_ciphersuite t.cipher_suite with
   | ProtocolError s -> begin
     IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
     true
@@ -129,24 +129,24 @@ let test_treekem_one t =
   end
   | Success cs -> begin
     let sanitize_hash h = if String.length h = 66 then String.sub h 2 64 else h in
-    let input = {t.tk_input with
-      my_leaf_secret = sanitize_hash t.tk_input.my_leaf_secret;
-      my_path_secret = sanitize_hash t.tk_input.my_path_secret;
+    let input = {t.input with
+      my_leaf_secret = sanitize_hash t.input.my_leaf_secret;
+      my_path_secret = sanitize_hash t.input.my_path_secret;
     } in
-    let output = {t.tk_output with
-      root_secret_after_add = sanitize_hash t.tk_output.root_secret_after_add;
-      root_secret_after_update = sanitize_hash t.tk_output.root_secret_after_update;
+    let output = {t.output with
+      root_secret_after_add = sanitize_hash t.output.root_secret_after_add;
+      root_secret_after_update = sanitize_hash t.output.root_secret_after_update;
     } in
     let t = {t with
-      tk_input = input;
-      tk_output = output;
+      input = input;
+      output = output;
     } in
-    let our_output = gen_treekem_output cs t.tk_input in
-    let tree_hash_before_ok = check_equal "tree_hash_before_ok" string_to_string t.tk_output.tree_hash_before our_output.tree_hash_before in
-    let root_secret_after_add_ok = check_equal "root_secret_after_add" string_to_string t.tk_output.root_secret_after_add our_output.root_secret_after_add in
-    let root_secret_after_update_ok = check_equal "root_secret_after_update" string_to_string t.tk_output.root_secret_after_update our_output.root_secret_after_update in
-    let ratchet_tree_after_ok = check_equal "ratchet_tree_after" string_to_string t.tk_output.ratchet_tree_after our_output.ratchet_tree_after in
-    let tree_hash_after_ok = check_equal "tree_hash_after" string_to_string t.tk_output.tree_hash_after our_output.tree_hash_after in
+    let our_output = gen_treekem_output cs t.input in
+    let tree_hash_before_ok = check_equal "tree_hash_before_ok" string_to_string t.output.tree_hash_before our_output.tree_hash_before in
+    let root_secret_after_add_ok = check_equal "root_secret_after_add" string_to_string t.output.root_secret_after_add our_output.root_secret_after_add in
+    let root_secret_after_update_ok = check_equal "root_secret_after_update" string_to_string t.output.root_secret_after_update our_output.root_secret_after_update in
+    let ratchet_tree_after_ok = check_equal "ratchet_tree_after" string_to_string t.output.ratchet_tree_after our_output.ratchet_tree_after in
+    let tree_hash_after_ok = check_equal "tree_hash_after" string_to_string t.output.tree_hash_after our_output.tree_hash_after in
     tree_hash_before_ok && root_secret_after_add_ok && root_secret_after_update_ok && ratchet_tree_after_ok && tree_hash_after_ok
   end
 

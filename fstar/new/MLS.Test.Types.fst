@@ -22,16 +22,16 @@ type keyschedule_test_epoch_input = {
 }
 
 type encryption_sender_data_info_test = {
-  esdit_ciphertext: string;
-  esdit_key: string;
-  esdit_nonce: string;
+  ciphertext: string;
+  key: string;
+  nonce: string;
 }
 
 type encryption_leaf_generation_test = {
-  elgt_key: string;
-  elgt_nonce: string;
-  elgt_plaintext: string;
-  elgt_ciphertext: string;
+  key: string;
+  nonce: string;
+  plaintext: string;
+  ciphertext: string;
 }
 
 type encryption_leaf_test = {
@@ -41,12 +41,12 @@ type encryption_leaf_test = {
 }
 
 type encryption_test = {
-  et_cipher_suite: U16.t;
-  et_n_leaves: U32.t;
-  et_encryption_secret: string;
-  et_sender_data_secret: string;
-  et_sender_data_info: encryption_sender_data_info_test;
-  et_leaves: list encryption_leaf_test;
+  cipher_suite: U16.t;
+  n_leaves: U32.t;
+  encryption_secret: string;
+  sender_data_secret: string;
+  sender_data_info: encryption_sender_data_info_test;
+  leaves: list encryption_leaf_test;
 }
 
 type keyschedule_test_epoch_output = {
@@ -69,28 +69,28 @@ type keyschedule_test_epoch_output = {
 }
 
 type keyschedule_test = {
-  ks_cipher_suite: U16.t;
+  cipher_suite: U16.t;
   group_id: string;
   initial_init_secret: string;
   epochs: list (keyschedule_test_epoch_input & keyschedule_test_epoch_output);
 }
 
 type commit_transcript_test = {
-  ctt_cipher_suite: U16.t;
-  ctt_group_id: string;
-  ctt_epoch: U64.t;
-  ctt_tree_hash_before: string;
-  ctt_confirmed_transcript_hash_before: string;
-  ctt_interim_transcript_hash_before: string;
-  ctt_credential: string;
+  cipher_suite: U16.t;
+  group_id: string;
+  epoch: U64.t;
+  tree_hash_before: string;
+  confirmed_transcript_hash_before: string;
+  interim_transcript_hash_before: string;
+  credential: string;
 
-  ctt_membership_key: string;
-  ctt_confirmation_key: string;
-  ctt_commit: string;
-  ctt_group_context: string;
+  membership_key: string;
+  confirmation_key: string;
+  commit: string;
+  group_context: string;
 
-  ctt_confirmed_transcript_hash_after: string;
-  ctt_interim_transcript_hash_after: string;
+  confirmed_transcript_hash_after: string;
+  interim_transcript_hash_after: string;
 }
 
 type treekem_test_input = {
@@ -115,9 +115,9 @@ type treekem_test_output = {
 }
 
 type treekem_test = {
-  tk_cipher_suite: U16.t;
-  tk_input: treekem_test_input;
-  tk_output: treekem_test_output;
+  cipher_suite: U16.t;
+  input: treekem_test_input;
+  output: treekem_test_output;
 }
 
 type test_type =
