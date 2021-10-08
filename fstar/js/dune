@@ -2,7 +2,6 @@
  (name MLS_JS)
  (modes byte js)
  (modules MLS_JS)
- (public_name MLS)
  (preprocess
   (pps js_of_ocaml-ppx))
- (libraries haclml js_of_ocaml))
+ (libraries mls.core js_of_ocaml))

@@ -65,6 +65,8 @@ obj/MLS_Test_Reader.ml: MLS_Test_Reader.ml
 obj/MLS_Test_Equality.ml: MLS_Test_Equality.ml
 	cp $< $@
 
+extract: $(ALL_ML_FILES)
+
 # OCaml compilation
 
 .PRECIOUS: obj/%.cmx

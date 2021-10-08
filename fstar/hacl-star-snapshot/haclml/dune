@@ -1,6 +1,6 @@
 (library
- (name        haclml)
- (public_name haclml)
+ (name haclml)
+ (public_name mls.haclml)
  (wrapped false)
  (modes byte native)
  (libraries fstarlib)

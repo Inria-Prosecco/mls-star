@@ -252,6 +252,13 @@ let get_filename (typ:test_type): string =
   | CommitTranscript -> "test_vectors/commit_transcript.json"
   | TreeKEM -> "test_vectors/treekem.json"
 
+let get_filename t =
+  let f = get_filename t in
+  if Sys.file_exists f then
+    f
+  else
+    "../../../../new/" ^ f
+
 let get_testsuite (typ:test_type): testsuite =
   let json = Yojson.Safe.from_channel (open_in (get_filename typ)) in
   match typ with
