@@ -1,0 +1,21 @@
+(library
+ (name        haclml)
+ (public_name haclml)
+ (wrapped false)
+ (modes byte native)
+ (libraries fstarlib)
+ (modules (:standard \ Meta_Interface Lib_Buffer Lib_ByteBuffer Lib_Loops)))
+
+(env
+ (dev (flags
+   :standard
+   -safe-string
+   -g
+   -w -8-9-33-20-21-26-27
+ ))
+ (release (flags
+   :standard
+   -safe-string
+   -g
+   -w -8-9-33-20-21-26-27
+ )))

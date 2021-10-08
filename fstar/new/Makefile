@@ -69,7 +69,7 @@ obj/MLS_Test_Equality.ml: MLS_Test_Equality.ml
 
 .PRECIOUS: obj/%.cmx
 obj/%.cmx: obj/%.ml
-	$(OCAMLOPT) -I obj -I $(HACL_SNAPSHOT_DIR)/ml $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa -c $< -o $@
+	$(OCAMLOPT) -I obj -I $(HACL_SNAPSHOT_DIR)/haclml $(HACL_SNAPSHOT_DIR)/haclml/libhaclml.cmxa -c $< -o $@
 
 obj/MLS_Test_Reader.cmx: obj/MLS_Test_Reader.ml obj/MLS_Test_Types.cmx
 obj/MLS_Test_Equality.cmx: obj/MLS_Test_Equality.ml
@@ -79,7 +79,7 @@ obj/MLS_Test_Equality.cmx: obj/MLS_Test_Equality.ml
 ALL_CMX_FILES=obj/MLS_Test_Reader.cmx obj/MLS_Test_Equality.cmx $(subst .ml,.cmx,$(ALL_ML_FILES))
 
 bin/test.exe: obj/MLS_Test.cmx | bin
-	$(OCAMLOPT) -I obj $(HACL_SNAPSHOT_DIR)/ml/libhaclml.cmxa $(ALL_CMX_FILES) -o bin/test.exe
+	$(OCAMLOPT) -I obj $(HACL_SNAPSHOT_DIR)/haclml/libhaclml.cmxa $(ALL_CMX_FILES) -o bin/test.exe
 
 bin:
 	mkdir $@
