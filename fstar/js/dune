@@ -2,6 +2,9 @@
  (name MLS_JS)
  (modes byte js)
  (modules MLS_JS)
+ (js_of_ocaml
+   (flags "--disable" "genprim")
+   (javascript_files "BigInteger.js" "zarith.js" "overrides.js"))
  (preprocess
   (pps js_of_ocaml-ppx))
  (libraries mls.core js_of_ocaml))
