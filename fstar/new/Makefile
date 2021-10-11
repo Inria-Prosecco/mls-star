@@ -19,7 +19,7 @@ FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+P
 
 .PHONY: all clean
 
-all: bin/test.exe
+all: extract
 
 clean:
 	rm -rf hints bin obj
@@ -60,34 +60,18 @@ obj:
 obj/%.ml:
 	$(FSTAR) $(FSTAR_FLAGS) $(notdir $(subst .checked,,$<)) --codegen OCaml \
 	--extract_module $(basename $(notdir $(subst .checked,,$<)))
-obj/MLS_Test_Reader.ml: MLS_Test_Reader.ml
-	cp $< $@
-obj/MLS_Test_Equality.ml: MLS_Test_Equality.ml
-	cp $< $@
 
 extract: $(ALL_ML_FILES)
 
-# OCaml compilation
-
-.PRECIOUS: obj/%.cmx
-obj/%.cmx: obj/%.ml
-	$(OCAMLOPT) -I obj -I $(HACL_SNAPSHOT_DIR)/haclml $(HACL_SNAPSHOT_DIR)/haclml/libhaclml.cmxa -c $< -o $@
-
-obj/MLS_Test_Reader.cmx: obj/MLS_Test_Reader.ml obj/MLS_Test_Types.cmx
-obj/MLS_Test_Equality.cmx: obj/MLS_Test_Equality.ml
-
 # Final binary
-
-ALL_CMX_FILES=obj/MLS_Test_Reader.cmx obj/MLS_Test_Equality.cmx $(subst .ml,.cmx,$(ALL_ML_FILES))
-
-bin/test.exe: obj/MLS_Test.cmx | bin
-	$(OCAMLOPT) -I obj $(HACL_SNAPSHOT_DIR)/haclml/libhaclml.cmxa $(ALL_CMX_FILES) -o bin/test.exe
 
 bin:
 	mkdir $@
 
-test: bin/test.exe test_vectors
-	time $<
+.PHONY: test
+bin/test.exe: test
+test: test_vectors
+	$(MAKE) -C .. test
 
 # Test vectors
 
