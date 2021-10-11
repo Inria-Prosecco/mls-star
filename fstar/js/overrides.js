@@ -207,7 +207,7 @@ function int128_sub(x, y) {
 
 //Provides: int_of_int128
 function int_of_int128(x) {
-  return Number(BigInt.asIntN(32));
+  return Number(BigInt.asIntN(32, x));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -253,7 +253,7 @@ function uint32_sub(x, y) {
 
 //Provides: int_of_uint32
 function int_of_uint32(x) {
-  return Number(BigInt.asUintN(32));
+  return Number(BigInt.asIntN(32, x));
 }
 
 //Provides: uint32_and
@@ -268,12 +268,12 @@ function uint32_or(x, y) {
 
 //Provides: uint32_shift_left
 function uint32_shift_left(x, y) {
-  return BigInt.asUintN(32, x << y);
+  return BigInt.asUintN(32, x << BigInt(y));
 }
 
 //Provides: uint32_shift_right
 function uint32_shift_right(x, y) {
-  return BigInt.asUintN(32, x >> y);
+  return BigInt.asUintN(32, x >> BigInt(y));
 }
 
 //Provides: uint32_xor
@@ -325,7 +325,7 @@ function uint40_sub(x, y) {
 
 //Provides: int_of_uint40
 function int_of_uint40(x) {
-  return Number(BigInt.asUintN(40));
+  return Number(BigInt.asIntN(32, x));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -371,7 +371,7 @@ function uint48_sub(x, y) {
 
 //Provides: int_of_uint48
 function int_of_uint48(x) {
-  return Number(BigInt.asUintN(48));
+  return Number(BigInt.asIntN(32, x));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -417,7 +417,7 @@ function uint56_sub(x, y) {
 
 //Provides: int_of_uint56
 function int_of_uint56(x) {
-  return Number(BigInt.asUintN(56));
+  return Number(BigInt.asIntN(32, x));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -463,7 +463,7 @@ function uint64_sub(x, y) {
 
 //Provides: int_of_uint64
 function int_of_uint64(x) {
-  return Number(BigInt.asUintN(64));
+  return Number(BigInt.asIntN(32, x));
 }
 
 //Provides: uint64_and
@@ -478,12 +478,12 @@ function uint64_or(x, y) {
 
 //Provides: uint64_shift_left
 function uint64_shift_left(x, y) {
-  return BigInt.asUintN(64, x << y);
+  return BigInt.asUintN(64, x << BigInt(y));
 }
 
 //Provides: uint64_shift_right
 function uint64_shift_right(x, y) {
-  return BigInt.asUintN(64, x >> y);
+  return BigInt.asUintN(64, x >> BigInt(y));
 }
 
 //Provides: uint64_xor
@@ -534,5 +534,27 @@ function uint128_sub(x, y) {
 
 //Provides: int_of_uint128
 function int_of_uint128(x) {
-  return Number(BigInt.asUintN(128));
+  return Number(BigInt.asIntN(32, x));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//Provides:caml_thread_self
+function caml_thread_self() {
+  return 0;
+}
+
+//Provides:caml_thread_id
+function caml_thread_id() {
+  return 0;
+}
+
+//Provides:caml_mutex_lock
+function caml_mutex_lock() {
+  return 0;
+}
+
+//Provides:caml_mutex_unlock
+function caml_mutex_unlock() {
+  return 0;
 }

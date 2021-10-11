@@ -3,7 +3,7 @@ open Js_of_ocaml
 let mls_bytes l =
   FStar_Seq_Properties.seq_of_list (List.map (fun x ->
     assert (x <= 255);
-    FStar_UInt8.__uint_to_t (Z.of_int x)
+    x
   ) l)
 
 let cs = {
@@ -14,11 +14,25 @@ let cs = {
   signature = MLS_Crypto_Builtins.Ed_25519
 }
 
+let dummy =
+  [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15; 16 ] @
+  [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15; 16 ]
+
 let _ =
   Js.export_all (object%js
     method debug: _ =
-      let s = MLS_Crypto_Derived.derive_secret cs (mls_bytes [ 0; 1 ]) (mls_bytes [ 2; 3 ]) in
-      s
+      let s = MLS_Crypto_Derived.derive_secret cs
+        (mls_bytes dummy)
+        (mls_bytes dummy)
+      in
+      match s with
+      | Success s ->
+          let buf = Buffer.create 1 in
+          List.iter (Printf.bprintf buf "%x02d") (FStar_Seq_Properties.seq_to_list s);
+          Buffer.add_string buf "\n";
+          Buffer.output_buffer stdout buf
+      | _ ->
+          print_endline "Test failed with *Error"
   end)
 
 let _ =
