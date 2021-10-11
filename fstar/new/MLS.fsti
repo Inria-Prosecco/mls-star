@@ -63,7 +63,7 @@ val send: #g:group_id -> state g → entropy → bytes → state g & group_messa
 
 // The application maintains a local store that maps the hash of a key package
 // to the corresponding private key.
-let key_callback = bytes -> option private_key
+let key_callback = bytes -> option bytes
 
 // The application provides a callback to retrieve the private key associated to
 // a key package previously generated with `fresh_key_package`.

@@ -11,6 +11,8 @@ interface State {
 
 type bytes = Uint8Array
 
+type KeyPackage = bytes
+
 interface GroupMessage {
   groupId: GroupId;
   payload: bytes
@@ -22,15 +24,22 @@ interface WelcomeMessage {
 }
 
 interface PublicInfo {
-  publicKey: bytes;
+  keyPackage: bytes;
   id: ParticipantId;
 }
 
 interface PrivateInfo {
   privateKey: bytes;
-  id: ParticipantId;
 }
 
+interface Credentials {
+  signingKey: bytes;
+  identity: string;
+}
+
+function freshKeyPackage(entropy: bytes, credentials: Credentials): [ KeyPackage, bytes ] {
+    return;
+}
 
 // Creates a group with a single `user`; with the desired `groupId`. The
 // function requires fresh entropy to be provided, using suitable randomness.
@@ -38,7 +47,7 @@ interface PrivateInfo {
 // TODO: how much entropy?
 // FYI: removed a GroupState in the return type since we now only create a group
 // with a single user, the creator of the group.
-function create(entropy: bytes, user: PrivateInfo, groupId: number): State {
+function create(entropy: bytes, user: PrivateInfo, groupId: number): [ State, ParticipantId ] {
   // ...
 }
 
@@ -59,14 +68,14 @@ function create(entropy: bytes, user: PrivateInfo, groupId: number): State {
 // The group message's `groupId` *is* `state.groupId`; the welcome message's
 // `participantId` is `participant.id`. This just makes it easy to serialize the
 // messages later on for the delivery service.
-function add(state: State, participant: PublicInfo): [ GroupMessage, WelcomeMessage ] {
+function add(state: State, participant: KeyPackage): [ GroupMessage, WelcomeMessage ] {
   // ...
 }
 
 // Same remark as above: the operation does not modify the state, and merely
 // returns a message to be dispatched and processed once the server echoes it
 // back to us.
-function remove(state: State, participant: PublicInfo): GroupMessage {
+function remove(state: State, participant: ParticipantId): GroupMessage {
   // ...
 }
 
@@ -84,7 +93,9 @@ function send(state: State, entropy: bytes, data: bytes): [ State, GroupMessage 
   // ...
 }
 
-function processWelcomeMessage(message: WelcomeMessage): [ State ] {
+type KeyCallback = (package: KeyPackage) => bytes | null
+
+function processWelcomeMessage(message: WelcomeMessage, lookup: KeyCallback): [ State ] {
   // ...
 }
 
