@@ -87,9 +87,11 @@ type operation_t =
   | Op_Remove: actor:credential_t -> ind:nat -> operation_t
   | Op_UpdatePath: actor:credential_t -> l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync l n i -> operation_t
 
+let group_id_t = nat
+
 (** TreeSync state and accessors *)
 type state_t = {
-  group_id: nat;
+  group_id: group_id_t;
   levels: level_n;
   treesize: tree_size levels;
   tree: treesync levels treesize;

@@ -30,12 +30,14 @@ FSTAR_ROOTS = \
   $(wildcard $(addsuffix /*.fsti,$(SOURCE_DIR))) \
   $(wildcard $(addsuffix /*.fst,$(SOURCE_DIR)))
 
+ifneq (,$(filter-out %-in,$(MAKECMDGOALS)))
 ifndef MAKE_RESTARTS
 .depend: .FORCE
 	$(FSTAR) $(FSTAR_FLAGS) --dep full $(FSTAR_EXTRACT) $(notdir $(FSTAR_ROOTS)) > $@
 
 .PHONY: .FORCE
 .FORCE:
+endif
 endif
 
 include .depend
@@ -83,3 +85,7 @@ test_vectors:
 	wget https://raw.githubusercontent.com/openmls/openmls/main/openmls/test_vectors/kat_encryption_openmls.json -O test_vectors/encryption.json
 	wget https://raw.githubusercontent.com/openmls/openmls/main/openmls/test_vectors/kat_transcripts.json -O test_vectors/commit_transcript.json
 
+# Interactive mode support...
+
+%.fst-in %.fsti-in:
+	@echo $(FSTAR_INCLUDE_DIRS)
