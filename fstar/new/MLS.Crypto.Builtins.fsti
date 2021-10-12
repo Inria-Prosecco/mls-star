@@ -58,6 +58,7 @@ type sign_public_key (cs:ciphersuite) = lbytes (sign_public_key_length cs)
 type sign_private_key (cs:ciphersuite) = lbytes (sign_private_key_length cs)
 type sign_signature (cs:ciphersuite) = lbytes (sign_signature_length cs)
 
+val sign_gen_keypair: cs:ciphersuite -> randomness (sign_private_key_length cs) -> result ((sign_public_key cs) & (sign_private_key cs))
 val sign_sign: cs:ciphersuite -> sign_private_key cs -> bytes -> randomness (sign_nonce_length cs) -> result (sign_signature cs)
 val sign_verify: cs:ciphersuite -> sign_public_key cs -> bytes -> sign_signature cs -> bool
 

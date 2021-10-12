@@ -9,6 +9,12 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
+// Note: in this file, we parse and serialize with `ps_seq ({min=0; max=(pow2 32)-1})`.
+// However, when implementing it following closely the MLS RFC, we would want to use min=8.
+// This is because the extensions capabilities and lifetime are mandatory, so the size should be at least 8.
+// However, it is not done like this here, because it is quite useful to define `extensions_empty`.
+// This is fine because the check min=8 is done elsewhere since it is correctly defined in `key_package_nt`.
+
 (*** Extensions parser ***)
 
 type capabilities_ext_nt = {
@@ -78,6 +84,11 @@ let ps_parent_hash_ext =
 
 (*** Utility functions ***)
 
+let extensions_min_size:nat = 0
+let extensions_max_size:nat = (pow2 32) - 1
+val ps_extensions: parser_serializer (blseq extension_nt ps_extension ({min=extensions_min_size; max=extensions_max_size}))
+let ps_extensions = ps_seq ({min=extensions_min_size; max=extensions_max_size}) ps_extension
+
 val find_extension_index: extension_type_nt -> extensions:Seq.seq extension_nt -> option (i:nat{i < Seq.length extensions})
 let find_extension_index t extensions =
   repeati (Seq.length extensions) (fun i acc ->
@@ -89,7 +100,7 @@ let find_extension_index t extensions =
 
 val get_extension: extension_type_nt -> bytes -> option bytes
 let get_extension t extensions_buf =
-  match (ps_to_pse (ps_seq ({min=8; max=(pow2 32)-1}) ps_extension)).parse_exact extensions_buf with
+  match (ps_to_pse ps_extensions).parse_exact extensions_buf with
   | None -> None
   | Some extensions ->
     match find_extension_index t extensions with
@@ -98,7 +109,7 @@ let get_extension t extensions_buf =
 
 val set_extension: extension_type_nt -> bytes -> bytes -> result bytes
 let set_extension t extensions_buf data =
-  extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse (ps_seq ({min=8; max=(pow2 32)-1}) ps_extension)).parse_exact extensions_buf);
+  extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse ps_extensions).parse_exact extensions_buf);
   if not (Seq.length data < pow2 16) then
     error "set_extension: data is too long"
   else (
@@ -109,12 +120,12 @@ let set_extension t extensions_buf data =
       | Some i -> (Seq.upd extensions i ext)
     in
     let ext_byte_length = byte_length ps_extension (Seq.seq_to_list new_extensions) in
-    if not (8 <= ext_byte_length) then
+    if not (extensions_min_size <= ext_byte_length) then
       error "set_extension: new extension buffer is too short"
-    else if not (ext_byte_length < pow2 32) then
+    else if not (ext_byte_length <= extensions_max_size) then
       error "set_extension: new extension buffer is too long"
     else (
-      return ((ps_seq ({min=8; max=(pow2 32)-1}) ps_extension).serialize new_extensions)
+      return (ps_extensions.serialize new_extensions)
     )
   )
 
@@ -131,9 +142,14 @@ let mk_set_extension #a ext_type ps_a buf ext_content =
 
 (*** Exposed functions ***)
 
+#push-options "--fuel 1 --ifuel 1"
+val empty_extensions: bytes
+let empty_extensions = ps_extensions.serialize Seq.empty
+#pop-options
+
 val get_extension_list: bytes -> result (list extension_type_nt)
 let get_extension_list extensions_buf =
-  extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse (ps_seq ({min=8; max=(pow2 32)-1}) ps_extension)).parse_exact extensions_buf);
+  extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse ps_extensions).parse_exact extensions_buf);
   return (List.Tot.map (fun x -> x.extension_type) (Seq.seq_to_list extensions))
 
 val get_capabilities_extension: bytes -> option capabilities_ext_nt

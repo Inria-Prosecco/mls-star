@@ -7,6 +7,8 @@ module MLS
 
 open MLS.Result
 
+val cs: MLS.Crypto.ciphersuite
+
 val group_id: Type0
 val state: group_id -> Type0
 
@@ -33,7 +35,7 @@ type credential = {
 // Return a fresh private & public key for signing; the public key is to be
 // stored in the key directory. The private key is to be stored locally, and
 // passed to `fresh_key_package`.
-val fresh_key_pair: e:entropy { Seq.length e == 32 } -> bytes & bytes
+val fresh_key_pair: e:entropy { Seq.length e == 32 } -> result ((MLS.Crypto.sign_public_key cs) & (MLS.Crypto.sign_private_key cs))
 
 // Assume here that the directory has generated a signing key for us; that our
 // public signing key is published somewhere in the directory; and that the
@@ -42,7 +44,7 @@ val fresh_key_pair: e:entropy { Seq.length e == 32 } -> bytes & bytes
 //   The application takes care of maintaining a mapping of e.g. hash of a key
 // package to private key to be retrieved later if we are ever to receive a
 // welcome message encoded with these credentials.
-val fresh_key_package: e:entropy { Seq.length e >= 32 } -> credential -> result (bytes & private_key:bytes)
+val fresh_key_package: e:entropy { Seq.length e >= 32 } -> credential -> MLS.Crypto.sign_private_key cs -> result (bytes & private_key:bytes)
 
 val current_epoch: #g:_ -> s:state g -> nat
 

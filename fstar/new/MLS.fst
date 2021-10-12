@@ -1,27 +1,47 @@
 module MLS
 
+open MLS.TreeSync.Types
+open MLS.Crypto
+open MLS.NetworkTypes
+open MLS.NetworkBinder
+open MLS.TreeSync.Extensions
+open MLS.Parser
 open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-let cs = Success?.v (MLS.Crypto.Derived.ciphersuite_from_nt MLS.NetworkTypes.CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519)
+let cs = Success?.v (ciphersuite_from_nt CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519)
 
 let group_id = MLS.TreeSync.Types.group_id_t
 let state g = s:MLS.TreeSync.Types.state_t { g == s.group_id }
 
 let fresh_key_pair e =
-  e, Spec.Ed25519.secret_to_public e
+  if not (Seq.length e = sign_private_key_length cs) then
+    internal_failure "fresh_key_pair: entropy length is wrong"
+  else
+    sign_gen_keypair cs (mk_randomness e)
 
-let fresh_key_package e { identity; signature_key } =
-  let open MLS.TreeSync.Types in
-  let open MLS.Crypto in
-  let open MLS.NetworkTypes in
-  let open MLS.NetworkBinder in
-  let open MLS.Parser in
-  let open MLS.Result in // Already opened, but we don't want Parser.bind in the scope
-  assume (hpke_private_key_length cs < 32);
+let fresh_key_package e { identity; signature_key } private_sign_key =
+  assume (hpke_private_key_length cs <= 32);
   key_pair <-- hpke_gen_keypair cs e;
   let ((private_key: bytes), public_key) = key_pair in
+  extensions <-- (
+    let versions = Seq.seq_of_list [PV_mls10] in
+    let ciphersuites = Seq.seq_of_list [CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519] in
+    let extensions = Seq.seq_of_list [ET_capabilities; ET_lifetime; (* ET_key_id; *) ET_parent_hash] in
+    if not (byte_length ps_protocol_version (Seq.seq_to_list versions) < 256) then
+      internal_failure "fresh_key_package: initial protocol versions too long"
+    else if not (byte_length ps_extension_type (Seq.seq_to_list extensions) < 256) then
+      internal_failure "fresh_key_package: initial extension types too long"
+    else if not (byte_length ps_cipher_suite (Seq.seq_to_list ciphersuites) < 256) then
+      internal_failure "fresh_key_package: initial cipher suites too long"
+    else (
+      let ext = empty_extensions in
+      ext <-- set_capabilities_extension ext ({versions; ciphersuites; extensions});
+      ext <-- set_lifetime_extension ext ({not_before = Lib.IntTypes.u64 0; not_after = Lib.IntTypes.u64 0}); //TODO
+      return ext
+    )
+  );
   let unsigned_leaf_package: leaf_package_t = {
     credential = {
       version = 0;
@@ -30,14 +50,14 @@ let fresh_key_package e { identity; signature_key } =
     };
     version = 0;
     content = ps_leaf_package_content.serialize ({public_key});
-    extensions = (* TODO *) Seq.empty;
+    extensions;
     signature = Seq.empty;
   } in
   signature <-- (
     unsigned_key_package <-- treesync_to_keypackage cs unsigned_leaf_package;
     let tbs = ps_key_package_tbs.serialize (key_package_get_tbs unsigned_key_package) in
-    assume (sign_nonce_length cs < 32);
-    sign_sign cs ( (* private signature key *) admit ()) tbs (mk_randomness (Seq.slice e 0 (sign_nonce_length cs)))
+    assume (sign_nonce_length cs <= 32);
+    sign_sign cs private_sign_key tbs (mk_randomness (Seq.slice e 0 (sign_nonce_length cs)))
   );
   let leaf_package = { unsigned_leaf_package with signature } in
   key_package <-- treesync_to_keypackage cs leaf_package;
