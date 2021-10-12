@@ -30,7 +30,7 @@ FSTAR_ROOTS = \
   $(wildcard $(addsuffix /*.fsti,$(SOURCE_DIR))) \
   $(wildcard $(addsuffix /*.fst,$(SOURCE_DIR)))
 
-ifneq (,$(filter-out %-in,$(MAKECMDGOALS)))
+ifeq (,$(filter %-in,$(MAKECMDGOALS)))
 ifndef MAKE_RESTARTS
 .depend: .FORCE
 	$(FSTAR) $(FSTAR_FLAGS) --dep full $(FSTAR_EXTRACT) $(notdir $(FSTAR_ROOTS)) > $@
