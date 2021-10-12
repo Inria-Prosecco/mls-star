@@ -42,13 +42,13 @@ val fresh_key_package: e:entropy { Seq.length e >= 32 } -> credential -> result 
 // TODO: expose a way to inject e.g. a uint32 into a group_id
 // Note that after we've created the group, we receive our freshly-assigned
 // participant id.
-val create: entropy → identity:string -> private_info → g:group_id -> s:state g
+val create: entropy → c:credential → g:group_id -> s:state g
 
 // Internally, a new `participant_id` is assigned to the freshly-added user.
 // Provided the server does not reject the message, the application can extend
 // its mapping from the welcome message's participant_id to the corresponding
 // username and endpoint.
-val add: #g:group_id -> s:state g → key_package → group_message & w:welcome_message
+val add: #g:group_id -> s:state g → key_package:bytes → group_message & w:welcome_message
 
 val remove: #g:group_id -> s:state g → p:identity → group_message
 
