@@ -88,4 +88,4 @@ test_vectors:
 # Interactive mode support...
 
 %.fst-in %.fsti-in:
-	@echo $(FSTAR_INCLUDE_DIRS)
+	@echo $(FSTAR_INCLUDE_DIRS) --include obj

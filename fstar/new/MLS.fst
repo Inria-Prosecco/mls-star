@@ -9,6 +9,9 @@ let cs = Success?.v (MLS.Crypto.Derived.ciphersuite_from_nt MLS.NetworkTypes.CS_
 let group_id = MLS.TreeSync.Types.group_id_t
 let state g = s:MLS.TreeSync.Types.state_t { g == s.group_id }
 
+let fresh_key_pair e =
+  e, Spec.Ed25519.secret_to_public e
+
 let fresh_key_package e { identity; signature_key } =
   let open MLS.TreeSync.Types in
   let open MLS.Crypto in
@@ -39,6 +42,8 @@ let fresh_key_package e { identity; signature_key } =
   let leaf_package = { unsigned_leaf_package with signature } in
   key_package <-- treesync_to_keypackage cs leaf_package;
   return (ps_key_package.serialize key_package, private_key)
+
+let current_epoch #_ s = s.MLS.TreeSync.Types.version
 
 #push-options "--fuel 2"
 let create e { identity; signature_key } g =

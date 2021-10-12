@@ -30,6 +30,11 @@ type credential = {
   identity: identity;
 }
 
+// Return a fresh private & public key for signing; the public key is to be
+// stored in the key directory. The private key is to be stored locally, and
+// passed to `fresh_key_package`.
+val fresh_key_pair: e:entropy { Seq.length e == 32 } -> bytes & bytes
+
 // Assume here that the directory has generated a signing key for us; that our
 // public signing key is published somewhere in the directory; and that the
 // client of this code passes us both our own participant_id and our own private
@@ -38,6 +43,8 @@ type credential = {
 // package to private key to be retrieved later if we are ever to receive a
 // welcome message encoded with these credentials.
 val fresh_key_package: e:entropy { Seq.length e >= 32 } -> credential -> result (bytes & private_key:bytes)
+
+val current_epoch: #g:_ -> s:state g -> nat
 
 // TODO: expose a way to inject e.g. a uint32 into a group_id
 // Note that after we've created the group, we receive our freshly-assigned
