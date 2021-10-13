@@ -16,6 +16,7 @@ val ciphersuite: Type0
 
 val randomness: nat -> Type0
 val mk_randomness: #n:size_nat -> lbytes n -> randomness n
+val get_random_bytes: #n:size_nat -> randomness n -> lbytes n
 val split_randomness: #n:nat -> randomness n -> len:nat{len <= n} -> (randomness (n-len) & randomness len)
 
 (*** Hash ***)

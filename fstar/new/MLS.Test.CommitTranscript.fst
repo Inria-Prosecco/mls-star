@@ -10,7 +10,6 @@ open MLS.NetworkTypes
 open MLS.Parser
 open MLS.TreeDEM.Message.Framing
 open MLS.TreeDEM.Message.Transcript
-open MLS.TreeDEM.Message.Auth
 open MLS.NetworkTypes
 open MLS.Result
 

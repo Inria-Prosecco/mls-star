@@ -176,19 +176,23 @@ let commit_to_network cs c =
     })
   )
 
-val message_content_to_network: #content_type:message_content_type -> MLS.Crypto.ciphersuite -> message_content content_type -> result mls_content_nt
-let message_content_to_network #content_type cs msg =
+val message_content_to_network: #content_type:message_content_type -> MLS.Crypto.ciphersuite -> message_content content_type -> result (get_content_type (message_content_type_to_network content_type))
+let message_content_to_network #content_type cs content =
   match content_type with
-  | CT_application -> begin
-    let msg: bytes = msg in
-    if not (Seq.length msg < pow2 32) then
-      internal_failure "message_content_to_network: application message too long"
+  | CT_application ->
+    if not (Seq.length (content <: bytes) < pow2 32) then
+      error "message_content_to_network: application content is too long"
     else
-      return (MC_application msg)
-  end
+      return content
   | CT_proposal ->
-    proposal <-- proposal_to_network cs msg;
-    return (MC_proposal proposal)
+    proposal_to_network cs content
   | CT_commit ->
-    commit <-- commit_to_network cs msg;
-    return (MC_commit commit)
+    commit_to_network cs content
+
+val message_content_pair_to_network: #content_type:message_content_type -> MLS.Crypto.ciphersuite -> message_content content_type -> result mls_content_nt
+let message_content_pair_to_network #content_type cs msg =
+  content <-- message_content_to_network cs msg;
+  match content_type with
+  | CT_application -> return (MC_application content)
+  | CT_proposal -> return (MC_proposal content)
+  | CT_commit -> return (MC_commit content)
