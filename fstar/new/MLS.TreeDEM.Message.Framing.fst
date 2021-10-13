@@ -478,21 +478,32 @@ let apply_reuse_guard cs reuse_guard nonce =
   let new_nonce_head = Seq.seq_of_list (map2 Lib.IntTypes.logxor (Seq.seq_to_list nonce_head) (Seq.seq_to_list reuse_guard)) in
   Seq.append new_nonce_head nonce_tail
 
-val message_ciphertext_to_message: #cs:ciphersuite -> (nat -> result (ratchet_output cs)) -> bytes -> message_ciphertext -> result (message & message_auth)
-let message_ciphertext_to_message #cs get_key_nonce sender_data_secret ct =
+val message_ciphertext_to_message: cs:ciphersuite -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> message_ciphertext -> result (message & message_auth)
+let message_ciphertext_to_message cs l n encryption_secret sender_data_secret ct =
   sender_data <-- (
     sender_data_ad <-- message_ciphertext_to_sender_data_aad ct;
     sender_data <-- decrypt_sender_data cs sender_data_ad (get_ciphertext_sample cs ct.ciphertext) sender_data_secret ct.encrypted_sender_data;
     return (network_to_encrypted_sender_data sender_data)
   );
   ciphertext_content <-- (
-    rs_output <-- get_key_nonce sender_data.generation;
-    let nonce = rs_output.nonce in
-    let key = rs_output.key in
-    let patched_nonce = apply_reuse_guard cs sender_data.reuse_guard nonce in
-    ciphertext_content_ad <-- message_ciphertext_to_ciphertext_content_aad ct;
-    ciphertext_content_network <-- decrypt_ciphertext_content cs ciphertext_content_ad key patched_nonce ct.ciphertext;
-    network_to_ciphertext_content (ciphertext_content_network <: mls_ciphertext_content_nt (message_content_type_to_network ct.content_type))
+    if not (sender_data.sender < n) then
+       error "message_ciphertext_to_message: sender is too big"
+    else (
+      leaf_tree_secret <-- leaf_kdf n cs encryption_secret (MLS.TreeMath.root l) sender_data.sender;
+      let sender_as_node_index: MLS.TreeMath.node_index 0 = sender_data.sender + sender_data.sender in
+      init_ratchet <-- (
+        match ct.content_type with
+        | Content.CT_application -> init_application_ratchet cs sender_as_node_index leaf_tree_secret
+        | _ -> init_handshake_ratchet cs sender_as_node_index leaf_tree_secret
+      );
+      rs_output <-- ratchet_get_generation_key init_ratchet sender_data.generation;
+      let nonce = rs_output.nonce in
+      let key = rs_output.key in
+      let patched_nonce = apply_reuse_guard cs sender_data.reuse_guard nonce in
+      ciphertext_content_ad <-- message_ciphertext_to_ciphertext_content_aad ct;
+      ciphertext_content_network <-- decrypt_ciphertext_content cs ciphertext_content_ad key patched_nonce ct.ciphertext;
+      network_to_ciphertext_content (ciphertext_content_network <: mls_ciphertext_content_nt (message_content_type_to_network ct.content_type))
+    )
   );
   return (({
     group_id = ct.group_id;

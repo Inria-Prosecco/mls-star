@@ -123,29 +123,31 @@ noeq type ratchet_state (cs:ciphersuite) = {
   node: node_index 0;
 }
 
+let init_ratchet_state (cs:ciphersuite) = st:ratchet_state cs{st.generation = 0}
+
 noeq type ratchet_output (cs:ciphersuite) = {
   nonce: lbytes (aead_nonce_length cs);
   key: lbytes (aead_key_length cs);
 }
 
-val init_handshake_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result (ratchet_state cs)
+val init_handshake_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result (init_ratchet_state cs)
 let init_handshake_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "handshake") node 0 (kdf_length cs);
   return ({
     secret = ratchet_secret;
     generation = 0;
     node = node;
-  })
+  } <: init_ratchet_state cs)
 
 //TODO: this is a copy-paste of init_handeshake_ratchet, factorize?
-val init_application_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result (ratchet_state cs)
+val init_application_ratchet: cs:ciphersuite -> node_index 0 -> bytes -> result (init_ratchet_state cs)
 let init_application_ratchet cs node tree_node_secret =
   ratchet_secret <-- derive_tree_secret cs tree_node_secret (string_to_bytes "application") node 0 (kdf_length cs);
   return ({
     secret = ratchet_secret;
     generation = 0;
     node = node;
-  })
+  } <: init_ratchet_state cs)
 
 val ratchet_get_key: #cs:ciphersuite -> ratchet_state cs -> result (ratchet_output cs)
 let ratchet_get_key #cs st =
