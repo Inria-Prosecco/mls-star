@@ -56,11 +56,8 @@ val current_epoch: #g:_ -> s:state g -> nat
 val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key cs -> g:group_id ->
   result (s:state g)
 
-// Internally, a new `participant_id` is assigned to the freshly-added user.
-// Provided the server does not reject the message, the application can extend
-// its mapping from the welcome message's participant_id to the corresponding
-// username and endpoint.
-val add: #g:group_id -> s:state g → key_package:bytes → group_message & w:welcome_message
+val add: #g:group_id -> s:state g → key_package:bytes → identity:string ->
+  group_message & w:welcome_message
 
 val remove: #g:group_id -> s:state g → p:identity → group_message
 
@@ -78,4 +75,4 @@ let key_callback = bytes -> option bytes
 val process_welcome_message: w:welcome_message → (lookup: key_callback) ->
   option (g:group_id & s:state g)
 
-val process_group_message: #g:group_id -> state g → group_message → result (state g & option bytes)
+val process_group_message: #g:group_id -> state g → bytes → result (state g & option bytes)

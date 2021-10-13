@@ -191,7 +191,45 @@ let send #g state e data =
 let process_welcome_message w lookup = admit()
 
 let process_group_message #g state msg =
-  // TODO: check precondition at runtime that `fst msg = state.group_id`.
+  msg <-- from_option "process_group_message: can't parse group message"
+    ((MLS.Parser.ps_to_pse MLS.NetworkTypes.ps_mls_message).parse_exact msg);
+  tmp <-- (
+    match msg with
+    | M_plaintext msg ->
+        msg <-- MLS.TreeDEM.Message.Framing.network_to_message_plaintext msg;
+        return (MLS.TreeDEM.Message.Framing.message_plaintext_to_message msg)
+    | M_ciphertext msg ->
+        msg <-- MLS.TreeDEM.Message.Framing.network_to_message_ciphertext msg;
+        encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption cs state.epoch_secret;
+        sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs state.epoch_secret;
+        MLS.TreeDEM.Message.Framing.message_ciphertext_to_message cs
+          state.tree_state.levels state.tree_state.treesize encryption_secret sender_data_secret msg
+    | _ ->
+        internal_failure "unknown message type"
+  );
+  let message, message_auth = tmp in
+  // Note: can't do a dependent pair pattern matching, have to nest matches +
+  // annotations because of the dependency
+  match message.content_type with
+  | MLS.TreeDEM.Message.Content.CT_proposal ->
+      let message_content: proposal = message.message_content in
+      begin match message_content with
+      | Add leaf_package -> admit ()
+      | _ -> admit ()
+      end
+  | MLS.TreeDEM.Message.Content.CT_commit ->
+      let message_content: commit = message.message_content in
+      begin match message_content with
+      | { c_proposals = [ pr ]; c_path } -> admit ()
+      | _ -> admit ()
+      end
+  | MLS.TreeDEM.Message.Content.CT_application ->
+      let data: bytes = message.message_content in
+      admit ()
+  | _ ->
+      internal_failure "unknown message content type"
+
+  (*// TODO: check precondition at runtime that `fst msg = state.group_id`.
   let msg = snd msg in
   // In the current version of the draft, we can't tell whether it's an
   // encrypted or a plain message. So, we try to decrypt it, and if it fails,
@@ -207,3 +245,4 @@ let process_group_message #g state msg =
       admit ()
   | None ->
       ProtocolError "Could not parse incoming group message"
+  *)
