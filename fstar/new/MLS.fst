@@ -82,4 +82,7 @@ let remove #g state p = admit()
 let update #g state e = admit()
 let send #g state e data = admit()
 let process_welcome_message w lookup = admit()
-let process_group_message #g state msg = admit()
+
+let process_group_message #g state msg =
+  // TODO: check precondition at runtime that `fst msg = state.group_id`.
+  admit ()

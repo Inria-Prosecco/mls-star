@@ -311,22 +311,5 @@ let cs = {
   signature = MLS_Crypto_Builtins.Ed_25519
 }
 
-let dummy =
-  [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15; 16 ] @
-  [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15; 16 ]
-
 let _ =
-  let s = MLS_Crypto_Derived.derive_secret cs
-    (mls_bytes dummy)
-    (mls_bytes dummy)
-  in
-  match s with
-  | Success s ->
-      let buf = Buffer.create 1 in
-      List.iter (Printf.bprintf buf "%x02d") (FStar_Seq_Properties.seq_to_list s);
-      Buffer.add_string buf "\n";
-      Buffer.output_buffer stdout buf;
-      flush stdout;
-      print_endline "Done with initial test (compare with JS!)"
-  | _ ->
-      print_endline "Test failed with *Error"
+  MLS_Test_Internal.test ()
