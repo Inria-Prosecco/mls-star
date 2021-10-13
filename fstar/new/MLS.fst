@@ -79,7 +79,9 @@ let create e { identity; signature_key } g =
     signature_key;
     version = 0
   } in
-  let t = MLS.TreeSync.create_tree 1 1 c (Seq.seq_of_list [ Some c ]) in
+  let group_id = admit() in
+  let leaf_package = admit() in //call fresh_key_package with the good arguments?
+  let st = MLS.TreeSync.create group_id leaf_package in
   admit ()
   (* MLS.TreeSync.Types.mk_initial_state g 1 1 t,
   ??,
@@ -102,7 +104,7 @@ let process_group_message #g state msg =
   match MLS.NetworkTypes.ps_mls_ciphertext.parse msg with
   | Some (cipher, _) ->
       msg_cipher <-- MLS.TreeDEM.Message.Framing.network_to_message_ciphertext cipher;
-      let msg = MLS.TreeDEM.Message.Framing.message_ciphertext_to_message
+      //let msg = MLS.TreeDEM.Message.Framing.message_ciphertext_to_message
       admit ()
   | None ->
   match MLS.NetworkTypes.ps_mls_plaintext.parse msg with

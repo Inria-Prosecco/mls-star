@@ -7,6 +7,7 @@ open MLS.Utils
 open MLS.Tree
 open MLS.TreeSync.Types
 
+(*
 (** Membership *)
 type member_array_t (sz:nat) = a:array (option credential_t){length a = sz}
 
@@ -42,6 +43,11 @@ let rec create_tree (l:level_n) (n:tree_size l) (actor:credential_t) (init:membe
       let right = create_tree (l-1) (n - pow2 (l-1)) actor init_r in
       TNode (actor, None) left right
 
+*)
+
+val create_tree: leaf_package_t -> treesync 0 1
+let create_tree lp =
+  TLeaf (lp.credential, Some lp)
 
 (** Apply a path to a tree *)
 let rec apply_path (#l:level_n) (#n:tree_size l) (#i:leaf_index n) (a:credential_t)
@@ -168,6 +174,7 @@ let add_one_level #l c t =
 /// API
 ///
 
+(*
 (** Create a new group state *)
 val create: gid:nat -> sz:pos -> init:member_array_t sz
   -> Tot (option state_t)
@@ -180,7 +187,11 @@ let create gid sz init =
     let st = mk_initial_state gid l sz t in
     Some ({st with //initial_tree = t;
                    transcript = bytes_empty})
+*)
 
+val create: gid:group_id_t -> leaf_package_t -> state_t
+let create gid lp =
+  mk_initial_state gid 0 1 (create_tree lp)
 
 (*
 (** Apply an operation to a state *)
