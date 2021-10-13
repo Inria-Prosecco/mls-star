@@ -1260,3 +1260,69 @@ let ps_mls_plaintext_tbm =
       confirmation_tag = confirmation_tag;
     }))
     (fun x -> (|x.tbs, (|x.signature, x.confirmation_tag|)|))
+
+type wire_format_nt =
+  | WF_reserved: wire_format_nt
+  | WF_plaintext: wire_format_nt
+  | WF_ciphertext: wire_format_nt
+  | WF_unknown: n:nat{3 <= n /\ n <= 255} -> wire_format_nt
+
+val ps_wire_format: parser_serializer wire_format_nt
+let ps_wire_format =
+  isomorphism wire_format_nt
+    ps_u8
+    (fun n ->
+      match v n with
+      | 0 -> WF_reserved
+      | 1 -> WF_plaintext
+      | 2 -> WF_ciphertext
+      | vn -> WF_unknown vn
+    )
+    (fun x ->
+      match x with
+      | WF_reserved -> u8 0
+      | WF_plaintext -> u8 1
+      | WF_ciphertext -> u8 2
+      | WF_unknown n -> u8 n
+    )
+
+val wire_format_to_type: wire_format_nt -> Type0
+let wire_format_to_type wf =
+  match wf with
+  | WF_reserved -> unit
+  | WF_plaintext -> mls_plaintext_nt
+  | WF_ciphertext -> mls_ciphertext_nt
+  | WF_unknown _ -> unit
+
+noeq type mls_message_nt =
+  | M_reserved: mls_message_nt
+  | M_plaintext: mls_plaintext_nt -> mls_message_nt
+  | M_ciphertext: mls_ciphertext_nt -> mls_message_nt
+  | M_unknown: n:nat{3 <= n /\ n <= 255} -> mls_message_nt
+
+val ps_mls_message: parser_serializer mls_message_nt
+let ps_mls_message =
+  isomorphism mls_message_nt
+    (
+      bind #_ #wire_format_to_type ps_wire_format (fun wire_format ->
+        match wire_format with
+        | WF_reserved -> ps_unit
+        | WF_plaintext -> ps_mls_plaintext
+        | WF_ciphertext -> ps_mls_ciphertext
+        | WF_unknown _ -> ps_unit
+      )
+    )
+    (fun (|wire_format, msg|) ->
+      match wire_format with
+      | WF_reserved -> M_reserved
+      | WF_plaintext -> M_plaintext msg
+      | WF_ciphertext -> M_ciphertext msg
+      | WF_unknown n -> M_unknown n
+    )
+    (fun msg ->
+      match msg with
+      | M_reserved -> (|WF_reserved, ()|)
+      | M_plaintext pt -> (|WF_plaintext, pt|)
+      | M_ciphertext ct-> (|WF_ciphertext, ct|)
+      | M_unknown n -> (|WF_unknown n, ()|)
+    )
