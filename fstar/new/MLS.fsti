@@ -35,7 +35,8 @@ type credential = {
 // Return a fresh private & public key for signing; the public key is to be
 // stored in the key directory. The private key is to be stored locally, and
 // passed to `fresh_key_package`.
-val fresh_key_pair: e:entropy { Seq.length e == 32 } -> result ((MLS.Crypto.sign_public_key cs) & (MLS.Crypto.sign_private_key cs))
+val fresh_key_pair: e:entropy { Seq.length e == 32 } ->
+  result ((MLS.Crypto.sign_public_key cs) & (MLS.Crypto.sign_private_key cs))
 
 // Assume here that the directory has generated a signing key for us; that our
 // public signing key is published somewhere in the directory; and that the
@@ -44,14 +45,16 @@ val fresh_key_pair: e:entropy { Seq.length e == 32 } -> result ((MLS.Crypto.sign
 //   The application takes care of maintaining a mapping of e.g. hash of a key
 // package to private key to be retrieved later if we are ever to receive a
 // welcome message encoded with these credentials.
-val fresh_key_package: e:entropy { Seq.length e >= 32 } -> credential -> MLS.Crypto.sign_private_key cs -> result (bytes & private_key:bytes)
+val fresh_key_package: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key cs ->
+  result (bytes & private_key:bytes)
 
 val current_epoch: #g:_ -> s:state g -> nat
 
 // TODO: expose a way to inject e.g. a uint32 into a group_id
 // Note that after we've created the group, we receive our freshly-assigned
 // participant id.
-val create: entropy → c:credential → g:group_id -> s:state g
+val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key cs -> g:group_id ->
+  result (s:state g)
 
 // Internally, a new `participant_id` is assigned to the freshly-added user.
 // Provided the server does not reject the message, the application can extend

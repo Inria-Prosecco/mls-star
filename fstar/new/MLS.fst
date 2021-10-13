@@ -38,13 +38,13 @@ let state_to_group_context #g st =
   tree_hash <-- MLS.TreeSync.Hash.tree_hash st.cs (MLS.TreeMath.root ts_state.levels) ts_state.tree;
   let confirmed_transcript_hash = st.confirmed_transcript_hash in
   if not (Seq.length group_id < 256) then
-     internal_failure "state_to_group_context: group_id too long"
+    internal_failure "state_to_group_context: group_id too long"
   else if not (epoch < pow2 64) then
-     internal_failure "state_to_group_context: epoch too big"
+    internal_failure "state_to_group_context: epoch too big"
   else if not (Seq.length tree_hash < 256) then
-     internal_failure "state_to_group_context: tree_hash too long"
+    internal_failure "state_to_group_context: tree_hash too long"
   else if not (Seq.length confirmed_transcript_hash < 256) then
-     internal_failure "state_to_group_context: confirmed_transcript_hash too long"
+    internal_failure "state_to_group_context: confirmed_transcript_hash too long"
   else (
     return ({
       group_id = group_id;
@@ -62,9 +62,25 @@ let fresh_key_pair e =
   else
     sign_gen_keypair cs (mk_randomness e)
 
-let fresh_key_package e { identity; signature_key } private_sign_key =
-  assume (hpke_private_key_length cs <= 32);
-  key_pair <-- hpke_gen_keypair cs e;
+// TODO: switch to randomness rather than this
+let chop_entropy (e: bytes) (l: nat): Pure (result (bytes & bytes))
+  (requires True)
+  (ensures (fun r ->
+    match r with
+    | Success (fresh, e) -> Seq.length fresh == l
+    | _ -> True))
+=
+  if Seq.length e <= l then
+    internal_failure "not enough entropy"
+  else
+    return (Seq.split e l)
+
+let fresh_key_package_internal e { identity; signature_key } private_sign_key =
+  tmp <-- chop_entropy e (hpke_private_key_length cs);
+  let fresh, e = tmp in
+  // TODO: debug this and the other occurrence below
+  assume (Seq.length fresh == hpke_private_key_length cs);
+  key_pair <-- hpke_gen_keypair cs fresh;
   let ((private_key: bytes), public_key) = key_pair in
   extensions <-- (
     let versions = Seq.seq_of_list [PV_mls10] in
@@ -94,32 +110,52 @@ let fresh_key_package e { identity; signature_key } private_sign_key =
     extensions;
     signature = Seq.empty;
   } in
+  tmp <-- chop_entropy e (sign_nonce_length cs);
+  let fresh, e = tmp in
+  assume (Seq.length fresh == sign_nonce_length cs);
   signature <-- (
     unsigned_key_package <-- treesync_to_keypackage cs unsigned_leaf_package;
     let tbs = ps_key_package_tbs.serialize (key_package_get_tbs unsigned_key_package) in
-    assume (sign_nonce_length cs <= 32);
-    sign_sign cs private_sign_key tbs (mk_randomness (Seq.slice e 0 (sign_nonce_length cs)))
+    // assume (sign_nonce_length cs <= 32);
+    sign_sign cs private_sign_key tbs (mk_randomness fresh)
   );
   let leaf_package = { unsigned_leaf_package with signature } in
+  return (leaf_package, private_key)
+
+let fresh_key_package e cred private_sign_key =
+  tmp <-- fresh_key_package_internal e cred private_sign_key;
+  let leaf_package, private_key = tmp in
   key_package <-- treesync_to_keypackage cs leaf_package;
   return (ps_key_package.serialize key_package, private_key)
 
 let current_epoch #_ s = s.tree_state.MLS.TreeSync.Types.version
 
 #push-options "--fuel 2"
-let create e { identity; signature_key } group_id =
-  let c: MLS.TreeSync.Types.credential_t = {
-    identity;
-    signature_key;
-    version = 0
-  } in
-  let leaf_package = mk_initial_leaf_package c in
-  let st = MLS.TreeSync.create group_id leaf_package in
-  let hs_st = MLS.TreeDEM.Keys.init_handshake_ratchet cs 0 
-  admit ()
-  (* st,
-  ??,
-  ?? *)
+let create e cred private_sign_key group_id =
+  tmp <-- chop_entropy e 64;
+  let fresh, e = tmp in
+  tmp <-- fresh_key_package_internal fresh cred private_sign_key;
+  let leaf_package, private_key = tmp in
+  let tree_state = MLS.TreeSync.create group_id leaf_package in
+  // 10. In principle, the above process could be streamlined by having the
+  // creator directly create a tree and choose a random value for first epoch's
+  // epoch secret.
+  tmp <-- chop_entropy e 32;
+  let epoch_secret, e = tmp in
+  encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption cs epoch_secret;
+  leaf_secret <-- MLS.TreeDEM.Keys.leaf_kdf #0 1 cs encryption_secret 0 0;
+  handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet cs 0 leaf_secret;
+  application_state <-- MLS.TreeDEM.Keys.init_application_ratchet cs 0 leaf_secret;
+  return ({
+    cs;
+    tree_state;
+    leaf_index = 0;
+    sign_private_key = private_sign_key;
+    handshake_state;
+    application_state;
+    epoch_secret;
+    confirmed_transcript_hash = Seq.empty
+  })
 #pop-options
 
 
