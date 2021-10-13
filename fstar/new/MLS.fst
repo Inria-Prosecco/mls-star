@@ -13,7 +13,14 @@ open MLS.Result
 let cs = Success?.v (ciphersuite_from_nt CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519)
 
 let group_id = MLS.TreeSync.Types.group_id_t
-let state g = s:MLS.TreeSync.Types.state_t { g == s.group_id }
+
+noeq
+type state g = {
+  cs: ciphersuite;
+  tree_state: s:MLS.TreeSync.Types.state_t { g == s.group_id };
+  handshake_state: MLS.TreeDEM.Keys.ratchet_state cs;
+  application_state: MLS.TreeDEM.Keys.ratchet_state cs
+}
 
 let fresh_key_pair e =
   if not (Seq.length e = sign_private_key_length cs) then
@@ -63,7 +70,7 @@ let fresh_key_package e { identity; signature_key } private_sign_key =
   key_package <-- treesync_to_keypackage cs leaf_package;
   return (ps_key_package.serialize key_package, private_key)
 
-let current_epoch #_ s = s.MLS.TreeSync.Types.version
+let current_epoch #_ s = s.tree_state.MLS.TreeSync.Types.version
 
 #push-options "--fuel 2"
 let create e { identity; signature_key } g =
@@ -73,7 +80,10 @@ let create e { identity; signature_key } g =
     version = 0
   } in
   let t = MLS.TreeSync.create_tree 1 1 c (Seq.seq_of_list [ Some c ]) in
-  MLS.TreeSync.Types.mk_initial_state g 1 1 t
+  admit ()
+  (* MLS.TreeSync.Types.mk_initial_state g 1 1 t,
+  ??,
+  ?? *)
 #pop-options
 
 
@@ -85,4 +95,18 @@ let process_welcome_message w lookup = admit()
 
 let process_group_message #g state msg =
   // TODO: check precondition at runtime that `fst msg = state.group_id`.
-  admit ()
+  let msg = snd msg in
+  // In the current version of the draft, we can't tell whether it's an
+  // encrypted or a plain message. So, we try to decrypt it, and if it fails,
+  // assume it's plaintext.
+  match MLS.NetworkTypes.ps_mls_ciphertext.parse msg with
+  | Some (cipher, _) ->
+      msg_cipher <-- MLS.TreeDEM.Message.Framing.network_to_message_ciphertext cipher;
+      let msg = MLS.TreeDEM.Message.Framing.message_ciphertext_to_message
+      admit ()
+  | None ->
+  match MLS.NetworkTypes.ps_mls_plaintext.parse msg with
+  | Some (plain, _) ->
+      admit ()
+  | None ->
+      ProtocolError "Could not parse incoming group message"

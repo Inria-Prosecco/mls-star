@@ -75,4 +75,4 @@ let key_callback = bytes -> option bytes
 val process_welcome_message: w:welcome_message → (lookup: key_callback) ->
   option (g:group_id & s:state g)
 
-val process_group_message: #g:group_id -> state g → group_message → (state g & option bytes)
+val process_group_message: #g:group_id -> state g → group_message → result (state g & option bytes)
