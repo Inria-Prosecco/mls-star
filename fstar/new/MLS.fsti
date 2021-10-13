@@ -14,7 +14,7 @@ val state: group_id -> Type0
 
 // TODO: update this to identity *and* endpoint once we switch to Draft 12
 let identity = MLS.Parser.blbytes ({min=0; max=pow2 16-1})
-let bytes = MLS.Lib.Array.array Lib.IntTypes.uint8
+let bytes = Lib.ByteSequence.bytes
 let entropy = bytes
 
 let group_message = group_id & bytes
@@ -64,7 +64,7 @@ val remove: #g:group_id -> s:state g → p:identity → group_message
 val update: #g:group_id -> state g → entropy → group_message
 
 // To send application data
-val send: #g:group_id -> state g → entropy → bytes → state g & group_message
+val send: #g:group_id -> state g → entropy → bytes → result (state g & group_message)
 
 // The application maintains a local store that maps the hash of a key package
 // to the corresponding private key.

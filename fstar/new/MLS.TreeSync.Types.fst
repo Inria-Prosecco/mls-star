@@ -87,7 +87,7 @@ type operation_t =
   | Op_Remove: actor:credential_t -> ind:nat -> operation_t
   | Op_UpdatePath: actor:credential_t -> l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync l n i -> operation_t
 
-let group_id_t = nat
+let group_id_t = bytes
 
 (** TreeSync state and accessors *)
 type state_t = {
@@ -100,7 +100,7 @@ type state_t = {
   transcript: Seq.seq operation_t;
 }
 
-val mk_initial_state: gid:nat -> l:level_n -> n:tree_size l -> treesync l n -> Tot state_t
+val mk_initial_state: gid:group_id_t -> l:level_n -> n:tree_size l -> treesync l n -> Tot state_t
 let mk_initial_state gid l n t = {
   group_id = gid; levels = l;
   treesize = n;
@@ -108,7 +108,7 @@ let mk_initial_state gid l n t = {
   //initial_tree = t;
   transcript = empty;}
 
-val group_id: state_t -> nat
+val group_id: state_t -> group_id_t
 let group_id st = st.group_id
 
 val max_size: state_t -> nat

@@ -7,7 +7,6 @@ open MLS.Utils
 open MLS.Tree
 open MLS.TreeSync.Types
 
-(*
 (** Membership *)
 type member_array_t (sz:nat) = a:array (option credential_t){length a = sz}
 
@@ -24,6 +23,7 @@ let rec tree_membership (#l:nat) (#n:tree_size l) (t:treesync l n): member_array
 val membership: st:state_t -> member_array_t (st.treesize)
 let membership st = tree_membership st.tree
 
+(*
 (** Create a new tree from a member array *)
 val create_tree: l:level_n -> n:tree_size l -> actor:credential_t ->
 		 init:member_array_t n ->

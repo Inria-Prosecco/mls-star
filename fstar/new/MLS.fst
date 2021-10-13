@@ -1,10 +1,13 @@
 module MLS
 
+open Lib.ByteSequence
 open MLS.TreeSync.Types
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeSync.Extensions
+open MLS.TreeDEM.Message.Content
+open MLS.TreeDEM.Message.Framing
 open MLS.Parser
 open MLS.Result
 
@@ -18,9 +21,40 @@ noeq
 type state g = {
   cs: ciphersuite;
   tree_state: s:MLS.TreeSync.Types.state_t { g == s.group_id };
+  leaf_index: nat;
+  sign_private_key: sign_private_key cs;
   handshake_state: MLS.TreeDEM.Keys.ratchet_state cs;
-  application_state: MLS.TreeDEM.Keys.ratchet_state cs
+  application_state: MLS.TreeDEM.Keys.ratchet_state cs;
+  epoch_secret: bytes;
+  confirmed_transcript_hash: bytes;
 }
+
+#push-options "--fuel 1"
+val state_to_group_context: #g:group_id -> state g -> result group_context_nt
+let state_to_group_context #g st =
+  let ts_state: state_t = st.tree_state in
+  let group_id = ts_state.group_id in
+  let epoch = ts_state.version in
+  tree_hash <-- MLS.TreeSync.Hash.tree_hash st.cs (MLS.TreeMath.root ts_state.levels) ts_state.tree;
+  let confirmed_transcript_hash = st.confirmed_transcript_hash in
+  if not (Seq.length group_id < 256) then
+     internal_failure "state_to_group_context: group_id too long"
+  else if not (epoch < pow2 64) then
+     internal_failure "state_to_group_context: epoch too big"
+  else if not (Seq.length tree_hash < 256) then
+     internal_failure "state_to_group_context: tree_hash too long"
+  else if not (Seq.length confirmed_transcript_hash < 256) then
+     internal_failure "state_to_group_context: confirmed_transcript_hash too long"
+  else (
+    return ({
+      group_id = group_id;
+      epoch = Lib.IntTypes.u64 epoch;
+      tree_hash = tree_hash;
+      confirmed_transcript_hash = confirmed_transcript_hash;
+      extensions = Seq.empty;
+    } <: group_context_nt)
+  )
+#pop-options
 
 let fresh_key_pair e =
   if not (Seq.length e = sign_private_key_length cs) then
@@ -92,7 +126,32 @@ let create e { identity; signature_key } group_id =
 let add #g state key_package = admit()
 let remove #g state p = admit()
 let update #g state e = admit()
-let send #g state e data = admit()
+
+let send #g state e data =
+  let msg: message = {
+    group_id = (state.tree_state <: state_t).group_id;
+    epoch = (state.tree_state <: state_t).version;
+    sender = {
+      sender_type = ST_member;
+      sender_id = state.leaf_index;
+    };
+    authenticated_data = Seq.empty; //TODO?
+    content_type = CT_application;
+    message_content = data;
+  } in
+  let rand: randomness (sign_nonce_length state.cs + 4) = admit() in
+  let (rand_nonce, rand_reuse_guard) = split_randomness rand 4 in
+  group_context <-- state_to_group_context state;
+  confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs state.epoch_secret;
+  sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs state.epoch_secret;
+  auth <-- message_compute_auth state.cs msg state.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret state.confirmed_transcript_hash;
+  ct_newappstate <-- message_to_message_ciphertext state.application_state rand_reuse_guard sender_data_secret (msg, auth);
+  let (ct, new_application_state) = ct_newappstate in
+  ct_network <-- message_ciphertext_to_network ct;
+  let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
+  let new_state = { state with application_state = new_application_state } in
+  return (new_state, (g, msg_bytes))
+
 let process_welcome_message w lookup = admit()
 
 let process_group_message #g state msg =
