@@ -73,17 +73,17 @@ let fresh_key_package e { identity; signature_key } private_sign_key =
 let current_epoch #_ s = s.tree_state.MLS.TreeSync.Types.version
 
 #push-options "--fuel 2"
-let create e { identity; signature_key } g =
+let create e { identity; signature_key } group_id =
   let c: MLS.TreeSync.Types.credential_t = {
     identity;
     signature_key;
     version = 0
   } in
-  let group_id = admit() in
-  let leaf_package = admit() in //call fresh_key_package with the good arguments?
+  let leaf_package = mk_initial_leaf_package c in
   let st = MLS.TreeSync.create group_id leaf_package in
+  let hs_st = MLS.TreeDEM.Keys.init_handshake_ratchet cs 0 
   admit ()
-  (* MLS.TreeSync.Types.mk_initial_state g 1 1 t,
+  (* st,
   ??,
   ?? *)
 #pop-options
