@@ -18,9 +18,9 @@ let cs = Success?.v (ciphersuite_from_nt CS_mls10_128_dhkemx25519_chacha20poly13
 let group_id = MLS.TreeSync.Types.group_id_t
 
 noeq
-type state g = {
+type state = {
   cs: ciphersuite;
-  tree_state: s:MLS.TreeSync.Types.state_t { g == s.group_id };
+  tree_state: s:MLS.TreeSync.Types.state_t;
   leaf_index: nat;
   sign_private_key: sign_private_key cs;
   handshake_state: MLS.TreeDEM.Keys.ratchet_state cs;
@@ -30,8 +30,8 @@ type state g = {
 }
 
 #push-options "--fuel 1"
-val state_to_group_context: #g:group_id -> state g -> result group_context_nt
-let state_to_group_context #g st =
+val state_to_group_context: state -> result group_context_nt
+let state_to_group_context st =
   let ts_state: state_t = st.tree_state in
   let group_id = ts_state.group_id in
   let epoch = ts_state.version in
@@ -128,7 +128,7 @@ let fresh_key_package e cred private_sign_key =
   key_package <-- treesync_to_keypackage cs leaf_package;
   return (ps_key_package.serialize key_package, private_key)
 
-let current_epoch #_ s = s.tree_state.MLS.TreeSync.Types.version
+let current_epoch s = s.tree_state.MLS.TreeSync.Types.version
 
 #push-options "--fuel 2"
 let create e cred private_sign_key group_id =
@@ -159,11 +159,11 @@ let create e cred private_sign_key group_id =
 #pop-options
 
 
-let add #g state key_package = admit()
-let remove #g state p = admit()
-let update #g state e = admit()
+let add state key_package = admit()
+let remove state p = admit()
+let update state e = admit()
 
-let send #g state e data =
+let send state e data =
   let msg: message = {
     group_id = (state.tree_state <: state_t).group_id;
     epoch = (state.tree_state <: state_t).version;
@@ -175,7 +175,9 @@ let send #g state e data =
     content_type = CT_application;
     message_content = data;
   } in
-  let rand: randomness (sign_nonce_length state.cs + 4) = admit() in
+  // FIXME
+  assume (sign_nonce_length state.cs == 0);
+  let rand: randomness (sign_nonce_length state.cs + 4) = mk_randomness e in
   let (rand_nonce, rand_reuse_guard) = split_randomness rand 4 in
   group_context <-- state_to_group_context state;
   confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs state.epoch_secret;
@@ -186,11 +188,11 @@ let send #g state e data =
   ct_network <-- message_ciphertext_to_network ct;
   let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
   let new_state = { state with application_state = new_application_state } in
-  return (new_state, (g, msg_bytes))
+  return (new_state, (state.tree_state.group_id, msg_bytes))
 
 let process_welcome_message w lookup = admit()
 
-let process_group_message #g state msg =
+let process_group_message state msg =
   msg <-- from_option "process_group_message: can't parse group message"
     ((MLS.Parser.ps_to_pse MLS.NetworkTypes.ps_mls_message).parse_exact msg);
   tmp <-- (
@@ -214,18 +216,18 @@ let process_group_message #g state msg =
   | MLS.TreeDEM.Message.Content.CT_proposal ->
       let message_content: proposal = message.message_content in
       begin match message_content with
-      | Add leaf_package -> admit ()
-      | _ -> admit ()
+      | Add leaf_package -> internal_failure "TODO: add"
+      | _ -> internal_failure "TODO: other proposals"
       end
   | MLS.TreeDEM.Message.Content.CT_commit ->
       let message_content: commit = message.message_content in
       begin match message_content with
-      | { c_proposals = [ pr ]; c_path } -> admit ()
-      | _ -> admit ()
+      | { c_proposals = [ pr ]; c_path } -> internal_failure "TODO: commit one"
+      | _ -> internal_failure "TODO: commit many"
       end
   | MLS.TreeDEM.Message.Content.CT_application ->
       let data: bytes = message.message_content in
-      admit ()
+      return (state, MsgData data)
   | _ ->
       internal_failure "unknown message content type"
 

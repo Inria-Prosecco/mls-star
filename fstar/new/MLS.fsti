@@ -10,7 +10,7 @@ open MLS.Result
 val cs: MLS.Crypto.ciphersuite
 
 val group_id: Type0
-val state: group_id -> Type0
+val state: Type0
 
 // TODO: update this to identity *and* endpoint once we switch to Draft 12
 let identity = MLS.Parser.blbytes ({min=0; max=pow2 16-1})
@@ -48,23 +48,23 @@ val fresh_key_pair: e:entropy { Seq.length e == 32 } ->
 val fresh_key_package: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key cs ->
   result (bytes & private_key:bytes)
 
-val current_epoch: #g:_ -> s:state g -> nat
+val current_epoch: s:state -> nat
 
 // TODO: expose a way to inject e.g. a uint32 into a group_id
 // Note that after we've created the group, we receive our freshly-assigned
 // participant id.
 val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key cs -> g:group_id ->
-  result (s:state g)
+  result state
 
-val add: #g:group_id -> s:state g → key_package:bytes → identity:string ->
-  group_message & w:welcome_message
+val add: s:state → key_package:bytes → identity:string ->
+  group_message & welcome_message
 
-val remove: #g:group_id -> s:state g → p:identity → group_message
+val remove: state → p:identity → group_message
 
-val update: #g:group_id -> state g → entropy → group_message
+val update: state → entropy → group_message
 
 // To send application data
-val send: #g:group_id -> state g → entropy → bytes → result (state g & group_message)
+val send: state → e:entropy { Seq.length e == 4 } → bytes → result (state & group_message)
 
 // The application maintains a local store that maps the hash of a key package
 // to the corresponding private key.
@@ -73,6 +73,10 @@ let key_callback = bytes -> option bytes
 // The application provides a callback to retrieve the private key associated to
 // a key package previously generated with `fresh_key_package`.
 val process_welcome_message: w:welcome_message → (lookup: key_callback) ->
-  option (g:group_id & s:state g)
+  option (group_id & state)
 
-val process_group_message: #g:group_id -> state g → bytes → result (state g & option bytes)
+type outcome =
+| MsgData: bytes -> outcome
+| MsgAdd: identity -> outcome
+
+val process_group_message: state → bytes → result (state & outcome)
