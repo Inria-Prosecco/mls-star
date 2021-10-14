@@ -56,7 +56,7 @@ val current_epoch: s:state -> nat
 val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key cs -> g:group_id ->
   result state
 
-val add: s:state → key_package:bytes → identity:string -> entropy ->
+val add: s:state → key_package:bytes → identity:string -> e:entropy { Seq.length e == 4 } ->
   result (state & (group_message & welcome_message))
 
 val remove: state → p:identity → group_message
@@ -77,6 +77,6 @@ val process_welcome_message: w:welcome_message → (lookup: key_callback) ->
 
 type outcome =
 | MsgData: bytes -> outcome
-| MsgAdd: identity -> outcome
+| MsgAdd: Lib.ByteSequence.pub_bytes -> outcome // TODO: should be identity here
 
 val process_group_message: state → bytes → result (state & outcome)

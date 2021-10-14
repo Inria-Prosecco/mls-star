@@ -93,12 +93,15 @@ let gen_treekem_output cs t =
     let tk1 = extract_result (treesync_to_treekem cs ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let upk1 = extract_result (update_path_to_treekem cs l n update_sender update_group_context update_path) in
+
     let update_leaf_package = extract_result (key_package_to_treesync update_path.leaf_key_package) in
     let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
     let ups1 = extract_result (external_pathsync_to_pathsync cs None ts1 ext_ups1) in
     let ts2 = apply_path dumb_credential ts1 ups1 in
     let tk2 = extract_result (treesync_to_treekem cs ts2) in
+
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in
+
     let ratchet_tree2 = extract_result (treesync_to_ratchet_tree cs ts2) in
     let byte_length_ratchet_tree2 = byte_length (ps_option ps_node) (Seq.seq_to_list ratchet_tree2) in
     let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 32 then ps_ratchet_tree.serialize ratchet_tree2 else bytes_empty in

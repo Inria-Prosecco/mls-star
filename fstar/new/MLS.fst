@@ -251,24 +251,24 @@ let process_group_message state msg =
   | MLS.TreeDEM.Message.Content.CT_commit ->
       let message_content: commit = message.message_content in
       begin match message_content with
-      | { c_proposals = [ Proposal (Add leaf_package) ]; c_path = Some update_path } ->
+      | { c_proposals = [ Proposal (Add leaf_package) ]; c_path = None } ->
           // SKETCH...
-          // - add doesn't return the new leaf index (could be computed with find_empty_leaf - 1 ?
-          // - what would be the credentials to be provided here?
-          //let tree_state, fresh_leaf_index = MLS.TreeSync.add state.tree_state some_credentials leaf_package in
-          //let state = { state with tree_state } in
-          // But maybe I don't have to call the treesync functions directly, but
-          // then I don't know how to go from update_path to a pathKem? I feel
-          // like I have to at least grow the tree beforehand before I can
-          // figure out the future leaf index, and then I can call:
-          (*update_pathkem <-- update_path_to_treekem cs state.tree_state.level state.tree_state.treesize
-            future_leaf_index what_is_group_context update_path;
+          let sender_id = message.sender.sender_id in
+          // let sender_cred = find_credentials state.tree sender_id in
+          let sender_cred = MLS.NetworkBinder.dumb_credential in
+          // - add doesn't return the new leaf index ...?
+          let tree_state = MLS.TreeSync.add state.tree_state sender_cred leaf_package in
+          let state = { state with tree_state } in
+          // - then maybe something like this once we gain the ability to process c_path = Some update_path...?
+          (*group_context <-- state_to_group_context state;
+          update_pathkem <-- update_path_to_treekem cs state.tree_state.level state.tree_state.treesize
+            future_leaf_index group_context update_path;
           update_leaf_package <-- key_package_to_treesync leaf_package;
           ext_ups1 <-- MLS.TreeSyncTreeKEMBinder.treekem_to_treesync leaf_package update_pathkem;
           let ups1 = extract_result (external_pathsync_to_pathsync cs None ts1 ext_ups1) in
           let ts2 = apply_path dumb_credential ts1 ups1 in
           let tk2 = extract_result (treesync_to_treekem cs ts2) in*)
-          internal_failure "TODO: commit (single add case)"
+          return (state, MsgAdd leaf_package.credential.identity)
       | _ -> internal_failure "TODO: commit (general case)"
       end
   | MLS.TreeDEM.Message.Content.CT_application ->
@@ -276,21 +276,3 @@ let process_group_message state msg =
       return (state, MsgData data)
   | _ ->
       internal_failure "unknown message content type"
-
-  (*// TODO: check precondition at runtime that `fst msg = state.group_id`.
-  let msg = snd msg in
-  // In the current version of the draft, we can't tell whether it's an
-  // encrypted or a plain message. So, we try to decrypt it, and if it fails,
-  // assume it's plaintext.
-  match MLS.NetworkTypes.ps_mls_ciphertext.parse msg with
-  | Some (cipher, _) ->
-      msg_cipher <-- MLS.TreeDEM.Message.Framing.network_to_message_ciphertext cipher;
-      //let msg = MLS.TreeDEM.Message.Framing.message_ciphertext_to_message
-      admit ()
-  | None ->
-  match MLS.NetworkTypes.ps_mls_plaintext.parse msg with
-  | Some (plain, _) ->
-      admit ()
-  | None ->
-      ProtocolError "Could not parse incoming group message"
-  *)
