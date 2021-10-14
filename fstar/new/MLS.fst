@@ -9,6 +9,7 @@ open MLS.TreeSync.Extensions
 open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Content
 open MLS.TreeDEM.Message.Framing
+open MLS.TreeDEM.Welcome
 open MLS.Parser
 open MLS.Result
 
@@ -79,6 +80,50 @@ let reset_ratchet_states st =
     return ({st with handshake_state; application_state})
   )
 #pop-options
+
+val process_commit: state -> msg:message{msg.content_type = CT_commit} -> message_auth -> result (state & bytes)
+let process_commit state message message_auth =
+  let message: MLS.TreeDEM.Message.Types.message = message in
+  let message_content: commit = message.message_content in
+  match message_content with
+  | { c_proposals = [ Proposal (Add leaf_package) ]; c_path = None } ->
+      // SKETCH...
+      let sender_id = message.sender.sender_id in
+      // let sender_cred = find_credentials state.tree sender_id in
+      let sender_cred = MLS.NetworkBinder.dumb_credential in
+      // 1. Process addition to the tree
+      let tree_state = MLS.TreeSync.add state.tree_state sender_cred leaf_package in
+      let state = { state with tree_state } in
+      // 2. Increase epoch -- TODO when should this happen?!!
+      let tree_state = { tree_state with version = tree_state.version + 1 } in
+      // 3. Update transcript
+      confirmed_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
+        cs message message_auth.signature state.interim_transcript_hash;
+      interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
+        cs message_auth confirmed_transcript_hash;
+      let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
+      // 4. New group context
+      group_context <-- state_to_group_context state;
+      // 5. Ratchet.
+      init_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_init cs state.epoch_secret;
+      let commit_secret = Seq.create 32 (Lib.IntTypes.u8 0) in // FIXME if c_path <> None
+      joiner_secret <-- MLS.TreeDEM.Keys.secret_init_to_joiner cs init_secret commit_secret;
+      let psk_secret = bytes_empty in
+      let serialized_group_context = ps_group_context.serialize group_context in
+      epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch cs joiner_secret psk_secret serialized_group_context;
+      let state = { state with epoch_secret } in
+      state <-- reset_ratchet_states state;
+      // - then maybe something like this once we gain the ability to process c_path = Some update_path...?
+      (*group_context <-- state_to_group_context state;
+      update_pathkem <-- update_path_to_treekem cs state.tree_state.level state.tree_state.treesize
+        sender_id group_context update_path;
+      update_leaf_package <-- key_package_to_treesync leaf_package;
+      ext_ups1 <-- MLS.TreeSyncTreeKEMBinder.treekem_to_treesync leaf_package update_pathkem;
+      let ups1 = extract_result (external_pathsync_to_pathsync cs None ts1 ext_ups1) in
+      let ts2 = apply_path dumb_credential ts1 ups1 in
+      let tk2 = extract_result (treesync_to_treekem cs ts2) in*)
+      return (state, (joiner_secret <: bytes))
+  | _ -> internal_failure "TODO: commit (general case)"
 
 let fresh_key_pair e =
   if not (Seq.length e = sign_private_key_length cs) then
@@ -175,7 +220,7 @@ let create e cred private_sign_key group_id =
   })
 #pop-options
 
-val send_helper: state -> message → e:entropy { Seq.length e == 4 } → result (state & group_message)
+val send_helper: state -> message → e:entropy { Seq.length e == 4 } → result (state & message_auth & group_message)
 let send_helper st msg e =
   //FIXME
   assume (sign_nonce_length st.cs == 0);
@@ -192,8 +237,9 @@ let send_helper st msg e =
   let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
   let new_st = if msg.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
   let g:group_message = (st.tree_state.group_id, msg_bytes) in
-  return (new_st, g)
+  return (new_st, auth, g)
 
+#push-options "--fuel 2 --ifuel 2 --z3rlimit 20"
 let add state key_package e =
   kp <-- from_option "error message if it is malformed" ((ps_to_pse ps_key_package).parse_exact key_package);
   lp <-- key_package_to_treesync kp;
@@ -208,10 +254,33 @@ let add state key_package e =
     content_type = CT_commit;
     message_content = { c_proposals = [ Proposal (Add lp) ]; c_path = None };
   } in
-  tmp <-- send_helper state msg e;
-  let (new_state, g) = tmp in
-  let w:welcome_message = (Seq.empty,Seq.empty) in
+  tmp <-- chop_entropy e 4;
+  let fresh, e = tmp in
+  tmp <-- send_helper state msg fresh;
+  let (new_state, msg_auth, g) = tmp in
+  tmp <-- process_commit new_state msg msg_auth;
+  let (future_state, joiner_secret) = tmp in
+  confirmation_tag <-- from_option "" msg_auth.confirmation_tag;
+  tree_hash <-- MLS.TreeSync.Hash.tree_hash future_state.cs (MLS.TreeMath.root future_state.tree_state.levels) future_state.tree_state.tree;
+  let group_info: welcome_group_info = {
+    group_id = state.tree_state.group_id;
+    epoch = state.tree_state.version;
+    tree_hash = tree_hash;
+    confirmed_transcript_hash = future_state.confirmed_transcript_hash;
+    extensions = Seq.empty; //FIXME
+    confirmation_tag = confirmation_tag;
+    signer_index = state.leaf_index;
+    signature = Seq.empty;
+  } in
+  assume (hpke_private_key_length cs == 32);
+  tmp <-- chop_entropy e 32;
+  let fresh, e = tmp in
+  let rand: randomness (hpke_private_key_length cs) = (mk_randomness #32 fresh) in
+  welcome_msg <-- encrypt_welcome cs group_info joiner_secret [(lp, None)] rand;
+  welcome_msg_network <-- welcome_to_network cs welcome_msg;
+  let w:welcome_message = (Seq.empty, ps_welcome.serialize welcome_msg_network) in
   return (new_state, (g,w))
+#pop-options
 
 let remove state p = admit()
 let update state e = admit()
@@ -228,9 +297,13 @@ let send state e data =
     content_type = CT_application;
     message_content = data;
   } in
-  send_helper state msg e
+  tmp <-- send_helper state msg e;
+  let (new_state, msg_auth, g) = tmp in
+  return (new_state, g)
 
 let process_welcome_message w lookup = admit()
+
+
 
 let process_group_message state msg =
   msg <-- from_option "process_group_message: can't parse group message"
@@ -263,41 +336,8 @@ let process_group_message state msg =
       let message_content: commit = message.message_content in
       begin match message_content with
       | { c_proposals = [ Proposal (Add leaf_package) ]; c_path = None } ->
-          // SKETCH...
-          let sender_id = message.sender.sender_id in
-          // let sender_cred = find_credentials state.tree sender_id in
-          let sender_cred = MLS.NetworkBinder.dumb_credential in
-          // 1. Process addition to the tree
-          let tree_state = MLS.TreeSync.add state.tree_state sender_cred leaf_package in
-          let state = { state with tree_state } in
-          // 2. Increase epoch -- TODO when should this happen?!!
-          let tree_state = { tree_state with version = tree_state.version + 1 } in
-          // 3. Update transcript
-          confirmed_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
-            cs message message_auth.signature state.interim_transcript_hash;
-          interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
-            cs message_auth confirmed_transcript_hash;
-          let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
-          // 4. New group context
-          group_context <-- state_to_group_context state;
-          // 5. Ratchet.
-          init_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_init cs state.epoch_secret;
-          let commit_secret = Seq.create 32 (Lib.IntTypes.u8 0) in // FIXME if c_path <> None
-          joiner_secret <-- MLS.TreeDEM.Keys.secret_init_to_joiner cs init_secret commit_secret;
-          let psk_secret = bytes_empty in
-          let serialized_group_context = ps_group_context.serialize group_context in
-          epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch cs joiner_secret psk_secret serialized_group_context;
-          let state = { state with epoch_secret } in
-          state <-- reset_ratchet_states state;
-          // - then maybe something like this once we gain the ability to process c_path = Some update_path...?
-          (*group_context <-- state_to_group_context state;
-          update_pathkem <-- update_path_to_treekem cs state.tree_state.level state.tree_state.treesize
-            sender_id group_context update_path;
-          update_leaf_package <-- key_package_to_treesync leaf_package;
-          ext_ups1 <-- MLS.TreeSyncTreeKEMBinder.treekem_to_treesync leaf_package update_pathkem;
-          let ups1 = extract_result (external_pathsync_to_pathsync cs None ts1 ext_ups1) in
-          let ts2 = apply_path dumb_credential ts1 ups1 in
-          let tk2 = extract_result (treesync_to_treekem cs ts2) in*)
+          tmp <-- process_commit state message message_auth;
+          let (state, _) = tmp in
           return (state, MsgAdd leaf_package.credential.identity)
       | _ -> internal_failure "TODO: commit (general case)"
       end
