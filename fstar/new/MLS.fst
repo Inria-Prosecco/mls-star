@@ -63,6 +63,21 @@ let state_to_group_context st =
   )
 #pop-options
 
+#push-options "--fuel 1"
+val reset_ratchet_states: state -> result state
+let reset_ratchet_states st =
+  if not (st.leaf_index < st.tree_state.treesize) then
+     internal_failure "reset_ratchet_state: leaf_index too big"
+  else (
+    encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption st.cs st.epoch_secret;
+    leaf_secret <-- MLS.TreeDEM.Keys.leaf_kdf #st.tree_state.levels st.tree_state.treesize st.cs encryption_secret (MLS.TreeMath.root st.tree_state.levels) st.leaf_index;
+    let my_node_index: MLS.TreeMath.node_index 0 = st.leaf_index + st.leaf_index in
+    handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet st.cs my_node_index leaf_secret;
+    application_state <-- MLS.TreeDEM.Keys.init_application_ratchet st.cs my_node_index leaf_secret;
+    return ({st with handshake_state; application_state})
+  )
+#pop-options
+
 let fresh_key_pair e =
   if not (Seq.length e = sign_private_key_length cs) then
     internal_failure "fresh_key_pair: entropy length is wrong"
@@ -277,6 +292,8 @@ let process_group_message state msg =
           let psk_secret = bytes_empty in
           let serialized_group_context = ps_group_context.serialize group_context in
           epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch cs joiner_secret psk_secret serialized_group_context;
+          let state = { state with epoch_secret } in
+          state <-- reset_ratchet_states state;
           // - then maybe something like this once we gain the ability to process c_path = Some update_path...?
           (*group_context <-- state_to_group_context state;
           update_pathkem <-- update_path_to_treekem cs state.tree_state.level state.tree_state.treesize
