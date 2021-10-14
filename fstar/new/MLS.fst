@@ -172,6 +172,24 @@ let create e cred private_sign_key group_id =
   })
 #pop-options
 
+val send_helper: state -> message → e:entropy { Seq.length e == 4 } → result (state & group_message)
+let send_helper st msg e =
+  //FIXME
+  assume (sign_nonce_length st.cs == 0);
+  let rand: randomness (sign_nonce_length st.cs + 4) = mk_randomness e in
+  let (rand_nonce, rand_reuse_guard) = split_randomness rand 4 in
+  group_context <-- state_to_group_context st;
+  confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs st.epoch_secret;
+  sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs st.epoch_secret;
+  auth <-- message_compute_auth st.cs msg st.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret st.confirmed_transcript_hash;
+  let ratchet = if msg.content_type = CT_application then st.application_state else st.handshake_state in
+  ct_new_ratchet_state <-- message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret (msg, auth);
+  let (ct, new_ratchet_state) = ct_new_ratchet_state in
+  ct_network <-- message_ciphertext_to_network ct;
+  let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
+  let new_st = if msg.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
+  let g:group_message = (st.tree_state.group_id, msg_bytes) in
+  return (new_st, g)
 
 let add state key_package e =
   kp <-- from_option "error message if it is malformed" ((ps_to_pse ps_key_package).parse_exact key_package);
@@ -187,20 +205,8 @@ let add state key_package e =
     content_type = CT_commit;
     message_content = { c_proposals = [ Proposal (Add lp) ]; c_path = None };
   } in
-  // FIXME
-  assume (sign_nonce_length state.cs == 0);
-  let rand: randomness (sign_nonce_length state.cs + 4) = mk_randomness e in
-  let (rand_nonce, rand_reuse_guard) = split_randomness rand 4 in
-  group_context <-- state_to_group_context state;
-  confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs state.epoch_secret;
-  sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs state.epoch_secret;
-  auth <-- message_compute_auth state.cs msg state.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret state.confirmed_transcript_hash;
-  ct_newhandshakestate <-- message_to_message_ciphertext state.handshake_state rand_reuse_guard sender_data_secret (msg, auth);
-  let (ct, new_handshake_state) = ct_newhandshakestate in
-  ct_network <-- message_ciphertext_to_network ct;
-  let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
-  let new_state = { state with handshake_state = new_handshake_state } in
-  let g:group_message = (state.tree_state.group_id, msg_bytes) in
+  tmp <-- send_helper state msg e;
+  let (new_state, g) = tmp in
   let w:welcome_message = (Seq.empty,Seq.empty) in
   return (new_state, (g,w))
 
@@ -219,20 +225,7 @@ let send state e data =
     content_type = CT_application;
     message_content = data;
   } in
-  // FIXME
-  assume (sign_nonce_length state.cs == 0);
-  let rand: randomness (sign_nonce_length state.cs + 4) = mk_randomness e in
-  let (rand_nonce, rand_reuse_guard) = split_randomness rand 4 in
-  group_context <-- state_to_group_context state;
-  confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs state.epoch_secret;
-  sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs state.epoch_secret;
-  auth <-- message_compute_auth state.cs msg state.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret state.confirmed_transcript_hash;
-  ct_newappstate <-- message_to_message_ciphertext state.application_state rand_reuse_guard sender_data_secret (msg, auth);
-  let (ct, new_application_state) = ct_newappstate in
-  ct_network <-- message_ciphertext_to_network ct;
-  let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
-  let new_state = { state with application_state = new_application_state } in
-  return (new_state, (state.tree_state.group_id, msg_bytes))
+  send_helper state msg e
 
 let process_welcome_message w lookup = admit()
 
