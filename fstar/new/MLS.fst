@@ -216,14 +216,31 @@ let process_group_message state msg =
   | MLS.TreeDEM.Message.Content.CT_proposal ->
       let message_content: proposal = message.message_content in
       begin match message_content with
-      | Add leaf_package -> internal_failure "TODO: add"
-      | _ -> internal_failure "TODO: other proposals"
+      | Add _ -> internal_failure "TODO: proposal (add)"
+      | _ -> internal_failure "TODO: proposal (other)"
       end
   | MLS.TreeDEM.Message.Content.CT_commit ->
       let message_content: commit = message.message_content in
       begin match message_content with
-      | { c_proposals = [ pr ]; c_path } -> internal_failure "TODO: commit one"
-      | _ -> internal_failure "TODO: commit many"
+      | { c_proposals = [ Proposal (Add leaf_package) ]; c_path = Some update_path } ->
+          // SKETCH...
+          // - add doesn't return the new leaf index (could be computed with find_empty_leaf - 1 ?
+          // - what would be the credentials to be provided here?
+          //let tree_state, fresh_leaf_index = MLS.TreeSync.add state.tree_state some_credentials leaf_package in
+          //let state = { state with tree_state } in
+          // But maybe I don't have to call the treesync functions directly, but
+          // then I don't know how to go from update_path to a pathKem? I feel
+          // like I have to at least grow the tree beforehand before I can
+          // figure out the future leaf index, and then I can call:
+          (*update_pathkem <-- update_path_to_treekem cs state.tree_state.level state.tree_state.treesize
+            future_leaf_index what_is_group_context update_path;
+          update_leaf_package <-- key_package_to_treesync leaf_package;
+          ext_ups1 <-- MLS.TreeSyncTreeKEMBinder.treekem_to_treesync leaf_package update_pathkem;
+          let ups1 = extract_result (external_pathsync_to_pathsync cs None ts1 ext_ups1) in
+          let ts2 = apply_path dumb_credential ts1 ups1 in
+          let tk2 = extract_result (treesync_to_treekem cs ts2) in*)
+          internal_failure "TODO: commit (single add case)"
+      | _ -> internal_failure "TODO: commit (general case)"
       end
   | MLS.TreeDEM.Message.Content.CT_application ->
       let data: bytes = message.message_content in
