@@ -196,6 +196,46 @@ let rec update_path_to_treekem cs l n i group_context update_path =
   )
 #pop-options
 
+val treesync_to_update_path_node: TS.node_package_t -> result update_path_node_nt
+let treesync_to_update_path_node np =
+  node_content <-- from_option "treesync_to_update_path_node: can't parse content" ((ps_to_pse ps_node_package_content).parse_exact np.TS.content);
+  return ({
+    public_key = node_content.public_key;
+    encrypted_path_secret = node_content.encrypted_path_secret;
+  } <: update_path_node_nt)
+
+val treesync_to_update_path_aux: #l:nat -> #n:tree_size l -> #i:leaf_index n -> ciphersuite -> TS.pathsync l n i -> result (key_package_nt & list update_path_node_nt)
+let rec treesync_to_update_path_aux #l #n #i cs p =
+  match p with
+  | PLeaf (Some lp) ->
+    kp <-- treesync_to_keypackage cs lp;
+    return (kp, [])
+  | PLeaf None ->
+    internal_failure "treesync_to_update_path: the path must not contain any blank node"
+  | PSkip _ p_next ->
+    treesync_to_update_path_aux cs p_next
+  | PNode (Some np) p_next ->
+    upn <-- treesync_to_update_path_node np;
+    tmp <-- treesync_to_update_path_aux cs p_next;
+    let (kp, upns) = tmp in
+    return (kp, upn::upns)
+  | PNode None p_next ->
+    internal_failure "treesync_to_update_path: the path must not contain any blank node"
+
+val treesync_to_update_path: #l:nat -> #n:tree_size l -> #i:leaf_index n -> ciphersuite -> TS.pathsync l n i -> result update_path_nt
+let treesync_to_update_path #l #n #i cs p =
+  tmp <-- treesync_to_update_path_aux cs p;
+  let (kp, upns) = tmp in
+  let upns = List.rev upns in
+  Seq.lemma_list_seq_bij upns;
+  if not (byte_length ps_update_path_node upns < pow2 32) then
+    error "treesync_to_update_path: nodes too long"
+  else
+    return ({
+      leaf_key_package = kp;
+      nodes = Seq.seq_of_list upns;
+    })
+
 (*** ratchet_tree extension (11.3) ***)
 
 val dumb_credential: TS.credential_t
