@@ -15,6 +15,13 @@ open MLS.Result
 
 let cs = Success?.v (ciphersuite_from_nt CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519)
 
+val universal_sign_nonce: result (randomness (sign_nonce_length cs))
+let universal_sign_nonce =
+  if not (sign_nonce_length cs = 0) then
+    internal_failure "universal_sign_nonce: nonce length is > 0"
+  else
+    return (mk_randomness Seq.empty)
+
 let group_id = MLS.TreeSync.Types.group_id_t
 
 noeq
@@ -63,23 +70,18 @@ let fresh_key_pair e =
     sign_gen_keypair cs (mk_randomness e)
 
 // TODO: switch to randomness rather than this
-let chop_entropy (e: bytes) (l: nat): Pure (result (bytes & bytes))
-  (requires True)
-  (ensures (fun r ->
-    match r with
-    | Success (fresh, e) -> Seq.length fresh == l
-    | _ -> True))
+let chop_entropy (e: bytes) (l: nat): (result ((fresh:bytes{Seq.length fresh == l}) * bytes))
 =
   if Seq.length e <= l then
     internal_failure "not enough entropy"
   else
-    return (Seq.split e l)
+    let (fresh, next) = (Seq.split e l) in
+    return (fresh, next)
 
 let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   tmp <-- chop_entropy e (hpke_private_key_length cs);
   let fresh, e = tmp in
   // TODO: debug this and the other occurrence below
-  assume (Seq.length fresh == hpke_private_key_length cs);
   key_pair <-- hpke_gen_keypair cs fresh;
   let ((private_key: bytes), public_key) = key_pair in
   extensions <-- (
@@ -110,14 +112,11 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     extensions;
     signature = Seq.empty;
   } in
-  tmp <-- chop_entropy e (sign_nonce_length cs);
-  let fresh, e = tmp in
-  assume (Seq.length fresh == sign_nonce_length cs);
   signature <-- (
     unsigned_key_package <-- treesync_to_keypackage cs unsigned_leaf_package;
     let tbs = ps_key_package_tbs.serialize (key_package_get_tbs unsigned_key_package) in
-    // assume (sign_nonce_length cs <= 32);
-    sign_sign cs private_sign_key tbs (mk_randomness fresh)
+    nonce <-- universal_sign_nonce;
+    sign_sign cs private_sign_key tbs nonce
   );
   let leaf_package = { unsigned_leaf_package with signature } in
   return (leaf_package, private_key)
