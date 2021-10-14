@@ -256,13 +256,31 @@ let process_group_message state msg =
           let sender_id = message.sender.sender_id in
           // let sender_cred = find_credentials state.tree sender_id in
           let sender_cred = MLS.NetworkBinder.dumb_credential in
-          // - add doesn't return the new leaf index ...?
+          // 1. Process addition to the tree
           let tree_state = MLS.TreeSync.add state.tree_state sender_cred leaf_package in
           let state = { state with tree_state } in
+          // 2. Increase epoch -- TODO when should this happen?!!
+          let tree_state = { tree_state with version = tree_state.version + 1 } in
+          // 3. Update transcript
+          interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
+            cs message_auth state.confirmed_transcript_hash;
+          // FIXME: am I passing the right signature argument here?
+          confirmed_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
+            cs message message_auth.signature interim_transcript_hash;
+          let state = { state with confirmed_transcript_hash } in
+          // 4. New group context
+          group_context <-- state_to_group_context state;
+          // 5. Ratchet.
+          init_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_init cs state.epoch_secret;
+          let commit_secret = Seq.create 32 (Lib.IntTypes.u8 0) in // FIXME if c_path <> None
+          joiner_secret <-- MLS.TreeDEM.Keys.secret_init_to_joiner cs init_secret commit_secret;
+          let psk_secret = bytes_empty in
+          let serialized_group_context = ps_group_context.serialize group_context in
+          epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch cs joiner_secret psk_secret serialized_group_context;
           // - then maybe something like this once we gain the ability to process c_path = Some update_path...?
           (*group_context <-- state_to_group_context state;
           update_pathkem <-- update_path_to_treekem cs state.tree_state.level state.tree_state.treesize
-            future_leaf_index group_context update_path;
+            sender_id group_context update_path;
           update_leaf_package <-- key_package_to_treesync leaf_package;
           ext_ups1 <-- MLS.TreeSyncTreeKEMBinder.treekem_to_treesync leaf_package update_pathkem;
           let ups1 = extract_result (external_pathsync_to_pathsync cs None ts1 ext_ups1) in
