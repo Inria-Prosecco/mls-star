@@ -129,6 +129,8 @@ let parent_node_to_treesync pn =
         });
       } <: TS.node_package_t)
 
+//TODO: this function should be equivalent to key_package_to_treesync followed by leaf_package_sync_to_kem (non-existant at this time)
+//Refactor?
 val key_package_to_treekem: cs:ciphersuite -> key_package_nt -> result (TK.member_info cs)
 let key_package_to_treekem cs kp =
   if not (Seq.length kp.public_key = hpke_public_key_length cs) then

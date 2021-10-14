@@ -121,30 +121,39 @@ let treekem_to_treesync_node_package #cs nb_left_leaves kp =
     } <: node_package_t) <: external_node_package_t)
   end
 
+// Some remarks about the `new_leaf_package` argument
+// This function is used in two cases:
+// - By processing an update path coming from the network. In that case, the update path provided a new leaf package to use, which will go in this `new_leaf_package` argument.
+//   Why change its public key in that case? Well it doesn't really change, because the public key in `PLeaf` and the public key of `new_leaf_package` will be the same.
+//   This is because the `PLeaf` content is equal to `key_package_to_treekem kp` and `new_leaf_package` is equal to `key_package_to_treesync kp` for the same kp
+//   The parent hash extension and the signature will be checked when converting the external_pathsync to a pathsync
+// - When we generate an updatepath, and convert it to treesync before converting it to an update_path_nt.
+//   In that case, `new_leaf_package` need to be equal to our previous leaf package. The HPKE public key will be updated here.
+//   The parent hash and signature need to be updated, but this will be done in the external_pathsync -> pathsync conversion.
 val treekem_to_treesync_aux: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> nat -> leaf_package_t -> pathkem cs l n i -> result (external_pathsync l n i)
-let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves old_leaf_package pk =
+let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves new_leaf_package pk =
   match pk with
   | PLeaf mi ->
     return (PLeaf ({
-      credential = old_leaf_package.credential;
+      credential = new_leaf_package.credential;
       version = (mi <: member_info cs).version;
       content = secret_to_pub (ps_leaf_package_content.serialize ({
         public_key = (mi <: member_info cs).public_key;
       }));
-      extensions = old_leaf_package.extensions; //TODO probably the parent hash should change?
-      signature = old_leaf_package.signature; //TODO the signature definitely has to change
+      extensions = new_leaf_package.extensions;
+      signature = new_leaf_package.signature;
     }))
   | PSkip _ pk' ->
-    result <-- treekem_to_treesync_aux nb_left_leaves old_leaf_package pk';
+    result <-- treekem_to_treesync_aux nb_left_leaves new_leaf_package pk';
     return (PSkip _ result)
   | PNode kp pk_next ->
     let (|dir, _|) = child_index l i in
     let new_left_leaves = (if dir = Left then nb_left_leaves else nb_left_leaves + pow2 (l-1)) in
-    next <-- treekem_to_treesync_aux new_left_leaves old_leaf_package pk_next;
+    next <-- treekem_to_treesync_aux new_left_leaves new_leaf_package pk_next;
     np <-- treekem_to_treesync_node_package nb_left_leaves kp;
     return (PNode np next)
 
 val treekem_to_treesync: #l:nat -> #n:tree_size l -> #i:leaf_index n -> #cs:ciphersuite -> leaf_package_t -> pathkem cs l n i -> result (external_pathsync l n i)
-let treekem_to_treesync #l #n #i #cs old_leaf_package pk =
-  treekem_to_treesync_aux 0 old_leaf_package pk
+let treekem_to_treesync #l #n #i #cs new_leaf_package pk =
+  treekem_to_treesync_aux 0 new_leaf_package pk
 
