@@ -7,6 +7,7 @@ open MLS.Test.Equality
 open MLS.Test.Types
 open MLS.Test.Utils
 open MLS.TreeDEM.Keys
+open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Framing
 open MLS.Crypto
 open MLS.NetworkTypes
@@ -27,7 +28,7 @@ let test_leaf_generation #cs l n encryption_secret sender_data_secret r_state te
   let message_1 = message_plaintext_to_message message_plaintext in
   let message_2 = extract_result (message_ciphertext_to_message cs l n encryption_secret sender_data_secret message_ciphertext) in
   let plaintext_eq_ciphertext_ok = test_equality message_1 message_2 in
-  let sender_ok = (fst message_1).sender.sender_type = MLS.TreeDEM.Message.Framing.ST_member && (let open FStar.Mul in 2*(fst message_1).sender.sender_id = r_state.node) in
+  let sender_ok = (fst message_1).sender.sender_type = MLS.TreeDEM.Message.Types.ST_member && (let open FStar.Mul in 2*(fst message_1).sender.sender_id = r_state.node) in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)
 
 val test_leaf_generations: #cs:ciphersuite -> l:nat -> n:tree_size l -> bytes -> bytes -> ratchet_state cs -> list encryption_leaf_generation_test -> ML bool

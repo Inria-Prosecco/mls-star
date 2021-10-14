@@ -6,6 +6,7 @@ open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeSync.Extensions
+open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Content
 open MLS.TreeDEM.Message.Framing
 open MLS.Parser
@@ -34,6 +35,7 @@ type state = {
   application_state: MLS.TreeDEM.Keys.ratchet_state cs;
   epoch_secret: bytes;
   confirmed_transcript_hash: bytes;
+  interim_transcript_hash: bytes;
 }
 
 #push-options "--fuel 1"
@@ -168,7 +170,8 @@ let create e cred private_sign_key group_id =
     handshake_state;
     application_state;
     epoch_secret;
-    confirmed_transcript_hash = Seq.empty
+    confirmed_transcript_hash = Seq.empty;
+    interim_transcript_hash = Seq.empty;
   })
 #pop-options
 
@@ -181,7 +184,7 @@ let send_helper st msg e =
   group_context <-- state_to_group_context st;
   confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs st.epoch_secret;
   sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs st.epoch_secret;
-  auth <-- message_compute_auth st.cs msg st.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret st.confirmed_transcript_hash;
+  auth <-- message_compute_auth st.cs msg st.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret st.interim_transcript_hash;
   let ratchet = if msg.content_type = CT_application then st.application_state else st.handshake_state in
   ct_new_ratchet_state <-- message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret (msg, auth);
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
@@ -270,12 +273,11 @@ let process_group_message state msg =
           // 2. Increase epoch -- TODO when should this happen?!!
           let tree_state = { tree_state with version = tree_state.version + 1 } in
           // 3. Update transcript
-          interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
-            cs message_auth state.confirmed_transcript_hash;
-          // FIXME: am I passing the right signature argument here?
           confirmed_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
-            cs message message_auth.signature interim_transcript_hash;
-          let state = { state with confirmed_transcript_hash } in
+            cs message message_auth.signature state.interim_transcript_hash;
+          interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
+            cs message_auth confirmed_transcript_hash;
+          let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
           // 4. New group context
           group_context <-- state_to_group_context state;
           // 5. Ratchet.

@@ -1,8 +1,8 @@
 module MLS.TreeDEM.Message.Transcript
 
-open MLS.TreeDEM.Message.Framing
-open MLS.TreeDEM.Message.Content
 open MLS.NetworkTypes
+open MLS.TreeDEM.Message.Types
+open MLS.TreeDEM.Message.Content
 open Lib.ByteSequence
 open Lib.IntTypes
 open MLS.Parser
@@ -19,6 +19,8 @@ let compute_confirmed_transcript_hash cs msg signature interim_transcript_hash =
     internal_failure "compute_confirmed_transcript_hash: authenticated_data too long"
   else if not (Seq.length signature < pow2 16) then
     internal_failure "compute_confirmed_transcript_hash: signature too long"
+  else if not (msg.content_type = CT_commit) then
+    internal_failure "compute_confirmed_transcript_hash: should only be used on a commit message"
   else (
     sender <-- sender_to_network msg.sender;
     content <-- message_content_pair_to_network cs msg.message_content;
