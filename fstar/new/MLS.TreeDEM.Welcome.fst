@@ -312,3 +312,12 @@ let encrypt_welcome cs group_info joiner_secret leaf_packages rand =
     secrets = group_secrets;
     encrypted_group_info = encrypted_group_info;
   })
+
+(*** Utility functions ***)
+
+val sign_welcome_group_info: cs:ciphersuite -> sign_private_key cs -> welcome_group_info -> randomness (sign_nonce_length cs) -> result (welcome_group_info)
+let sign_welcome_group_info cs sign_sk gi rand =
+  gi_network <-- welcome_group_info_to_network gi;
+  let tbs_bytes = ps_group_info_tbs.serialize ({gi_network with signature = Seq.empty} <: group_info_nt) in
+  signature <-- sign_sign cs sign_sk tbs_bytes rand;
+  return ({gi with signature = signature})

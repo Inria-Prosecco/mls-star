@@ -1272,10 +1272,12 @@ noeq type group_info_nt = {
   signature: blbytes ({min=0; max=(pow2 16)-1});
 }
 
-#push-options "--ifuel 6"
-val ps_group_info: parser_serializer group_info_nt
-let ps_group_info =
-  isomorphism group_info_nt
+let group_info_tbs_nt = gi:group_info_nt{gi.signature = Seq.empty}
+
+#push-options "--ifuel 5"
+val ps_group_info_tbs: parser_serializer group_info_tbs_nt
+let ps_group_info_tbs =
+  isomorphism group_info_tbs_nt
     (
       _ <-- ps_bytes _;
       _ <-- ps_u64;
@@ -1283,10 +1285,9 @@ let ps_group_info =
       _ <-- ps_bytes _;
       _ <-- ps_bytes _;
       _ <-- ps_mac;
-      _ <-- ps_u32;
-      ps_bytes _
+      ps_u32
     )
-    (fun (|group_id, (|epoch, (|tree_hash, (|confirmed_transcript_hash, (|extensions, (|confirmation_tag, (|signer_index, signature|)|)|)|)|)|)|) -> {
+    (fun (|group_id, (|epoch, (|tree_hash, (|confirmed_transcript_hash, (|extensions, (|confirmation_tag, signer_index|)|)|)|)|)|) -> {
       group_id = group_id;
       epoch = epoch;
       tree_hash = tree_hash;
@@ -1294,10 +1295,20 @@ let ps_group_info =
       extensions = extensions;
       confirmation_tag = confirmation_tag;
       signer_index = signer_index;
-      signature = signature;
+      signature = Seq.empty;
     })
-    (fun x -> (|x.group_id, (|x.epoch, (|x.tree_hash, (|x.confirmed_transcript_hash, (|x.extensions, (|x.confirmation_tag, (|x.signer_index, x.signature|)|)|)|)|)|)|))
+    (fun x -> (|x.group_id, (|x.epoch, (|x.tree_hash, (|x.confirmed_transcript_hash, (|x.extensions, (|x.confirmation_tag, x.signer_index|)|)|)|)|)|))
 #pop-options
+
+val ps_group_info: parser_serializer group_info_nt
+let ps_group_info =
+  isomorphism group_info_nt
+    (
+      _ <-- ps_group_info_tbs;
+      ps_bytes _
+    )
+    (fun (|tbs, signature|) -> { tbs with signature = signature })
+    (fun x -> (|{x with signature = Seq.empty}, x.signature|))
 
 noeq type path_secret_nt = {
   path_secret: blbytes ({min=0; max=255});
