@@ -56,8 +56,8 @@ val current_epoch: s:state -> nat
 val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key cs -> g:group_id ->
   result state
 
-val add: s:state → key_package:bytes → identity:string ->
-  group_message & welcome_message
+val add: s:state → key_package:bytes → identity:string -> entropy ->
+  result (state & (group_message & welcome_message))
 
 val remove: state → p:identity → group_message
 

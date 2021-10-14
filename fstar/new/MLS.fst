@@ -158,7 +158,37 @@ let create e cred private_sign_key group_id =
 #pop-options
 
 
-let add state key_package = admit()
+let add state key_package id e =
+  kp <-- from_option "error message if it is malformed" ((ps_to_pse ps_key_package).parse_exact key_package);
+  lp <-- key_package_to_treesync kp;
+  let msg: message = {
+    group_id = (state.tree_state <: state_t).group_id;
+    epoch = (state.tree_state <: state_t).version;
+    sender = {
+      sender_type = ST_member;
+      sender_id = state.leaf_index;
+    };
+    authenticated_data = Seq.empty; //TODO?
+    content_type = CT_commit;
+    message_content = { c_proposals = [ Proposal (Add lp) ]; c_path = None };
+  } in
+  // FIXME
+  assume (sign_nonce_length state.cs == 0);
+  let rand: randomness (sign_nonce_length state.cs + 4) = mk_randomness e in
+  let (rand_nonce, rand_reuse_guard) = split_randomness rand 4 in
+  group_context <-- state_to_group_context state;
+  confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs state.epoch_secret;
+  sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs state.epoch_secret;
+  auth <-- message_compute_auth state.cs msg state.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret state.confirmed_transcript_hash;
+  ct_newappstate <-- message_to_message_ciphertext state.application_state rand_reuse_guard sender_data_secret (msg, auth);
+  let (ct, new_application_state) = ct_newappstate in
+  ct_network <-- message_ciphertext_to_network ct;
+  let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
+  let new_state = { state with application_state = new_application_state } in
+  let g:group_message = (state.tree_state.group_id, msg_bytes) in
+  let w:welcome_message = (Seq.empty,Seq.empty) in
+  return (new_state, (g,w))
+
 let remove state p = admit()
 let update state e = admit()
 
