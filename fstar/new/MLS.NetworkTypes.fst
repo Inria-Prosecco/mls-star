@@ -1261,6 +1261,118 @@ let ps_mls_plaintext_tbm =
     }))
     (fun x -> (|x.tbs, (|x.signature, x.confirmation_tag|)|))
 
+noeq type group_info_nt = {
+  group_id: blbytes ({min=0; max=255});
+  epoch: uint64;
+  tree_hash: blbytes ({min=0; max=255});
+  confirmed_transcript_hash: blbytes ({min=0; max=255});
+  extensions: blbytes ({min=0; max=(pow2 32)-1});
+  confirmation_tag: mac_nt;
+  signer_index: uint32;
+  signature: blbytes ({min=0; max=(pow2 16)-1});
+}
+
+#push-options "--ifuel 6"
+val ps_group_info: parser_serializer group_info_nt
+let ps_group_info =
+  isomorphism group_info_nt
+    (
+      _ <-- ps_bytes _;
+      _ <-- ps_u64;
+      _ <-- ps_bytes _;
+      _ <-- ps_bytes _;
+      _ <-- ps_bytes _;
+      _ <-- ps_mac;
+      _ <-- ps_u32;
+      ps_bytes _
+    )
+    (fun (|group_id, (|epoch, (|tree_hash, (|confirmed_transcript_hash, (|extensions, (|confirmation_tag, (|signer_index, signature|)|)|)|)|)|)|) -> {
+      group_id = group_id;
+      epoch = epoch;
+      tree_hash = tree_hash;
+      confirmed_transcript_hash = confirmed_transcript_hash;
+      extensions = extensions;
+      confirmation_tag = confirmation_tag;
+      signer_index = signer_index;
+      signature = signature;
+    })
+    (fun x -> (|x.group_id, (|x.epoch, (|x.tree_hash, (|x.confirmed_transcript_hash, (|x.extensions, (|x.confirmation_tag, (|x.signer_index, x.signature|)|)|)|)|)|)|))
+#pop-options
+
+noeq type path_secret_nt = {
+  path_secret: blbytes ({min=0; max=255});
+}
+
+val ps_path_secret: parser_serializer path_secret_nt
+let ps_path_secret =
+  isomorphism path_secret_nt
+    (ps_bytes _)
+    (fun x -> {path_secret = x})
+    (fun x -> x.path_secret)
+
+noeq type group_secrets_nt = {
+  joiner_secret: blbytes ({min=1; max=255});
+  path_secret: option_nt path_secret_nt;
+  psks: option_nt pre_shared_keys_nt;
+}
+
+val ps_group_secrets: parser_serializer group_secrets_nt
+let ps_group_secrets =
+  isomorphism group_secrets_nt
+    (
+      _ <-- ps_bytes _;
+      _ <-- ps_option ps_path_secret;
+      ps_option ps_pre_shared_keys
+    )
+    (fun (|joiner_secret, (|path_secret, psks|)|) -> {
+      joiner_secret = joiner_secret;
+      path_secret = path_secret;
+      psks = psks;
+    })
+    (fun x -> (|x.joiner_secret, (|x.path_secret, x.psks|)|))
+
+noeq type encrypted_group_secrets_nt = {
+  key_package_hash: blbytes ({min=1; max=255});
+  encrypted_group_secrets: hpke_ciphertext_nt;
+}
+
+val ps_encrypted_group_secrets: parser_serializer encrypted_group_secrets_nt
+let ps_encrypted_group_secrets =
+  isomorphism encrypted_group_secrets_nt
+    (
+      _ <-- ps_bytes _;
+      ps_hpke_ciphertext
+    )
+    (fun (|key_package_hash, encrypted_group_secrets|) -> {
+      key_package_hash = key_package_hash;
+      encrypted_group_secrets = encrypted_group_secrets;
+    })
+    (fun x -> (|x.key_package_hash, x.encrypted_group_secrets|))
+
+noeq type welcome_nt = {
+  version: protocol_version_nt;
+  cipher_suite: cipher_suite_nt;
+  secrets: blseq encrypted_group_secrets_nt ps_encrypted_group_secrets ({min=0; max=(pow2 32)-1});
+  encrypted_group_info: blbytes ({min=1; max=(pow2 32)-1});
+}
+
+val ps_welcome: parser_serializer welcome_nt
+let ps_welcome =
+  isomorphism welcome_nt
+    (
+      _ <-- ps_protocol_version;
+      _ <-- ps_cipher_suite;
+      _ <-- ps_seq _ ps_encrypted_group_secrets;
+      ps_bytes _
+    )
+    (fun (|version, (|cipher_suite, (|secrets, encrypted_group_info|)|)|) -> {
+      version = version;
+      cipher_suite = cipher_suite;
+      secrets = secrets;
+      encrypted_group_info = encrypted_group_info;
+    })
+    (fun x -> (|x.version, (|x.cipher_suite, (|x.secrets, x.encrypted_group_info|)|)|))
+
 type wire_format_nt =
   | WF_reserved: wire_format_nt
   | WF_plaintext: wire_format_nt
