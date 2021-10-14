@@ -1,8 +1,11 @@
 (* This file gets linked into the library for the purpose of doing an internal
    sanity test without having to link the test files. *)
 
+open MLS_Result
+
 let dummy_data = List.map Char.code [ 'h'; 'e'; 'l'; 'l'; 'o' ]
-let dummy_user = List.map Char.code [ 'j'; 'o'; 'n'; 'a'; 't'; 'h'; 'a'; 'n' ]
+let dummy_user_a = List.map Char.code [ 'j'; 'o'; 'n'; 'a'; 't'; 'h'; 'a'; 'n' ]
+let dummy_user_b = List.map Char.code [ 't'; 'h'; 'e'; 'o' ]
 let dummy_group = List.map Char.code [ 'm'; 'y'; '_'; 'g'; 'r'; 'o'; 'u'; 'p' ]
 
 let dummy4 = [ 0; 1; 2; 3 ]
@@ -43,6 +46,11 @@ let debug_ascii s =
   Buffer.add_string buf "\n";
   Buffer.output_buffer stdout buf
 
+let extract = function
+  | InternalError s -> failwith ("Internal error: " ^ s)
+  | ProtocolError s -> failwith ("Protocol error: " ^ s)
+  | Success s -> s
+
 let test () =
   let open MLS_Result in
 
@@ -52,48 +60,51 @@ let test () =
   let dummy64 = bytes_of_list dummy64 in
   let dummy96 = bytes_of_list dummy96 in
   let dummy128 = bytes_of_list dummy128 in
-  let s = MLS_Crypto_Derived.derive_secret cs dummy32 dummy32 in
-  match s with
-  | Success s ->
-      debug_buffer s;
-      flush stdout;
-  | _ ->
-      failwith "Test 1 failed with *Error"; ;
-  let s = MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32 in
-  match s with
-  | Success (s1, s2) ->
-      debug_buffer s1;
-      debug_buffer s2;
-      flush stdout;
-  | _ ->
-      failwith "Test 2 failed with *Error"; ;
+  let s = extract (MLS_Crypto_Derived.derive_secret cs dummy32 dummy32) in
+  debug_buffer s;
+  let s1, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32) in
+  debug_buffer s1;
+  debug_buffer s2;
 
   (* High-level API test *)
   print_endline "... high-level API test";
-  let pub, priv = match MLS.fresh_key_pair dummy32 with
-  | InternalError s -> failwith ("Internal error: " ^ s)
-  | ProtocolError s -> failwith ("Protocol error: " ^ s)
-  | Success (pub, priv) -> pub, priv
-  in
-  let cred = { MLS.identity = bytes_of_list dummy_user; signature_key = pub } in
+
+  (* New user: a *)
+  let sign_pub_a, sign_priv_a = extract (MLS.fresh_key_pair dummy32) in
+  let cred_a = { MLS.identity = bytes_of_list dummy_user_a; signature_key = sign_pub_a } in
+
   let group_id = bytes_of_list dummy_group in
+
+  (* a sends data to a *)
   (* FIXME not enough entropy error if we use dummy96 even though signature says
      so *)
-  let s = match MLS.create dummy128 cred priv group_id with
-  | InternalError s -> failwith ("Internal error: " ^ s)
-  | ProtocolError s -> failwith ("Protocol error: " ^ s)
-  | Success s -> s
-  in
-  let res = match MLS.send s dummy4 (bytes_of_list dummy_data) with
-  | InternalError s -> failwith ("Internal error: " ^ s)
-  | ProtocolError s -> failwith ("Protocol error: " ^ s)
-  | Success (s', (group_id, msg)) ->
-      MLS.process_group_message s' msg
-  in
-  match res with
-  | InternalError s -> failwith ("Internal error: " ^ s)
-  | ProtocolError s -> failwith ("Protocol error: " ^ s)
-  | Success (s'', MsgData data) ->
+  let s = extract (MLS.create dummy128 cred_a sign_priv_a group_id) in
+  let s, (group_id, msg) = extract (MLS.send s dummy4 (bytes_of_list dummy_data)) in
+  let s, outcome = extract (MLS.process_group_message s msg) in
+  match outcome with
+  | MsgData data ->
       print_endline "... got data:";
-      debug_ascii data; ;
+      debug_ascii data;
+  | _ ->
+      failwith "could not parse back application data"; ;
+
+  (* New user: b *)
+  let sign_pub_b, sign_priv_b = extract (MLS.fresh_key_pair dummy32) in
+  let cred_b = { MLS.identity = bytes_of_list dummy_user_b; signature_key = sign_pub_b } in
+  let package_b, priv_b = extract (MLS.fresh_key_package dummy64 cred_b sign_priv_b) in
+
+  (* b adds a and the server echoes the message back *)
+  (* Assume s is immediately accepted by the server *)
+  let s, (msg, _) = extract (MLS.add s package_b dummy64) in
+  let s, outcome = extract (MLS.process_group_message s (snd msg)) in
+  match outcome with
+  | MsgAdd somebody ->
+      print_endline "... got a new member in the group:";
+      debug_ascii somebody;
+  | _ ->
+      failwith "could not parse back add message"; ;
+
   print_endline "... all good";
+
+  if Array.length Sys.argv >= 2 && Sys.argv.(1) = "-short" then
+    exit 0

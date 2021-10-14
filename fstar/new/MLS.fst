@@ -158,7 +158,7 @@ let create e cred private_sign_key group_id =
 #pop-options
 
 
-let add state key_package id e =
+let add state key_package e =
   kp <-- from_option "error message if it is malformed" ((ps_to_pse ps_key_package).parse_exact key_package);
   lp <-- key_package_to_treesync kp;
   let msg: message = {
