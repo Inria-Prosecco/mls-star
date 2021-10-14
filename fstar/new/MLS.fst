@@ -180,11 +180,11 @@ let add state key_package e =
   confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation cs state.epoch_secret;
   sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data cs state.epoch_secret;
   auth <-- message_compute_auth state.cs msg state.sign_private_key rand_nonce (ps_group_context.serialize group_context) confirmation_secret state.confirmed_transcript_hash;
-  ct_newappstate <-- message_to_message_ciphertext state.application_state rand_reuse_guard sender_data_secret (msg, auth);
-  let (ct, new_application_state) = ct_newappstate in
+  ct_newhandshakestate <-- message_to_message_ciphertext state.handshake_state rand_reuse_guard sender_data_secret (msg, auth);
+  let (ct, new_handshake_state) = ct_newhandshakestate in
   ct_network <-- message_ciphertext_to_network ct;
   let msg_bytes = ps_mls_message.serialize (M_ciphertext ct_network) in
-  let new_state = { state with application_state = new_application_state } in
+  let new_state = { state with handshake_state = new_handshake_state } in
   let g:group_message = (state.tree_state.group_id, msg_bytes) in
   let w:welcome_message = (Seq.empty,Seq.empty) in
   return (new_state, (g,w))
