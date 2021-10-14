@@ -251,3 +251,64 @@ let decrypt_welcome cs w lp sk opt_tree =
   //TODO: integrity check, this is where `opt_tree` will be useful
   return (group_info, group_secrets)
 
+(*** Encrypting a welcome ***)
+
+val encrypt_one_group_secrets: cs:ciphersuite -> leaf_package_t -> group_secrets -> randomness (hpke_private_key_length cs) -> result encrypted_group_secrets
+let encrypt_one_group_secrets cs lp gs rand =
+  kp_hash <-- hash_leaf_package cs lp;
+  gs_network <-- group_secrets_to_network gs;
+  let gs_bytes = ps_group_secrets.serialize gs_network in
+  leaf_hpke_pk <-- (
+    leaf_content <-- from_option "encrypt_one_group_secrets: malformed leaf content" ((ps_to_pse ps_leaf_package_content).parse_exact lp.content);
+    let leaf_hpke_pk = leaf_content.public_key in
+    if not (Seq.length leaf_hpke_pk = hpke_public_key_length cs) then
+      internal_failure "encrypt_one_group_secrets: public key has wrong size"
+    else
+      return (leaf_hpke_pk <: hpke_public_key cs)
+  );
+  tmp <-- hpke_encrypt cs leaf_hpke_pk bytes_empty bytes_empty gs_bytes rand;
+  let (kem_output, ciphertext) = tmp in
+  return ({
+    key_package_hash = kp_hash;
+    enc_group_secrets = {
+      kem_output = kem_output;
+      ciphertext = ciphertext;
+    }
+  })
+
+val encrypt_welcome_entropy_length: ciphersuite -> list (leaf_package_t & option bytes) -> nat
+let encrypt_welcome_entropy_length cs leaf_packages =
+  let open FStar.Mul in
+  (List.Tot.length leaf_packages) * (hpke_private_key_length cs)
+
+val encrypt_group_secrets: cs:ciphersuite -> bytes -> leaf_packages:list (leaf_package_t & option bytes) -> option pre_shared_keys_nt -> randomness (encrypt_welcome_entropy_length cs leaf_packages) -> result (list (encrypted_group_secrets))
+let rec encrypt_group_secrets cs joiner_secret leaf_packages psks rand =
+  match leaf_packages with
+  | [] -> return []
+  | (lp, path_secret)::tail -> (
+    let (rand_next, cur_rand) = split_randomness rand (hpke_private_key_length cs) in
+    let group_secrets = {
+      joiner_secret = joiner_secret;
+      path_secret = path_secret;
+      psks = psks;
+    } in
+    res_head <-- encrypt_one_group_secrets cs lp group_secrets cur_rand;
+    res_tail <-- encrypt_group_secrets cs joiner_secret tail psks rand_next;
+    return (res_head::res_tail)
+  )
+
+val encrypt_welcome: cs:ciphersuite -> welcome_group_info -> bytes -> leaf_packages:list (leaf_package_t & option bytes) -> randomness (encrypt_welcome_entropy_length cs leaf_packages) -> result welcome
+let encrypt_welcome cs group_info joiner_secret leaf_packages rand =
+  encrypted_group_info <-- (
+    welcome_secret <-- secret_joiner_to_welcome cs joiner_secret bytes_empty (*TODO psk*);
+    welcome_key <-- welcome_secret_to_key cs welcome_secret;
+    welcome_nonce <-- welcome_secret_to_nonce cs welcome_secret;
+    group_info_network <-- welcome_group_info_to_network group_info;
+    let group_info_bytes = ps_group_info.serialize group_info_network in
+    aead_decrypt cs welcome_key welcome_nonce bytes_empty group_info_bytes
+  );
+  group_secrets <-- encrypt_group_secrets cs joiner_secret leaf_packages (None (*TODO psks*) ) rand;
+  return ({
+    secrets = group_secrets;
+    encrypted_group_info = encrypted_group_info;
+  })
