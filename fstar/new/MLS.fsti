@@ -45,8 +45,9 @@ val fresh_key_pair: e:entropy { Seq.length e == 32 } ->
 //   The application takes care of maintaining a mapping of e.g. hash of a key
 // package to private key to be retrieved later if we are ever to receive a
 // welcome message encoded with these credentials.
+//   Serialized key package, its hash (for the lookup) and the private key.
 val fresh_key_package: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key cs ->
-  result (bytes & private_key:bytes)
+  result (bytes & bytes & bytes)
 
 val current_epoch: s:state -> nat
 
@@ -77,6 +78,6 @@ val process_welcome_message: w:welcome_message -> ((MLS.Crypto.sign_public_key c
 
 type outcome =
 | MsgData: bytes -> outcome
-| MsgAdd: Lib.ByteSequence.pub_bytes -> outcome // TODO: should be identity here
+| MsgAdd: Lib.ByteSequence.pub_bytes -> outcome
 
 val process_group_message: state → bytes → result (state & outcome)

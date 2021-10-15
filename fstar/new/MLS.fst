@@ -135,7 +135,7 @@ let fresh_key_pair e =
 // TODO: switch to randomness rather than this
 let chop_entropy (e: bytes) (l: nat): (result ((fresh:bytes{Seq.length fresh == l}) * bytes))
 =
-  if Seq.length e <= l then
+  if Seq.length e < l then
     internal_failure "not enough entropy"
   else
     let (fresh, next) = (Seq.split e l) in
@@ -188,7 +188,9 @@ let fresh_key_package e cred private_sign_key =
   tmp <-- fresh_key_package_internal e cred private_sign_key;
   let leaf_package, private_key = tmp in
   key_package <-- treesync_to_keypackage cs leaf_package;
-  return (ps_key_package.serialize key_package, private_key)
+  let key_package = ps_key_package.serialize key_package in
+  hash <-- hash_hash cs key_package;
+  return (key_package, hash, private_key)
 
 let current_epoch s = s.tree_state.MLS.TreeSync.Types.version
 

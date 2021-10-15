@@ -4,7 +4,7 @@
  (modules MLS_JS)
  (js_of_ocaml
    ;(flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=0")
-   (flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=1" "--pretty" "--disable" "excwrap")
+   (flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=0" "--pretty" "--disable" "excwrap")
    (javascript_files "BigInteger.js" "zarith.js" "overrides.js"))
  (preprocess
   (pps js_of_ocaml-ppx))

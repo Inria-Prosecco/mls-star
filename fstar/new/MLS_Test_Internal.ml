@@ -64,7 +64,7 @@ let test () =
   let dummy128 = bytes_of_list dummy128 in
   let s = extract (MLS_Crypto_Derived.derive_secret cs dummy32 dummy32) in
   debug_buffer s;
-  let s1, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32) in
+  let s1, _, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32) in
   debug_buffer s1;
   debug_buffer s2;
 
@@ -86,7 +86,7 @@ let test () =
   print_endline "\n\n*** a sends data to a (send, process_group_message)";
   (* FIXME not enough entropy error if we use dummy96 even though signature says
      so *)
-  let s = extract (MLS.create dummy128 cred_a sign_priv_a group_id) in
+  let s = extract (MLS.create dummy96 cred_a sign_priv_a group_id) in
   let s, (group_id, msg) = extract (MLS.send s dummy4 (bytes_of_list dummy_data)) in
   print_endline "... a's group id:";
   debug_ascii group_id;
@@ -103,7 +103,7 @@ let test () =
   print_endline "\n\n*** new user: b (fresh_key_pair, fresh_key_package)";
   let sign_pub_b, sign_priv_b = extract (MLS.fresh_key_pair dummy32) in
   let cred_b = { MLS.identity = bytes_of_list dummy_user_b; signature_key = sign_pub_b } in
-  let package_b, priv_b = extract (MLS.fresh_key_package dummy64 cred_b sign_priv_b) in
+  let package_b, hash_b, priv_b = extract (MLS.fresh_key_package dummy64 cred_b sign_priv_b) in
 
   print_endline "\n\n*** a adds b and the server echoes the message back (add, process_group_message)";
   (* Assume s is immediately accepted by the server *)
@@ -162,7 +162,7 @@ let test () =
   (* New user: c *)
   let sign_pub_c, sign_priv_c = extract (MLS.fresh_key_pair dummy32) in
   let cred_c = { MLS.identity = bytes_of_list dummy_user_c; signature_key = sign_pub_c } in
-  let package_c, priv_c = extract (MLS.fresh_key_package dummy64 cred_c sign_priv_c) in
+  let package_c, hash_c, priv_c = extract (MLS.fresh_key_package dummy64 cred_c sign_priv_c) in
 
   (* a adds c and the server echoes the message back *)
   (* Assume s is immediately accepted by the server *)
