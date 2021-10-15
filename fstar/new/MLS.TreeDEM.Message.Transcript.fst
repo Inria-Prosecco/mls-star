@@ -35,11 +35,11 @@ let compute_confirmed_transcript_hash cs msg signature interim_transcript_hash =
     hash_hash cs (Seq.append interim_transcript_hash serialized_msg)
   )
 
-val compute_interim_transcript_hash: cs:ciphersuite -> message_auth -> bytes -> result (lbytes (hash_length cs))
-let compute_interim_transcript_hash cs msg_auth confirmed_transcript_hash =
-  confirmation_tag <-- opt_bytes_to_opt_tag msg_auth.confirmation_tag;
+val compute_interim_transcript_hash: cs:ciphersuite -> option bytes -> bytes -> result (lbytes (hash_length cs))
+let compute_interim_transcript_hash cs confirmation_tag confirmed_transcript_hash =
+  confirmation_tag_network <-- opt_bytes_to_opt_tag confirmation_tag;
   let serialized_auth = ps_mls_plaintext_commit_auth_data.serialize ({
-    confirmation_tag = confirmation_tag;
+    confirmation_tag = confirmation_tag_network;
   }) in
   hash_hash cs (Seq.append confirmed_transcript_hash serialized_auth)
 

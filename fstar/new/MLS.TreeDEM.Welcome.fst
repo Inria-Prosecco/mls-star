@@ -219,24 +219,23 @@ let welcome_secret_to_nonce cs welcome_secret =
 
 (*** Decrypting a welcome ***)
 
-val find_my_encrypted_group_secret: bytes -> list encrypted_group_secrets -> option hpke_ciphertext
-let rec find_my_encrypted_group_secret kp_hash l =
+val find_my_encrypted_group_secret: #cs:ciphersuite -> (bytes -> option (hpke_private_key cs)) -> list encrypted_group_secrets -> option (hpke_private_key cs & hpke_ciphertext)
+let rec find_my_encrypted_group_secret #cs kp_hash_to_hpke_sk l =
   match l with
   | [] -> None
   | h::t -> (
-    if (h.key_package_hash = kp_hash) then
-      Some h.enc_group_secrets
-    else
-      find_my_encrypted_group_secret kp_hash t
+    match kp_hash_to_hpke_sk h.key_package_hash with
+    | Some sk -> Some (sk, h.enc_group_secrets)
+    | None -> find_my_encrypted_group_secret kp_hash_to_hpke_sk t
   )
 
-val decrypt_welcome: cs:ciphersuite -> welcome -> leaf_package_t -> hpke_private_key cs -> option (l:nat & n:tree_size l & treesync l n) -> result (welcome_group_info & group_secrets)
-let decrypt_welcome cs w lp sk opt_tree =
+val decrypt_welcome: cs:ciphersuite -> welcome -> (bytes -> option (hpke_private_key cs)) -> option (l:nat & n:tree_size l & treesync l n) -> result (welcome_group_info & group_secrets)
+let decrypt_welcome cs w kp_hash_to_hpke_sk opt_tree =
   group_secrets <-- (
-    my_kp_hash <-- hash_leaf_package cs lp;
-    my_hpke_ciphertext <-- from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret my_kp_hash w.secrets);
+    tmp <-- from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_hash_to_hpke_sk w.secrets);
+    let (my_hpke_sk, my_hpke_ciphertext) = tmp in
     kem_output <-- bytes_to_kem_output cs my_hpke_ciphertext.kem_output;
-    group_secrets_bytes <-- hpke_decrypt cs kem_output sk bytes_empty bytes_empty my_hpke_ciphertext.ciphertext;
+    group_secrets_bytes <-- hpke_decrypt cs kem_output my_hpke_sk bytes_empty bytes_empty my_hpke_ciphertext.ciphertext;
     group_secrets_network <-- from_option "decrypt_welcome: malformed group secrets" ((ps_to_pse ps_group_secrets).parse_exact group_secrets_bytes);
     network_to_group_secrets group_secrets_network
   );

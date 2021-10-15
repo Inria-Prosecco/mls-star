@@ -72,8 +72,8 @@ let key_callback = bytes -> option bytes
 
 // The application provides a callback to retrieve the private key associated to
 // a key package previously generated with `fresh_key_package`.
-val process_welcome_message: w:welcome_message → (lookup: key_callback) ->
-  option (group_id & state)
+val process_welcome_message: w:welcome_message -> ((MLS.Crypto.sign_public_key cs) & (MLS.Crypto.sign_private_key cs)) → (lookup: key_callback) ->
+  result (group_id & state)
 
 type outcome =
 | MsgData: bytes -> outcome

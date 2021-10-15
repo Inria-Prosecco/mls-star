@@ -1,6 +1,7 @@
 module MLS
 
 open Lib.ByteSequence
+open MLS.Tree
 open MLS.TreeSync.Types
 open MLS.Crypto
 open MLS.NetworkTypes
@@ -40,13 +41,9 @@ type state = {
 }
 
 #push-options "--fuel 1"
-val state_to_group_context: state -> result group_context_nt
-let state_to_group_context st =
-  let ts_state: state_t = st.tree_state in
-  let group_id = ts_state.group_id in
-  let epoch = ts_state.version in
-  tree_hash <-- MLS.TreeSync.Hash.tree_hash st.cs (MLS.TreeMath.root ts_state.levels) ts_state.tree;
-  let confirmed_transcript_hash = st.confirmed_transcript_hash in
+val compute_group_context: #l:nat -> #n:tree_size l -> bytes -> nat -> treesync l n -> bytes -> result group_context_nt
+let compute_group_context #l #n group_id epoch tree confirmed_transcript_hash =
+  tree_hash <-- MLS.TreeSync.Hash.tree_hash cs (MLS.TreeMath.root l) tree;
   if not (Seq.length group_id < 256) then
     internal_failure "state_to_group_context: group_id too long"
   else if not (epoch < pow2 64) then
@@ -66,11 +63,15 @@ let state_to_group_context st =
   )
 #pop-options
 
+val state_to_group_context: state -> result group_context_nt
+let state_to_group_context st =
+  compute_group_context st.tree_state.group_id st.tree_state.version st.tree_state.tree st.confirmed_transcript_hash
+
 #push-options "--fuel 1"
 val reset_ratchet_states: state -> result state
 let reset_ratchet_states st =
   if not (st.leaf_index < st.tree_state.treesize) then
-     internal_failure "reset_ratchet_state: leaf_index too big"
+     internal_failure "reset_ratchet_states: leaf_index too big"
   else (
     encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption st.cs st.epoch_secret;
     leaf_secret <-- MLS.TreeDEM.Keys.leaf_kdf #st.tree_state.levels st.tree_state.treesize st.cs encryption_secret (MLS.TreeMath.root st.tree_state.levels) st.leaf_index;
@@ -100,7 +101,7 @@ let process_commit state message message_auth =
       confirmed_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
         cs message message_auth.signature state.interim_transcript_hash;
       interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
-        cs message_auth confirmed_transcript_hash;
+        cs message_auth.confirmation_tag confirmed_transcript_hash;
       let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
       // 4. New group context
       group_context <-- state_to_group_context state;
@@ -262,12 +263,20 @@ let add state key_package e =
   let (future_state, joiner_secret) = tmp in
   confirmation_tag <-- from_option "" msg_auth.confirmation_tag;
   tree_hash <-- MLS.TreeSync.Hash.tree_hash future_state.cs (MLS.TreeMath.root future_state.tree_state.levels) future_state.tree_state.tree;
+  ratchet_tree <-- treesync_to_ratchet_tree cs future_state.tree_state.tree;
+  ratchet_tree_bytes <-- (
+    let l = byte_length (ps_option ps_node) (Seq.seq_to_list ratchet_tree) in
+    if 1 <= l && l < pow2 32 then
+      return (ps_ratchet_tree.serialize ratchet_tree)
+    else
+      internal_failure "add: ratchet_tree too big"
+  );
   let group_info: welcome_group_info = {
     group_id = state.tree_state.group_id;
     epoch = state.tree_state.version;
     tree_hash = tree_hash;
     confirmed_transcript_hash = future_state.confirmed_transcript_hash;
-    extensions = Seq.empty; //FIXME
+    extensions = ratchet_tree_bytes;
     confirmation_tag = confirmation_tag;
     signer_index = state.leaf_index;
     signature = Seq.empty;
@@ -301,8 +310,60 @@ let send state e data =
   let (new_state, msg_auth, g) = tmp in
   return (new_state, g)
 
-let process_welcome_message w lookup = admit()
+val find_my_index: #l:nat -> #n:tree_size l -> treesync l n -> bytes -> result (res:nat{res<n})
+let find_my_index #l #n t sign_pk =
+  let test (oc: option credential_t) =
+    match oc with
+    | None -> false
+    | Some c -> c.signature_key = sign_pk
+  in
+  from_option "couldn't find my_index" (MLS.Test.Utils.find_first test (Seq.seq_to_list (MLS.TreeSync.tree_membership t)))
 
+#push-options "--fuel 1"
+let process_welcome_message w (sign_pk, sign_sk) lookup =
+  let (_, welcome_bytes) = w in
+  welcome_network <-- from_option "" ((ps_to_pse ps_welcome).parse_exact welcome_bytes);
+  let welcome = network_to_welcome welcome_network in
+  tmp <-- decrypt_welcome cs welcome (fun kp_hash ->
+    match lookup kp_hash with
+    | Some sk -> if Seq.length sk = hpke_private_key_length cs then Some sk else None
+    | None -> None
+  ) None;
+  let (group_info, secrets) = tmp in
+  ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse ps_ratchet_tree).parse_exact group_info.extensions);
+  ln <-- ratchet_tree_l_n ratchet_tree;
+  let (|l, n|) = ln in
+  ts <-- ratchet_tree_to_treesync l n ratchet_tree;
+  interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash cs (Some group_info.confirmation_tag) group_info.confirmed_transcript_hash;
+  group_context <-- compute_group_context group_info.group_id group_info.epoch ts group_info.confirmed_transcript_hash;
+  epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch cs secrets.joiner_secret bytes_empty (ps_group_context.serialize group_context);
+  leaf_index <-- find_my_index ts sign_pk;
+  let dumb_ratchet_state: MLS.TreeDEM.Keys.ratchet_state cs = {
+    secret = Seq.create (kdf_length cs) (Lib.IntTypes.u8 0);
+    generation = 0;
+    node = 0; //fuel is for this field
+  } in
+  let st: state = {
+    cs = cs;
+    tree_state = {
+      group_id = group_info.group_id;
+      levels = l;
+      treesize = n;
+      tree = ts;
+      version = group_info.epoch;
+      transcript = Seq.empty;
+    };
+    leaf_index;
+    sign_private_key = sign_sk;
+    handshake_state = dumb_ratchet_state;
+    application_state = dumb_ratchet_state;
+    epoch_secret;
+    confirmed_transcript_hash = group_info.confirmed_transcript_hash;
+    interim_transcript_hash;
+  } in
+  st <-- reset_ratchet_states st;
+  return(group_info.group_id, st)
+#pop-options
 
 
 let process_group_message state msg =
