@@ -304,7 +304,7 @@ let encrypt_welcome cs group_info joiner_secret leaf_packages rand =
     welcome_nonce <-- welcome_secret_to_nonce cs welcome_secret;
     group_info_network <-- welcome_group_info_to_network group_info;
     let group_info_bytes = ps_group_info.serialize group_info_network in
-    aead_decrypt cs welcome_key welcome_nonce bytes_empty group_info_bytes
+    aead_encrypt cs welcome_key welcome_nonce bytes_empty group_info_bytes
   );
   group_secrets <-- encrypt_group_secrets cs joiner_secret leaf_packages (None (*TODO psks*) ) rand;
   return ({
