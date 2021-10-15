@@ -1,4 +1,4 @@
-.PHONY: all test copy
+.PHONY: all test copy release
 
 all: copy
 	$(MAKE) -C new extract
@@ -9,3 +9,6 @@ test: all
 
 copy:
 	cp new/MLS_Test_*.ml new/obj
+
+release:
+	tar cjvf mls-js-$(shell date +%Y%m%d%H%M%z).tar.bz2 js/index.html js/index.js _build/default/js/MLS_JS.bc.js
