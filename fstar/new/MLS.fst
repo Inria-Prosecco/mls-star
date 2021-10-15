@@ -273,7 +273,7 @@ let add state key_package e =
   );
   let group_info: welcome_group_info = {
     group_id = state.tree_state.group_id;
-    epoch = state.tree_state.version;
+    epoch = future_state.tree_state.version;
     tree_hash = tree_hash;
     confirmed_transcript_hash = future_state.confirmed_transcript_hash;
     extensions = ratchet_tree_bytes;
