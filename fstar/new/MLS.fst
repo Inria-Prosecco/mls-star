@@ -310,6 +310,21 @@ let send state e data =
   let (new_state, msg_auth, g) = tmp in
   return (new_state, g)
 
+
+// FIXME this is a copy
+val find_first: #a:Type -> (a -> bool) -> l:list a -> option (n:nat{n < List.Tot.length l})
+let rec find_first #a p l =
+  match l with
+  | [] -> None
+  | h::t ->
+    if p h then (
+      Some 0
+    ) else (
+      match find_first p t with
+      | Some v -> Some (v+1)
+      | None -> None
+    )
+
 val find_my_index: #l:nat -> #n:tree_size l -> treesync l n -> bytes -> result (res:nat{res<n})
 let find_my_index #l #n t sign_pk =
   let test (oc: option credential_t) =
@@ -317,7 +332,7 @@ let find_my_index #l #n t sign_pk =
     | None -> false
     | Some c -> c.signature_key = sign_pk
   in
-  from_option "couldn't find my_index" (MLS.Test.Utils.find_first test (Seq.seq_to_list (MLS.TreeSync.tree_membership t)))
+  from_option "couldn't find my_index" (find_first test (Seq.seq_to_list (MLS.TreeSync.tree_membership t)))
 
 #push-options "--fuel 1"
 let process_welcome_message w (sign_pk, sign_sk) lookup =

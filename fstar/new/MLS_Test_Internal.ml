@@ -71,7 +71,7 @@ let test () =
   (* High-level API test *)
   print_endline "... high-level API test";
 
-  (* New user: a *)
+  print_endline "*** new user: a (fresh_key_pair, fresh_key_package)";
   let sign_pub_a, sign_priv_a = extract (MLS.fresh_key_pair dummy32) in
   print_endline "... pub/priv sign keypair for a";
   debug_buffer sign_pub_a;
@@ -83,11 +83,13 @@ let test () =
 
   let group_id = bytes_of_list dummy_group in
 
-  (* a sends data to a *)
+  print_endline "\n\n*** a sends data to a (send, process_group_message)";
   (* FIXME not enough entropy error if we use dummy96 even though signature says
      so *)
   let s = extract (MLS.create dummy128 cred_a sign_priv_a group_id) in
   let s, (group_id, msg) = extract (MLS.send s dummy4 (bytes_of_list dummy_data)) in
+  print_endline "... a's group id:";
+  debug_ascii group_id;
   let s, outcome = extract (MLS.process_group_message s msg) in
   match outcome with
   | MsgData data ->
@@ -95,15 +97,17 @@ let test () =
       debug_ascii data;
   | _ ->
       failwith "could not parse back application data"; ;
+  print_endline "... a's epoch secret:";
+  debug_buffer s.MLS.epoch_secret;
 
-  (* New user: b *)
+  print_endline "\n\n*** new user: b (fresh_key_pair, fresh_key_package)";
   let sign_pub_b, sign_priv_b = extract (MLS.fresh_key_pair dummy32) in
   let cred_b = { MLS.identity = bytes_of_list dummy_user_b; signature_key = sign_pub_b } in
   let package_b, priv_b = extract (MLS.fresh_key_package dummy64 cred_b sign_priv_b) in
 
-  (* a adds b and the server echoes the message back *)
+  print_endline "\n\n*** a adds b and the server echoes the message back (add, process_group_message)";
   (* Assume s is immediately accepted by the server *)
-  let s, (msg, _) = extract (MLS.add s package_b dummy64) in
+  let s, (msg, welcome_msg) = extract (MLS.add s package_b dummy64) in
   (* Instead rely on the server echoing our changes back to us to process them *)
   let s, outcome = extract (MLS.process_group_message s (snd msg)) in
   match outcome with
@@ -112,6 +116,48 @@ let test () =
       debug_ascii somebody;
   | _ ->
       failwith "could not parse back add message"; ;
+  print_endline "... a's epoch secret:";
+  debug_buffer s.MLS.epoch_secret;
+  Printf.printf "... a's epoch: %d\n" (Z.to_int s.MLS.tree_state.MLS_TreeSync_Types.version3);
+
+  print_endline "\n\n*** We create b's state from the welcome message (process_welcome_message)";
+  let group_id, s_b = extract (MLS.process_welcome_message welcome_msg (sign_pub_b, sign_priv_b)
+    (fun p ->
+      print_endline "... lookup:";
+      debug_buffer p;
+      (* Shortcut: only one person added to the group so this works *)
+      if true then Some priv_b else None)) in
+  print_endline "... b processed welcome message";
+  print_endline "... b's epoch secret:";
+  debug_buffer s_b.MLS.epoch_secret;
+  Printf.printf "... b's epoch: %d\n" (Z.to_int s.MLS.tree_state.MLS_TreeSync_Types.version3);
+  print_endline "... b's group id:";
+  debug_ascii group_id;
+
+  print_endline "\n\n*** b says hello (send)";
+  let s_b, (group_id, msg) = extract (MLS.send s_b dummy4 (bytes_of_list dummy_data)) in
+  print_endline "... b's epoch secret:";
+  debug_buffer s_b.MLS.epoch_secret;
+  print_endline "... b's group id (again):";
+  debug_ascii group_id;
+
+  print_endline "\n\n*** b receives hello (process_group_message)";
+  let s_b, outcome = extract (MLS.process_group_message s_b msg) in
+  match outcome with
+  | MsgData data ->
+      print_endline "... b got data:";
+      debug_ascii data;
+  | _ ->
+      failwith "could not parse back application data"; ;
+
+  print_endline "\n\n*** a receives hello (process_group_message)";
+  let s, outcome = extract (MLS.process_group_message s msg) in
+  match outcome with
+  | MsgData data ->
+      print_endline "... a got data:";
+      debug_ascii data;
+  | _ ->
+      failwith "could not parse back application data"; ;
 
   (* New user: c *)
   let sign_pub_c, sign_priv_c = extract (MLS.fresh_key_pair dummy32) in
