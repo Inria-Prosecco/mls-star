@@ -4,8 +4,10 @@
 open MLS_Result
 
 let dummy_data = List.map Char.code [ 'h'; 'e'; 'l'; 'l'; 'o' ]
+let dummy_data2 = List.map Char.code [ 'h'; 'e'; 'l'; 'l'; 'o'; ' '; 'f'; 'o'; 'l'; 'k'; 's' ]
 let dummy_user_a = List.map Char.code [ 'j'; 'o'; 'n'; 'a'; 't'; 'h'; 'a'; 'n' ]
 let dummy_user_b = List.map Char.code [ 't'; 'h'; 'e'; 'o' ]
+let dummy_user_c = List.map Char.code [ 'k'; 'a'; 'r'; 't'; 'h'; 'i'; 'k' ]
 let dummy_group = List.map Char.code [ 'm'; 'y'; '_'; 'g'; 'r'; 'o'; 'u'; 'p' ]
 
 let dummy4 = [ 0; 1; 2; 3 ]
@@ -71,7 +73,13 @@ let test () =
 
   (* New user: a *)
   let sign_pub_a, sign_priv_a = extract (MLS.fresh_key_pair dummy32) in
+  print_endline "... pub/priv sign keypair for a";
+  debug_buffer sign_pub_a;
+  debug_buffer sign_priv_a;
   let cred_a = { MLS.identity = bytes_of_list dummy_user_a; signature_key = sign_pub_a } in
+  print_endline "... jonathan's key package";
+  ignore (MLS.fresh_key_package dummy64 cred_a sign_priv_a);
+  print_endline "... done";
 
   let group_id = bytes_of_list dummy_group in
 
@@ -93,9 +101,10 @@ let test () =
   let cred_b = { MLS.identity = bytes_of_list dummy_user_b; signature_key = sign_pub_b } in
   let package_b, priv_b = extract (MLS.fresh_key_package dummy64 cred_b sign_priv_b) in
 
-  (* b adds a and the server echoes the message back *)
+  (* a adds b and the server echoes the message back *)
   (* Assume s is immediately accepted by the server *)
   let s, (msg, _) = extract (MLS.add s package_b dummy64) in
+  (* Instead rely on the server echoing our changes back to us to process them *)
   let s, outcome = extract (MLS.process_group_message s (snd msg)) in
   match outcome with
   | MsgAdd somebody ->
@@ -103,6 +112,34 @@ let test () =
       debug_ascii somebody;
   | _ ->
       failwith "could not parse back add message"; ;
+
+  (* New user: c *)
+  let sign_pub_c, sign_priv_c = extract (MLS.fresh_key_pair dummy32) in
+  let cred_c = { MLS.identity = bytes_of_list dummy_user_c; signature_key = sign_pub_c } in
+  let package_c, priv_c = extract (MLS.fresh_key_package dummy64 cred_c sign_priv_c) in
+
+  (* a adds c and the server echoes the message back *)
+  (* Assume s is immediately accepted by the server *)
+  let s, (msg, _) = extract (MLS.add s package_c dummy64) in
+  (* Instead rely on the server echoing our changes back to us to process them *)
+  let s, outcome = extract (MLS.process_group_message s (snd msg)) in
+  match outcome with
+  | MsgAdd somebody ->
+      print_endline "... got a new member in the group:";
+      debug_ascii somebody;
+  | _ ->
+      failwith "could not parse back add message"; ;
+
+  (* Another message to the group *)
+  let s, (group_id, msg) = extract (MLS.send s dummy4 (bytes_of_list dummy_data2)) in
+  let s, outcome = extract (MLS.process_group_message s msg) in
+  match outcome with
+  | MsgData data ->
+      print_endline "... got data:";
+      debug_ascii data;
+  | _ ->
+      failwith "could not parse back application data"; ;
+
 
   print_endline "... all good";
 
