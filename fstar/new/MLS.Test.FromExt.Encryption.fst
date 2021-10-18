@@ -1,4 +1,4 @@
-module MLS.Test.Encryption
+module MLS.Test.FromExt.Encryption
 
 open FStar.IO
 open FStar.All

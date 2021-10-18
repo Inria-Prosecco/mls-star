@@ -6,14 +6,14 @@
  (libraries mls.haclml)
  (modules :standard \
    MLS_Test
-   MLS_Test_CommitTranscript
-   MLS_Test_Encryption
-   MLS_Test_Equality
-   MLS_Test_KeySchedule
-   MLS_Test_Reader
-   MLS_Test_TreeKEM
-   MLS_Test_TreeMath
+   MLS_Test_FromExt_CommitTranscript
+   MLS_Test_FromExt_Encryption
+   MLS_Test_FromExt_KeySchedule
+   MLS_Test_FromExt_TreeKEM
+   MLS_Test_FromExt_TreeMath
    MLS_Test_Types
+   MLS_Test_Reader
+   MLS_Test_Equality
    MLS_Test_Utils))
 
 (test
@@ -22,14 +22,14 @@
  (libraries mls.core yojson)
  (modules
    MLS_Test
-   MLS_Test_CommitTranscript
-   MLS_Test_Encryption
-   MLS_Test_Equality
-   MLS_Test_KeySchedule
-   MLS_Test_Reader
-   MLS_Test_TreeKEM
-   MLS_Test_TreeMath
+   MLS_Test_FromExt_CommitTranscript
+   MLS_Test_FromExt_Encryption
+   MLS_Test_FromExt_KeySchedule
+   MLS_Test_FromExt_TreeKEM
+   MLS_Test_FromExt_TreeMath
    MLS_Test_Types
+   MLS_Test_Reader
+   MLS_Test_Equality
    MLS_Test_Utils))
 
 (env

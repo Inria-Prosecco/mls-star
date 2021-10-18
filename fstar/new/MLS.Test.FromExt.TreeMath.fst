@@ -1,4 +1,4 @@
-module MLS.Test.TreeMath
+module MLS.Test.FromExt.TreeMath
 
 open FStar.IO
 open FStar.All

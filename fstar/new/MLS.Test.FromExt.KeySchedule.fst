@@ -1,4 +1,4 @@
-module MLS.Test.KeySchedule
+module MLS.Test.FromExt.KeySchedule
 
 open FStar.IO
 open FStar.All

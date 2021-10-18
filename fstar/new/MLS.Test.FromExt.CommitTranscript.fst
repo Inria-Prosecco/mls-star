@@ -1,4 +1,4 @@
-module MLS.Test.CommitTranscript
+module MLS.Test.FromExt.CommitTranscript
 
 open FStar.IO
 open FStar.All

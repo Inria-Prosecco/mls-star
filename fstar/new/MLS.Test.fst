@@ -4,11 +4,11 @@ open FStar.IO
 open FStar.All
 open MLS.Test.Types
 open MLS.Test.Reader
-open MLS.Test.TreeMath
-open MLS.Test.Encryption
-open MLS.Test.KeySchedule
-open MLS.Test.CommitTranscript
-open MLS.Test.TreeKEM
+open MLS.Test.FromExt.TreeMath
+open MLS.Test.FromExt.Encryption
+open MLS.Test.FromExt.KeySchedule
+open MLS.Test.FromExt.CommitTranscript
+open MLS.Test.FromExt.TreeKEM
 open MLS.Test.Utils
 
 let run_treemath_tests () =

@@ -1,4 +1,4 @@
-module MLS.Test.TreeKEM
+module MLS.Test.FromExt.TreeKEM
 
 open FStar.IO
 open FStar.All
