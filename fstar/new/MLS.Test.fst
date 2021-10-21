@@ -78,4 +78,5 @@ let main =
   run_treekem_tests ();
   run_commit_transcript_tests ();
   run_self_treekem_test ();
+  MLS.Test.Internal.test ();
   ()

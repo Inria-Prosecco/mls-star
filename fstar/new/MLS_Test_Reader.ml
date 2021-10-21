@@ -293,23 +293,3 @@ let get_testsuite (typ:test_type): testsuite =
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
 
-(******************************************************************************)
-
-(* Super small teset to compare JS vs OCaml output*)
-
-let mls_bytes l =
-  FStar_Seq_Properties.seq_of_list (List.map (fun x ->
-    assert (x <= 255);
-    x
-  ) l)
-
-let cs = {
-  MLS_Crypto_Builtins.kem_dh = Spec_Agile_DH.DH_Curve25519;
-  kem_hash = Spec_Hash_Definitions.SHA2_256;
-  aead = Spec_Agile_AEAD.CHACHA20_POLY1305;
-  kdf_hash = Spec_Hash_Definitions.SHA2_256;
-  signature = MLS_Crypto_Builtins.Ed_25519
-}
-
-let _ =
-  MLS_Test_Internal.test ()
