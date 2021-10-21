@@ -22,7 +22,8 @@ FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+P
 all: extract
 
 clean:
-	rm -rf hints bin obj
+	rm -rf hints bin obj/*.ml obj/*.checked
+	dune clean
 
 # Dependency analysis
 
