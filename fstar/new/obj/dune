@@ -11,6 +11,7 @@
    MLS_Test_FromExt_KeySchedule
    MLS_Test_FromExt_TreeKEM
    MLS_Test_FromExt_TreeMath
+   MLS_Test_Self_TreeKEM
    MLS_Test_Types
    MLS_Test_Reader
    MLS_Test_Equality
@@ -27,6 +28,7 @@
    MLS_Test_FromExt_KeySchedule
    MLS_Test_FromExt_TreeKEM
    MLS_Test_FromExt_TreeMath
+   MLS_Test_Self_TreeKEM
    MLS_Test_Types
    MLS_Test_Reader
    MLS_Test_Equality

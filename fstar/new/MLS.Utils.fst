@@ -2,15 +2,19 @@ module MLS.Utils
 
 type nat_less (m:nat) = n:nat{n<m}
 
-val find_index: #a:eqtype -> a -> l:list a -> option (nat_less (List.Tot.length l))
-let rec find_index #a x l =
+val find_index: #a:eqtype -> skips:list a -> a -> l:list a -> option (nat_less (List.Tot.length l))
+let rec find_index #a skips x l =
   match l with
   | [] -> None
   | h::t ->
-    if x=h then (
+    if List.Tot.mem h skips then
+      match find_index skips x t with
+      | Some res -> Some res
+      | None -> None
+    else if x=h then (
       Some 0
     ) else (
-      match find_index x t with
+      match find_index skips x t with
       | Some res -> Some (res+1)
       | None -> None
     )

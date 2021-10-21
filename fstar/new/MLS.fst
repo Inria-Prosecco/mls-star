@@ -93,7 +93,7 @@ let process_commit state message message_auth =
       // let sender_cred = find_credentials state.tree sender_id in
       let sender_cred = MLS.NetworkBinder.dumb_credential in
       // 1. Process addition to the tree
-      let tree_state = MLS.TreeSync.add state.tree_state sender_cred leaf_package in
+      let (tree_state, _) = MLS.TreeSync.add state.tree_state sender_cred leaf_package in
       let state = { state with tree_state } in
       // 2. Increase epoch -- TODO when should this happen?!!
       let tree_state = { tree_state with version = tree_state.version + 1 } in

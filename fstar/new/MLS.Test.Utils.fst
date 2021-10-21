@@ -2,6 +2,7 @@ module MLS.Test.Utils
 
 open FStar.IO
 open FStar.All
+open Lib.IntTypes
 open Lib.ByteSequence
 open MLS.Result
 open FStar.String
@@ -193,3 +194,65 @@ let rec find_first #a p l =
       | Some v -> Some (v+1)
       | None -> None
     )
+
+type rand_state = {
+  internal_state: (x:nat{x < pow2 64});
+}
+
+// Stupid linear congruential generator
+val init_rand_state: seed:nat -> rand_state
+let init_rand_state seed =
+  { internal_state = (seed % (pow2 64)) }
+
+#push-options "--z3rlimit 10"
+val gen_rand_bits: rand_state -> n_bits:pos{n_bits <= 64} -> rand_state & (x:nat{x<pow2 n_bits})
+let gen_rand_bits st n_bits =
+  let open FStar.Mul in
+  let res = (6364136223846793005 * st.internal_state + 1442695040888963407)%(pow2 64) in
+  FStar.Math.Lemmas.lemma_div_lt res 64 (64 - n_bits);
+  ({internal_state = res}, res / (pow2 (64 - n_bits)))
+#pop-options
+
+val gen_rand_bytes_aux: rand_state -> size:nat -> Tot (rand_state & res:list uint8{List.Tot.length res == size}) (decreases size)
+let rec gen_rand_bytes_aux rng size =
+  if size = 0 then
+    (rng, [])
+  else (
+    let (rng, head) = gen_rand_bits rng 8 in
+    let (rng, tail) = gen_rand_bytes_aux rng (size-1) in
+    (rng, (u8 head)::tail)
+  )
+
+val gen_rand_bytes: rand_state -> size:nat -> rand_state & res:bytes{Seq.length res == size}
+let gen_rand_bytes rng size =
+  let (rng, l) = gen_rand_bytes_aux rng size in
+  (rng, Seq.seq_of_list l)
+
+val get_n_bits_aux: x:nat{x<=pow2 64} -> cur:nat{pow2 cur < x /\ cur < 64} -> Tot (res:nat{res <= 64 /\ x <= pow2 res}) (decreases 64-cur)
+let rec get_n_bits_aux x cur =
+  if x <= pow2 (cur+1) then
+    cur+1
+  else
+    get_n_bits_aux x (cur+1)
+
+val get_n_bits: x:nat{2 <= x /\ x <= pow2 64} -> res:nat{res <= 64 /\ x <= pow2 res}
+let get_n_bits x =
+  get_n_bits_aux x 0
+
+val gen_rand_num: rand_state -> upper_bound:pos{upper_bound < pow2 64} -> Dv (rand_state & (x:nat{x < upper_bound}))
+let rec gen_rand_num st upper_bound =
+  if upper_bound = 1 then
+    (st, 0)
+  else
+    let n_bits = get_n_bits upper_bound in
+    let (st, res) = gen_rand_bits st n_bits in
+    if res < upper_bound then
+      (st, res)
+    else
+      gen_rand_num st upper_bound
+
+val gen_rand_num_ml: rand_state -> upper_bound:nat -> ML (rand_state & (x:nat{x < upper_bound}))
+let gen_rand_num_ml st upper_bound =
+  if not (1 <= upper_bound) then failwith "gen_rand_num_ml: upper_bound = 0" else
+  if not (upper_bound < pow2 64) then failwith "gen_rand_num_ml: upper_bound >= pow2 64" else
+  gen_rand_num st upper_bound

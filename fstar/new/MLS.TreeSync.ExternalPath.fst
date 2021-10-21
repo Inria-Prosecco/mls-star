@@ -18,7 +18,6 @@ val external_pathsync_to_pathsync_aux: #l:nat -> #n:tree_size l -> #i:leaf_index
 let rec external_pathsync_to_pathsync_aux #l #n #i cs opt_sign_key parent_parent_hash nb_left_leaves t p =
   match t, p with
   | _, PLeaf lp ->
-    leaf_errors <-- check_leaf cs 0 (Some lp); //TODO hack: we know that the leaf index is only used for the errors, so we can set it to 0
     lp <-- (
       match opt_sign_key with
       | None -> return lp
@@ -35,6 +34,7 @@ let rec external_pathsync_to_pathsync_aux #l #n #i cs opt_sign_key parent_parent
         )
       )
     );
+    leaf_errors <-- check_leaf cs 0 (Some lp); //TODO hack: we know that the leaf index is only used for the errors, so we can set it to 0
     let parent_hash_ext = get_parent_hash_extension lp.extensions in
     //TODO: hack while openmls' test vectors are broken
     if not (IE_Good? leaf_errors || (match leaf_errors with |IE_Errors [IE_LeafError LIE_ExtensionsNotInCapabilities _] -> true | _ -> false)) then

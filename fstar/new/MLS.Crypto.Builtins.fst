@@ -178,7 +178,7 @@ let sign_signature_length cs =
 let sign_gen_keypair cs rand =
   match cs.signature with
   | Ed_25519 ->
-      return (rand, Ed25519.secret_to_public rand)
+      return (Ed25519.secret_to_public rand, rand)
   | P_256 -> internal_failure "sign_gen_keypair: P_256 not implemented"
 
 let sign_sign cs sk msg rand =

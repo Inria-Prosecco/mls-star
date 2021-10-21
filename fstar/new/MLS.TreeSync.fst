@@ -72,21 +72,21 @@ let rec blank_path (l:level_n) (n:tree_size l) (i:leaf_index n) (olp:option leaf
     let (|dir,j|) = child_index l i in
     PNode None (blank_path (l-1) (if dir = Left then (pow2 (l-1)) else (n - (pow2 (l-1)))) j olp)
 
-let rec unmerged_path (#l:level_n) (#n:tree_size l) (leaf_index:leaf_index n) (t:treesync l n) (lp:leaf_package_t): pathsync l n leaf_index =
+let rec unmerged_path (#l:level_n) (#n:tree_size l) (original_leaf_index: nat) (leaf_index:leaf_index n) (t:treesync l n) (lp:leaf_package_t): pathsync l n leaf_index =
   match t with
   | TLeaf (_, _) ->
     PLeaf (Some lp)
-  | TSkip _ t' -> PSkip _ (unmerged_path leaf_index t' lp)
+  | TSkip _ t' -> PSkip _ (unmerged_path original_leaf_index leaf_index t' lp)
   | TNode (_, onp) left right ->
     let (|dir, new_leaf_index|) = child_index l leaf_index in
     let (child, _) = order_subtrees dir (left, right) in
-    let path_next = unmerged_path new_leaf_index child lp in
+    let path_next = unmerged_path original_leaf_index new_leaf_index child lp in
     match onp with
     | None ->
       PNode None path_next
     | Some np ->
       PNode (Some (
-        {np with unmerged_leafs = insert_sorted leaf_index np.unmerged_leafs}
+        {np with unmerged_leafs = insert_sorted original_leaf_index np.unmerged_leafs}
       )) path_next
 
 // Helper functions to truncate the tree
@@ -216,12 +216,12 @@ let state_update_tree #l #n st new_tree =
     //transcript = Seq.snoc st.transcript op //TODO
   })
 
-val add: state_t -> credential_t -> leaf_package_t -> state_t
+val add: state_t -> credential_t -> leaf_package_t -> (state_t & nat)
 let add st actor lp =
   match find_empty_leaf st.tree with
   | Some i ->
-    let p = unmerged_path i st.tree lp in
-    state_update_tree st (apply_path actor st.tree p)
+    let p = unmerged_path i i st.tree lp in
+    (state_update_tree st (apply_path actor st.tree p), i)
   | None ->
     let new_l = if st.treesize = pow2 st.levels then st.levels+1 else st.levels in
     let new_n = st.treesize+1 in
@@ -232,8 +232,8 @@ let add st actor lp =
         add_one_leaf actor st.tree
     in
     let i = Some?.v (find_empty_leaf augmented_tree) in
-    let p = unmerged_path i augmented_tree lp in
-    state_update_tree st (apply_path actor augmented_tree p)
+    let p = unmerged_path i i augmented_tree lp in
+    (state_update_tree st (apply_path actor augmented_tree p), i)
 
 val update: st:state_t -> credential_t -> leaf_package_t -> index_t st -> state_t
 let update st actor lp i =

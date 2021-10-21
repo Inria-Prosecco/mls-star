@@ -9,6 +9,7 @@ open MLS.Test.FromExt.Encryption
 open MLS.Test.FromExt.KeySchedule
 open MLS.Test.FromExt.CommitTranscript
 open MLS.Test.FromExt.TreeKEM
+open MLS.Test.Self.TreeKEM
 open MLS.Test.Utils
 
 let run_treemath_tests () =
@@ -76,4 +77,5 @@ let main =
   run_keyschedule_tests ();
   run_treekem_tests ();
   run_commit_transcript_tests ();
+  run_self_treekem_test ();
   ()
