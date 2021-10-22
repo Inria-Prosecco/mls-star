@@ -25,3 +25,5 @@ obj/
 .cache/
 .hints/
 *.checked
+
+_build

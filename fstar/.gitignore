@@ -1,2 +1,5 @@
-_build
-.DS_Store
+*.o
+out
+bin
+test_vectors
+hints
