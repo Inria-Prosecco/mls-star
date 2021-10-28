@@ -44,7 +44,16 @@ let rec print_tree #l #n #leaf_t #node_t print_leaf print_node t =
   | TNode data left right ->
     "(" ^ print_tree print_leaf print_node left ^ ") " ^ print_node data ^ " (" ^ print_tree print_leaf print_node right ^ ")"
 
+val get_leaf_list: #l:nat -> #n:tree_size l -> #leaf_t:Type -> #node_t:Type -> tree l n leaf_t node_t -> Pure (list leaf_t) (requires True) (fun res -> List.Tot.length res == n)
+let rec get_leaf_list #l #n #leaf_t #node_t t =
+  let open FStar.List.Tot in
+  match t with
+  | TLeaf data -> [data]
+  | TSkip _ t' -> get_leaf_list t'
+  | TNode _ left right ->
+    (get_leaf_list left) @ (get_leaf_list right)
 
+(*
 type pre_path (leaf_t:Type) (node_t:Type) = (leaf_t & list node_t)
 
 val pre_path_to_path: #leaf_t:Type -> #node_t:Type -> l:nat -> n:tree_size l -> i:leaf_index n -> pre_path leaf_t node_t -> result (path l n i leaf_t node_t)
@@ -64,3 +73,4 @@ let rec pre_path_to_path #leaf_t #node_t l n i (leaf_value, node_values) =
       path_next <-- pre_path_to_path (l-1) (if dir = Left then pow2 (l-1) else n - (pow2 (l-1))) next_i (leaf_value, t);
       return (PNode h path_next)
   )
+*)

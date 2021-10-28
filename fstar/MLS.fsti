@@ -57,12 +57,13 @@ val current_epoch: s:state -> nat
 val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key cs -> g:group_id ->
   result state
 
+//Actually more entropy is needed, but we can't give any bound...
 val add: s:state → key_package:bytes → e:entropy { Seq.length e == 4+32 } ->
   result (state & (group_message & welcome_message))
 
-val remove: state → p:identity → group_message
+val remove: state → p:identity -> entropy → result (state & group_message)
 
-val update: state → entropy → group_message
+val update: state → entropy → result (state & group_message)
 
 // To send application data
 val send: state → e:entropy { Seq.length e == 4 } → bytes → result (state & group_message)

@@ -16,6 +16,7 @@ open MLS.NetworkBinder
 open MLS.NetworkTypes
 open MLS.Parser
 open MLS.Result
+open MLS.StringUtils
 open MLS.Test.Utils
 open Lib.ByteSequence
 open MLS.Crypto

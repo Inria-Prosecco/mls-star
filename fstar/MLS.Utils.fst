@@ -31,3 +31,17 @@ let rec insert_sorted x l =
     else
       h::(insert_sorted x t)
 
+#push-options "--fuel 1 --ifuel 1"
+val find_first: #a:Type -> (a -> bool) -> l:list a -> option (n:nat{n < List.Tot.length l})
+let rec find_first #a p l =
+  match l with
+  | [] -> None
+  | h::t ->
+    if p h then (
+      Some 0
+    ) else (
+      match find_first p t with
+      | Some v -> Some (v+1)
+      | None -> None
+    )
+#pop-options

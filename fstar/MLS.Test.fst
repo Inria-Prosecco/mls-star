@@ -11,6 +11,7 @@ open MLS.Test.FromExt.CommitTranscript
 open MLS.Test.FromExt.TreeKEM
 open MLS.Test.Self.TreeKEM
 open MLS.Test.Utils
+open MLS.StringUtils
 
 let run_treemath_tests () =
   match get_testsuite TreeMath with

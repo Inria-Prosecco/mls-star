@@ -237,7 +237,7 @@ let rec root_secret #cs #l #n t leaf_index leaf_secret =
       let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l n kp.unmerged_leafs in
       let child_forbidden_leaves = if dir = Left then left_forbidden_leaves else right_forbidden_leaves in
       let i = if dir = kp.path_secret_from then 0 else original_resolution_index child_forbidden_leaves child next_leaf_index in
-      assume (dir <> kp.path_secret_from ==> List.Tot.length (original_tree_resolution kp.unmerged_leafs child) == List.Tot.length kp.path_secret_ciphertext);
+      assume (dir <> kp.path_secret_from ==> List.Tot.length (original_tree_resolution child_forbidden_leaves child) == List.Tot.length kp.path_secret_ciphertext);
       node_decap child_path_secret i dir kp
     )
   end
@@ -246,6 +246,25 @@ let rec root_secret #cs #l #n t leaf_index leaf_secret =
     let (child, sibling) = order_subtrees dir (left, right) in
     root_secret child next_leaf_index leaf_secret
   end
+
+val find_least_common_ancestor: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> my_ind:leaf_index n -> other_ind:leaf_index n{my_ind <> other_ind} -> (res_l:nat & res_n:tree_size res_l & treekem cs res_l res_n & leaf_index res_n)
+let rec find_least_common_ancestor #cs #l #n t my_ind other_ind =
+  match t with
+  | TSkip _ t' -> find_least_common_ancestor t' my_ind other_ind
+  | TNode _ left right ->
+      let (|my_dir, next_my_ind|) = child_index l my_ind in
+      let (|other_dir, next_other_ind|) = child_index l other_ind in
+      if my_dir = other_dir then (
+        let (child, sibling) = order_subtrees my_dir (left, right) in
+        find_least_common_ancestor child next_my_ind next_other_ind
+      ) else (
+        (|l, n, t, my_ind|)
+      )
+
+val path_secret_at_least_common_ancestor: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> my_ind:leaf_index n -> other_ind:leaf_index n{my_ind <> other_ind} -> leaf_secret:bytes -> result bytes
+let path_secret_at_least_common_ancestor #cs #l #n t my_ind other_ind leaf_secret =
+  let (|_, _, lca, lca_my_ind|) = find_least_common_ancestor t my_ind other_ind in
+  root_secret lca lca_my_ind leaf_secret
 
 val empty_path_secret_ciphertext: cs:ciphersuite -> path_secret_ciphertext cs
 let empty_path_secret_ciphertext cs = {

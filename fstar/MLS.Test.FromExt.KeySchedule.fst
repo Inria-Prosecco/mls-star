@@ -4,6 +4,7 @@ open FStar.IO
 open FStar.All
 open MLS.Test.Types
 open MLS.Test.Utils
+open MLS.StringUtils
 
 open MLS.Result
 open Lib.ByteSequence

@@ -6,6 +6,7 @@ open Lib.ByteSequence
 open MLS.Test.Equality
 open MLS.Test.Types
 open MLS.Test.Utils
+open MLS.StringUtils
 open MLS.TreeDEM.Keys
 open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Framing

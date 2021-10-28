@@ -11,6 +11,7 @@ open MLS.Parser
 open MLS.TreeDEM.Message.Framing
 open MLS.TreeDEM.Message.Transcript
 open MLS.NetworkTypes
+open MLS.StringUtils
 open MLS.Result
 
 val test_commit_transcript_one: commit_transcript_test -> ML bool

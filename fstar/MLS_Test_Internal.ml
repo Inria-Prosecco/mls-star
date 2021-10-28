@@ -12,6 +12,11 @@ let dummy_group = List.map Char.code [ 'm'; 'y'; '_'; 'g'; 'r'; 'o'; 'u'; 'p' ]
 
 let dummy4 = [ 0; 1; 2; 3 ]
 
+(* print ("; ".join(str(random.randrange(0, 256)) for _ in range(32))) *)
+let dummy_sign_a = [32; 253; 20; 170; 202; 227; 238; 210; 27; 101; 42; 60; 111; 102; 230; 67; 215; 226; 241; 122; 209; 115; 47; 6; 56; 238; 190; 255; 224; 93; 78; 19]
+let dummy_sign_b = [35; 90; 128; 221; 81; 223; 92; 59; 75; 242; 32; 175; 171; 153; 103; 118; 79; 18; 173; 160; 6; 102; 242; 54; 173; 120; 38; 90; 24; 142; 151; 198]
+let dummy_sign_c = [156; 11; 245; 228; 136; 5; 116; 12; 190; 194; 163; 35; 133; 176; 85; 85; 181; 16; 7; 77; 225; 131; 43; 71; 252; 151; 14; 126; 17; 132; 152; 31]
+
 let dummy32 =
   [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15 ] @
   [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15 ]
@@ -72,7 +77,7 @@ let test () =
   print_endline "... high-level API test";
 
   print_endline "*** new user: a (fresh_key_pair, fresh_key_package)";
-  let sign_pub_a, sign_priv_a = extract (MLS.fresh_key_pair dummy32) in
+  let sign_pub_a, sign_priv_a = extract (MLS.fresh_key_pair (bytes_of_list dummy_sign_a)) in
   print_endline "... pub/priv sign keypair for a";
   debug_buffer sign_pub_a;
   debug_buffer sign_priv_a;
@@ -101,13 +106,13 @@ let test () =
   debug_buffer s.MLS.epoch_secret;
 
   print_endline "\n\n*** new user: b (fresh_key_pair, fresh_key_package)";
-  let sign_pub_b, sign_priv_b = extract (MLS.fresh_key_pair dummy32) in
+  let sign_pub_b, sign_priv_b = extract (MLS.fresh_key_pair (bytes_of_list dummy_sign_b)) in
   let cred_b = { MLS.identity = bytes_of_list dummy_user_b; signature_key = sign_pub_b } in
   let package_b, hash_b, priv_b = extract (MLS.fresh_key_package dummy64 cred_b sign_priv_b) in
 
   print_endline "\n\n*** a adds b and the server echoes the message back (add, process_group_message)";
   (* Assume s is immediately accepted by the server *)
-  let s, (msg, welcome_msg) = extract (MLS.add s package_b dummy64) in
+  let s, (msg, welcome_msg) = extract (MLS.add s package_b dummy128) in
   (* Instead rely on the server echoing our changes back to us to process them *)
   let s, outcome = extract (MLS.process_group_message s (snd msg)) in
   match outcome with
@@ -160,13 +165,13 @@ let test () =
       failwith "could not parse back application data"; ;
 
   (* New user: c *)
-  let sign_pub_c, sign_priv_c = extract (MLS.fresh_key_pair dummy32) in
+  let sign_pub_c, sign_priv_c = extract (MLS.fresh_key_pair (bytes_of_list dummy_sign_c)) in
   let cred_c = { MLS.identity = bytes_of_list dummy_user_c; signature_key = sign_pub_c } in
   let package_c, hash_c, priv_c = extract (MLS.fresh_key_package dummy64 cred_c sign_priv_c) in
 
   (* a adds c and the server echoes the message back *)
   (* Assume s is immediately accepted by the server *)
-  let s, (msg, _) = extract (MLS.add s package_c dummy64) in
+  let s, (msg, _) = extract (MLS.add s package_c dummy128) in
   (* Instead rely on the server echoing our changes back to us to process them *)
   let s, outcome = extract (MLS.process_group_message s (snd msg)) in
   match outcome with

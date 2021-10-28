@@ -32,3 +32,10 @@ let rec mapM (f:('a -> result 'b)) (l:list 'a): result (list 'b) =
     fh <-- f h;
     ft <-- mapM f t;
     return (fh::ft)
+
+let rec fold_leftM (f:'a -> 'b -> result 'a) (x:'a) (l:list 'b): Tot (result 'a) (decreases l) =
+  match l with
+  | [] -> return x
+  | h::t ->
+    new_x <-- f x h;
+    fold_leftM f new_x t

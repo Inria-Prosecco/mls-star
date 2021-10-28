@@ -5,6 +5,7 @@ open FStar.All
 open MLS.Test.Types
 open MLS.TreeMath.Internal
 open MLS.Test.Utils
+open MLS.StringUtils
 
 module U32 = FStar.UInt32
 

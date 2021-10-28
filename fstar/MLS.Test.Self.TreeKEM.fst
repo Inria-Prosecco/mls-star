@@ -16,6 +16,7 @@ open MLS.TreeKEM
 open MLS.TreeMath
 open MLS.TreeSyncTreeKEMBinder
 open MLS.Test.Utils
+open MLS.StringUtils
 open MLS.Result
 
 type participant_secrets (cs:ciphersuite) = {
