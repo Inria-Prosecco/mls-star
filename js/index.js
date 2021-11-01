@@ -2,13 +2,16 @@ var runtime = {
   caml_thread_initialize: () => {}
 };
 
+let freshKeyPairDebug = 0;
+
 function freshKeyPair() {
-  let dummy32 = new Uint8Array([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  ]);
+  let dummy32s = [
+    new Uint8Array([32, 253, 20, 170, 202, 227, 238, 210, 27, 101, 42, 60, 111, 102, 230, 67, 215, 226, 241, 122, 209, 115, 47, 6, 56, 238, 190, 255, 224, 93, 78, 19]),
+    new Uint8Array([35, 90, 128, 221, 81, 223, 92, 59, 75, 242, 32, 175, 171, 153, 103, 118, 79, 18, 173, 160, 6, 102, 242, 54, 173, 120, 38, 90, 24, 142, 151, 198]),
+    new Uint8Array([156, 11, 245, 228, 136, 5, 116, 12, 190, 194, 163, 35, 133, 176, 85, 85, 181, 16, 7, 77, 225, 131, 43, 71, 252, 151, 14, 126, 17, 132, 152, 31])
+  ];
   let random32 = window.crypto.getRandomValues(new Uint8Array(32));
-  return freshKeyPair1(dummy32);
+  return freshKeyPair1(dummy32s[freshKeyPairDebug++%3]);
 }
 
 function freshKeyPackage(cred, priv) {

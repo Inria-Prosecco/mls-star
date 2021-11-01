@@ -73,11 +73,13 @@ let run_treekem_tests () =
   | _ -> IO.print_string "TreeKEM: got the wrong type of testsuite (internal error)\n"
 
 let main =
+  // Moving this back to the front so that I can run benchmarks with
+  // ./MLS_Test.exe -short
+  MLS.Test.Internal.test ();
   run_treemath_tests ();
   run_encryption_tests();
   run_keyschedule_tests ();
   run_treekem_tests ();
   run_commit_transcript_tests ();
   run_self_treekem_test ();
-  MLS.Test.Internal.test ();
   ()
