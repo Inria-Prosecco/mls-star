@@ -79,12 +79,8 @@ test: test_vectors
 # Test vectors
 
 test_vectors:
-	mkdir -p test_vectors
-	wget https://raw.githubusercontent.com/openmls/openmls/main/openmls/test_vectors/kat_treemath_openmls.json -O test_vectors/treemath.json
-	wget https://raw.githubusercontent.com/openmls/openmls/main/openmls/test_vectors/kat_tree_kem_openmls.json -O test_vectors/treekem.json
-	wget https://raw.githubusercontent.com/openmls/openmls/main/openmls/test_vectors/kat_key_schedule_openmls.json -O test_vectors/key_schedule.json
-	wget https://raw.githubusercontent.com/openmls/openmls/main/openmls/test_vectors/kat_encryption_openmls.json -O test_vectors/encryption.json
-	wget https://raw.githubusercontent.com/openmls/openmls/main/openmls/test_vectors/kat_transcripts.json -O test_vectors/commit_transcript.json
+	wget https://tmp.twal.org/test_vectors.zip
+	unzip test_vectors.zip
 
 # Interactive mode support...
 
