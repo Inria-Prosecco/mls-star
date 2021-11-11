@@ -72,7 +72,10 @@ window.addEventListener("load", () => {
   pre.appendChild(document.createTextNode("Page loaded"));
 
   // A self-test mostly for my own debugging.
-  //test();
+  const t0 = performance.now();
+  test();
+  const t1 = performance.now();
+
 
   // Sample usage of the API -- an integration test.
 
@@ -129,4 +132,8 @@ window.addEventListener("load", () => {
   ({ state: state_A, outcome } = processGroupMessage(state_A, groupMessage.payload));
   console.log("A received a message", outcome.payload);
   console.log("current epoch of A", currentEpoch(state_A));
+
+  const t2 = performance.now();
+  console.log(`Call to internal self-test took ${t1 - t0} milliseconds.`);
+  console.log(`Call to JS-driven test took ${t2 - t1} milliseconds.`);
 });
