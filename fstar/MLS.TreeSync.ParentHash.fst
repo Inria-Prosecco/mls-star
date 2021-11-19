@@ -35,13 +35,9 @@ let ps_parent_hash_input =
   })
   (fun x -> (|x.public_key, (|x.parent_hash, x.original_child_resolution|)|))
 
-val compute_parent_hash_treekem: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> hpke_public_key_nt -> bytes -> treekem cs l n -> list (hpke_public_key cs) -> result (lbytes (hash_length cs))
-let compute_parent_hash_treekem #cs #l #n public_key parent_hash sibling forbidden_public_keys =
-  let sibling_resolution = tree_resolution sibling in
-  let original_child_resolution = List.Tot.filter (fun pk ->
-    //TODO: this should break secret independance?
-    not (List.Tot.mem pk forbidden_public_keys)
-  ) sibling_resolution in
+val compute_parent_hash_treekem: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> hpke_public_key_nt -> bytes -> treekem cs l n -> list nat -> result (lbytes (hash_length cs))
+let compute_parent_hash_treekem #cs #l #n public_key parent_hash sibling forbidden_leaves =
+  let original_child_resolution = original_tree_resolution forbidden_leaves sibling in
   let original_child_resolution_nt = List.Tot.map (fun (x:hpke_public_key cs) -> x <: hpke_public_key_nt) original_child_resolution in
   if not (Seq.length parent_hash < 256) then
     internal_failure "compute_parent_hash: parent_hash too long"
@@ -80,7 +76,7 @@ let compute_parent_hash_from_sibling #l #ls #n #ns cs content parent_parent_hash
     match root_kem_onp with
     | None -> []
     | Some root_np ->
-      unmerged_leaves_resolution root_kem (root_np <: key_package cs).unmerged_leaves
+      (root_np <: key_package cs).unmerged_leaves
   in
   compute_parent_hash_treekem public_key parent_parent_hash sibling_kem forbidden_keys
 
