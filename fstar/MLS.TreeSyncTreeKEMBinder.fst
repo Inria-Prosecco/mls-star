@@ -43,7 +43,7 @@ let treesync_to_treekem_node_package cs nb_left_leaves np =
       error "treesync_to_treekem_node_package: unmerged_leaf index too small"
     else
       return ((unmerged_leaf - nb_left_leaves) <: nat)
-  ) np.unmerged_leafs;
+  ) np.unmerged_leaves;
   if not (Seq.length content.public_key = hpke_public_key_length cs) then
     error "treesync_to_treekem_node_package: public key has wrong length"
   else (
@@ -51,7 +51,7 @@ let treesync_to_treekem_node_package cs nb_left_leaves np =
       public_key = content.public_key;
       version = np.version;
       last_group_context = content.last_group_context;
-      unmerged_leafs = unmerged_leaves;
+      unmerged_leaves = unmerged_leaves;
       path_secret_from = (np.content_dir);
       path_secret_ciphertext = path_secret_ciphertext;
     })
@@ -115,7 +115,7 @@ let treekem_to_treesync_node_package #cs nb_left_leaves kp =
     return (({
       version = kp.version;
       content_dir = kp.path_secret_from;
-      unmerged_leafs = List.Tot.map (fun (x:nat) -> (x + nb_left_leaves <: nat)) kp.unmerged_leafs;
+      unmerged_leaves = List.Tot.map (fun (x:nat) -> (x + nb_left_leaves <: nat)) kp.unmerged_leaves;
       parent_hash = Seq.empty;
       content = secret_to_pub np_content;
     } <: node_package_t) <: external_node_package_t)

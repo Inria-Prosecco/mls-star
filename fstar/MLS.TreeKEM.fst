@@ -26,8 +26,8 @@ let rec leaf_public_key #cs #l #n t leaf_index =
       leaf_public_key right new_leaf_index
 
 //This is a special case of the original_* functions below
-val unmerged_leafs_resolution: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> list nat -> list (hpke_public_key cs)
-let unmerged_leafs_resolution #cs #l #n t indexes =
+val unmerged_leaves_resolution: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> list nat -> list (hpke_public_key cs)
+let unmerged_leaves_resolution #cs #l #n t indexes =
   List.Tot.concatMap (fun (index:nat) ->
     if index < n then
       match leaf_public_key t index with
@@ -44,7 +44,7 @@ let rec tree_resolution #cs #l t =
   | TLeaf None -> []
   | TLeaf (Some mi) -> [mi.public_key]
   | TSkip _ t' -> tree_resolution t'
-  | TNode (Some kp) left right -> (kp.public_key)::(unmerged_leafs_resolution t kp.unmerged_leafs)
+  | TNode (Some kp) left right -> (kp.public_key)::(unmerged_leaves_resolution t kp.unmerged_leaves)
   | TNode None left right -> (tree_resolution left)@(tree_resolution right)
 
 val original_unmerged_leaves_resolution: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> list nat -> treekem cs l n -> list nat -> list (hpke_public_key cs)
@@ -87,7 +87,7 @@ let rec original_tree_resolution #cs #l #n forbidden_leaves t =
   | TLeaf None -> []
   | TLeaf (Some mi) -> if forbidden_leaves = [] then [mi.public_key] else []
   | TSkip _ t' -> original_tree_resolution forbidden_leaves t'
-  | TNode (Some kp) left right -> (kp.public_key)::(original_unmerged_leaves_resolution forbidden_leaves t kp.unmerged_leafs)
+  | TNode (Some kp) left right -> (kp.public_key)::(original_unmerged_leaves_resolution forbidden_leaves t kp.unmerged_leaves)
   | TNode None left right ->
     let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l n forbidden_leaves in
     (original_tree_resolution left_forbidden_leaves left)@(original_tree_resolution right_forbidden_leaves right)
@@ -102,7 +102,7 @@ let rec original_resolution_index #cs #l #n forbidden_leaves t leaf_index =
   | TLeaf None -> admit() //TODO: There should be a precondition that prevent this case
   | TSkip _ t' -> original_resolution_index forbidden_leaves t' leaf_index
   | TNode (Some kp) left right -> (
-    match find_index forbidden_leaves leaf_index kp.unmerged_leafs with
+    match find_index forbidden_leaves leaf_index kp.unmerged_leaves with
     | Some res ->
       //That is currently not provable because a node might contain an unmerged leaf which is actually blanked
       assume (1+res < List.Tot.length (original_tree_resolution forbidden_leaves t));
@@ -156,7 +156,7 @@ let node_encap #cs version child_secret ad dir pks rand =
       public_key = snd node_keys;
       version = version;
       last_group_context = ad;
-      unmerged_leafs = [];
+      unmerged_leaves = [];
       path_secret_from = dir;
       path_secret_ciphertext = ciphertext;
     },
@@ -226,7 +226,7 @@ let rec root_secret #cs #l #n t leaf_index leaf_secret =
   | TLeaf (Some _) -> return leaf_secret
   | TSkip _ t' -> root_secret t' leaf_index leaf_secret
   | TNode (Some kp) left right -> begin
-    if List.Tot.mem leaf_index kp.unmerged_leafs then (
+    if List.Tot.mem leaf_index kp.unmerged_leaves then (
       return leaf_secret
     ) else (
       let (|dir, next_leaf_index|) = child_index l leaf_index in
@@ -234,7 +234,7 @@ let rec root_secret #cs #l #n t leaf_index leaf_secret =
       child_path_secret <-- root_secret child next_leaf_index leaf_secret;
       //The condition is here becaus the `i` argument has not sense when dir = kp.path_secret_from.
       //Maybe we should refactor `node_decap`?
-      let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l n kp.unmerged_leafs in
+      let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l n kp.unmerged_leaves in
       let child_forbidden_leaves = if dir = Left then left_forbidden_leaves else right_forbidden_leaves in
       let i = if dir = kp.path_secret_from then 0 else original_resolution_index child_forbidden_leaves child next_leaf_index in
       assume (dir <> kp.path_secret_from ==> List.Tot.length (original_tree_resolution child_forbidden_leaves child) == List.Tot.length kp.path_secret_ciphertext);
@@ -313,7 +313,7 @@ let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
       next <-- mk_init_path child next_my_index next_update_index path_secret ad;
       return (PNode new_kp next)
     ) else (
-      if not (kp.unmerged_leafs = []) then
+      if not (kp.unmerged_leaves = []) then
         error "mk_init_path: the lowest common ancestor must have empty unmerged leaves"
       else (
         let resol_size = List.Tot.length (original_tree_resolution [] sibling) in

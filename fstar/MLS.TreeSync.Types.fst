@@ -50,7 +50,7 @@ let mk_initial_leaf_package (c:credential_t) =
 type node_package_t = {
   version: nat;
   content_dir: direction;
-  unmerged_leafs: list nat;
+  unmerged_leaves: list nat;
   parent_hash: pub_bytes;
   content: pub_bytes;
 }

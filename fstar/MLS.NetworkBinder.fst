@@ -100,7 +100,7 @@ let treesync_to_keypackage cs lp =
 
 val treesync_to_parent_node: TS.node_package_t -> result parent_node_nt
 let treesync_to_parent_node np =
-  unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (Lib.IntTypes.u32 x) else internal_failure "") np.TS.unmerged_leafs;
+  unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (Lib.IntTypes.u32 x) else internal_failure "") np.TS.unmerged_leaves;
   if not (Seq.length np.TS.parent_hash < 256) then
     internal_failure "treesync_to_parent_node: parent_hash too long"
   else if not ((byte_length ps_u32 unmerged_leaves) < pow2 32) then
@@ -120,7 +120,7 @@ let parent_node_to_treesync pn =
   return ({
         TS.version = 0;
         TS.content_dir = Left; //We don't care I guess
-        TS.unmerged_leafs = List.Tot.map (fun x -> let open Lib.IntTypes in (v x <: nat)) (Seq.seq_to_list pn.unmerged_leaves);
+        TS.unmerged_leaves = List.Tot.map (fun x -> let open Lib.IntTypes in (v x <: nat)) (Seq.seq_to_list pn.unmerged_leaves);
         TS.parent_hash = pn.parent_hash;
         TS.content = ps_node_package_content.serialize ({
           public_key = pn.public_key;
@@ -159,7 +159,7 @@ let update_path_node_to_treekem cs group_context dir update_path_node =
       TK.public_key = update_path_node.public_key;
       TK.version = 0;
       TK.last_group_context = group_context;
-      TK.unmerged_leafs = [];
+      TK.unmerged_leaves = [];
       TK.path_secret_from = dir;
       TK.path_secret_ciphertext = path_secret_ciphertext;
     })

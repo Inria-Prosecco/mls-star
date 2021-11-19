@@ -80,7 +80,7 @@ let compute_parent_hash_from_sibling #l #ls #n #ns cs content parent_parent_hash
     match root_kem_onp with
     | None -> []
     | Some root_np ->
-      unmerged_leafs_resolution root_kem root_np.unmerged_leafs
+      unmerged_leaves_resolution root_kem (root_np <: key_package cs).unmerged_leaves
   in
   compute_parent_hash_treekem public_key parent_parent_hash sibling_kem forbidden_keys
 

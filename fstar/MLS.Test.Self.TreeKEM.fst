@@ -234,7 +234,7 @@ let check_root_secret #cs st =
   //      | Some _ -> "L")
   //    (fun node -> match node with
   //      | None -> "_"
-  //      | Some np -> "N[" ^ list_to_string nat_to_string np.unmerged_leafs ^ ", " ^ (if np.path_secret_from = Left then "Left" else "Right") ^ ", " ^ nat_to_string (List.Tot.length np.path_secret_ciphertext) ^ "]")
+  //      | Some np -> "N[" ^ list_to_string nat_to_string np.unmerged_leaves ^ ", " ^ (if np.path_secret_from = Left then "Left" else "Right") ^ ", " ^ nat_to_string (List.Tot.length np.path_secret_ciphertext) ^ "]")
   //    tree_tk
   //);
   //IO.print_string "\n";

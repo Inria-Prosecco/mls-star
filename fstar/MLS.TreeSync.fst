@@ -86,7 +86,7 @@ let rec unmerged_path (#l:level_n) (#n:tree_size l) (original_leaf_index: nat) (
       PNode None path_next
     | Some np ->
       PNode (Some (
-        {np with unmerged_leafs = insert_sorted original_leaf_index np.unmerged_leafs}
+        {np with unmerged_leaves = insert_sorted original_leaf_index np.unmerged_leaves}
       )) path_next
 
 // Helper functions to truncate the tree
