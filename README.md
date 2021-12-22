@@ -1,3 +1,3 @@
-# mls-proposals
+# mls-star
 
-A proposed protocol for asynchronous group messaging
+A formal specification of IETF MLS in F*
