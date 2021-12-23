@@ -114,19 +114,6 @@ let uint16_to_ciphersuite x =
   | None -> failwith "couldn't parse ciphersuite"
   | Some cs_nt -> ciphersuite_from_nt cs_nt
 
-val find_first: #a:Type -> (a -> bool) -> l:list a -> option (n:nat{n < List.Tot.length l})
-let rec find_first #a p l =
-  match l with
-  | [] -> None
-  | h::t ->
-    if p h then (
-      Some 0
-    ) else (
-      match find_first p t with
-      | Some v -> Some (v+1)
-      | None -> None
-    )
-
 type rand_state = {
   internal_state: (x:nat{x < pow2 64});
 }

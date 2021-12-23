@@ -5,44 +5,6 @@ open MLS.Utils
 open MLS.Tree
 open MLS.TreeSync.Types
 
-(** Membership *)
-type member_array_t (sz:nat) = a:Seq.seq (option credential_t){Seq.length a = sz}
-
-let rec tree_membership (#l:nat) (#n:tree_size l) (t:treesync l n): member_array_t n =
-  match t with
-  | TLeaf (_, olp) ->
-    (match olp with
-    | None -> Seq.create 1 None
-    | Some lp -> Seq.create 1 (Some lp.credential))
-  | TSkip _ t' -> tree_membership t'
-  | TNode (_,_) left right -> Seq.append (tree_membership left)
-				 (tree_membership right)
-
-val membership: st:state_t -> member_array_t (st.treesize)
-let membership st = tree_membership st.tree
-
-(*
-(** Create a new tree from a member array *)
-val create_tree: l:level_n -> n:tree_size l -> actor:credential_t ->
-		 init:member_array_t n ->
-		 t:treesync l n{tree_membership t == init}
-
-let rec create_tree (l:level_n) (n:tree_size l) (actor:credential_t) (init:member_array_t n) =
-  if l = 0 then
-    match init.[0] with
-    | None -> TLeaf (actor, None)
-    | Some c -> TLeaf (actor, (Some (mk_initial_leaf_package c)))
-  else
-    if n <= (pow2 (l-1)) then
-      TSkip _ (create_tree (l-1) n actor init)
-    else
-      let init_l,init_r = split init (pow2 (l-1)) in
-      let left = create_tree (l-1) (pow2 (l-1)) actor init_l in
-      let right = create_tree (l-1) (n - pow2 (l-1)) actor init_r in
-      TNode (actor, None) left right
-
-*)
-
 val create_tree: leaf_package_t -> treesync 0 1
 let create_tree lp =
   TLeaf (lp.credential, Some lp)
@@ -172,37 +134,9 @@ let add_one_level #l c t =
 /// API
 ///
 
-(*
-(** Create a new group state *)
-val create: gid:nat -> sz:pos -> init:member_array_t sz
-  -> Tot (option state_t)
-
-let create gid sz init =
-  match init.[0], log2 sz with
-  | _ -> None
-  | Some actor,Some l ->
-    let t = create_tree l sz actor init in
-    let st = mk_initial_state gid l sz t in
-    Some ({st with //initial_tree = t;
-                   transcript = bytes_empty})
-*)
-
 val create: gid:group_id_t -> leaf_package_t -> state_t
 let create gid lp =
   mk_initial_state gid 0 1 (create_tree lp)
-
-(*
-(** Apply an operation to a state *)
-val apply: state_t -> operation_t
-  -> Tot (option state_t)
-
-let apply st op =
-  if op.op_levels <> st.levels || op.op_treesize <> st.treesize then None
-  else
-    let nt = apply_path op.op_actor st.tree op.op_path in
-    Some ({ st with version = st.version + 1; tree = nt;
-            transcript = Seq.snoc st.transcript op})
-*)
 
 val state_update_tree: #l:level_n -> #n:tree_size l -> state_t -> treesync l n -> state_t
 let state_update_tree #l #n st new_tree =

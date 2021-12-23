@@ -504,12 +504,13 @@ let send state e data =
 
 val find_my_index: #l:nat -> #n:tree_size l -> treesync l n -> bytes -> result (res:nat{res<n})
 let find_my_index #l #n t sign_pk =
-  let test (oc: option credential_t) =
-    match oc with
+  let test (x: credential_t & option leaf_package_t) =
+    let (_, olp) = x in
+    match olp with
     | None -> false
-    | Some c -> c.signature_key = sign_pk
+    | Some lp -> lp.credential.signature_key = sign_pk
   in
-  from_option "couldn't find my_index" (find_first test (Seq.seq_to_list (MLS.TreeSync.tree_membership t)))
+  from_option "couldn't find my_index" (find_first test (get_leaf_list t))
 
 #push-options "--fuel 1 --z3rlimit 50"
 let process_welcome_message w (sign_pk, sign_sk) lookup =

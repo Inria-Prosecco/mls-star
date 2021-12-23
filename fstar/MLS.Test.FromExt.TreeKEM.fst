@@ -17,7 +17,7 @@ open MLS.NetworkTypes
 open MLS.Parser
 open MLS.Result
 open MLS.StringUtils
-open MLS.Test.Utils
+open MLS.Utils
 open Lib.ByteSequence
 open MLS.Crypto
 open MLS.TreeSync.IntegrityCheck
@@ -50,12 +50,13 @@ let find_my_index #l #n t kp =
     | C_basic c -> secret_to_pub c.signature_key
     | _ -> failwith "unsupported credential!"; bytes_empty
   in
-  let test (oc: option credential_t) =
-    match oc with
+  let test (x: credential_t & option leaf_package_t) =
+    let (_, olp) = x in
+    match olp with
     | None -> false
-    | Some c -> c.signature_key = my_signature_key
+    | Some lp -> lp.credential.signature_key = my_signature_key
   in
-  let res = extract_option "couldn't find my_index" (find_first test (Seq.seq_to_list (tree_membership t))) in
+  let res = extract_option "couldn't find my_index" (find_first test (get_leaf_list t)) in
   res
 
 val gen_treekem_output: ciphersuite -> treekem_test_input -> ML treekem_test_output
