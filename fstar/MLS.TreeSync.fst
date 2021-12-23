@@ -5,11 +5,14 @@ open MLS.Utils
 open MLS.Tree
 open MLS.TreeSync.Types
 
+(*** Tree creation ***)
+
 val create_tree: leaf_package_t -> treesync 0 1
 let create_tree lp =
   TLeaf (lp.credential, Some lp)
 
-(** Apply a path to a tree *)
+(*** Paths ***)
+
 let rec apply_path (#l:level_n) (#n:tree_size l) (#i:leaf_index n) (a:credential_t)
                    (t:treesync l n) (p:pathsync l n i) : treesync l n =
   match t,p with
@@ -49,7 +52,7 @@ let rec unmerged_path (#l:level_n) (#n:tree_size l) (original_leaf_index: nat) (
         {np with unmerged_leaves = insert_sorted original_leaf_index np.unmerged_leaves}
       )) path_next
 
-// Helper functions to truncate the tree
+(*** Tree extension / truncation ***)
 
 val is_tree_empty: #l:nat -> #n:tree_size l -> treesync l n -> bool
 let rec is_tree_empty #l #n t =
@@ -130,9 +133,7 @@ val add_one_level: #l:nat -> credential_t -> treesync l (pow2 l) -> Pure (treesy
 let add_one_level #l c t =
   TNode (c, None) t (mk_one_leaf_tree l c)
 
-///
-/// API
-///
+(*** Higher-level API ***)
 
 val create: gid:group_id_t -> leaf_package_t -> state_t
 let create gid lp =
