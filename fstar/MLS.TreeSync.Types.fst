@@ -1,6 +1,5 @@
 module MLS.TreeSync.Types
 
-open MLS.Lib.Array
 open Lib.ByteSequence
 open MLS.Tree
 
@@ -106,7 +105,7 @@ let mk_initial_state gid l n t = {
   treesize = n;
   tree = t; version = 0;
   //initial_tree = t;
-  transcript = empty;}
+  transcript = Seq.empty;}
 
 val group_id: state_t -> group_id_t
 let group_id st = st.group_id

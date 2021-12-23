@@ -1,23 +1,21 @@
 module MLS.TreeSync
 
-open MLS.Lib.Array
-open MLS.Lib.Maths
 open Lib.ByteSequence
 open MLS.Utils
 open MLS.Tree
 open MLS.TreeSync.Types
 
 (** Membership *)
-type member_array_t (sz:nat) = a:array (option credential_t){length a = sz}
+type member_array_t (sz:nat) = a:Seq.seq (option credential_t){Seq.length a = sz}
 
 let rec tree_membership (#l:nat) (#n:tree_size l) (t:treesync l n): member_array_t n =
   match t with
   | TLeaf (_, olp) ->
     (match olp with
-    | None -> singleton None
-    | Some lp -> singleton (Some lp.credential))
+    | None -> Seq.create 1 None
+    | Some lp -> Seq.create 1 (Some lp.credential))
   | TSkip _ t' -> tree_membership t'
-  | TNode (_,_) left right -> append (tree_membership left)
+  | TNode (_,_) left right -> Seq.append (tree_membership left)
 				 (tree_membership right)
 
 val membership: st:state_t -> member_array_t (st.treesize)
