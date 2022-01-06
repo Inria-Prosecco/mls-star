@@ -16,8 +16,8 @@ open MLS.Parser
 open MLS.Result
 open MLS.Tree
 
-val test_leaf_generation: #cs:ciphersuite -> l:nat -> n:tree_size l -> bytes -> bytes -> ratchet_state cs -> encryption_leaf_generation_test -> ML (bool & ratchet_state cs)
-let test_leaf_generation #cs l n encryption_secret sender_data_secret r_state test =
+val test_leaf_generation: #cs:ciphersuite -> l:nat -> n:tree_size l -> i:leaf_index n -> bytes -> bytes -> ratchet_state cs -> encryption_leaf_generation_test -> ML (bool & ratchet_state cs)
+let test_leaf_generation #cs l n i encryption_secret sender_data_secret r_state test =
   let r_output = extract_result (ratchet_get_key r_state) in
   let r_next_state = extract_result (ratchet_next_state r_state) in
   let key_ok = check_equal "key" string_to_string test.key (bytes_to_hex_string r_output.key) in
@@ -27,18 +27,18 @@ let test_leaf_generation #cs l n encryption_secret sender_data_secret r_state te
   let message_plaintext = extract_result (network_to_message_plaintext message_plaintext_network) in
   let message_ciphertext = extract_result (network_to_message_ciphertext message_ciphertext_network) in
   let message_1 = message_plaintext_to_message message_plaintext in
-  let message_2 = extract_result (message_ciphertext_to_message cs l n encryption_secret sender_data_secret message_ciphertext) in
+  let message_2 = extract_result (message_ciphertext_to_message cs l n encryption_secret sender_data_secret (fun _ -> return (Some i)) message_ciphertext) in
   let plaintext_eq_ciphertext_ok = test_equality message_1 message_2 in
-  let sender_ok = (fst message_1).sender.sender_type = MLS.TreeDEM.Message.Types.ST_member && (let open FStar.Mul in 2*(fst message_1).sender.sender_id = r_state.node) in
+  let sender_ok = MLS.TreeDEM.Message.Types.S_member? (fst message_1).sender in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)
 
-val test_leaf_generations: #cs:ciphersuite -> l:nat -> n:tree_size l -> bytes -> bytes -> ratchet_state cs -> list encryption_leaf_generation_test -> ML bool
-let rec test_leaf_generations #cs l n encryption_secret sender_data_secret r_state tests =
+val test_leaf_generations: #cs:ciphersuite -> l:nat -> n:tree_size l -> i:leaf_index n -> bytes -> bytes -> ratchet_state cs -> list encryption_leaf_generation_test -> ML bool
+let rec test_leaf_generations #cs l n i encryption_secret sender_data_secret r_state tests =
   match tests with
   | [] -> true
   | h::t ->
-    let (head_ok, r_next_state) = test_leaf_generation l n encryption_secret sender_data_secret r_state h in
-    let tail_ok = test_leaf_generations l n encryption_secret sender_data_secret r_next_state t in
+    let (head_ok, r_next_state) = test_leaf_generation l n i encryption_secret sender_data_secret r_state h in
+    let tail_ok = test_leaf_generations l n i encryption_secret sender_data_secret r_next_state t in
     head_ok && tail_ok
 
 val test_leaf: ciphersuite -> l:nat -> n:tree_size l -> i:leaf_index n -> bytes -> bytes -> encryption_leaf_test -> ML bool
@@ -47,8 +47,8 @@ let test_leaf cs l n i encryption_secret sender_data_secret test =
   let i_as_node_index: MLS.TreeMath.node_index 0 = i+i in
   let handshake_ratchet = extract_result (init_handshake_ratchet cs i_as_node_index leaf_encryption_secret) in
   let application_ratchet = extract_result (init_application_ratchet cs i_as_node_index leaf_encryption_secret) in
-  let handshake_ok = test_leaf_generations l n encryption_secret sender_data_secret handshake_ratchet test.handshake in
-  let application_ok = test_leaf_generations l n encryption_secret sender_data_secret application_ratchet test.application in
+  let handshake_ok = test_leaf_generations l n i encryption_secret sender_data_secret handshake_ratchet test.handshake in
+  let application_ok = test_leaf_generations l n i encryption_secret sender_data_secret application_ratchet test.application in
   handshake_ok && application_ok
 
 val test_leaves_aux: ciphersuite -> l:nat -> n:tree_size l -> bytes -> bytes -> leaf_tests:list encryption_leaf_test -> i:nat{i + List.Tot.length leaf_tests <= n} -> ML bool

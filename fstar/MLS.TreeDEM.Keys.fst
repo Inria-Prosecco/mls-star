@@ -62,19 +62,29 @@ let rec leaf_kdf #l n cs encryption_secret root leaf_index =
     leaf_kdf new_n cs new_encryption_secret new_root new_leaf_index
   )
 
-val secret_init_to_joiner: cs:ciphersuite -> bytes -> bytes -> result (lbytes (kdf_length cs))
-let secret_init_to_joiner cs init_secret commit_secret =
-  prk <-- kdf_extract cs init_secret commit_secret;
-  derive_secret cs prk (string_to_bytes "joiner")
+val zero_vector: ciphersuite -> bytes
+let zero_vector cs =
+  Seq.create (kdf_length cs) (u8 0)
 
-val secret_joiner_to_welcome: cs:ciphersuite -> bytes -> bytes -> result (lbytes (kdf_length cs))
-let secret_joiner_to_welcome cs joiner_secret psk_secret =
-  prk <-- kdf_extract cs joiner_secret psk_secret;
+val opt_secret_to_secret: ciphersuite -> option bytes -> bytes
+let opt_secret_to_secret cs opt_secret =
+  match opt_secret with
+  | Some commit_secret -> commit_secret
+  | None -> zero_vector cs
+
+val secret_init_to_joiner: cs:ciphersuite -> bytes -> option bytes -> bytes -> result (lbytes (kdf_length cs))
+let secret_init_to_joiner cs init_secret opt_commit_secret group_context =
+  prk <-- kdf_extract cs init_secret (opt_secret_to_secret cs opt_commit_secret);
+  expand_with_label cs prk (string_to_bytes "joiner") group_context (kdf_length cs)
+
+val secret_joiner_to_welcome: cs:ciphersuite -> bytes -> option bytes -> result (lbytes (kdf_length cs))
+let secret_joiner_to_welcome cs joiner_secret opt_psk_secret =
+  prk <-- kdf_extract cs joiner_secret (opt_secret_to_secret cs opt_psk_secret);
   derive_secret cs prk (string_to_bytes "welcome")
 
-val secret_joiner_to_epoch: cs:ciphersuite -> bytes -> bytes -> bytes -> result (lbytes (kdf_length cs))
-let secret_joiner_to_epoch cs joiner_secret psk_secret group_context =
-  prk <-- kdf_extract cs joiner_secret psk_secret;
+val secret_joiner_to_epoch: cs:ciphersuite -> bytes -> option bytes -> bytes -> result (lbytes (kdf_length cs))
+let secret_joiner_to_epoch cs joiner_secret opt_psk_secret group_context =
+  prk <-- kdf_extract cs joiner_secret (opt_secret_to_secret cs opt_psk_secret);
   expand_with_label cs prk (string_to_bytes "epoch") group_context (kdf_length cs)
 
 val secret_epoch_to_sender_data: cs:ciphersuite -> bytes -> result (lbytes (kdf_length cs))

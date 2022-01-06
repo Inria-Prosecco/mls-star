@@ -31,18 +31,12 @@ noeq type leaf_secrets_t = {
 (** Definition of a Leaf package *)
 type leaf_package_t = {
   credential: credential_t;
+  endpoint_id: bytes;
   version: nat;
   content: pub_bytes;
   extensions: pub_bytes;
   signature: pub_bytes;
 }
-
-let mk_initial_leaf_package (c:credential_t) =
-  { credential = c;
-    version = 0;
-    content = Seq.empty;
-    extensions = Seq.empty;
-    signature = admit();}
 
 
 (** Definition of a Node package *)

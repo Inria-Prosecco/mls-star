@@ -99,6 +99,7 @@ let gen_leaf_package #cs rng secrets sign_pk hpke_pk =
       identity;
       signature_key = sign_pk;
     };
+    endpoint_id = bytes_empty;
     version = 0;
     content = ps_leaf_package_content.serialize ({public_key = hpke_pk});
     extensions;

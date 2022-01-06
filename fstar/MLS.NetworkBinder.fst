@@ -65,6 +65,7 @@ let key_package_to_treesync kp =
         TS.identity = cred.identity;
         TS.signature_key = cred.signature_key;
       };
+      TS.endpoint_id = kp.endpoint_id;
       TS.version = 0;
       TS.content = ps_leaf_package_content.serialize ({public_key = kp.public_key});
       TS.extensions = (ps_seq _ ps_extension).serialize (kp.extensions);
@@ -75,6 +76,8 @@ let key_package_to_treesync kp =
 val treesync_to_keypackage: ciphersuite -> TS.leaf_package_t -> result key_package_nt
 let treesync_to_keypackage cs lp =
   if not (Seq.length lp.TS.credential.TS.identity < pow2 16) then
+    error "treesync_to_keypackage: identity too long"
+  else if not (Seq.length lp.TS.endpoint_id < 256) then
     error "treesync_to_keypackage: identity too long"
   else if not (Seq.length lp.TS.credential.TS.signature_key < pow2 16) then
     error "treesync_to_keypackage: signature_key too long"
@@ -88,6 +91,7 @@ let treesync_to_keypackage cs lp =
       version = PV_mls10;
       cipher_suite = cipher_suite;
       public_key = leaf_content.public_key;
+      endpoint_id = lp.TS.endpoint_id;
       credential = C_basic ({
         identity = lp.TS.credential.TS.identity;
         signature_scheme = SA_ed25519; //TODO

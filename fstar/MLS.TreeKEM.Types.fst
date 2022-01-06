@@ -19,7 +19,7 @@ noeq type path_secret_ciphertext (cs:ciphersuite) = {
 noeq type key_package (cs:ciphersuite) = {
   public_key: hpke_public_key cs;
   version: nat;
-  last_group_context: bytes; //Related to version, correspond to the additional data used in the ciphertexts
+  last_group_context: bytes; //Related to version, correspond to the info used in the ciphertexts
   unmerged_leaves: list nat;
   path_secret_from: direction;
   path_secret_ciphertext: list (path_secret_ciphertext cs);

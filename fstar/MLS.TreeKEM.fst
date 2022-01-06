@@ -146,16 +146,16 @@ let derive_next_path_secret cs path_secret =
   res <-- derive_secret cs path_secret (string_to_bytes "path");
   return (res <: bytes)
 
-val node_encap: #cs:ciphersuite -> version:nat -> child_secret:bytes -> ad:bytes -> direction -> pks:list (hpke_public_key cs) -> randomness (hpke_multirecipient_encrypt_entropy_length pks) -> result (key_package cs & bytes)
-let node_encap #cs version child_secret ad dir pks rand =
+val node_encap: #cs:ciphersuite -> version:nat -> child_secret:bytes -> hpke_info:bytes -> direction -> pks:list (hpke_public_key cs) -> randomness (hpke_multirecipient_encrypt_entropy_length pks) -> result (key_package cs & bytes)
+let node_encap #cs version child_secret hpke_info dir pks rand =
   node_secret <-- derive_next_path_secret cs child_secret;
   node_keys <-- derive_keypair_from_path_secret cs node_secret;
-  ciphertext <-- hpke_multirecipient_encrypt pks bytes_empty ad node_secret rand;
+  ciphertext <-- hpke_multirecipient_encrypt pks hpke_info bytes_empty node_secret rand;
   return (
     {
       public_key = snd node_keys;
       version = version;
-      last_group_context = ad;
+      last_group_context = hpke_info;
       unmerged_leaves = [];
       path_secret_from = dir;
       path_secret_ciphertext = ciphertext;
@@ -293,11 +293,11 @@ let rec mk_init_path_aux #cs #l #n t update_index =
     return (PNode new_kp next)
   end
 
-val mk_init_path: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> my_index:leaf_index n -> update_index:leaf_index n{my_index <> update_index} -> path_secret:bytes -> ad:bytes -> result (pathkem cs l n update_index)
-let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
+val mk_init_path: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> my_index:leaf_index n -> update_index:leaf_index n{my_index <> update_index} -> path_secret:bytes -> hpke_info:bytes -> result (pathkem cs l n update_index)
+let rec mk_init_path #cs #l #n t my_index update_index path_secret hpke_info =
   match t with
   | TSkip _ t' ->
-    res <-- mk_init_path t' my_index update_index path_secret ad;
+    res <-- mk_init_path t' my_index update_index path_secret hpke_info;
     return (PSkip _ res)
   | TNode None left right -> begin
     error "mk_init_path: path from the root to update leaf cannot contain blank node"
@@ -310,7 +310,7 @@ let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
       let new_kp = { kp with
         path_secret_from = update_dir;
       } in
-      next <-- mk_init_path child next_my_index next_update_index path_secret ad;
+      next <-- mk_init_path child next_my_index next_update_index path_secret hpke_info;
       return (PNode new_kp next)
     ) else (
       if not (kp.unmerged_leaves = []) then
@@ -320,10 +320,10 @@ let rec mk_init_path #cs #l #n t my_index update_index path_secret ad =
         let resol_index = original_resolution_index [] sibling next_my_index in
         let fake_randomness = mk_randomness (Seq.create (hpke_private_key_length cs) (u8 0)) in
         my_pk <-- from_option "leaf at my_index is empty!" (leaf_public_key t my_index);
-        my_path_secret_ciphertext <-- hpke_encrypt cs my_pk bytes_empty ad path_secret fake_randomness;
+        my_path_secret_ciphertext <-- hpke_encrypt cs my_pk hpke_info bytes_empty path_secret fake_randomness;
         let new_kp = { kp with
           path_secret_from = update_dir;
-          last_group_context = ad;
+          last_group_context = hpke_info;
           //TODO: put the {kem_output = ...; ...} in a separate function
           path_secret_ciphertext = Seq.seq_to_list (Seq.upd (Seq.create resol_size (empty_path_secret_ciphertext cs)) resol_index ({kem_output=fst my_path_secret_ciphertext; ciphertext = snd my_path_secret_ciphertext}));
         } in

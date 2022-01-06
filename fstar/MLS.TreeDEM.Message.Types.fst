@@ -9,17 +9,24 @@ open MLS.Result
 
 module NT = MLS.NetworkTypes
 
+(*
 type sender_type =
   | ST_member
   | ST_preconfigured
   | ST_new_member
+*)
 
-type sender = {
-  sender_type: sender_type;
-  sender_id: nat;
-}
+type sender =
+  | S_member: member:key_package_ref_nt -> sender
+  | S_preconfigured: external_key_id:bytes -> sender
+  | S_new_member: sender
+
+type wire_format =
+  | WF_plaintext
+  | WF_ciphertext
 
 noeq type message = {
+  wire_format: wire_format;
   group_id: bytes;
   epoch: nat;
   sender: sender;
@@ -33,6 +40,7 @@ noeq type message_auth = {
   confirmation_tag: option bytes;
 }
 
+(*
 val network_to_sender_type: sender_type_nt -> result sender_type
 let network_to_sender_type s =
   match s with
@@ -47,25 +55,41 @@ let sender_type_to_network s =
   | ST_member -> NT.ST_member
   | ST_preconfigured -> NT.ST_preconfigured
   | ST_new_member -> NT.ST_new_member
+*)
 
 val network_to_sender: sender_nt -> result sender
 let network_to_sender s =
-  sender_type <-- network_to_sender_type s.sender_type;
-  return ({
-    sender_type = sender_type;
-    sender_id = Lib.IntTypes.v s.sender;
-  })
+  match s with
+  | NT.S_member kp_ref -> return (S_member kp_ref)
+  | NT.S_preconfigured external_key_id -> return (S_preconfigured external_key_id)
+  | NT.S_new_member -> return S_new_member
+  | _ -> error "network_to_sender: invalid sender type"
 
 val sender_to_network: sender -> result sender_nt
 let sender_to_network s =
-  if not (s.sender_id < pow2 32) then (
-    internal_failure "network_to_sender: sender_id too big"
-  ) else (
-    return ({
-      sender_type = sender_type_to_network s.sender_type;
-      sender = u32 s.sender_id;
-    } <: sender_nt)
+  match s with
+  | S_member kp_ref -> return (NT.S_member kp_ref)
+  | S_preconfigured external_key_id -> (
+    if not (Seq.length external_key_id < 256) then (
+      internal_failure "sender_to_network: external_key_id too long"
+    ) else (
+      return (NT.S_preconfigured external_key_id)
+    )
   )
+  | S_new_member -> return NT.S_new_member
+
+val network_to_wire_format: wire_format_nt -> result wire_format
+let network_to_wire_format s =
+  match s with
+  | NT.WF_plaintext -> return WF_plaintext
+  | NT.WF_ciphertext -> return WF_ciphertext
+  | _ -> error "network_to_wire_format: invalid wire format"
+
+val wire_format_to_network: wire_format -> wire_format_nt
+let wire_format_to_network s =
+  match s with
+  | WF_plaintext -> NT.WF_plaintext
+  | WF_ciphertext -> NT.WF_ciphertext
 
 val opt_tag_to_opt_bytes: option_nt mac_nt -> result (option bytes)
 let opt_tag_to_opt_bytes mac =

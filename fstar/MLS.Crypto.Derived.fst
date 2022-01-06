@@ -6,6 +6,7 @@ open MLS.Parser
 open MLS.NetworkTypes
 open Lib.IntTypes
 open MLS.Crypto.Builtins
+open MLS.Result
 
 module DH = Spec.Agile.DH
 module AEAD = Spec.Agile.AEAD
@@ -75,6 +76,7 @@ noeq type kdf_label_nt = {
 
 val ps_kdf_label: parser_serializer kdf_label_nt
 let ps_kdf_label =
+  let open MLS.Parser in
   isomorphism kdf_label_nt
     (
       _ <-- ps_u16;
@@ -104,3 +106,7 @@ let expand_with_label cs secret label context len =
 
 let derive_secret cs secret label =
   expand_with_label cs secret label bytes_empty (kdf_length cs)
+
+let make_hash_ref cs buf =
+  tmp <-- kdf_extract cs buf bytes_empty;
+  kdf_expand cs tmp (string_to_bytes "MLS 1.0 ref") 16

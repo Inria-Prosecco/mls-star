@@ -43,7 +43,7 @@ noeq type message_ciphertext_content (content_type:message_content_type) = {
 }
 
 noeq type encrypted_sender_data_content = {
-  sender: nat;
+  sender: key_package_ref_nt;
   generation: nat;
   reuse_guard: lbytes 4;
 }
@@ -127,20 +127,18 @@ let ciphertext_content_to_network #content_type cs content =
 val network_to_encrypted_sender_data: mls_sender_data_nt -> encrypted_sender_data_content
 let network_to_encrypted_sender_data sd =
   ({
-    sender = Lib.IntTypes.v sd.sender;
+    sender = sd.sender;
     generation = Lib.IntTypes.v sd.generation;
     reuse_guard = sd.reuse_guard;
   })
 
 val encrypted_sender_data_to_network: encrypted_sender_data_content -> result mls_sender_data_nt
 let encrypted_sender_data_to_network sd =
-  if not (sd.sender < pow2 32) then
-    internal_failure "encrypted_sender_data_to_network: sender too big"
-  else if not (sd.generation < pow2 32) then
+  if not (sd.generation < pow2 32) then
     internal_failure "encrypted_sender_data_to_network: generation too big"
   else
     return ({
-      sender = u32 sd.sender;
+      sender = sd.sender;
       generation = u32 sd.generation;
       reuse_guard = sd.reuse_guard;
     } <: mls_sender_data_nt)
@@ -198,6 +196,7 @@ let compute_tbs cs msg =
     sender <-- sender_to_network msg.sender;
     content <-- message_content_pair_to_network cs msg.message_content;
     return ({
+      wire_format = wire_format_to_network msg.wire_format;
       group_id = msg.group_id;
       epoch = u64 msg.epoch;
       sender = sender;
@@ -225,7 +224,7 @@ let compute_tbs_bytes cs msg group_context =
   tbs <-- compute_tbs cs msg;
   let partial_serialized_bytes = ps_mls_plaintext_tbs.serialize tbs in
   return (
-    if msg.sender.sender_type = ST_member then
+    if S_member? msg.sender then
       Seq.append group_context partial_serialized_bytes
     else
       partial_serialized_bytes
@@ -246,7 +245,7 @@ let compute_message_membership_tag cs membership_key msg auth group_context =
   tbm <-- compute_tbm cs msg auth;
   let partial_serialized_bytes = ps_mls_plaintext_tbm.serialize tbm in
   let serialized_bytes =
-    if msg.sender.sender_type = ST_member then
+    if S_member? msg.sender then
       Seq.append group_context partial_serialized_bytes
     else
       partial_serialized_bytes
@@ -276,6 +275,7 @@ let message_compute_auth cs msg sk rand group_context confirmation_key interim_t
 val message_plaintext_to_message: message_plaintext -> message & message_auth
 let message_plaintext_to_message pt =
   (({
+    wire_format = WF_plaintext;
     group_id = pt.group_id;
     epoch = pt.epoch;
     sender = pt.sender;
@@ -287,8 +287,9 @@ let message_plaintext_to_message pt =
     confirmation_tag = pt.confirmation_tag;
   } <: message_auth))
 
-val message_to_message_plaintext: cs:ciphersuite -> membership_key:bytes -> group_context:bytes -> message & message_auth -> result message_plaintext
+val message_to_message_plaintext: cs:ciphersuite -> membership_key:bytes -> group_context:bytes -> (msg:message{msg.wire_format == WF_plaintext}) * message_auth -> result message_plaintext
 let message_to_message_plaintext cs membership_key group_context (msg, msg_auth) =
+  let msg: message = msg in //Help the record field name disambiguation (see F* issue #2374)
   membership_tag <-- compute_message_membership_tag cs membership_key msg msg_auth group_context;
   return ({
     group_id = msg.group_id;
@@ -413,40 +414,38 @@ let apply_reuse_guard cs reuse_guard nonce =
   let new_nonce_head = Seq.seq_of_list (map2 Lib.IntTypes.logxor (Seq.seq_to_list nonce_head) (Seq.seq_to_list reuse_guard)) in
   Seq.append new_nonce_head nonce_tail
 
-val message_ciphertext_to_message: cs:ciphersuite -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> message_ciphertext -> result (message & message_auth)
-let message_ciphertext_to_message cs l n encryption_secret sender_data_secret ct =
+val message_ciphertext_to_message: cs:ciphersuite -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> (key_package_ref_nt -> result (option (MLS.Tree.leaf_index n))) -> message_ciphertext -> result (message & message_auth)
+let message_ciphertext_to_message cs l n encryption_secret sender_data_secret kp_ref_to_leaf_index ct =
   sender_data <-- (
     sender_data_ad <-- message_ciphertext_to_sender_data_aad ct;
     sender_data <-- decrypt_sender_data cs sender_data_ad (get_ciphertext_sample cs ct.ciphertext) sender_data_secret ct.encrypted_sender_data;
     return (network_to_encrypted_sender_data sender_data)
   );
   ciphertext_content <-- (
-    if not (sender_data.sender < n) then
-       error "message_ciphertext_to_message: sender is too big"
-    else (
-      leaf_tree_secret <-- leaf_kdf n cs encryption_secret (MLS.TreeMath.root l) sender_data.sender;
-      let sender_as_node_index: MLS.TreeMath.node_index 0 = sender_data.sender + sender_data.sender in
-      init_ratchet <-- (
-        match ct.content_type with
-        | Content.CT_application -> init_application_ratchet cs sender_as_node_index leaf_tree_secret
-        | _ -> init_handshake_ratchet cs sender_as_node_index leaf_tree_secret
-      );
-      rs_output <-- ratchet_get_generation_key init_ratchet sender_data.generation;
-      let nonce = rs_output.nonce in
-      let key = rs_output.key in
-      let patched_nonce = apply_reuse_guard cs sender_data.reuse_guard nonce in
-      ciphertext_content_ad <-- message_ciphertext_to_ciphertext_content_aad ct;
-      ciphertext_content_network <-- decrypt_ciphertext_content cs ciphertext_content_ad key patched_nonce ct.ciphertext;
-      network_to_ciphertext_content (ciphertext_content_network <: mls_ciphertext_content_nt (message_content_type_to_network ct.content_type))
-    )
+    sender_index <-- (
+      opt_sender_index <-- kp_ref_to_leaf_index sender_data.sender;
+      from_option "message_ciphertext_to_message: can't find sender's KeyPackageRef" opt_sender_index
+    );
+    leaf_tree_secret <-- leaf_kdf n cs encryption_secret (MLS.TreeMath.root l) sender_index;
+    let sender_as_node_index: MLS.TreeMath.node_index 0 = sender_index + sender_index in
+    init_ratchet <-- (
+      match ct.content_type with
+      | Content.CT_application -> init_application_ratchet cs sender_as_node_index leaf_tree_secret
+      | _ -> init_handshake_ratchet cs sender_as_node_index leaf_tree_secret
+    );
+    rs_output <-- ratchet_get_generation_key init_ratchet sender_data.generation;
+    let nonce = rs_output.nonce in
+    let key = rs_output.key in
+    let patched_nonce = apply_reuse_guard cs sender_data.reuse_guard nonce in
+    ciphertext_content_ad <-- message_ciphertext_to_ciphertext_content_aad ct;
+    ciphertext_content_network <-- decrypt_ciphertext_content cs ciphertext_content_ad key patched_nonce ct.ciphertext;
+    network_to_ciphertext_content (ciphertext_content_network <: mls_ciphertext_content_nt (message_content_type_to_network ct.content_type))
   );
   return (({
+    wire_format = WF_ciphertext;
     group_id = ct.group_id;
     epoch = ct.epoch;
-    sender = ({
-      sender_type = ST_member;
-      sender_id = sender_data.sender;
-    });
+    sender = S_member sender_data.sender;
     authenticated_data = ct.authenticated_data;
     content_type = ct.content_type;
     message_content = ciphertext_content.message_content;
@@ -455,8 +454,9 @@ let message_ciphertext_to_message cs l n encryption_secret sender_data_secret ct
     confirmation_tag = ciphertext_content.confirmation_tag;
   } <: message_auth))
 
-val message_to_message_ciphertext: #cs:ciphersuite -> ratchet_state cs -> randomness 4 -> bytes -> (message & message_auth) -> result (message_ciphertext & ratchet_state cs)
+val message_to_message_ciphertext: #cs:ciphersuite -> ratchet_state cs -> randomness 4 -> bytes -> (msg:message{msg.wire_format == WF_ciphertext} * message_auth) -> result (message_ciphertext & ratchet_state cs)
 let message_to_message_ciphertext #cs ratchet rand sender_data_secret (msg, msg_auth) =
+  let msg: message = msg in //Help the record field name disambiguation (see F* issue #2374)
   let reuse_guard = get_random_bytes rand in
   ciphertext <-- (
     key_nonce <-- ratchet_get_key ratchet;
@@ -473,12 +473,12 @@ let message_to_message_ciphertext #cs ratchet rand sender_data_secret (msg, msg_
     encrypt_ciphertext_content cs ciphertext_content_ad key patched_nonce ciphertext_content_network
   );
   encrypted_sender_data <-- (
-    if not (msg.sender.sender_type = ST_member) then
+    if not (S_member? msg.sender) then
       error "message_to_message_ciphertext: sender is not a member"
     else (
       sender_data_ad <-- message_to_sender_data_aad msg;
       let sender_data = ({
-        sender = msg.sender.sender_id;
+        sender = S_member?.member msg.sender;
         generation = ratchet.generation;
         reuse_guard = reuse_guard;
       }) in

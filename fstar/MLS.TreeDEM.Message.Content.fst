@@ -45,15 +45,16 @@ let message_content_type_to_network content_type =
 noeq type proposal =
   | Add: MLS.TreeSync.Types.leaf_package_t -> proposal
   | Update: MLS.TreeSync.Types.leaf_package_t -> proposal
-  | Remove: nat -> proposal
+  | Remove: key_package_ref_nt -> proposal
   | PreSharedKey: pre_shared_key_id_nt -> proposal
   | ReInit: reinit_nt -> proposal
   | ExternalInit: external_init_nt -> proposal
   | AppAck: app_ack_nt -> proposal
+  | GroupContextExtensions: group_context_extensions_nt -> proposal
 
 noeq type proposal_or_ref =
   | Proposal: proposal -> proposal_or_ref
-  | Reference: bytes -> proposal_or_ref
+  | Reference: proposal_ref_nt -> proposal_or_ref
 
 noeq type commit = {
   c_proposals: list proposal_or_ref;
@@ -77,7 +78,7 @@ let network_to_proposal p =
     kp <-- key_package_to_treesync update.key_package;
     return (Update kp)
   | P_remove remove ->
-    return (Remove (Lib.IntTypes.v remove.removed))
+    return (Remove remove.removed)
   | P_psk psk ->
     return (PreSharedKey psk.psk)
   | P_reinit reinit ->
@@ -86,6 +87,8 @@ let network_to_proposal p =
     return (ExternalInit external_init)
   | P_app_ack app_ack ->
     return (AppAck app_ack)
+  | P_group_context_extensions group_context_extensions ->
+    return (GroupContextExtensions group_context_extensions)
   | _ -> error "network_to_proposal: invalid proposal"
 
 val network_to_proposal_or_ref: proposal_or_ref_nt -> result proposal_or_ref
@@ -142,14 +145,12 @@ let proposal_to_network cs p =
     kp <-- treesync_to_keypackage cs lp;
     return (P_update ({key_package = kp}))
   | Remove id ->
-    if not (id < pow2 32) then
-      internal_failure "proposal_to_network: remove id too big"
-    else
-      return (P_remove ({removed = u32 id}))
+      return (P_remove ({removed = id}))
   | PreSharedKey x -> return (P_psk ({psk = x}))
   | ReInit x -> return (P_reinit x)
   | ExternalInit x -> return (P_external_init x)
   | AppAck x -> return (P_app_ack x)
+  | GroupContextExtensions x -> return (P_group_context_extensions x)
 
 val proposal_or_ref_to_network: MLS.Crypto.ciphersuite -> proposal_or_ref -> result proposal_or_ref_nt
 let proposal_or_ref_to_network cs por =

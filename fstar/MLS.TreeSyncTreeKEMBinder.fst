@@ -136,6 +136,7 @@ let rec treekem_to_treesync_aux #l #n #i #cs nb_left_leaves new_leaf_package pk 
   | PLeaf mi ->
     return (PLeaf ({
       credential = new_leaf_package.credential;
+      endpoint_id = new_leaf_package.endpoint_id;
       version = (mi <: member_info cs).version;
       content = secret_to_pub (ps_leaf_package_content.serialize ({
         public_key = (mi <: member_info cs).public_key;

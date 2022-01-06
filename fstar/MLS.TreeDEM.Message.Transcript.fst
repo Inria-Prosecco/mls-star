@@ -25,6 +25,7 @@ let compute_confirmed_transcript_hash cs msg signature interim_transcript_hash =
     sender <-- sender_to_network msg.sender;
     content <-- message_content_pair_to_network cs msg.message_content;
     let serialized_msg = ps_mls_plaintext_commit_content.serialize ({
+      wire_format = wire_format_to_network msg.wire_format;
       group_id = msg.group_id;
       epoch = u64 msg.epoch;
       sender = sender;
