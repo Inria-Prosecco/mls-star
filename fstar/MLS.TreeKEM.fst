@@ -174,7 +174,7 @@ let node_decap #cs child_secret i dir kp =
     let ciphertext = List.Tot.index kp.path_secret_ciphertext i in
     child_keys <-- derive_keypair_from_path_secret cs child_secret;
     let child_sk = fst child_keys in
-    hpke_decrypt cs ciphertext.kem_output child_sk bytes_empty (kp.last_group_context) ciphertext.ciphertext
+    hpke_decrypt cs ciphertext.kem_output child_sk (kp.last_group_context) bytes_empty ciphertext.ciphertext
   )
 
 val update_path_entropy_length: #cs:ciphersuite -> #l:nat -> #n:tree_size l -> treekem cs l n -> leaf_index n -> nat
