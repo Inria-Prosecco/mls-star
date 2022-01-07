@@ -62,14 +62,10 @@ let rec leaf_kdf #l n cs encryption_secret root leaf_index =
     leaf_kdf new_n cs new_encryption_secret new_root new_leaf_index
   )
 
-val zero_vector: ciphersuite -> bytes
-let zero_vector cs =
-  Seq.create (kdf_length cs) (u8 0)
-
 val opt_secret_to_secret: ciphersuite -> option bytes -> bytes
 let opt_secret_to_secret cs opt_secret =
   match opt_secret with
-  | Some commit_secret -> commit_secret
+  | Some secret -> secret
   | None -> zero_vector cs
 
 val secret_init_to_joiner: cs:ciphersuite -> bytes -> option bytes -> bytes -> result (lbytes (kdf_length cs))

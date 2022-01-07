@@ -110,3 +110,6 @@ let derive_secret cs secret label =
 let make_hash_ref cs buf =
   tmp <-- kdf_extract cs buf bytes_empty;
   kdf_expand cs tmp (string_to_bytes "MLS 1.0 ref") 16
+
+let zero_vector cs =
+  Seq.create (kdf_length cs) (u8 0)
