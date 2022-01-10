@@ -16,18 +16,30 @@ open MLS.Parser
 open MLS.Result
 open MLS.Tree
 
+val normalize_text: string -> ML string
+let normalize_text s =
+    if FStar.String.length s < 2 then
+      failwith "normalize_text: too short"
+    else if FStar.String.sub s 0 2 = "02" then
+      FStar.String.sub s 2 (FStar.String.length s - 2)
+    else
+      failwith "normalize_text: don't start with 02"
+
 val test_leaf_generation: #cs:ciphersuite -> l:nat -> n:tree_size l -> i:leaf_index n -> bytes -> bytes -> ratchet_state cs -> encryption_leaf_generation_test -> ML (bool & ratchet_state cs)
 let test_leaf_generation #cs l n i encryption_secret sender_data_secret r_state test =
   let r_output = extract_result (ratchet_get_key r_state) in
   let r_next_state = extract_result (ratchet_next_state r_state) in
-  let key_ok = check_equal "key" string_to_string test.key (bytes_to_hex_string r_output.key) in
-  let nonce_ok = check_equal "nonce" string_to_string test.nonce (bytes_to_hex_string r_output.nonce) in
-  let message_plaintext_network = extract_option "bad plaintext" ((ps_to_pse ps_mls_plaintext).parse_exact (hex_string_to_bytes test.plaintext)) in
-  let message_ciphertext_network = extract_option "bad ciphertext" ((ps_to_pse ps_mls_ciphertext).parse_exact (hex_string_to_bytes test.ciphertext)) in
+  let key_ok = check_equal "key" bytes_to_hex_string (hex_string_to_bytes test.key) r_output.key in
+  let nonce_ok = check_equal "nonce" bytes_to_hex_string (hex_string_to_bytes test.nonce) r_output.nonce in
+  let plaintext_string = normalize_text test.plaintext in
+  let ciphertext_string = normalize_text test.ciphertext in
+  let message_plaintext_network = extract_option "bad plaintext" ((ps_to_pse ps_mls_plaintext).parse_exact (hex_string_to_bytes plaintext_string)) in
+  let message_ciphertext_network = extract_option "bad ciphertext" ((ps_to_pse ps_mls_ciphertext).parse_exact (hex_string_to_bytes ciphertext_string)) in
   let message_plaintext = extract_result (network_to_message_plaintext message_plaintext_network) in
   let message_ciphertext = extract_result (network_to_message_ciphertext message_ciphertext_network) in
   let message_1 = message_plaintext_to_message message_plaintext in
   let message_2 = extract_result (message_ciphertext_to_message cs l n encryption_secret sender_data_secret (fun _ -> return (Some i)) message_ciphertext) in
+  let message_2 = (({ (fst message_2) with wire_format = MLS.TreeDEM.Message.Types.WF_plaintext } <: message), snd message_2) in
   let plaintext_eq_ciphertext_ok = test_equality message_1 message_2 in
   let sender_ok = MLS.TreeDEM.Message.Types.S_member? (fst message_1).sender in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)

@@ -37,7 +37,7 @@ let rec external_pathsync_to_pathsync_aux #l #n #i cs opt_sign_key parent_parent
     leaf_errors <-- check_leaf cs 0 (Some lp); //TODO hack: we know that the leaf index is only used for the errors, so we can set it to 0
     let parent_hash_ext = get_parent_hash_extension lp.extensions in
     //TODO: hack while openmls' test vectors are broken
-    if not (IE_Good? leaf_errors || (match leaf_errors with |IE_Errors [IE_LeafError LIE_ExtensionsNotInCapabilities _] -> true | _ -> false)) then
+    if not (IE_Good? leaf_errors || (match leaf_errors with |IE_Errors [IE_LeafError LIE_ExtensionsNotInCapabilities _] -> true |IE_Errors [IE_LeafError LIE_NoCapabilities _] -> true| _ -> false)) then
       error "external_pathsync_to_pathsync_aux: invalid leaf"
     else if not (Some? parent_hash_ext) then
       error "external_pathsync_to_pathsync_aux: leaf don't contain any parent hash"

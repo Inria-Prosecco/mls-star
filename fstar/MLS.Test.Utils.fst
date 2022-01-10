@@ -61,7 +61,13 @@ let hex_string_to_hex_digit s =
   else if s = "D" then 13
   else if s = "E" then 14
   else if s = "F" then 15
-  else failwith "string_to_hex_digit: digit is not in [0-9A-F]"
+  else if s = "a" then 10
+  else if s = "b" then 11
+  else if s = "c" then 12
+  else if s = "d" then 13
+  else if s = "e" then 14
+  else if s = "f" then 15
+  else failwith "string_to_hex_digit: digit is not in [0-9A-Fa-f]"
 
 val hex_string_to_byte: s:string{strlen s == 2} -> ML (n:nat{n<256})
 let hex_string_to_byte s =

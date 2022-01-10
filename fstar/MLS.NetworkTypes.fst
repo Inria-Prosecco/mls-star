@@ -9,9 +9,17 @@ type hpke_public_key_nt = blbytes ({min=1; max=(pow2 16)-1})
 val ps_hpke_public_key: parser_serializer hpke_public_key_nt
 let ps_hpke_public_key = ps_bytes _
 
+//This is from draft 12+
+(*
 type key_package_ref_nt = lbytes 16
 val ps_key_package_ref: parser_serializer key_package_ref_nt
 let ps_key_package_ref = ps_lbytes 16
+*)
+
+//This is from draft 12
+type key_package_ref_nt = blbytes ({min=0; max=255})
+val ps_key_package_ref: parser_serializer key_package_ref_nt
+let ps_key_package_ref = ps_bytes _
 
 type proposal_ref_nt = lbytes 16
 val ps_proposal_ref: parser_serializer proposal_ref_nt
@@ -595,6 +603,27 @@ let ps_pre_shared_keys =
     (fun psks -> {psks = psks})
     (fun x -> x.psks)
 
+noeq type psk_label_nt = {
+  id: pre_shared_key_id_nt;
+  index: uint16;
+  count: uint16;
+}
+
+val ps_psk_label: parser_serializer psk_label_nt
+let ps_psk_label =
+  isomorphism psk_label_nt
+    (
+      _ <-- ps_pre_shared_key_id;
+      _ <-- ps_u16;
+      ps_u16
+    )
+    (fun (|id, (|index, count|)|) -> ({
+      id = id;
+      index = index;
+      count = count;
+    }))
+    (fun x -> (|x.id, (|x.index, x.count|)|))
+
 (*** Proposals ***)
 
 noeq type add_nt = {
@@ -729,7 +758,7 @@ type proposal_type_nt =
 
 val ps_proposal_type: parser_serializer proposal_type_nt
 let ps_proposal_type =
-  isomorphism proposal_type_nt ps_u8
+  isomorphism proposal_type_nt ps_u16
     (fun x -> match v x with
       | 0 -> PT_reserved
       | 1 -> PT_add

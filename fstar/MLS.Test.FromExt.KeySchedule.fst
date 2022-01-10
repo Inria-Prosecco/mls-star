@@ -13,6 +13,7 @@ open MLS.NetworkTypes
 open MLS.Parser
 open MLS.Crypto
 open MLS.TreeDEM.Keys
+open MLS.TreeDEM.PSK
 
 val gen_group_context: string -> nat -> keyschedule_test_epoch_input -> ML bytes
 let gen_group_context group_id epoch inp =
@@ -49,6 +50,17 @@ let gen_epoch_output cs group_id last_init_secret epoch inp =
   let membership_key = extract_result (secret_epoch_to_membership cs epoch_secret) in
   let resumption_secret = extract_result (secret_epoch_to_resumption cs epoch_secret) in
   let external_pub = ps_hpke_public_key.serialize (snd (extract_result (secret_external_to_keypair cs external_secret))) in
+
+  //TODO (when this is standardized in the test vectors) move it in a more sensible place
+  let my_psk_secret = extract_result (compute_psk_secret cs (List.map (fun (psk:keyschedule_test_epoch_psk) -> ({id = PSKI_external (hex_string_to_bytes psk.id); nonce = hex_string_to_bytes psk.nonce;}, hex_string_to_bytes psk.secret)) inp.external_psks)) in
+  let _ =
+    if inp.branch_psk_nonce = "" then (
+      if check_equal "psk_secret" (bytes_to_hex_string) (hex_string_to_bytes inp.psk_secret) my_psk_secret then
+        ()
+      else
+        failwith "bad psk secret"
+    ) else FStar.IO.print_string "skipping psk_secret because of branch psk nonce (TODO)\n"
+  in
 
   {
     group_context = bytes_to_hex_string group_context;
@@ -94,19 +106,19 @@ let test_keyschedule_one t =
     let (inputs, expected_outputs) = List.Tot.unzip t.epochs in
     let our_outputs = gen_list_epoch_output cs t.group_id t.initial_init_secret inputs in
     List.forall2 (fun (e_out:keyschedule_test_epoch_output) (o_out:keyschedule_test_epoch_output) ->
-      let group_context_ok = check_equal "group_context" string_to_string e_out.group_context o_out.group_context in
-      let joiner_secret_ok = check_equal "joiner_secret" string_to_string e_out.joiner_secret o_out.joiner_secret in
-      let welcome_secret_ok = check_equal "welcome_secret" string_to_string e_out.welcome_secret o_out.welcome_secret in
-      let init_secret_ok = check_equal "init_secret" string_to_string e_out.init_secret o_out.init_secret in
-      let sender_data_secret_ok = check_equal "sender_data_secret" string_to_string e_out.sender_data_secret o_out.sender_data_secret in
-      let encryption_secret_ok = check_equal "encryption_secret" string_to_string e_out.encryption_secret o_out.encryption_secret in
-      let exporter_secret_ok = check_equal "exporter_secret" string_to_string e_out.exporter_secret o_out.exporter_secret in
-      let authentication_secret_ok = check_equal "authentication_secret" string_to_string e_out.authentication_secret o_out.authentication_secret in
-      let external_secret_ok = check_equal "external_secret" string_to_string e_out.external_secret o_out.external_secret in
-      let confirmation_key_ok = check_equal "confirmation_key" string_to_string e_out.confirmation_key o_out.confirmation_key in
-      let membership_key_ok = check_equal "membership_key" string_to_string e_out.membership_key o_out.membership_key in
-      let resumption_secret_ok = check_equal "resumption_secret" string_to_string e_out.resumption_secret o_out.resumption_secret in
-      let external_pub_ok = check_equal "external_pub" string_to_string e_out.external_pub o_out.external_pub in
+      let group_context_ok = check_equal "group_context" (bytes_to_hex_string) (hex_string_to_bytes e_out.group_context) (hex_string_to_bytes o_out.group_context) in
+      let joiner_secret_ok = check_equal "joiner_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.joiner_secret) (hex_string_to_bytes o_out.joiner_secret) in
+      let welcome_secret_ok = check_equal "welcome_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.welcome_secret) (hex_string_to_bytes o_out.welcome_secret) in
+      let init_secret_ok = check_equal "init_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.init_secret) (hex_string_to_bytes o_out.init_secret) in
+      let sender_data_secret_ok = check_equal "sender_data_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.sender_data_secret) (hex_string_to_bytes o_out.sender_data_secret) in
+      let encryption_secret_ok = check_equal "encryption_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.encryption_secret) (hex_string_to_bytes o_out.encryption_secret) in
+      let exporter_secret_ok = check_equal "exporter_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.exporter_secret) (hex_string_to_bytes o_out.exporter_secret) in
+      let authentication_secret_ok = check_equal "authentication_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.authentication_secret) (hex_string_to_bytes o_out.authentication_secret) in
+      let external_secret_ok = check_equal "external_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_secret) (hex_string_to_bytes o_out.external_secret) in
+      let confirmation_key_ok = check_equal "confirmation_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.confirmation_key) (hex_string_to_bytes o_out.confirmation_key) in
+      let membership_key_ok = check_equal "membership_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.membership_key) (hex_string_to_bytes o_out.membership_key) in
+      let resumption_secret_ok = check_equal "resumption_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.resumption_secret) (hex_string_to_bytes o_out.resumption_secret) in
+      let external_pub_ok = check_equal "external_pub" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_pub) (hex_string_to_bytes o_out.external_pub) in
       group_context_ok && joiner_secret_ok && welcome_secret_ok && init_secret_ok && sender_data_secret_ok && encryption_secret_ok && exporter_secret_ok && authentication_secret_ok && external_secret_ok && confirmation_key_ok && membership_key_ok && resumption_secret_ok && external_pub_ok
     ) expected_outputs our_outputs
   end

@@ -14,13 +14,6 @@ type treemath_test = {
   sibling: list (option U32.t);
 }
 
-type keyschedule_test_epoch_input = {
-  tree_hash: string;
-  commit_secret: string;
-  psk_secret: string;
-  confirmed_transcript_hash: string;
-}
-
 type encryption_sender_data_info_test = {
   ciphertext: string;
   key: string;
@@ -47,6 +40,21 @@ type encryption_test = {
   sender_data_secret: string;
   sender_data_info: encryption_sender_data_info_test;
   leaves: list encryption_leaf_test;
+}
+
+type keyschedule_test_epoch_psk = {
+  id: string;
+  nonce: string;
+  secret: string;
+}
+
+type keyschedule_test_epoch_input = {
+  tree_hash: string;
+  commit_secret: string;
+  psk_secret: string;
+  confirmed_transcript_hash: string;
+  external_psks: list keyschedule_test_epoch_psk;
+  branch_psk_nonce: string;
 }
 
 type keyschedule_test_epoch_output = {

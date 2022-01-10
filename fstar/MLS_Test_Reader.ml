@@ -42,7 +42,15 @@ let parse_optional_uint32 (json:Yojson.Safe.t): FStar_UInt32.t option =
 
 let parse_treemath_test (json:Yojson.Safe.t): treemath_test =
   match json with
-  | `Assoc [("n_leaves", `Int n_leaves); ("n_nodes", `Int n_nodes); ("root", `List root); ("left", `List left); ("right", `List right); ("parent", `List parent); ("sibling", `List sibling)] ->
+  | `Assoc [
+    ("left", `List left);
+    ("n_leaves", `Int n_leaves);
+    ("n_nodes", `Int n_nodes);
+    ("parent", `List parent);
+    ("right", `List right);
+    ("root", `List root);
+    ("sibling", `List sibling);
+  ] ->
     ({
       n_leaves=int_to_uint32 n_leaves;
       n_nodes=int_to_uint32 n_nodes;
@@ -70,10 +78,10 @@ let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_send
 let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_generation_test =
   match json with
   | `Assoc [
+    ("ciphertext", `String ciphertext);
     ("key", `String key);
     ("nonce", `String nonce);
     ("plaintext", `String plaintext);
-    ("ciphertext", `String ciphertext);
   ] ->
     ({
       key1 = key;
@@ -85,9 +93,9 @@ let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_
 let parse_encryption_leaf_test (json:Yojson.Safe.t): encryption_leaf_test =
   match json with
   | `Assoc [
+    ("application", `List application);
     ("generations", `Int generations);
     ("handshake", `List handshake);
-    ("application", `List application);
   ] ->
     ({
       generations = int_to_uint32 generations;
@@ -99,47 +107,65 @@ let parse_encryption_test (json:Yojson.Safe.t): encryption_test =
   match json with
   | `Assoc [
     ("cipher_suite", `Int cipher_suite);
-    ("n_leaves", `Int n_leaves);
+    (* ("n_leaves", `Int n_leaves); *)
     ("encryption_secret", `String encryption_secret);
-    ("sender_data_secret", `String sender_data_secret);
+    ("leaves", `List leaves);
     ("sender_data_info", sender_data_info);
-    ("leaves", `List leaves)
+    ("sender_data_secret", `String sender_data_secret);
+    ("tree", _)
   ] ->
     ({
       cipher_suite = int_to_uint16 cipher_suite;
-      n_leaves1 = int_to_uint32 n_leaves;
+      n_leaves1 = int_to_uint32 (List.length leaves); (*n_leaves;*)
       encryption_secret = encryption_secret;
       sender_data_secret = sender_data_secret;
       sender_data_info = parse_encryption_sender_data_info_test sender_data_info;
       leaves = List.map parse_encryption_leaf_test leaves;
     })
 
+let parse_keyschedule_test_epoch_psk (json:Yojson.Safe.t): keyschedule_test_epoch_psk =
+  match json with
+  | `Assoc [
+    ("id", `String id);
+    ("nonce", `String nonce);
+    ("secret", `String secret);
+  ] ->
+    ({
+      id = id;
+      nonce2 = nonce;
+      secret = secret;
+    })
+
 let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_input * keyschedule_test_epoch_output =
   match json with
   | `Assoc [
-    ("tree_hash", `String tree_hash);
+    ("authentication_secret", `String authentication_secret);
+    ("branch_psk_nonce", `String branch_psk_nonce);
     ("commit_secret", `String commit_secret);
-    ("psk_secret", `String psk_secret);
+    ("confirmation_key", `String confirmation_key);
     ("confirmed_transcript_hash", `String confirmed_transcript_hash);
-    ("group_context", `String group_context);
-    ("joiner_secret", `String joiner_secret);
-    ("welcome_secret", `String welcome_secret);
-    ("init_secret", `String init_secret);
-    ("sender_data_secret", `String sender_data_secret);
     ("encryption_secret", `String encryption_secret);
     ("exporter_secret", `String exporter_secret);
-    ("authentication_secret", `String authentication_secret);
+    ("external_psks", `List external_psks);
+    ("external_pub", `String external_pub);
     ("external_secret", `String external_secret);
-    ("confirmation_key", `String confirmation_key);
+    ("group_context", `String group_context);
+    ("init_secret", `String init_secret);
+    ("joiner_secret", `String joiner_secret);
     ("membership_key", `String membership_key);
+    ("psk_secret", `String psk_secret);
     ("resumption_secret", `String resumption_secret);
-    ("external_pub", `String external_pub)
+    ("sender_data_secret", `String sender_data_secret);
+    ("tree_hash", `String tree_hash);
+    ("welcome_secret", `String welcome_secret);
   ] ->
     ({
       tree_hash = tree_hash;
       commit_secret = commit_secret;
       psk_secret = psk_secret;
       confirmed_transcript_hash = confirmed_transcript_hash;
+      external_psks = List.map parse_keyschedule_test_epoch_psk external_psks;
+      branch_psk_nonce = branch_psk_nonce;
     }, {
       group_context = group_context;
       joiner_secret = joiner_secret;
@@ -160,7 +186,12 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
 
 let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
   match json with
-  | `Assoc [("cipher_suite", `Int cipher_suite); ("group_id", `String group_id); ("initial_init_secret", `String initial_init_secret); ("epochs", `List epochs)] ->
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("epochs", `List epochs);
+    ("group_id", `String group_id);
+    ("initial_init_secret", `String initial_init_secret);
+  ] ->
     {
       cipher_suite1 = int_to_uint16 cipher_suite;
       group_id = group_id;
@@ -173,18 +204,18 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
   match json with
   | `Assoc [
     ("cipher_suite", `Int cipher_suite);
-    ("group_id", `String group_id);
-    ("epoch", epoch);
-    ("tree_hash_before", `String tree_hash_before);
-    ("confirmed_transcript_hash_before", `String confirmed_transcript_hash_before);
-    ("interim_transcript_hash_before", `String interim_transcript_hash_before);
-    ("credential", `String credential);
-    ("membership_key", `String membership_key);
-    ("confirmation_key", `String confirmation_key);
     ("commit", `String commit);
-    ("group_context", `String group_context);
+    ("confirmation_key", `String confirmation_key);
     ("confirmed_transcript_hash_after", `String confirmed_transcript_hash_after);
+    ("confirmed_transcript_hash_before", `String confirmed_transcript_hash_before);
+    ("credential", `String credential);
+    ("epoch", epoch);
+    ("group_context", `String group_context);
+    ("group_id", `String group_id);
     ("interim_transcript_hash_after", `String interim_transcript_hash_after);
+    ("interim_transcript_hash_before", `String interim_transcript_hash_before);
+    ("membership_key", `String membership_key);
+    ("tree_hash_before", `String tree_hash_before);
   ] ->
     ({
       cipher_suite2 = int_to_uint16 cipher_suite;
@@ -206,20 +237,20 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
 let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
   match json with
   | `Assoc [
-    ("cipher_suite", `Int cipher_suite);
-    ("ratchet_tree_before", `String ratchet_tree_before);
     ("add_sender", `Int add_sender);
-    ("my_leaf_secret", `String my_leaf_secret);
+    ("cipher_suite", `Int cipher_suite);
     ("my_key_package", `String my_key_package);
+    ("my_leaf_secret", `String my_leaf_secret);
     ("my_path_secret", `String my_path_secret);
-    ("update_sender", `Int update_sender);
-    ("update_path", `String update_path);
-    ("update_group_context", `String update_group_context);
-    ("tree_hash_before", `String tree_hash_before);
+    ("ratchet_tree_after", `String ratchet_tree_after);
+    ("ratchet_tree_before", `String ratchet_tree_before);
     ("root_secret_after_add", `String root_secret_after_add);
     ("root_secret_after_update", `String root_secret_after_update);
-    ("ratchet_tree_after", `String ratchet_tree_after);
-    ("tree_hash_after", `String tree_hash_after)
+    ("tree_hash_after", `String tree_hash_after);
+    ("tree_hash_before", `String tree_hash_before);
+    ("update_group_context", `String update_group_context);
+    ("update_path", `String update_path);
+    ("update_sender", `Int update_sender);
   ] ->
     ({
       cipher_suite3 = int_to_uint16 cipher_suite;
@@ -261,6 +292,7 @@ let get_filename t =
 
 let get_testsuite (typ:test_type): testsuite =
   let json = Yojson.Safe.from_channel (open_in (get_filename typ)) in
+  let json = Yojson.Safe.sort json in
   match typ with
   | TreeMath -> begin
     match json with

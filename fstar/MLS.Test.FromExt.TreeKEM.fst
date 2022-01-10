@@ -147,11 +147,11 @@ let test_treekem_one t =
       output = output;
     } in
     let our_output = gen_treekem_output cs t.input in
-    let tree_hash_before_ok = check_equal "tree_hash_before_ok" string_to_string t.output.tree_hash_before our_output.tree_hash_before in
-    let root_secret_after_add_ok = check_equal "root_secret_after_add" string_to_string t.output.root_secret_after_add our_output.root_secret_after_add in
-    let root_secret_after_update_ok = check_equal "root_secret_after_update" string_to_string t.output.root_secret_after_update our_output.root_secret_after_update in
-    let ratchet_tree_after_ok = check_equal "ratchet_tree_after" string_to_string t.output.ratchet_tree_after our_output.ratchet_tree_after in
-    let tree_hash_after_ok = check_equal "tree_hash_after" string_to_string t.output.tree_hash_after our_output.tree_hash_after in
+    let tree_hash_before_ok = check_equal "tree_hash_before_ok" bytes_to_hex_string (hex_string_to_bytes t.output.tree_hash_before) (hex_string_to_bytes our_output.tree_hash_before) in
+    let root_secret_after_add_ok = check_equal "root_secret_after_add" bytes_to_hex_string (hex_string_to_bytes t.output.root_secret_after_add) (hex_string_to_bytes our_output.root_secret_after_add) in
+    let root_secret_after_update_ok = check_equal "root_secret_after_update" bytes_to_hex_string (hex_string_to_bytes t.output.root_secret_after_update) (hex_string_to_bytes our_output.root_secret_after_update) in
+    let ratchet_tree_after_ok = check_equal "ratchet_tree_after" bytes_to_hex_string (hex_string_to_bytes t.output.ratchet_tree_after) (hex_string_to_bytes our_output.ratchet_tree_after) in
+    let tree_hash_after_ok = check_equal "tree_hash_after" bytes_to_hex_string (hex_string_to_bytes t.output.tree_hash_after) (hex_string_to_bytes our_output.tree_hash_after) in
     tree_hash_before_ok && root_secret_after_add_ok && root_secret_after_update_ok && ratchet_tree_after_ok && tree_hash_after_ok
   end
 

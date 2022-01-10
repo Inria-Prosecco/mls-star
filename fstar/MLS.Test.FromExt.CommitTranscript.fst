@@ -14,6 +14,7 @@ open MLS.NetworkTypes
 open MLS.StringUtils
 open MLS.Result
 
+#push-options "--ifuel 2 --z3rlimit 50"
 val test_commit_transcript_one: commit_transcript_test -> ML bool
 let test_commit_transcript_one t =
   match uint16_to_ciphersuite t.cipher_suite with
@@ -27,15 +28,20 @@ let test_commit_transcript_one t =
   end
   | Success cs -> begin
     let ciphersuite_network = extract_option "malformed credential" ((ps_to_pse ps_credential).parse_exact (hex_string_to_bytes t.credential)) in
-    let commit_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_plaintext).parse_exact (hex_string_to_bytes t.commit)) in
-    let commit_plaintext = extract_result (network_to_message_plaintext commit_network) in
+    let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_message).parse_exact (hex_string_to_bytes t.commit)) in
+    let commit_plaintext_network =
+      match commit_message_network with
+      | M_plaintext p -> p
+      | _ -> failwith "commit is not in a plaintext"
+    in
+    let commit_plaintext = extract_result (network_to_message_plaintext commit_plaintext_network) in
     let (commit_message, commit_auth) = message_plaintext_to_message commit_plaintext in
     let computed_confirmed_transcript_hash = extract_result (compute_confirmed_transcript_hash cs commit_message commit_auth.signature (hex_string_to_bytes t.interim_transcript_hash_before)) in
     let computed_interim_transcript_hash = extract_result (compute_interim_transcript_hash cs commit_auth.confirmation_tag computed_confirmed_transcript_hash) in
     let computed_confirmation_tag = extract_result (compute_message_confirmation_tag cs (hex_string_to_bytes t.confirmation_key) computed_confirmed_transcript_hash) in
     let computed_membership_tag = extract_result (compute_message_membership_tag cs (hex_string_to_bytes t.membership_key) commit_message commit_auth (hex_string_to_bytes t.group_context)) in
-    let confirmed_transcript_hash_ok = check_equal "confirmed_transcript_hash" string_to_string (t.confirmed_transcript_hash_after) (bytes_to_hex_string computed_confirmed_transcript_hash) in
-    let interim_transcript_hash_ok = check_equal "interim_transcript_hash" string_to_string (t.interim_transcript_hash_after) (bytes_to_hex_string computed_interim_transcript_hash) in
+    let confirmed_transcript_hash_ok = check_equal "confirmed_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.confirmed_transcript_hash_after) computed_confirmed_transcript_hash in
+    let interim_transcript_hash_ok = check_equal "interim_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.interim_transcript_hash_after) computed_interim_transcript_hash in
     let confirmation_tag_ok =
       match commit_auth.confirmation_tag with
       | Some expected_confirmation_tag ->
@@ -45,9 +51,9 @@ let test_commit_transcript_one t =
         false
     in
     let membership_tag_ok =
-      match commit_network.membership_tag with
+      match commit_plaintext_network.membership_tag with
       | Some_nt expected_membership_tag ->
-        check_equal "membership_tag" string_to_string (bytes_to_hex_string expected_membership_tag.mac_value) (bytes_to_hex_string computed_membership_tag)
+        check_equal "membership_tag" bytes_to_hex_string expected_membership_tag.mac_value computed_membership_tag
       | _ ->
         IO.print_string "Missing membership tag\n";
         false
@@ -67,6 +73,7 @@ let test_commit_transcript_one t =
     in
     confirmed_transcript_hash_ok && interim_transcript_hash_ok && confirmation_tag_ok && membership_tag_ok && signature_ok
   end
+#pop-options
 
 val test_commit_transcript: list commit_transcript_test -> ML bool
 let test_commit_transcript =

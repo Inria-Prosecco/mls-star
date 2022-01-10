@@ -13,7 +13,13 @@ val leaf_package_to_kp_ref: cs:ciphersuite -> leaf_package_t -> result (key_pack
 let leaf_package_to_kp_ref cs lp =
   kp <-- treesync_to_keypackage cs lp;
   let kp_bytes = ps_key_package.serialize kp in
+  (*
+  // This is from draft 12+
   make_hash_ref cs kp_bytes
+  *)
+  // This is from draft 12
+  res <-- hash_hash cs kp_bytes;
+  if hash_length cs < 256 then return (res <: key_package_ref_nt) else internal_failure "leaf_package_to_kp_ref: hash_length too long"
 
 val key_package_ref_to_index: #l:nat -> #n:tree_size l -> ciphersuite -> treesync l n -> key_package_ref_nt -> result (option (leaf_index n))
 let key_package_ref_to_index #l #n cs t kp_ref =
