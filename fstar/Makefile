@@ -78,9 +78,9 @@ test: test_vectors
 
 # Test vectors
 
-test_vectors:
-	wget https://tmp.twal.org/test_vectors.zip
-	unzip test_vectors.zip
+# test_vectors:
+# 	wget https://tmp.twal.org/test_vectors.zip
+# 	unzip test_vectors.zip
 
 # Interactive mode support...
 
