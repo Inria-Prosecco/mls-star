@@ -391,8 +391,13 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
     other_extensions = ratchet_tree_bytes;
     confirmation_tag = confirmation_tag;
     signer = my_kp_ref;
-    signature = Seq.empty; //TODO
+    signature = Seq.empty; //Signed afterward
   } in
+  group_info <-- (
+    nonce <-- universal_sign_nonce;
+    assume(cs == future_state.cs);
+    sign_welcome_group_info cs future_state.sign_private_key group_info nonce
+  );
   leaf_packages_and_path_secrets <-- mapM (fun new_leaf_package ->
     if Some? (msg <: message).message_content.c_path then (
       match find_first (fun (_, lp) -> lp = Some (new_leaf_package)) (get_leaf_list future_state.tree_state.tree) with
@@ -563,6 +568,22 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   ln <-- ratchet_tree_l_n ratchet_tree;
   let (|l, n|) = ln in
   tree <-- ratchet_tree_to_treesync l n ratchet_tree;
+  _ <-- ( //Check signature
+    group_info_ok <-- verify_welcome_group_info cs (fun kp_ref ->
+      opt_leaf_ind <-- key_package_ref_to_index cs tree kp_ref;
+      match opt_leaf_ind with
+      | None -> error "process_welcome_message: signer don't exist"
+      | Some leaf_ind -> (
+        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (1)" (snd (get_leaf tree leaf_ind));
+        let result = sender_leaf_package.credential.signature_key in
+        if not (Seq.length result = sign_public_key_length cs) then
+          error "process_welcome_message: bad public key length"
+        else
+          return (result <: sign_public_key cs)
+      )
+    ) group_info;
+    return ()
+  );
   leaf_index <-- find_my_index tree sign_pk;
   tree <-- (
     match secrets.path_secret with
@@ -580,7 +601,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       else (
         tree_kem <-- treesync_to_treekem cs tree;
         update_path_kem <-- mk_init_path tree_kem leaf_index signer_index path_secret bytes_empty;
-        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked" (snd (get_leaf tree signer_index));
+        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (2)" (snd (get_leaf tree signer_index));
         external_update_path <-- treekem_to_treesync sender_leaf_package update_path_kem;
         update_path <-- external_pathsync_to_pathsync cs None tree external_update_path;
         return (MLS.TreeSync.apply_path sender_leaf_package.credential tree update_path)

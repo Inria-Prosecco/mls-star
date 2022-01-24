@@ -319,3 +319,15 @@ let sign_welcome_group_info cs sign_sk gi rand =
   let tbs_bytes = ps_group_info_tbs.serialize ({gi_network with signature = Seq.empty} <: group_info_nt) in
   signature <-- sign_sign cs sign_sk tbs_bytes rand;
   return ({gi with signature = signature})
+
+val verify_welcome_group_info: cs:ciphersuite -> (key_package_ref_nt -> result (sign_public_key cs)) -> welcome_group_info -> result bool
+let verify_welcome_group_info cs get_sign_pk gi =
+  if not (Seq.length gi.signature = sign_signature_length cs) then
+    error "verify_welcome_group_info: bad signature size"
+  else (
+    gi_network <-- welcome_group_info_to_network gi;
+    let tbs_bytes = ps_group_info_tbs.serialize ({gi_network with signature = Seq.empty} <: group_info_nt) in
+    sign_pk <-- get_sign_pk gi.signer;
+    let result = sign_verify cs sign_pk tbs_bytes gi.signature in
+    return result
+  )
