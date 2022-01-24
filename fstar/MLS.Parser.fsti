@@ -63,6 +63,10 @@ let parser_serializer (a:Type) = ps_a:parser_serializer_unit a{is_not_unit ps_a}
 val bind: #a:Type -> #b:(a -> Type) -> ps_a:parser_serializer_unit a -> ps_b:(xa:a -> parser_serializer_unit (b xa)) -> Pure (parser_serializer_unit (xa:a&(b xa)))
   (requires True)
   (ensures fun res -> is_not_unit res <==> is_not_unit ps_a \/ (forall xa. is_not_unit (ps_b xa)))
+val isomorphism_explicit:
+  #a:Type -> b:Type -> ps_a:parser_serializer_unit a -> f:(a -> b) -> g:(b -> a) ->
+  g_f_inv:(xa:a -> Lemma (g (f xa) == xa)) -> f_g_inv:(xb:b -> Lemma (f (g xb) == xb)) ->
+  Pure (parser_serializer_unit b) (requires True) (ensures fun res -> is_not_unit res <==> is_not_unit ps_a)
 val isomorphism: #a:Type -> b:Type -> ps_a:parser_serializer_unit a -> f:(a -> b) -> g:(b -> a) -> Pure (parser_serializer_unit b)
   (requires (forall xa. g (f xa) == xa) /\ (forall xb. f (g xb) == xb))
   (ensures fun res -> is_not_unit res <==> is_not_unit ps_a)
@@ -71,13 +75,13 @@ val isomorphism: #a:Type -> b:Type -> ps_a:parser_serializer_unit a -> f:(a -> b
 
 val ps_unit: parser_serializer_unit unit
 
+val ps_lbytes: n:size_nat{1 <= n} -> parser_serializer (lbytes n)
+
 val ps_u8: parser_serializer uint8
 val ps_u16: parser_serializer uint16
 val ps_u32: parser_serializer uint32
 val ps_u64: parser_serializer uint64
 val ps_u128: parser_serializer uint128
-
-val ps_lbytes: n:size_nat{1 <= n} -> parser_serializer (lbytes n)
 
 (*** Exact parsers ***)
 

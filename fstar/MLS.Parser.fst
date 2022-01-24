@@ -85,8 +85,7 @@ let bind #a #b ps_a ps_b =
     )
   })
 
-
-let isomorphism #a b ps_a f g =
+let isomorphism_explicit #a b ps_a f g g_f_inv f_g_inv =
   let parse_b buf =
     match ps_a.parse buf with
     | Some (xa, l) -> Some (f xa, l)
@@ -99,15 +98,24 @@ let isomorphism #a b ps_a f g =
     parse = parse_b;
     serialize = serialize_b;
     parse_serialize_inv = (fun (x:b) ->
+      f_g_inv x;
       ps_a.parse_serialize_inv (g x)
     );
     serialize_parse_inv = (fun (buf:bytes) ->
-      ps_a.serialize_parse_inv buf
+      match ps_a.parse buf with
+      | Some (xa, l) -> (
+        g_f_inv xa;
+        ps_a.serialize_parse_inv buf
+      )
+      | None -> ()
     );
     parse_no_lookahead = (fun (b1 b2:bytes) ->
       ps_a.parse_no_lookahead b1 b2
     )
   }
+
+let isomorphism #a b ps_a f g =
+  isomorphism_explicit #a b ps_a f g (fun _ -> ()) (fun _ -> ())
 
 (*** Parser for basic types ***)
 
@@ -119,41 +127,6 @@ let ps_unit =
     serialize_parse_inv = (fun _ -> ());
     parse_no_lookahead = (fun _ _ -> ());
   }
-
-val ps_uint: t:IT.inttype{IT.unsigned t /\ ~(IT.U1? t)} -> parser_serializer (IT.uint_t t IT.SEC)
-let ps_uint t =
-  let nbytes = IT.numbytes t in
-  let parse_uint (buf:bytes): option (IT.uint_t t IT.SEC & consumed_length buf) =
-    if Seq.length buf < nbytes then
-      None
-    else
-      let b = Seq.slice buf 0 nbytes in
-      Some (uint_from_bytes_be b, (nbytes <: consumed_length buf))
-  in
-  let serialize_uint (x:IT.uint_t t IT.SEC): bytes =
-    uint_to_bytes_be x
-  in
-  {
-    parse = parse_uint;
-    serialize = serialize_uint;
-    parse_serialize_inv = (fun x -> lemma_uint_to_from_bytes_be_preserves_value x);
-    serialize_parse_inv = (fun (buf:bytes) ->
-      match parse_uint buf with
-      | None -> ()
-      | Some _ -> lemma_uint_from_to_bytes_be_preserves_value #t #IT.SEC (Seq.slice buf 0 nbytes)
-    );
-    parse_no_lookahead = (fun (b1 b2:bytes) ->
-      match parse_uint b1 with
-      | None -> ()
-      | Some _ -> assert(Seq.equal (Seq.slice b1 0 nbytes) (Seq.slice b2 0 nbytes))
-    )
-  }
-
-let ps_u8 = ps_uint IT.U8
-let ps_u16 = ps_uint IT.U16
-let ps_u32 = ps_uint IT.U32
-let ps_u64 = ps_uint IT.U64
-let ps_u128 = ps_uint IT.U128
 
 let ps_lbytes n =
   let parse_lbytes (buf:bytes): option (lbytes n & consumed_length buf) =
@@ -176,6 +149,22 @@ let ps_lbytes n =
       | Some _ -> assert(Seq.equal (Seq.slice b1 0 n) (Seq.slice b2 0 n))
     )
   }
+
+val ps_uint: t:IT.inttype{IT.unsigned t /\ ~(IT.U1? t)} -> parser_serializer (IT.uint_t t IT.SEC)
+let ps_uint t =
+  let nbytes = IT.numbytes t in
+  isomorphism_explicit (IT.uint_t t IT.SEC)
+    (ps_lbytes nbytes)
+    (fun b -> uint_from_bytes_be b)
+    (fun x -> uint_to_bytes_be x)
+    (fun b -> lemma_uint_from_to_bytes_be_preserves_value #t #IT.SEC b)
+    (fun x -> lemma_uint_to_from_bytes_be_preserves_value x)
+
+let ps_u8 = ps_uint IT.U8
+let ps_u16 = ps_uint IT.U16
+let ps_u32 = ps_uint IT.U32
+let ps_u64 = ps_uint IT.U64
+let ps_u128 = ps_uint IT.U128
 
 (*** Exact parsers ***)
 
