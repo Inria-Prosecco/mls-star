@@ -59,6 +59,7 @@ let find_my_index #l #n t kp =
   let res = extract_option "couldn't find my_index" (find_first test (get_leaf_list t)) in
   res
 
+#push-options "--z3rlimit 100"
 val gen_treekem_output: ciphersuite -> treekem_test_input -> ML treekem_test_output
 let gen_treekem_output cs t =
   let ratchet_tree = extract_option "bad ratchet tree" ((ps_to_pse ps_ratchet_tree).parse_exact (hex_string_to_bytes t.ratchet_tree_before)) in
@@ -116,6 +117,7 @@ let gen_treekem_output cs t =
       tree_hash_after = bytes_to_hex_string tree_hash_after;
     }
   )
+#pop-options
 
 val test_treekem_one: treekem_test -> ML bool
 let test_treekem_one t =

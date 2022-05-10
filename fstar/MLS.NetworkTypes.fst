@@ -546,6 +546,7 @@ noeq type pre_shared_key_id_nt =
   | PSKI_branch: psk_group_id:blbytes ({min=0; max=255}) -> psk_epoch:uint64 -> psk_nonce:blbytes ({min=0; max=255}) -> pre_shared_key_id_nt
   | PSKI_unknown: n:nat{4 <= n /\ n < 256} -> psk_nonce:blbytes ({min=0; max=255}) -> pre_shared_key_id_nt
 
+#push-options "--ifuel 3"
 val ps_pre_shared_key_id: parser_serializer pre_shared_key_id_nt
 let ps_pre_shared_key_id =
   isomorphism pre_shared_key_id_nt
@@ -591,6 +592,7 @@ let ps_pre_shared_key_id =
       | PSKI_branch psk_group_id psk_epoch psk_nonce -> (|(|PSKT_branch, (|psk_group_id, psk_epoch|)|), psk_nonce|)
       | PSKI_unknown vx psk_nonce -> (|(|PSKT_unknown vx, ()|), psk_nonce|)
     )
+#pop-options
 
 noeq type pre_shared_keys_nt = {
   psks: blseq pre_shared_key_id_nt ps_pre_shared_key_id ({min=0; max=(pow2 16)-1});
@@ -754,7 +756,7 @@ type proposal_type_nt =
   | PT_external_init: proposal_type_nt
   | PT_app_ack: proposal_type_nt
   | PT_group_context_extensions: proposal_type_nt
-  | PT_unknown: n:nat{9 <= n /\ n < 256} -> proposal_type_nt
+  | PT_unknown: n:nat{9 <= n /\ n < pow2 16} -> proposal_type_nt
 
 val ps_proposal_type: parser_serializer proposal_type_nt
 let ps_proposal_type =
@@ -772,16 +774,16 @@ let ps_proposal_type =
       | vx -> PT_unknown vx
     )
     (fun x -> match x with
-      | PT_reserved -> u8 0
-      | PT_add -> u8 1
-      | PT_update -> u8 2
-      | PT_remove -> u8 3
-      | PT_psk -> u8 4
-      | PT_reinit -> u8 5
-      | PT_external_init -> u8 6
-      | PT_app_ack -> u8 7
-      | PT_group_context_extensions -> u8 8
-      | PT_unknown vx -> u8 vx
+      | PT_reserved -> u16 0
+      | PT_add -> u16 1
+      | PT_update -> u16 2
+      | PT_remove -> u16 3
+      | PT_psk -> u16 4
+      | PT_reinit -> u16 5
+      | PT_external_init -> u16 6
+      | PT_app_ack -> u16 7
+      | PT_group_context_extensions -> u16 8
+      | PT_unknown vx -> u16 vx
     )
 
 val get_proposal_type: proposal_type_nt -> Type0
@@ -808,7 +810,7 @@ noeq type proposal_nt =
   | P_external_init: external_init_nt -> proposal_nt
   | P_app_ack: app_ack_nt -> proposal_nt
   | P_group_context_extensions: group_context_extensions_nt -> proposal_nt
-  | P_unknown: n:nat{9 <= n /\ n < 256} -> proposal_nt
+  | P_unknown: n:nat{9 <= n /\ n < pow2 16} -> proposal_nt
 
 val ps_proposal: parser_serializer proposal_nt
 let ps_proposal =
@@ -961,7 +963,7 @@ let ps_sender_type =
       | ST_unknown vx -> u8 vx
     )
 
-type sender_nt =
+noeq type sender_nt =
   | S_reserved: sender_nt
   | S_member: member:key_package_ref_nt -> sender_nt
   | S_preconfigured: external_key_id:blbytes ({min=0; max=255}) -> sender_nt
@@ -1032,7 +1034,7 @@ let ps_wire_format =
       | WF_unknown n -> u8 n
     )
 
-type mac_nt = {
+noeq type mac_nt = {
   mac_value: blbytes ({min=0; max=255});
 }
 
@@ -1394,7 +1396,7 @@ noeq type group_info_nt = {
   signature: blbytes ({min=0; max=(pow2 16)-1});
 }
 
-let group_info_tbs_nt = gi:group_info_nt{gi.signature = Seq.empty}
+let group_info_tbs_nt = gi:group_info_nt{gi.signature == Seq.empty}
 
 #push-options "--ifuel 6"
 val ps_group_info_tbs: parser_serializer group_info_tbs_nt
