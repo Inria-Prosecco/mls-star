@@ -1,7 +1,6 @@
 module MLS.TreeDEM.Message.Content
 
-open Lib.ByteSequence
-open Lib.IntTypes
+open Comparse
 open MLS.NetworkTypes
 open MLS.NetworkBinder
 open MLS.Result
@@ -42,34 +41,34 @@ let message_content_type_to_network content_type =
   | CT_proposal -> NT.CT_proposal
   | CT_commit -> NT.CT_commit
 
-noeq type proposal =
-  | Add: MLS.TreeSync.Types.leaf_package_t -> proposal
-  | Update: MLS.TreeSync.Types.leaf_package_t -> proposal
-  | Remove: key_package_ref_nt -> proposal
-  | PreSharedKey: pre_shared_key_id_nt -> proposal
-  | ReInit: reinit_nt -> proposal
-  | ExternalInit: external_init_nt -> proposal
-  | AppAck: app_ack_nt -> proposal
-  | GroupContextExtensions: group_context_extensions_nt -> proposal
+noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
+  | Add: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
+  | Update: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
+  | Remove: key_package_ref_nt bytes -> proposal bytes
+  | PreSharedKey: pre_shared_key_id_nt bytes -> proposal bytes
+  | ReInit: reinit_nt bytes -> proposal bytes
+  | ExternalInit: external_init_nt bytes -> proposal bytes
+  | AppAck: app_ack_nt bytes -> proposal bytes
+  | GroupContextExtensions: group_context_extensions_nt bytes -> proposal bytes
 
-noeq type proposal_or_ref =
-  | Proposal: proposal -> proposal_or_ref
-  | Reference: proposal_ref_nt -> proposal_or_ref
+noeq type proposal_or_ref (bytes:Type0) {|bytes_like bytes|} =
+  | Proposal: proposal bytes -> proposal_or_ref bytes
+  | Reference: proposal_ref_nt bytes -> proposal_or_ref bytes
 
-noeq type commit = {
-  c_proposals: list proposal_or_ref;
-  c_path: option (update_path_nt);
+noeq type commit (bytes:Type0) {|bytes_like bytes|} = {
+  c_proposals: list (proposal_or_ref bytes);
+  c_path: option (update_path_nt bytes);
 }
 
-val message_content: message_content_type -> Type0
-let message_content content_type =
+val message_content: bytes:Type0 -> {|bytes_like bytes|} -> message_content_type -> Type0
+let message_content bytes #bl content_type =
   match content_type with
   | CT_application -> bytes
-  | CT_proposal -> proposal
-  | CT_commit -> commit
+  | CT_proposal -> proposal bytes
+  | CT_commit -> commit bytes
 
-val network_to_proposal: proposal_nt -> result proposal
-let network_to_proposal p =
+val network_to_proposal: #bytes:Type0 -> {|bytes_like bytes|} -> proposal_nt bytes -> result (proposal bytes)
+let network_to_proposal #bytes #bl p =
   match p with
   | P_add add ->
     kp <-- key_package_to_treesync add.key_package;
@@ -91,8 +90,8 @@ let network_to_proposal p =
     return (GroupContextExtensions group_context_extensions)
   | _ -> error "network_to_proposal: invalid proposal"
 
-val network_to_proposal_or_ref: proposal_or_ref_nt -> result proposal_or_ref
-let network_to_proposal_or_ref por =
+val network_to_proposal_or_ref: #bytes:Type0 -> {|bytes_like bytes|} -> proposal_or_ref_nt bytes -> result (proposal_or_ref bytes)
+let network_to_proposal_or_ref #bytes #bl por =
   match por with
   | POR_proposal p ->
     res <-- network_to_proposal p;
@@ -101,8 +100,8 @@ let network_to_proposal_or_ref por =
     return (Reference r)
   | _ -> error "network_to_proposal_or_ref: invalid proposal or ref"
 
-val network_to_commit: commit_nt -> result commit
-let network_to_commit c =
+val network_to_commit: #bytes:Type0 -> {|bytes_like bytes|} -> commit_nt bytes -> result (commit bytes)
+let network_to_commit #bytes #bl c =
   proposals <-- mapM network_to_proposal_or_ref (Seq.seq_to_list c.proposals);
   path <-- network_to_option c.path;
   return ({
@@ -110,21 +109,21 @@ let network_to_commit c =
     c_path = path;
   })
 
-val network_to_message_content: #content_type: content_type_nt{valid_network_message_content_type content_type} -> get_content_type content_type -> result (message_content (network_to_message_content_type_tot content_type))
-let network_to_message_content #content_type content =
+val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt{valid_network_message_content_type content_type} -> get_content_type #bytes content_type -> result (message_content bytes (network_to_message_content_type_tot content_type))
+let network_to_message_content #bytes #bl #content_type content =
   match content_type with
   | NT.CT_application ->
     return content
   | NT.CT_proposal ->
-    network_to_proposal content
+    network_to_proposal (content <: proposal_nt bytes)
   | NT.CT_commit ->
-    network_to_commit content
+    network_to_commit (content <: commit_nt bytes)
 
-let message_content_pair: Type0 = content_type:message_content_type & message_content content_type
+let message_content_pair (bytes:Type0) {|bytes_like bytes|}: Type0 = content_type:message_content_type & message_content bytes content_type
 
-val network_to_message_content_pair: mls_content_nt -> result message_content_pair
-let network_to_message_content_pair content =
-  let make_message_content_pair (#content_type:message_content_type) (msg:message_content content_type): message_content_pair =
+val network_to_message_content_pair: #bytes:Type0 -> {|bytes_like bytes|} -> mls_content_nt bytes -> result (message_content_pair bytes)
+let network_to_message_content_pair #bytes #bl content =
+  let make_message_content_pair #bytes #bl (#content_type:message_content_type) (msg:message_content bytes content_type): message_content_pair bytes =
     (|content_type, msg|)
   in
   match content with
@@ -135,14 +134,15 @@ let network_to_message_content_pair content =
     return (make_message_content_pair res)
   | _ -> error "network_to_message_content_pair: invalid content type"
 
-val proposal_to_network: MLS.Crypto.ciphersuite -> proposal -> result proposal_nt
-let proposal_to_network cs p =
+//TODO: not a crypto_bytes in latest draft (14)?
+val proposal_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> proposal bytes -> result (proposal_nt bytes)
+let proposal_to_network #bytes #cb p =
   match p with
   | Add lp ->
-    kp <-- treesync_to_keypackage cs lp;
+    kp <-- treesync_to_keypackage lp;
     return (P_add ({key_package = kp}))
   | Update lp ->
-    kp <-- treesync_to_keypackage cs lp;
+    kp <-- treesync_to_keypackage lp;
     return (P_update ({key_package = kp}))
   | Remove id ->
       return (P_remove ({removed = id}))
@@ -152,23 +152,24 @@ let proposal_to_network cs p =
   | AppAck x -> return (P_app_ack x)
   | GroupContextExtensions x -> return (P_group_context_extensions x)
 
-val proposal_or_ref_to_network: MLS.Crypto.ciphersuite -> proposal_or_ref -> result proposal_or_ref_nt
-let proposal_or_ref_to_network cs por =
+//TODO: not a crypto_bytes in latest draft (14)?
+val proposal_or_ref_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> proposal_or_ref bytes -> result (proposal_or_ref_nt bytes)
+let proposal_or_ref_to_network #bytes #bl por =
   match por with
   | Proposal p ->
-    res <-- proposal_to_network cs p;
+    res <-- proposal_to_network p;
     return (POR_proposal res)
   | Reference ref ->
-    if not (Seq.length ref < 256) then
+    if not (length (ref <: bytes) < 256) then
       internal_failure "proposal_or_ref_to_network: reference too long"
     else
       return (POR_reference ref)
 
-val commit_to_network: MLS.Crypto.ciphersuite -> commit -> result commit_nt
-let commit_to_network cs c =
-  proposals <-- mapM (proposal_or_ref_to_network cs) c.c_proposals;
+val commit_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> commit bytes -> result (commit_nt bytes)
+let commit_to_network #bytes #cb c =
+  proposals <-- mapM (proposal_or_ref_to_network) c.c_proposals;
   Seq.lemma_list_seq_bij proposals;
-  if not (MLS.Parser.byte_length ps_proposal_or_ref proposals < pow2 32) then
+  if not (Comparse.bytes_length ps_proposal_or_ref proposals < pow2 32) then
     internal_failure "commit_to_network: proposals too long"
   else (
     return ({
@@ -177,22 +178,22 @@ let commit_to_network cs c =
     })
   )
 
-val message_content_to_network: #content_type:message_content_type -> MLS.Crypto.ciphersuite -> message_content content_type -> result (get_content_type (message_content_type_to_network content_type))
-let message_content_to_network #content_type cs content =
+val message_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:message_content_type -> message_content bytes content_type -> result (get_content_type #bytes (message_content_type_to_network content_type))
+let message_content_to_network #bytes #bl #content_type content =
   match content_type with
   | CT_application ->
-    if not (Seq.length (content <: bytes) < pow2 32) then
+    if not (length (content <: bytes) < pow2 32) then
       error "message_content_to_network: application content is too long"
     else
       return content
   | CT_proposal ->
-    proposal_to_network cs content
+    proposal_to_network (content <: proposal bytes)
   | CT_commit ->
-    commit_to_network cs content
+    commit_to_network (content <: commit bytes)
 
-val message_content_pair_to_network: #content_type:message_content_type -> MLS.Crypto.ciphersuite -> message_content content_type -> result mls_content_nt
-let message_content_pair_to_network #content_type cs msg =
-  content <-- message_content_to_network cs msg;
+val message_content_pair_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:message_content_type -> message_content bytes content_type -> result (mls_content_nt bytes)
+let message_content_pair_to_network #bytes #cb #content_type msg =
+  content <-- message_content_to_network msg;
   match content_type with
   | CT_application -> return (MC_application content)
   | CT_proposal -> return (MC_proposal content)

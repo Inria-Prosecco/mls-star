@@ -1,7 +1,6 @@
 module MLS.TreeDEM.Message.Types
 
-open Lib.ByteSequence
-open Lib.IntTypes
+open Comparse.Bytes
 open MLS.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeDEM.Message.Content
@@ -10,39 +9,39 @@ open MLS.Result
 module NT = MLS.NetworkTypes
 
 (*
-type sender_type =
+type sender_type (bytes:Type0) {|bytes_like bytes|} =
   | ST_member
   | ST_preconfigured
   | ST_new_member
 *)
 
-type sender =
-  | S_member: member:key_package_ref_nt -> sender
-  | S_preconfigured: external_key_id:bytes -> sender
-  | S_new_member: sender
+type sender (bytes:Type0) {|bytes_like bytes|} =
+  | S_member: member:key_package_ref_nt bytes -> sender bytes
+  | S_preconfigured: external_key_id:bytes -> sender bytes
+  | S_new_member: sender bytes
 
 type wire_format =
   | WF_plaintext
   | WF_ciphertext
 
-noeq type message = {
+noeq type message (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format;
   group_id: bytes;
   epoch: nat;
-  sender: sender;
+  sender: sender bytes;
   authenticated_data: bytes;
   content_type: message_content_type;
-  message_content: message_content content_type;
+  message_content: message_content bytes content_type;
 }
 
-noeq type message_auth = {
+noeq type message_auth (bytes:Type0) {|bytes_like bytes|} = {
   signature: bytes;
   confirmation_tag: option bytes;
 }
 
 (*
 val network_to_sender_type: sender_type_nt -> result sender_type
-let network_to_sender_type s =
+let network_to_sender_type s (bytes:Type0) {|bytes_like bytes|} =
   match s with
   | NT.ST_member -> return ST_member
   | NT.ST_preconfigured -> return ST_preconfigured
@@ -57,20 +56,20 @@ let sender_type_to_network s =
   | ST_new_member -> NT.ST_new_member
 *)
 
-val network_to_sender: sender_nt -> result sender
-let network_to_sender s =
+val network_to_sender: #bytes:Type0 -> {|bytes_like bytes|} -> sender_nt bytes -> result (sender bytes)
+let network_to_sender #bytes #bl s =
   match s with
   | NT.S_member kp_ref -> return (S_member kp_ref)
   | NT.S_preconfigured external_key_id -> return (S_preconfigured external_key_id)
   | NT.S_new_member -> return S_new_member
   | _ -> error "network_to_sender: invalid sender type"
 
-val sender_to_network: sender -> result sender_nt
-let sender_to_network s =
+val sender_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> sender bytes -> result (sender_nt bytes)
+let sender_to_network #bytes #bl s =
   match s with
   | S_member kp_ref -> return (NT.S_member kp_ref)
   | S_preconfigured external_key_id -> (
-    if not (Seq.length external_key_id < 256) then (
+    if not (length external_key_id < 256) then (
       internal_failure "sender_to_network: external_key_id too long"
     ) else (
       return (NT.S_preconfigured external_key_id)
@@ -91,8 +90,8 @@ let wire_format_to_network s =
   | WF_plaintext -> NT.WF_plaintext
   | WF_ciphertext -> NT.WF_ciphertext
 
-val opt_tag_to_opt_bytes: option_nt mac_nt -> result (option bytes)
-let opt_tag_to_opt_bytes mac =
+val opt_tag_to_opt_bytes: #bytes:Type0 -> {|bytes_like bytes|} -> option_nt (mac_nt bytes) -> result (option bytes)
+let opt_tag_to_opt_bytes #bytes #bl mac =
   optmac <-- network_to_option mac;
   return (
     match optmac with
@@ -100,10 +99,10 @@ let opt_tag_to_opt_bytes mac =
     | Some m -> Some (m.mac_value)
   )
 
-val opt_bytes_to_opt_tag: option bytes -> result (option_nt mac_nt)
-let opt_bytes_to_opt_tag mac =
+val opt_bytes_to_opt_tag: #bytes:Type0 -> {|bytes_like bytes|} -> option bytes -> result (option_nt (mac_nt bytes))
+let opt_bytes_to_opt_tag #bytes #bl mac =
   optmac <-- (match mac with
     | None -> (return None)
-    | Some m -> if Seq.length m < 256 then return (Some ({mac_value = m})) else internal_failure "opt_bytes_to_opt_tag: mac too long"
+    | Some m -> if length m < 256 then return (Some ({mac_value = m})) else internal_failure "opt_bytes_to_opt_tag: mac too long"
   );
   return (option_to_network optmac)

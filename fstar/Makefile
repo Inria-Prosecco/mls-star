@@ -4,6 +4,9 @@ endif
 ifndef Z3
 	Z3 = $(shell which z3)
 endif
+ifndef COMPARSE_HOME
+	COMPARSE_HOME = ../../comparse
+endif
 
 include $(FSTAR_HOME)/ulib/gmake/fstar.mk
 include $(FSTAR_HOME)/ulib/ml/Makefile.include
@@ -11,11 +14,11 @@ include $(FSTAR_HOME)/ulib/ml/Makefile.include
 HACL_SNAPSHOT_DIR = ../hacl-star-snapshot
 SOURCE_DIR = .
 
-INCLUDE_DIRS = $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs
+INCLUDE_DIRS = $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)
 FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
 
-FSTAR_EXTRACT = --extract '-* +MLS'
-FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --admit_smt_queries true --warn_error '+241@247+285' --cache_dir obj --odir obj --cmi
+FSTAR_EXTRACT = --extract '-* +MLS +Comparse -Comparse.Tactic'
+FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --warn_error '+241@247+285' --cache_dir obj --odir obj --cmi
 
 .PHONY: all clean
 

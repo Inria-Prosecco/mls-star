@@ -7,14 +7,15 @@ module MLS
 
 open MLS.Result
 
-val cs: MLS.Crypto.ciphersuite
+let bytes = MLS.Crypto.hacl_star_bytes
+val cb: MLS.Crypto.crypto_bytes MLS.Crypto.hacl_star_bytes
+instance bytes_crypto_bytes: MLS.Crypto.crypto_bytes bytes = cb
 
 val group_id: Type0
 val state: Type0
 
 // TODO: update this to identity *and* endpoint once we switch to Draft 12
-let identity = MLS.Parser.blbytes ({min=0; max=pow2 16-1})
-let bytes = Lib.ByteSequence.bytes
+let identity = Comparse.blbytes bytes ({min=0; max=pow2 16-1})
 let entropy = bytes
 
 let group_message = group_id & bytes
@@ -28,7 +29,7 @@ type private_info = {
 // Always Ed25519 for the time being.
 noeq
 type credential = {
-  signature_key: MLS.Parser.blbytes ({min=0; max=pow2 16-1});
+  signature_key: Comparse.blbytes bytes ({min=0; max=pow2 16-1});
   identity: identity;
 }
 
@@ -36,7 +37,7 @@ type credential = {
 // stored in the key directory. The private key is to be stored locally, and
 // passed to `fresh_key_package`.
 val fresh_key_pair: e:entropy { Seq.length e == 32 } ->
-  result ((MLS.Crypto.sign_public_key cs) & (MLS.Crypto.sign_private_key cs))
+  result ((MLS.Crypto.sign_public_key bytes) & (MLS.Crypto.sign_private_key bytes))
 
 // Assume here that the directory has generated a signing key for us; that our
 // public signing key is published somewhere in the directory; and that the
@@ -46,7 +47,7 @@ val fresh_key_pair: e:entropy { Seq.length e == 32 } ->
 // package to private key to be retrieved later if we are ever to receive a
 // welcome message encoded with these credentials.
 //   Serialized key package, its hash (for the lookup) and the private key.
-val fresh_key_package: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key cs ->
+val fresh_key_package: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key bytes ->
   result (bytes & bytes & bytes)
 
 val current_epoch: s:state -> nat
@@ -54,7 +55,7 @@ val current_epoch: s:state -> nat
 // TODO: expose a way to inject e.g. a uint32 into a group_id
 // Note that after we've created the group, we receive our freshly-assigned
 // participant id.
-val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key cs -> g:group_id ->
+val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sign_private_key bytes -> g:group_id ->
   result state
 
 //Actually more entropy is needed, but we can't give any bound...
@@ -74,7 +75,7 @@ let key_callback = bytes -> option bytes
 
 // The application provides a callback to retrieve the private key associated to
 // a key package previously generated with `fresh_key_package`.
-val process_welcome_message: w:welcome_message -> ((MLS.Crypto.sign_public_key cs) & (MLS.Crypto.sign_private_key cs)) → (lookup: key_callback) ->
+val process_welcome_message: w:welcome_message -> ((MLS.Crypto.sign_public_key bytes) & (MLS.Crypto.sign_private_key bytes)) → (lookup: key_callback) ->
   result (group_id & state)
 
 type outcome =

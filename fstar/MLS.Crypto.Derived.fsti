@@ -1,17 +1,18 @@
 module MLS.Crypto.Derived
 
 open MLS.Crypto.Builtins
-open MLS.Result
-open Lib.IntTypes
-open Lib.ByteSequence
 open MLS.NetworkTypes
+open Comparse
+open MLS.Result
 
-val ciphersuite_from_nt: cs:cipher_suite_nt -> res:result ciphersuite{Success? res = normalize_term (List.mem cs [CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519; CS_mls10_128_dhkemp256_aes128gcm_sha256_p256; CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519])}
+val available_ciphersuite_from_network: cipher_suite_nt -> result available_ciphersuite
+val available_ciphersuite_to_network: available_ciphersuite -> cipher_suite_nt
 
+val expand_with_label: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> context:bytes -> len:nat -> result (lbytes bytes len)
+val derive_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> result (lbytes bytes (kdf_length #bytes))
+val make_hash_ref: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes 16)
 
-val ciphersuite_to_nt: ciphersuite -> result cipher_suite_nt
+val split_randomness: #bytes:Type0 -> {|bytes_like bytes|} -> #l1:list nat -> #l2:list nat -> randomness bytes (List.Tot.append l1 l2) -> (randomness bytes l1 & randomness bytes l2)
 
-val expand_with_label: ciphersuite -> secret:bytes -> label:bytes -> context:bytes -> len:size_nat -> result (lbytes len)
-val derive_secret: cs:ciphersuite -> secret:bytes -> label:bytes -> result (lbytes (kdf_length cs))
-val make_hash_ref: ciphersuite -> bytes -> result (lbytes 16)
-val zero_vector: ciphersuite -> bytes
+val mk_zero_vector: #bytes:Type0 -> {|bytes_like bytes|} -> n:nat -> lbytes bytes n
+val zero_vector: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes

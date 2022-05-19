@@ -1,63 +1,52 @@
 module MLS.TreeSync.Types
 
-open Lib.ByteSequence
+open Comparse.Bytes
 open MLS.Tree
-
-(** Cryptography *)
-let sign_key_t = bytes
-let verif_key_t = pub_bytes
-
-let enc_key_t = pub_bytes
-let dec_key_t = bytes
-
 
 (** Identity and Credentials *)
 type principal_t = string
 
-type credential_t = {
+type credential_t (bytes:Type0) {|bytes_like bytes|} = {
   version: nat;
-  identity: pub_bytes;
-  signature_key: verif_key_t;
+  identity: bytes;
+  signature_key: bytes;
 }
 
-assume val validate_credential: credential_t -> bool
-
-
 (** Secrets belonging to a Group member  *)
-noeq type leaf_secrets_t = {
-  identity_sig_key: sign_key_t;
+noeq type leaf_secrets_t (bytes:Type0) {|bytes_like bytes|} = {
+  identity_sig_key: bytes;
 }
 
 (** Definition of a Leaf package *)
-type leaf_package_t = {
-  credential: credential_t;
+type leaf_package_t (bytes:Type0) {|bytes_like bytes|} = {
+  credential: credential_t bytes;
   endpoint_id: bytes;
   version: nat;
-  content: pub_bytes;
-  extensions: pub_bytes;
-  signature: pub_bytes;
+  content: bytes;
+  extensions: bytes;
+  signature: bytes;
 }
 
 
 (** Definition of a Node package *)
-type node_package_t = {
+type node_package_t (bytes:Type0) {|bytes_like bytes|} = {
   version: nat;
   content_dir: direction;
   unmerged_leaves: list nat;
-  parent_hash: pub_bytes;
-  content: pub_bytes;
+  parent_hash: bytes;
+  content: bytes;
 }
 
 (** Tree and Paths definitions *)
 type level_n = nat
 
 //TODO: clarify the use of credential_t
-type treesync (l:level_n) (n:tree_size l) = tree l n (credential_t & option leaf_package_t) (credential_t & option node_package_t)
-type pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option leaf_package_t) (option node_package_t)
+type treesync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) = tree l n (credential_t bytes & option (leaf_package_t bytes)) (credential_t bytes & option (node_package_t bytes))
+type pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option (leaf_package_t bytes)) (option (node_package_t bytes))
 
 //Data coming from TreeKEM
-type external_node_package_t = np:node_package_t{np.parent_hash == Seq.empty}
-type external_pathsync (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i leaf_package_t external_node_package_t
+type external_node_package_t (bytes:Type0) {|bytes_like bytes|} = np:node_package_t bytes{np.parent_hash == empty #bytes}
+type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (leaf_package_t bytes) (external_node_package_t bytes)
 
 (*
 This way to describe operations doesn't work well in practice:
@@ -74,26 +63,24 @@ type operation_t = {
 }
 *)
 
-type operation_t =
-  | Op_Add: actor:credential_t -> lp:leaf_package_t -> operation_t
-  | Op_Update: actor:credential_t -> lp:leaf_package_t -> operation_t
-  | Op_Remove: actor:credential_t -> ind:nat -> operation_t
-  | Op_UpdatePath: actor:credential_t -> l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync l n i -> operation_t
-
-let group_id_t = bytes
+type operation_t (bytes:Type0) {|bytes_like bytes|} =
+  | Op_Add: actor:credential_t bytes -> lp:leaf_package_t bytes -> operation_t bytes
+  | Op_Update: actor:credential_t bytes -> lp:leaf_package_t bytes -> operation_t bytes
+  | Op_Remove: actor:credential_t bytes -> ind:nat -> operation_t bytes
+  | Op_UpdatePath: actor:credential_t bytes -> l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync bytes l n i -> operation_t bytes
 
 (** TreeSync state and accessors *)
-type state_t = {
-  group_id: group_id_t;
+type state_t (bytes:Type0) {|bytes_like bytes|} = {
+  group_id: bytes;
   levels: level_n;
   treesize: tree_size levels;
-  tree: treesync levels treesize;
+  tree: treesync bytes levels treesize;
   version: nat;
   //initial_tree: treesync levels treesize;
-  transcript: Seq.seq operation_t;
+  transcript: Seq.seq (operation_t bytes);
 }
 
-val mk_initial_state: gid:group_id_t -> l:level_n -> n:tree_size l -> treesync l n -> Tot state_t
+val mk_initial_state: #bytes:Type0 -> {|bytes_like bytes|} -> gid:bytes -> l:level_n -> n:tree_size l -> treesync bytes l n -> state_t bytes
 let mk_initial_state gid l n t = {
   group_id = gid; levels = l;
   treesize = n;
@@ -101,13 +88,4 @@ let mk_initial_state gid l n t = {
   //initial_tree = t;
   transcript = Seq.empty;}
 
-val group_id: state_t -> group_id_t
-let group_id st = st.group_id
-
-val max_size: state_t -> nat
-let max_size st = pow2 st.levels
-
-val epoch: state_t -> nat
-let epoch st = st.version
-
-type index_t (st:state_t) = i:nat{i < st.treesize}
+type index_t (#bytes:Type0) {|bytes_like bytes|} (st:state_t bytes) = i:nat{i < st.treesize}

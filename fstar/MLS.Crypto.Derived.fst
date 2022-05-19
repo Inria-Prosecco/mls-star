@@ -2,9 +2,7 @@ module MLS.Crypto.Derived
 
 friend MLS.Crypto.Builtins
 
-open MLS.Parser
 open MLS.NetworkTypes
-open Lib.IntTypes
 open MLS.Crypto.Builtins
 open MLS.Result
 
@@ -12,104 +10,97 @@ module DH = Spec.Agile.DH
 module AEAD = Spec.Agile.AEAD
 module Hash = Spec.Agile.Hash
 
-let ciphersuite_from_nt cs =
+#set-options "--fuel 0 --ifuel 0"
+
+let available_ciphersuite_from_network cs =
   match cs with
-  | CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519 -> return ({
-    kem_dh = DH.DH_Curve25519;
-    kem_hash = Hash.SHA2_256;
-    aead = AEAD.AES128_GCM;
-    kdf_hash = Hash.SHA2_256;
-    signature = Ed_25519;
-  })
-  | CS_mls10_128_dhkemp256_aes128gcm_sha256_p256 -> return ({
-    kem_dh = DH.DH_P256;
-    kem_hash = Hash.SHA2_256;
-    aead = AEAD.AES128_GCM;
-    kdf_hash = Hash.SHA2_256;
-    signature = P_256;
-  })
-  | CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> return ({
-    kem_dh = DH.DH_Curve25519;
-    kem_hash = Hash.SHA2_256;
-    aead = AEAD.CHACHA20_POLY1305;
-    kdf_hash = Hash.SHA2_256;
-    signature = Ed_25519;
-  })
-  | CS_mls10_256_dhkemx448_aes256gcm_sha512_ed448 -> error "ciphersuite_from_nt: ciphersuite not available"
-  | CS_mls10_256_dhkemp521_aes256gcm_sha512_p521 -> error "ciphersuite_from_nt: ciphersuite not available"
-  | CS_mls10_256_dhkemx448_chacha20poly1305_sha512_ed448 -> error "ciphersuite_from_nt: ciphersuite not available"
-  | _ -> error "ciphersuite_from_nt: bad ciphersuite"
+  | CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519 -> return AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
+  | CS_mls10_128_dhkemp256_aes128gcm_sha256_p256 -> return AC_mls_128_dhkemp256_aes128gcm_sha256_p256
+  | CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> return AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+  | CS_mls10_256_dhkemx448_aes256gcm_sha512_ed448 -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls10_256_dhkemp521_aes256gcm_sha512_p521 -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls10_256_dhkemx448_chacha20poly1305_sha512_ed448 -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | _ -> error "available_ciphersuite_from_network: bad ciphersuite"
 
-let ciphersuite_to_nt cs =
-  match cs.kem_dh, cs.kem_hash, cs.aead, cs.kdf_hash, cs.signature with
-  | DH.DH_Curve25519, Hash.SHA2_256, AEAD.AES128_GCM, Hash.SHA2_256, Ed_25519 -> return CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | DH.DH_P256, Hash.SHA2_256, AEAD.AES128_GCM, Hash.SHA2_256, P_256 -> return CS_mls10_128_dhkemp256_aes128gcm_sha256_p256
-  | DH.DH_Curve25519, Hash.SHA2_256, AEAD.CHACHA20_POLY1305, Hash.SHA2_256, Ed_25519 -> return CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519
-  | _ -> internal_failure "ciphersuite_to_nt: invalid ciphersuite"
+#push-options "--ifuel 1"
+let available_ciphersuite_to_network cs =
+  match cs with
+  | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519
+  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> CS_mls10_128_dhkemp256_aes128gcm_sha256_p256
+  | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+#pop-options
 
-//Inversion lemmas to make sure there is no error in the functions above
-val ciphersuite_from_to_lemma: cs:ciphersuite -> Lemma (
-  match ciphersuite_to_nt cs with
-  | Success cs' -> (
-     match ciphersuite_from_nt cs' with
-     | Success cs'' -> cs == cs''
-     | _ -> True
-  )
-  | _ -> True)
-let ciphersuite_from_to_lemma cs = ()
+#push-options "--ifuel 1"
+private let sanity_lemma_1 (cs:available_ciphersuite):
+  Lemma (available_ciphersuite_from_network (available_ciphersuite_to_network cs) == return cs)
+  = ()
+private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
+  match (available_ciphersuite_from_network cs) with
+  | Success acs -> available_ciphersuite_to_network acs == cs
+  | _ -> True
+) = ()
+#pop-options
 
-val ciphersuite_to_from_lemma: cs:cipher_suite_nt -> Lemma (
-  match ciphersuite_from_nt cs with
-  | Success cs' -> (
-     match ciphersuite_to_nt cs' with
-     | Success cs'' -> cs == cs''
-     | _ -> True
-  )
-  | _ -> True)
-let ciphersuite_to_from_lemma cs = ()
-
-noeq type kdf_label_nt = {
-  length: uint16;
-  label: blbytes ({min=7; max=255});
-  context: blbytes ({min=0; max=(pow2 32)-1});
+noeq type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
+  length: nat_lbytes 2;
+  label: blbytes bytes ({min=7; max=255});
+  context: blbytes bytes ({min=0; max=(pow2 32)-1});
 }
 
-val ps_kdf_label: parser_serializer kdf_label_nt
-let ps_kdf_label =
-  let open MLS.Parser in
-  isomorphism kdf_label_nt
+#push-options "--ifuel 1"
+val ps_kdf_label: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (kdf_label_nt bytes)
+let ps_kdf_label #bytes #bl =
+  let open Comparse in
+  mk_isomorphism (kdf_label_nt bytes)
     (
-      _ <-- ps_u16;
-      _ <-- ps_bytes _;
-      ps_bytes _
+      _ <-- ps_nat_lbytes 2;
+      _ <-- ps_blbytes _;
+      ps_blbytes #bytes _ //Why the annotation? See FStarLang/FStar#2583
     )
     (fun (|length, (|label, context|)|) -> {length=length; label=label; context=context;})
     (fun x -> (|x.length, (|x.label, x.context|)|))
+#pop-options
 
-let expand_with_label cs secret label context len =
+let expand_with_label #bytes #cb secret label context len =
   assert_norm (String.strlen "mls10 " == 6);
   if not (len < pow2 16) then
     internal_failure "expand_with_label: len too high"
-  else if not (1 <= Seq.length label) then
+  else if not (1 <= length label) then
     internal_failure "expand_with_label: label too short"
-  else if not (Seq.length label < 255-6) then
+  else if not (length label < 255-6) then
     internal_failure "expand_with_label: label too long"
-  else if not (Seq.length context < pow2 32) then
+  else if not (length context < pow2 32) then
     internal_failure "expand_with_label: context too long"
-  else
-    let kdf_label = ps_kdf_label.serialize ({
-      length = u16 len;
-      label = Seq.append (string_to_bytes "mls10 ") label;
+  else (
+    concat_length (string_to_bytes #bytes "mls10 ") label;
+    let kdf_label = (ps_to_pse ps_kdf_label).serialize_exact ({
+      length = len;
+      label = concat #bytes (string_to_bytes #bytes "mls10 ") label;
       context = context;
     }) in
-    kdf_expand cs secret kdf_label len
+    kdf_expand secret kdf_label len
+  )
 
-let derive_secret cs secret label =
-  expand_with_label cs secret label bytes_empty (kdf_length cs)
+let derive_secret #bytes #cb secret label =
+  expand_with_label secret label (empty #bytes) (kdf_length #bytes)
 
-let make_hash_ref cs buf =
-  tmp <-- kdf_extract cs bytes_empty buf;
-  kdf_expand cs tmp (string_to_bytes "MLS 1.0 ref") 16
+let make_hash_ref #bytes #cb buf =
+  tmp <-- kdf_extract (empty #bytes) buf;
+  kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 ref") 16
 
-let zero_vector cs =
-  Seq.create (kdf_length cs) (u8 0)
+#push-options "--fuel 1 --ifuel 1"
+let rec split_randomness #bytes #bl #l1 #l2 r =
+  match l1 with
+  | [] -> (mk_empty_randomness bytes, r)
+  | h1::t1 ->
+    let (rh, rt) = dest_randomness (r <: randomness bytes (h1::(t1@l2))) in
+    let (rt1, rl2) = split_randomness rt in
+    (mk_randomness (rh, rt1), rl2)
+#pop-options
+
+let mk_zero_vector #bytes #bl n =
+  FStar.Math.Lemmas.pow2_le_compat n 0;
+  from_nat #bytes n 0
+
+let zero_vector #bytes #cb =
+  mk_zero_vector #bytes (kdf_length #bytes)

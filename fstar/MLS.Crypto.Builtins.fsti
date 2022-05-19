@@ -1,84 +1,97 @@
 module MLS.Crypto.Builtins
 
+open Comparse
 open MLS.Result
-open Lib.ByteSequence
-open Lib.IntTypes
-
-(*** Ciphersuite ***)
-
-type signature_algorithm =
-  | Ed_25519
-  | P_256
-
-val ciphersuite: Type0
-
-(*** Cryptographic randomness ***)
-
-val randomness: nat -> Type0
-val mk_randomness: #n:size_nat -> lbytes n -> randomness n
-val get_random_bytes: #n:size_nat -> randomness n -> lbytes n
-val split_randomness: #n:nat -> randomness n -> len:nat{len <= n} -> (randomness (n-len) & randomness len)
-
-(*** Hash ***)
-
-val hash_length: ciphersuite -> n:size_nat{n < 256}
-val hash_hash: cs:ciphersuite -> bytes -> result (lbytes (hash_length cs))
-
-(*** KDF ***)
-
-val kdf_length: ciphersuite -> size_nat
-
-val kdf_extract_tot: cs:ciphersuite -> key:bytes{Seq.length key < pow2 31} -> data:bytes{Seq.length data < pow2 60} -> lbytes (kdf_length cs)
-val kdf_expand_tot: cs:ciphersuite -> prk:bytes{kdf_length cs <= Seq.length prk /\ Seq.length prk <= pow2 31} -> info:bytes{Seq.length info <= pow2 60} -> len:nat{len <= 4080} -> lbytes len
-
-val kdf_extract: cs:ciphersuite -> key:bytes -> data:bytes -> result (lbytes (kdf_length cs))
-val kdf_expand: cs:ciphersuite -> prk:bytes -> info:bytes -> len:size_nat -> result (lbytes len)
-
-(*** HPKE ***)
-
-val hpke_public_key_length: ciphersuite -> n:size_nat{1 <= n /\ n < pow2 16}
-val hpke_private_key_length: cs:ciphersuite -> n:size_nat{n <= kdf_length cs}
-val hpke_kem_output_length: ciphersuite -> size_nat
-
-type hpke_public_key (cs:ciphersuite) = lbytes (hpke_public_key_length cs)
-type hpke_private_key (cs:ciphersuite) = lbytes (hpke_private_key_length cs)
-type hpke_kem_output (cs:ciphersuite) = lbytes (hpke_kem_output_length cs)
-
-val hpke_gen_keypair: cs:ciphersuite -> ikm:bytes{Seq.length ikm >= hpke_private_key_length cs} -> result (hpke_private_key cs & hpke_public_key cs)
-val hpke_encrypt: cs:ciphersuite -> pkR:hpke_public_key cs -> info:bytes -> ad:bytes -> plaintext:bytes -> randomness (hpke_private_key_length cs) -> result (hpke_kem_output cs & bytes)
-val hpke_decrypt: cs:ciphersuite -> enc:hpke_kem_output cs -> skR:hpke_private_key cs -> info:bytes -> ad:bytes -> ciphertext:bytes -> result bytes
-
-(*** Signature ***)
-
-val sign_public_key_length: ciphersuite -> size_nat
-val sign_private_key_length: ciphersuite -> size_nat
-val sign_nonce_length: ciphersuite -> size_nat
-val sign_signature_length: ciphersuite -> size_nat
-
-type sign_public_key (cs:ciphersuite) = lbytes (sign_public_key_length cs)
-type sign_private_key (cs:ciphersuite) = lbytes (sign_private_key_length cs)
-type sign_signature (cs:ciphersuite) = lbytes (sign_signature_length cs)
-
-val sign_gen_keypair: cs:ciphersuite -> randomness (sign_private_key_length cs) -> result ((sign_public_key cs) & (sign_private_key cs))
-val sign_sign: cs:ciphersuite -> sign_private_key cs -> bytes -> randomness (sign_nonce_length cs) -> result (sign_signature cs)
-val sign_verify: cs:ciphersuite -> sign_public_key cs -> bytes -> sign_signature cs -> bool
-
-(*** AEAD ***)
-
-val aead_nonce_length: ciphersuite -> n:size_nat{4 <= n}
-val aead_key_length: ciphersuite -> size_nat
-
-type aead_key (cs:ciphersuite) = lbytes (aead_key_length cs)
-type aead_nonce (cs:ciphersuite) = lbytes (aead_nonce_length cs)
-
-val aead_encrypt: cs:ciphersuite -> aead_key cs -> aead_nonce cs -> ad:bytes -> plaintext:bytes -> result bytes
-val aead_decrypt: cs:ciphersuite -> aead_key cs -> aead_nonce cs -> ad:bytes -> ciphertext:bytes -> result bytes
-
-(*** HMAC ***)
-
-val hmac_hmac: cs:ciphersuite -> key:bytes -> data:bytes -> result (lbytes (hash_length cs))
-
-(*** String to bytes ***)
 
 let string_is_ascii (s:string) = List.Tot.for_all (fun x -> FStar.Char.int_of_char x < 256) (FStar.String.list_of_string s)
-val string_to_bytes: s:string{b2t (normalize_term (string_is_ascii s && String.strlen s < max_size_t))} -> lbytes (String.strlen s)
+
+(*** Typeclass definition ***)
+
+type available_ciphersuite =
+  | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
+  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256
+  | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+
+class crypto_bytes (bytes:Type0) = {
+  [@@@FStar.Tactics.Typeclasses.tcinstance]
+  base: bytes_like bytes;
+
+  //TODO: stronger than bytes_like.recognize_empty
+  //Useful to check hashes
+  bytes_hasEq: squash (hasEq bytes);
+
+  ciphersuite: available_ciphersuite;
+
+  hash_length: nat;
+  hash_length_bound: squash (hash_length < 256);
+  hash_hash: bytes -> result (lbytes bytes hash_length);
+
+  kdf_length: nat;
+  kdf_extract: key:bytes -> data:bytes -> result (lbytes bytes kdf_length);
+  kdf_expand: prk:bytes -> info:bytes -> len:nat -> result (lbytes bytes len);
+
+  hpke_public_key_length: nat;
+  hpke_public_key_length_bound: squash (1 <= hpke_public_key_length /\ hpke_public_key_length < pow2 16);
+  hpke_private_key_length: nat;
+  hpke_private_key_length_bound: squash(hpke_private_key_length <= kdf_length);
+  hpke_kem_output_length: nat;
+  hpke_gen_keypair: ikm:bytes{length ikm >= hpke_private_key_length} -> result (lbytes bytes hpke_private_key_length & lbytes bytes hpke_public_key_length);
+  hpke_encrypt: pkR:lbytes bytes hpke_public_key_length -> info:bytes -> ad:bytes -> plaintext:bytes -> entropy:lbytes bytes hpke_private_key_length -> result (lbytes bytes hpke_kem_output_length & bytes);
+  hpke_decrypt: enc:lbytes bytes hpke_kem_output_length -> skR:lbytes bytes hpke_private_key_length -> info:bytes -> ad:bytes -> ciphertext:bytes -> result bytes;
+
+  sign_public_key_length: nat;
+  sign_private_key_length: nat;
+  sign_nonce_length: nat;
+  sign_signature_length: nat;
+  sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> result (lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length);
+  sign_sign: lbytes bytes sign_private_key_length -> bytes -> entropy:lbytes bytes sign_nonce_length -> result (lbytes bytes sign_signature_length);
+  sign_verify: lbytes bytes sign_public_key_length -> bytes -> lbytes bytes sign_signature_length -> bool;
+
+  aead_nonce_length: nat;
+  aead_nonce_length_bound: squash (4 <= aead_nonce_length);
+  aead_key_length: nat;
+  aead_encrypt: lbytes bytes aead_key_length -> lbytes bytes aead_nonce_length -> ad:bytes -> plaintext:bytes -> result bytes;
+  aead_decrypt: lbytes bytes aead_key_length -> lbytes bytes aead_nonce_length -> ad:bytes -> ciphertext:bytes -> result bytes;
+
+  hmac_length: nat;
+  hmac_hmac: key:bytes -> data:bytes -> result (lbytes bytes hmac_length);
+
+  string_to_bytes: s:string{b2t (normalize_term (string_is_ascii s))} -> lbytes bytes (String.strlen s);
+
+  //TODO: in symbolic bytes, how do we do this?
+  unsafe_split: b:bytes -> i:nat{i <= length b} -> bytes & bytes;
+  xor: #n:nat -> lbytes bytes n -> lbytes bytes n -> lbytes bytes n;
+}
+
+(*** Utility types ***)
+
+//type hash_type (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hash_length #bytes)
+
+type hpke_public_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_public_key_length #bytes)
+type hpke_private_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_private_key_length #bytes)
+type hpke_kem_output (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_kem_output_length #bytes)
+
+type sign_public_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_public_key_length #bytes)
+type sign_private_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_private_key_length #bytes)
+type sign_nonce (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_nonce_length #bytes)
+type sign_signature (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_signature_length #bytes)
+
+type aead_nonce (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (aead_nonce_length #bytes)
+type aead_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (aead_key_length #bytes)
+
+(*** Instances ***)
+
+type hacl_star_bytes = Lib.ByteSequence.bytes
+val bytes_like_hacl_star_bytes: bytes_like hacl_star_bytes
+val mk_concrete_crypto_bytes: available_ciphersuite -> Pure (crypto_bytes hacl_star_bytes)
+  (requires True) (ensures fun cb -> cb.base == bytes_like_hacl_star_bytes)
+
+//TODO
+//val mk_symbolic_crypto_bytes: available_ciphersuite -> crypto_bytes dolev_yao_star_bytes
+
+(*** Randomness ***)
+
+val randomness: bytes:Type0 -> {|bytes_like bytes|} -> list nat -> Type0
+val mk_empty_randomness: bytes:Type0 -> {|bytes_like bytes|} -> randomness bytes []
+val mk_randomness:   #bytes:Type0 -> {|bytes_like bytes|} -> #head_size:nat -> #tail_size:list nat -> (lbytes bytes head_size & randomness bytes tail_size) -> randomness bytes (head_size::tail_size)
+val dest_randomness: #bytes:Type0 -> {|bytes_like bytes|} -> #head_size:nat -> #tail_size:list nat -> randomness bytes (head_size::tail_size) -> (lbytes bytes head_size & randomness bytes tail_size)

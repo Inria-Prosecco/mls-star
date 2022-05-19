@@ -2,57 +2,57 @@ module MLS.Test.FromExt.KeySchedule
 
 open FStar.IO
 open FStar.All
+open Comparse
 open MLS.Test.Types
 open MLS.Test.Utils
 open MLS.StringUtils
 
 open MLS.Result
-open Lib.ByteSequence
-open Lib.IntTypes
 open MLS.NetworkTypes
-open MLS.Parser
 open MLS.Crypto
 open MLS.TreeDEM.Keys
 open MLS.TreeDEM.PSK
 
-val gen_group_context: string -> nat -> keyschedule_test_epoch_input -> ML bytes
+val gen_group_context: {|bytes_like bytes|} -> string -> nat -> keyschedule_test_epoch_input -> ML bytes
 let gen_group_context group_id epoch inp =
   let group_id = hex_string_to_bytes group_id in
   let tree_hash = hex_string_to_bytes inp.tree_hash in
   let confirmed_transcript_hash = hex_string_to_bytes inp.confirmed_transcript_hash in
-  if Seq.length group_id <= 255 && epoch < (pow2 64) && Seq.length tree_hash <= 255 && Seq.length confirmed_transcript_hash <= 255 then
-    ps_group_context.serialize ({
+  if length group_id <= 255 && epoch < (pow2 64) && length tree_hash <= 255 && length confirmed_transcript_hash <= 255 then (
+    bytes_length_nil #bytes ps_extension;
+    (ps_to_pse ps_group_context).serialize_exact ({
       group_id = group_id;
-      epoch = u64 epoch;
+      epoch = epoch;
       tree_hash = tree_hash;
       confirmed_transcript_hash = confirmed_transcript_hash;
       extensions = Seq.empty;
     })
-  else
+  ) else (
     failwith ""
+  )
 
-val gen_epoch_output: ciphersuite -> string -> string -> nat -> keyschedule_test_epoch_input -> ML keyschedule_test_epoch_output
-let gen_epoch_output cs group_id last_init_secret epoch inp =
+val gen_epoch_output: {|crypto_bytes bytes|} -> string -> string -> nat -> keyschedule_test_epoch_input -> ML keyschedule_test_epoch_output
+let gen_epoch_output #cb group_id last_init_secret epoch inp =
   let commit_secret = hex_string_to_bytes inp.commit_secret in
   let psk_secret = hex_string_to_bytes inp.psk_secret in
   let group_context = gen_group_context group_id epoch inp in
   let last_init_secret = hex_string_to_bytes last_init_secret in
-  let joiner_secret = extract_result (secret_init_to_joiner cs last_init_secret (Some commit_secret) group_context) in
-  let welcome_secret = extract_result (secret_joiner_to_welcome cs joiner_secret (Some psk_secret)) in
-  let epoch_secret = extract_result (secret_joiner_to_epoch cs joiner_secret (Some psk_secret) group_context) in
-  let init_secret = extract_result (secret_epoch_to_init cs epoch_secret) in
-  let sender_data_secret = extract_result (secret_epoch_to_sender_data cs epoch_secret) in
-  let encryption_secret = extract_result (secret_epoch_to_encryption cs epoch_secret) in
-  let exporter_secret = extract_result (secret_epoch_to_exporter cs epoch_secret) in
-  let authentication_secret = extract_result (secret_epoch_to_authentication cs epoch_secret) in
-  let external_secret = extract_result (secret_epoch_to_external cs epoch_secret) in
-  let confirmation_key = extract_result (secret_epoch_to_confirmation cs epoch_secret) in
-  let membership_key = extract_result (secret_epoch_to_membership cs epoch_secret) in
-  let resumption_secret = extract_result (secret_epoch_to_resumption cs epoch_secret) in
-  let external_pub = ps_hpke_public_key.serialize (snd (extract_result (secret_external_to_keypair cs external_secret))) in
+  let joiner_secret = extract_result (secret_init_to_joiner last_init_secret (Some commit_secret) group_context) in
+  let welcome_secret = extract_result (secret_joiner_to_welcome joiner_secret (Some psk_secret)) in
+  let epoch_secret: bytes = extract_result (secret_joiner_to_epoch joiner_secret (Some psk_secret) group_context) in
+  let init_secret = extract_result (secret_epoch_to_init epoch_secret) in
+  let sender_data_secret = extract_result (secret_epoch_to_sender_data epoch_secret) in
+  let encryption_secret = extract_result (secret_epoch_to_encryption epoch_secret) in
+  let exporter_secret = extract_result (secret_epoch_to_exporter epoch_secret) in
+  let authentication_secret = extract_result (secret_epoch_to_authentication epoch_secret) in
+  let external_secret = extract_result (secret_epoch_to_external epoch_secret) in
+  let confirmation_key = extract_result (secret_epoch_to_confirmation epoch_secret) in
+  let membership_key = extract_result (secret_epoch_to_membership epoch_secret) in
+  let resumption_secret = extract_result (secret_epoch_to_resumption epoch_secret) in
+  let external_pub = (ps_to_pse ps_hpke_public_key).serialize_exact (snd (extract_result (secret_external_to_keypair external_secret))) in
 
   //TODO (when this is standardized in the test vectors) move it in a more sensible place
-  let my_psk_secret = extract_result (compute_psk_secret cs (List.map (fun (psk:keyschedule_test_epoch_psk) -> ({id = PSKI_external (hex_string_to_bytes psk.id); nonce = hex_string_to_bytes psk.nonce;}, hex_string_to_bytes psk.secret)) inp.external_psks)) in
+  let my_psk_secret = extract_result (compute_psk_secret (List.map (fun (psk:keyschedule_test_epoch_psk) -> ({id = PSKI_external (hex_string_to_bytes psk.id); nonce = hex_string_to_bytes psk.nonce;}, hex_string_to_bytes psk.secret)) inp.external_psks)) in
   let _ =
     if inp.branch_psk_nonce = "" then (
       if check_equal "psk_secret" (bytes_to_hex_string) (hex_string_to_bytes inp.psk_secret) my_psk_secret then
@@ -78,18 +78,18 @@ let gen_epoch_output cs group_id last_init_secret epoch inp =
     external_pub = bytes_to_hex_string external_pub;
   }
 
-val gen_list_epoch_output_aux: ciphersuite -> string -> string -> nat -> list keyschedule_test_epoch_input -> ML (list keyschedule_test_epoch_output)
-let rec gen_list_epoch_output_aux cs group_id last_init_secret epoch l =
+val gen_list_epoch_output_aux: {|crypto_bytes bytes|} -> string -> string -> nat -> list keyschedule_test_epoch_input -> ML (list keyschedule_test_epoch_output)
+let rec gen_list_epoch_output_aux #cb group_id last_init_secret epoch l =
   match l with
   | [] -> []
   | h::t ->
-    let output_head = gen_epoch_output cs group_id last_init_secret epoch h in
-    let output_tail = gen_list_epoch_output_aux cs group_id output_head.init_secret (epoch + 1) t in
+    let output_head = gen_epoch_output group_id last_init_secret epoch h in
+    let output_tail = gen_list_epoch_output_aux group_id output_head.init_secret (epoch + 1) t in
     output_head::output_tail
 
-val gen_list_epoch_output: ciphersuite -> string -> string -> list keyschedule_test_epoch_input -> ML (list keyschedule_test_epoch_output)
-let gen_list_epoch_output cs group_id initial_init_secret l =
-  gen_list_epoch_output_aux cs group_id initial_init_secret 0 l
+val gen_list_epoch_output: {|crypto_bytes bytes|} -> string -> string -> list keyschedule_test_epoch_input -> ML (list keyschedule_test_epoch_output)
+let gen_list_epoch_output #cb group_id initial_init_secret l =
+  gen_list_epoch_output_aux group_id initial_init_secret 0 l
 
 val test_keyschedule_one: keyschedule_test -> ML bool
 let test_keyschedule_one t =
@@ -103,8 +103,9 @@ let test_keyschedule_one t =
     false
   end
   | Success cs -> begin
+    let cb = mk_concrete_crypto_bytes cs in
     let (inputs, expected_outputs) = List.Tot.unzip t.epochs in
-    let our_outputs = gen_list_epoch_output cs t.group_id t.initial_init_secret inputs in
+    let our_outputs = gen_list_epoch_output t.group_id t.initial_init_secret inputs in
     List.forall2 (fun (e_out:keyschedule_test_epoch_output) (o_out:keyschedule_test_epoch_output) ->
       let group_context_ok = check_equal "group_context" (bytes_to_hex_string) (hex_string_to_bytes e_out.group_context) (hex_string_to_bytes o_out.group_context) in
       let joiner_secret_ok = check_equal "joiner_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.joiner_secret) (hex_string_to_bytes o_out.joiner_secret) in

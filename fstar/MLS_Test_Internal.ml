@@ -33,13 +33,7 @@ let bytes_of_list l =
 
 let list_of_bytes = FStar_Seq_Properties.seq_to_list
 
-let cs = {
-  MLS_Crypto_Builtins.kem_dh = Spec_Agile_DH.DH_Curve25519;
-  kem_hash = Spec_Hash_Definitions.SHA2_256;
-  aead = Spec_Agile_AEAD.CHACHA20_POLY1305;
-  kdf_hash = Spec_Hash_Definitions.SHA2_256;
-  signature = MLS_Crypto_Builtins.Ed_25519
-}
+let cb = MLS_Crypto_Builtins.mk_concrete_crypto_bytes MLS_Crypto_Builtins.AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
 
 let debug_buffer s =
   let buf = Buffer.create 1 in
@@ -67,7 +61,7 @@ let test () =
   let dummy64 = bytes_of_list dummy64 in
   let dummy96 = bytes_of_list dummy96 in
   let dummy128 = bytes_of_list dummy128 in
-  let s = extract (MLS_Crypto_Derived.derive_secret cs dummy32 dummy32) in
+  let s = extract (MLS_Crypto_Derived.derive_secret cb dummy32 dummy32) in
   debug_buffer s;
   let s1, _, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32) in
   debug_buffer s1;

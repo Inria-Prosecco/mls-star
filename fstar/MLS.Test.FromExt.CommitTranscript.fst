@@ -2,17 +2,30 @@ module MLS.Test.FromExt.CommitTranscript
 
 open FStar.IO
 open FStar.All
-open Lib.ByteSequence
+open Comparse
 open MLS.Test.Types
 open MLS.Test.Utils
 open MLS.Crypto
 open MLS.NetworkTypes
-open MLS.Parser
+open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Framing
 open MLS.TreeDEM.Message.Transcript
 open MLS.NetworkTypes
 open MLS.StringUtils
 open MLS.Result
+
+val to_lbytes: #bytes:Type0 -> {|bytes_like bytes|} -> n:nat -> bytes -> ML (lbytes bytes n)
+let to_lbytes #bytes #bl n b =
+  if length b = n then
+    b
+  else
+    failwith "to_lbytes: bad length"
+
+val is_signature_ok: {|cb:crypto_bytes bytes|} -> basic_credential_nt bytes -> message bytes #cb.base -> message_auth bytes #cb.base -> string -> ML bool
+let is_signature_ok #cb cred commit_message commit_auth group_context =
+  let signature_key = to_lbytes (sign_public_key_length #bytes) cred.signature_key in
+  let signature_signature = to_lbytes (sign_signature_length #bytes) commit_auth.signature in
+  extract_result (check_message_signature signature_key signature_signature commit_message (hex_string_to_bytes group_context))
 
 #push-options "--ifuel 2 --z3rlimit 50"
 val test_commit_transcript_one: commit_transcript_test -> ML bool
@@ -27,7 +40,8 @@ let test_commit_transcript_one t =
     false
   end
   | Success cs -> begin
-    let ciphersuite_network = extract_option "malformed credential" ((ps_to_pse ps_credential).parse_exact (hex_string_to_bytes t.credential)) in
+    let cb = mk_concrete_crypto_bytes cs in
+    let credential_network = extract_option "malformed credential" ((ps_to_pse ps_credential).parse_exact (hex_string_to_bytes t.credential)) in
     let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_message).parse_exact (hex_string_to_bytes t.commit)) in
     let commit_plaintext_network =
       match commit_message_network with
@@ -36,10 +50,10 @@ let test_commit_transcript_one t =
     in
     let commit_plaintext = extract_result (network_to_message_plaintext commit_plaintext_network) in
     let (commit_message, commit_auth) = message_plaintext_to_message commit_plaintext in
-    let computed_confirmed_transcript_hash = extract_result (compute_confirmed_transcript_hash cs commit_message commit_auth.signature (hex_string_to_bytes t.interim_transcript_hash_before)) in
-    let computed_interim_transcript_hash = extract_result (compute_interim_transcript_hash cs commit_auth.confirmation_tag computed_confirmed_transcript_hash) in
-    let computed_confirmation_tag = extract_result (compute_message_confirmation_tag cs (hex_string_to_bytes t.confirmation_key) computed_confirmed_transcript_hash) in
-    let computed_membership_tag = extract_result (compute_message_membership_tag cs (hex_string_to_bytes t.membership_key) commit_message commit_auth (hex_string_to_bytes t.group_context)) in
+    let computed_confirmed_transcript_hash = extract_result (compute_confirmed_transcript_hash commit_message commit_auth.signature (hex_string_to_bytes t.interim_transcript_hash_before)) in
+    let computed_interim_transcript_hash = extract_result (compute_interim_transcript_hash commit_auth.confirmation_tag computed_confirmed_transcript_hash) in
+    let computed_confirmation_tag = extract_result (compute_message_confirmation_tag (hex_string_to_bytes t.confirmation_key) computed_confirmed_transcript_hash) in
+    let computed_membership_tag = extract_result (compute_message_membership_tag (hex_string_to_bytes t.membership_key) commit_message commit_auth (hex_string_to_bytes t.group_context)) in
     let confirmed_transcript_hash_ok = check_equal "confirmed_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.confirmed_transcript_hash_after) computed_confirmed_transcript_hash in
     let interim_transcript_hash_ok = check_equal "interim_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.interim_transcript_hash_after) computed_interim_transcript_hash in
     let confirmation_tag_ok =
@@ -63,11 +77,9 @@ let test_commit_transcript_one t =
         IO.print_string "Skipping signature check because only Ed25519 is supported\n";
         true
       ) else (
-        match ciphersuite_network with
+        match credential_network with
         | C_basic cred ->
-          if not (Seq.length cred.signature_key = sign_public_key_length cs) then false
-          else if not (Seq.length commit_auth.signature = sign_signature_length cs) then false
-          else extract_result (check_message_signature cs cred.signature_key commit_auth.signature commit_message (hex_string_to_bytes t.group_context))
+          is_signature_ok cred commit_message commit_auth t.group_context
         | _ -> false
       )
     in

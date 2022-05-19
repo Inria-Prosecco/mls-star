@@ -1,9 +1,7 @@
 module MLS.TreeSync.IntegrityCheck
 
-open Lib.ByteSequence
+open Comparse
 open MLS.Crypto
-open MLS.Parser
-open MLS.Result
 open MLS.Tree
 open MLS.TreeSync
 open MLS.TreeSync.Types
@@ -13,6 +11,7 @@ open MLS.TreeSync.Extensions
 open MLS.TreeSync.ParentHash
 open MLS.TreeKEM.Types
 open MLS.TreeSyncTreeKEMBinder
+open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
@@ -48,23 +47,23 @@ let integrity_either_to_bool ie =
   | IE_Good -> true
   | _ -> false
 
-val check_signature: ciphersuite -> leaf_package_t -> result (option leaf_integrity_error)
-let check_signature cs lp =
-  if not (Seq.length lp.credential.signature_key = sign_public_key_length cs) then
+val check_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_package_t bytes -> result (option leaf_integrity_error)
+let check_signature #bytes #cb lp =
+  if not (length lp.credential.signature_key = sign_public_key_length #bytes) then
     error "check_leaf_package: signature key has wrong length"
-  else if not (Seq.length lp.signature = sign_signature_length cs) then
+  else if not (length lp.signature = sign_signature_length #bytes) then
     error "check_leaf_package: signature has wrong length"
   else (
-    key_package <-- treesync_to_keypackage cs lp;
-    let leaf_package_bytes = ps_key_package_tbs.serialize (key_package_get_tbs key_package) in
-    if sign_verify cs lp.credential.signature_key leaf_package_bytes lp.signature then
+    key_package <-- treesync_to_keypackage lp;
+    let leaf_package_bytes: bytes = serialize (key_package_tbs_nt bytes) (key_package_get_tbs key_package) in
+    if sign_verify lp.credential.signature_key leaf_package_bytes lp.signature then
       return None
     else
       return (Some LIE_BadSignature)
   )
 
-val check_capabilities: leaf_package_t -> result (option leaf_integrity_error)
-let check_capabilities lp =
+val check_capabilities: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_package_t bytes -> result (option leaf_integrity_error)
+let check_capabilities #bytes #bl lp =
   extensions_list <-- get_extension_list lp.extensions;
   let opt_capabilities_extension = get_capabilities_extension lp.extensions in
   return (
@@ -80,8 +79,8 @@ let check_capabilities lp =
       else Some LIE_ExtensionsNotInCapabilities
   )
 
-val check_lifetime: leaf_package_t -> result (option leaf_integrity_error)
-let check_lifetime lp =
+val check_lifetime: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_package_t bytes -> result (option leaf_integrity_error)
+let check_lifetime #bytes #bl lp =
   let opt_lifetime_extension = get_lifetime_extension lp.extensions in
   return (
     match opt_lifetime_extension with
@@ -96,12 +95,12 @@ let convert_opt_leaf_error_to_either opt leaf_index =
   | None -> IE_Good
   | Some x -> IE_Errors [IE_LeafError x leaf_index]
 
-val check_leaf: ciphersuite -> nat -> olp:option leaf_package_t -> result integrity_either
-let check_leaf cs leaf_index olp =
+val check_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> olp:option (leaf_package_t bytes) -> result integrity_either
+let check_leaf #bytes #cb leaf_index olp =
   match olp with
   | None -> return IE_Good
   | Some lp -> (
-    signature_check <-- check_signature cs lp;
+    signature_check <-- check_signature lp;
     capabilities_check <-- check_capabilities lp;
     lifetime_check <-- check_lifetime lp;
     let signature_either = convert_opt_leaf_error_to_either signature_check leaf_index in
@@ -111,8 +110,8 @@ let check_leaf cs leaf_index olp =
   )
 
 #push-options "--ifuel 1"
-val get_original_right_node: #l:nat -> #n:tree_size l -> treesync l n -> option (l_res:nat & n_res:tree_size l_res & treesync l_res n_res)
-let rec get_original_right_node #l #n t =
+val get_original_right_node: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> option (l_res:nat & n_res:tree_size l_res & treesync bytes l_res n_res)
+let rec get_original_right_node #bytes #bl #l #n t =
   match t with
   | TNode (_, Some np) _ _ ->
     Some (|l, n, t|)
@@ -127,8 +126,8 @@ let rec get_original_right_node #l #n t =
 #pop-options
 
 #push-options "--ifuel 1"
-val get_parent_hash: #l:nat -> #n:tree_size l -> treesync l n -> option bytes
-let get_parent_hash #l #n t =
+val get_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> option bytes
+let get_parent_hash #bytes #bl #l #n t =
   match t with
   | TNode (_, None) _ _ -> None
   | TNode (_, Some np) _ _ -> Some np.parent_hash
@@ -142,15 +141,15 @@ let get_parent_hash #l #n t =
 #pop-options
 
 #push-options "--ifuel 1"
-val check_internal_node: #l:nat -> #n:tree_size l -> ciphersuite -> nat -> t:treesync l n{TNode? t} -> result integrity_either
-let check_internal_node #l #n cs nb_left_leaves t =
+val check_internal_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> t:treesync bytes l n{TNode? t} -> result integrity_either
+let check_internal_node #bytes #cb #l #n nb_left_leaves t =
   let (TNode (_, onp) left right) = t in
   match onp with
   | None -> return IE_Good
   | Some np -> (
     parent_hash_from_left_ok <-- (
       let real_parent_hash = get_parent_hash left in
-      computed_parent_hash <-- compute_parent_hash_from_dir cs np.content np.parent_hash nb_left_leaves t Left;
+      computed_parent_hash <-- compute_parent_hash_from_dir np.content np.parent_hash nb_left_leaves t Left;
       return (real_parent_hash = Some computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
@@ -158,7 +157,7 @@ let check_internal_node #l #n cs nb_left_leaves t =
       | None -> return false
       | Some (|_, _, original_right|) -> (
         let real_parent_hash = get_parent_hash original_right in
-        computed_parent_hash <-- compute_parent_hash_from_dir cs np.content np.parent_hash nb_left_leaves t Right;
+        computed_parent_hash <-- compute_parent_hash_from_dir np.content np.parent_hash nb_left_leaves t Right;
         return (real_parent_hash = Some computed_parent_hash)
       )
     );
@@ -170,20 +169,20 @@ let check_internal_node #l #n cs nb_left_leaves t =
 #pop-options
 
 #push-options "--ifuel 1"
-val check_treesync_aux: #l:nat -> #n:tree_size l -> ciphersuite -> nat -> treesync l n -> result integrity_either
-let rec check_treesync_aux #l #n cs nb_left_leaves t =
+val check_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result integrity_either
+let rec check_treesync_aux #bytes #cb #l #n nb_left_leaves t =
   match t with
   | TNode (_, onp) left right ->
-    left_ok <-- check_treesync_aux cs nb_left_leaves left;
-    right_ok <-- check_treesync_aux cs (nb_left_leaves + pow2 (l-1)) right;
-    cur_ok <-- check_internal_node cs nb_left_leaves t;
+    left_ok <-- check_treesync_aux nb_left_leaves left;
+    right_ok <-- check_treesync_aux (nb_left_leaves + pow2 (l-1)) right;
+    cur_ok <-- check_internal_node nb_left_leaves t;
     return (left_ok &&& cur_ok &&& right_ok)
   | TSkip _ t' ->
-    check_treesync_aux cs nb_left_leaves t'
+    check_treesync_aux nb_left_leaves t'
   | TLeaf (_, olp) ->
-    check_leaf cs nb_left_leaves olp
+    check_leaf nb_left_leaves olp
 #pop-options
 
-val check_treesync: #l:nat -> #n:tree_size l -> ciphersuite -> treesync l n -> result integrity_either
-let check_treesync #l #n cs t =
-  check_treesync_aux cs 0 t
+val check_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> result integrity_either
+let check_treesync #bytes #cb #l #n t =
+  check_treesync_aux 0 t
