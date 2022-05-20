@@ -114,10 +114,9 @@ let extract_result x =
 
 val uint16_to_ciphersuite: UInt16.t -> ML (result available_ciphersuite)
 let uint16_to_ciphersuite x =
-  let open Comparse in
   let open MLS.NetworkTypes in
   let cs_bytes = (ps_to_pse #bytes #bytes_like_bytes (ps_nat_lbytes 2)).serialize_exact (FStar.UInt16.v x) in
-  let o_cs_nt = (ps_to_pse #bytes #bytes_like_bytes ps_cipher_suite).parse_exact cs_bytes in
+  let o_cs_nt = (ps_to_pse #bytes #bytes_like_bytes ps_cipher_suite_nt).parse_exact cs_bytes in
   match o_cs_nt with
   | None -> failwith "couldn't parse ciphersuite"
   | Some cs_nt -> available_ciphersuite_from_network cs_nt

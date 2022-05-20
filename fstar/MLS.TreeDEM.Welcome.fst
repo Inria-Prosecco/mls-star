@@ -53,14 +53,14 @@ noeq type welcome (bytes:Type0) {|bytes_like bytes|} = {
 val network_to_welcome_group_info: #bytes:Type0 -> {|bytes_like bytes|} -> group_info_nt bytes -> welcome_group_info bytes
 let network_to_welcome_group_info #bytes #bl gi =
   {
-    group_id = gi.group_id;
-    epoch = gi.epoch;
-    tree_hash = gi.tree_hash;
-    confirmed_transcript_hash = gi.confirmed_transcript_hash;
-    group_context_extensions = gi.group_context_extensions;
-    other_extensions = gi.other_extensions;
-    confirmation_tag = gi.confirmation_tag.mac_value;
-    signer = gi.signer;
+    group_id = gi.tbs.group_id;
+    epoch = gi.tbs.epoch;
+    tree_hash = gi.tbs.tree_hash;
+    confirmed_transcript_hash = gi.tbs.confirmed_transcript_hash;
+    group_context_extensions = gi.tbs.group_context_extensions;
+    other_extensions = gi.tbs.other_extensions;
+    confirmation_tag = gi.tbs.confirmation_tag.mac_value;
+    signer = gi.tbs.signer;
     signature = gi.signature;
   }
 
@@ -84,24 +84,25 @@ let welcome_group_info_to_network #bytes #bl gi =
     internal_failure "welcome_group_info_to_network: signature_id too long"
   else
     return ({
-      group_id = gi.group_id;
-      epoch = gi.epoch;
-      tree_hash = gi.tree_hash;
-      confirmed_transcript_hash = gi.confirmed_transcript_hash;
-      group_context_extensions = gi.group_context_extensions;
-      other_extensions = gi.other_extensions;
-      confirmation_tag = {mac_value = gi.confirmation_tag};
-      signer = gi.signer;
+      tbs = {
+        group_id = gi.group_id;
+        epoch = gi.epoch;
+        tree_hash = gi.tree_hash;
+        confirmed_transcript_hash = gi.confirmed_transcript_hash;
+        group_context_extensions = gi.group_context_extensions;
+        other_extensions = gi.other_extensions;
+        confirmation_tag = {mac_value = gi.confirmation_tag};
+        signer = gi.signer;
+      };
       signature = gi.signature;
     } <: group_info_nt bytes)
 
 val network_to_group_secrets: #bytes:Type0 -> {|bytes_like bytes|} -> group_secrets_nt bytes -> result (group_secrets bytes)
 let network_to_group_secrets #bytes #bl gs =
-  path_secret <-- network_to_option gs.path_secret;
   return ({
     joiner_secret = gs.joiner_secret;
     path_secret = (
-      match path_secret with
+      match gs.path_secret with
       | None -> None
       | Some p -> Some p.path_secret
     );
@@ -112,12 +113,12 @@ val group_secrets_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> group_secr
 let group_secrets_to_network #bytes #bl gs =
   path_secret <-- (
     match gs.path_secret with
-    | None -> return None_nt
+    | None -> return None
     | Some p -> (
       if not (length p < 256) then
         internal_failure ""
       else
-        return (Some_nt ({ path_secret = p } <: path_secret_nt bytes))
+        return (Some ({ path_secret = p } <: path_secret_nt bytes))
     )
   );
   if not (1 <= length gs.joiner_secret) then
@@ -181,11 +182,11 @@ let welcome_to_network #bytes #cb w =
     internal_failure "welcome_to_network: encrypted_group_info too short"
   else if not (length w.encrypted_group_info < pow2 32) then
     internal_failure "welcome_to_network: encrypted_group_info too long"
-  else if not (bytes_length ps_encrypted_group_secrets secrets < pow2 32) then
+  else if not (bytes_length ps_encrypted_group_secrets_nt secrets < pow2 32) then
     internal_failure "welcome_to_network: secrets too long"
   else (
     return ({
-      version = PV_mls10;
+      version = PV_mls10 ();
       cipher_suite = cipher_suite;
       secrets = Seq.seq_of_list secrets;
       encrypted_group_info = w.encrypted_group_info;
@@ -230,15 +231,15 @@ let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
     let (my_hpke_sk, my_hpke_ciphertext) = tmp in
     kem_output <-- bytes_to_kem_output my_hpke_ciphertext.kem_output;
     group_secrets_bytes <-- hpke_decrypt kem_output my_hpke_sk empty empty my_hpke_ciphertext.ciphertext;
-    group_secrets_network <-- from_option "decrypt_welcome: malformed group secrets" ((ps_to_pse ps_group_secrets).parse_exact group_secrets_bytes);
+    group_secrets_network <-- from_option "decrypt_welcome: malformed group secrets" (parse (group_secrets_nt bytes) group_secrets_bytes);
     network_to_group_secrets group_secrets_network
   );
   group_info <-- (
     welcome_secret <-- secret_joiner_to_welcome group_secrets.joiner_secret None (*TODO psk*);
-    welcome_key <-- welcome_secret_to_key welcome_secret;
+    welcome_key <-- welcome_secret_to_key #bytes welcome_secret;
     welcome_nonce <-- welcome_secret_to_nonce welcome_secret;
     group_info_bytes <-- aead_decrypt welcome_key welcome_nonce empty w.encrypted_group_info;
-    group_info_network <-- from_option "decrypt_welcome: malformed group info" ((ps_to_pse ps_group_info).parse_exact group_info_bytes);
+    group_info_network <-- from_option "decrypt_welcome: malformed group info" (parse (group_info_nt bytes) group_info_bytes);
     return (network_to_welcome_group_info group_info_network)
   );
   //TODO: integrity check, this is where `opt_tree` will be useful
@@ -250,9 +251,9 @@ val encrypt_one_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_pa
 let encrypt_one_group_secrets #bytes #cb lp gs rand =
   kp_ref <-- leaf_package_to_kp_ref lp;
   gs_network <-- group_secrets_to_network gs;
-  let gs_bytes = serialize (group_secrets_nt bytes) gs_network in
+  let gs_bytes = serialize #bytes (group_secrets_nt bytes) gs_network in
   leaf_hpke_pk <-- (
-    leaf_content <-- from_option "encrypt_one_group_secrets: malformed leaf content" ((ps_to_pse ps_leaf_package_content).parse_exact lp.content);
+    leaf_content <-- from_option "encrypt_one_group_secrets: malformed leaf content" (parse (leaf_package_content_nt bytes) lp.content);
     let leaf_hpke_pk = leaf_content.public_key in
     if not (length (leaf_hpke_pk <: bytes) = hpke_public_key_length #bytes) then
       internal_failure "encrypt_one_group_secrets: public key has wrong size"
@@ -306,7 +307,7 @@ let encrypt_welcome #bytes #cb group_info joiner_secret leaf_packages rand =
     let group_info_bytes = serialize (group_info_nt bytes) group_info_network in
     aead_encrypt welcome_key welcome_nonce empty group_info_bytes
   );
-  bytes_length_nil #bytes ps_pre_shared_key_id;
+  bytes_length_nil #bytes ps_pre_shared_key_id_nt;
   group_secrets <-- encrypt_group_secrets joiner_secret leaf_packages ({psks = Seq.empty (*TODO psks*)}) rand;
   return ({
     secrets = group_secrets;
@@ -319,7 +320,7 @@ let encrypt_welcome #bytes #cb group_info joiner_secret leaf_packages rand =
 val sign_welcome_group_info: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> welcome_group_info bytes -> sign_nonce bytes -> result (welcome_group_info bytes)
 let sign_welcome_group_info #bytes #cb sign_sk gi rand =
   gi_network <-- welcome_group_info_to_network gi;
-  let tbs_bytes = serialize (group_info_tbs_nt bytes) ({gi_network with signature = empty #bytes}) in
+  let tbs_bytes = serialize (group_info_tbs_nt bytes) gi_network.tbs in
   signature <-- sign_sign sign_sk tbs_bytes rand;
   return ({gi with signature = signature})
 
@@ -329,7 +330,7 @@ let verify_welcome_group_info #bytes #cb get_sign_pk gi =
     error "verify_welcome_group_info: bad signature size"
   else (
     gi_network <-- welcome_group_info_to_network gi;
-    let tbs_bytes = serialize (group_info_tbs_nt bytes) ({gi_network with signature = empty #bytes}) in
+    let tbs_bytes = serialize (group_info_tbs_nt bytes) gi_network.tbs in
     sign_pk <-- get_sign_pk gi.signer;
     let result = sign_verify sign_pk tbs_bytes gi.signature in
     return result

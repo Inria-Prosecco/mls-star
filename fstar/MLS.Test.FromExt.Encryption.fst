@@ -32,8 +32,8 @@ let test_leaf_generation #cb l n i encryption_secret sender_data_secret r_state 
   let nonce_ok = check_equal "nonce" bytes_to_hex_string (hex_string_to_bytes test.nonce) r_output.nonce in
   let plaintext_string = normalize_text test.plaintext in
   let ciphertext_string = normalize_text test.ciphertext in
-  let message_plaintext_network = extract_option "bad plaintext" ((ps_to_pse ps_mls_plaintext).parse_exact (hex_string_to_bytes plaintext_string)) in
-  let message_ciphertext_network = extract_option "bad ciphertext" ((ps_to_pse ps_mls_ciphertext).parse_exact (hex_string_to_bytes ciphertext_string)) in
+  let message_plaintext_network = extract_option "bad plaintext" ((ps_to_pse ps_mls_plaintext_nt).parse_exact (hex_string_to_bytes plaintext_string)) in
+  let message_ciphertext_network = extract_option "bad ciphertext" ((ps_to_pse ps_mls_ciphertext_nt).parse_exact (hex_string_to_bytes ciphertext_string)) in
   let message_plaintext = extract_result (network_to_message_plaintext message_plaintext_network) in
   let message_ciphertext = extract_result (network_to_message_ciphertext message_ciphertext_network) in
   let message_1 = message_plaintext_to_message message_plaintext in

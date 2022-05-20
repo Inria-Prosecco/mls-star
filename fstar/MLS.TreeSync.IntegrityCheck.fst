@@ -55,7 +55,7 @@ let check_signature #bytes #cb lp =
     error "check_leaf_package: signature has wrong length"
   else (
     key_package <-- treesync_to_keypackage lp;
-    let leaf_package_bytes: bytes = serialize (key_package_tbs_nt bytes) (key_package_get_tbs key_package) in
+    let leaf_package_bytes: bytes = serialize (key_package_tbs_nt bytes) key_package.tbs in
     if sign_verify lp.credential.signature_key leaf_package_bytes lp.signature then
       return None
     else

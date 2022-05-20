@@ -61,7 +61,7 @@ let network_to_sender #bytes #bl s =
   match s with
   | NT.S_member kp_ref -> return (S_member kp_ref)
   | NT.S_preconfigured external_key_id -> return (S_preconfigured external_key_id)
-  | NT.S_new_member -> return S_new_member
+  | NT.S_new_member () -> return S_new_member
   | _ -> error "network_to_sender: invalid sender type"
 
 val sender_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> sender bytes -> result (sender_nt bytes)
@@ -75,34 +75,30 @@ let sender_to_network #bytes #bl s =
       return (NT.S_preconfigured external_key_id)
     )
   )
-  | S_new_member -> return NT.S_new_member
+  | S_new_member -> return (NT.S_new_member ())
 
 val network_to_wire_format: wire_format_nt -> result wire_format
 let network_to_wire_format s =
   match s with
-  | NT.WF_plaintext -> return WF_plaintext
-  | NT.WF_ciphertext -> return WF_ciphertext
-  | _ -> error "network_to_wire_format: invalid wire format"
+  | NT.WF_plaintext () -> return WF_plaintext
+  | NT.WF_ciphertext () -> return WF_ciphertext
 
 val wire_format_to_network: wire_format -> wire_format_nt
 let wire_format_to_network s =
   match s with
-  | WF_plaintext -> NT.WF_plaintext
-  | WF_ciphertext -> NT.WF_ciphertext
+  | WF_plaintext -> NT.WF_plaintext ()
+  | WF_ciphertext -> NT.WF_ciphertext ()
 
-val opt_tag_to_opt_bytes: #bytes:Type0 -> {|bytes_like bytes|} -> option_nt (mac_nt bytes) -> result (option bytes)
+val opt_tag_to_opt_bytes: #bytes:Type0 -> {|bytes_like bytes|} -> option (mac_nt bytes) -> result (option bytes)
 let opt_tag_to_opt_bytes #bytes #bl mac =
-  optmac <-- network_to_option mac;
   return (
-    match optmac with
+    match mac with
     | None -> (None <: option bytes)
     | Some m -> Some (m.mac_value)
   )
 
-val opt_bytes_to_opt_tag: #bytes:Type0 -> {|bytes_like bytes|} -> option bytes -> result (option_nt (mac_nt bytes))
+val opt_bytes_to_opt_tag: #bytes:Type0 -> {|bytes_like bytes|} -> option bytes -> result (option (mac_nt bytes))
 let opt_bytes_to_opt_tag #bytes #bl mac =
-  optmac <-- (match mac with
+  match mac with
     | None -> (return None)
     | Some m -> if length m < 256 then return (Some ({mac_value = m})) else internal_failure "opt_bytes_to_opt_tag: mac too long"
-  );
-  return (option_to_network optmac)

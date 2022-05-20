@@ -45,7 +45,7 @@ let integrity_error_to_string ie =
 val find_my_index: {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> key_package_nt bytes -> ML (res:nat{res<n})
 let find_my_index #bl #l #n t kp =
   let my_signature_key =
-    match kp.credential with
+    match kp.tbs.credential with
     | C_basic c -> c.signature_key
     | _ -> failwith "unsupported credential!"; empty
   in
@@ -61,13 +61,13 @@ let find_my_index #bl #l #n t kp =
 #push-options "--z3rlimit 100"
 val gen_treekem_output: {|crypto_bytes bytes|} -> treekem_test_input -> ML treekem_test_output
 let gen_treekem_output #cb t =
-  let ratchet_tree = extract_option "bad ratchet tree" ((ps_to_pse ps_ratchet_tree).parse_exact (hex_string_to_bytes t.ratchet_tree_before)) in
+  let ratchet_tree = extract_option "bad ratchet tree" ((ps_to_pse ps_ratchet_tree_nt).parse_exact (hex_string_to_bytes t.ratchet_tree_before)) in
   let add_sender = FStar.UInt32.v t.add_sender in
   let my_leaf_secret = (hex_string_to_bytes t.my_leaf_secret) in
-  let my_key_package = extract_option "bad key package" ((ps_to_pse ps_key_package).parse_exact (hex_string_to_bytes t.my_key_package)) in
+  let my_key_package = extract_option "bad key package" ((ps_to_pse ps_key_package_nt).parse_exact (hex_string_to_bytes t.my_key_package)) in
   let my_path_secret = (hex_string_to_bytes t.my_path_secret) in
   let update_sender = FStar.UInt32.v t.update_sender in
-  let update_path = extract_option "bad update path" ((ps_to_pse ps_update_path).parse_exact (hex_string_to_bytes t.update_path)) in
+  let update_path = extract_option "bad update path" ((ps_to_pse ps_update_path_nt).parse_exact (hex_string_to_bytes t.update_path)) in
   let update_group_context = hex_string_to_bytes t.update_group_context in
   let (|l, n|) = extract_result (ratchet_tree_l_n ratchet_tree) in
   let ts0 = extract_result (ratchet_tree_to_treesync l n ratchet_tree) in
@@ -105,8 +105,8 @@ let gen_treekem_output #cb t =
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in
 
     let ratchet_tree2 = extract_result (treesync_to_ratchet_tree ts2) in
-    let byte_length_ratchet_tree2 = bytes_length (ps_option ps_node) (Seq.seq_to_list ratchet_tree2) in
-    let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 32 then (ps_to_pse ps_ratchet_tree).serialize_exact ratchet_tree2 else empty in
+    let byte_length_ratchet_tree2 = bytes_length (ps_option ps_node_nt) (Seq.seq_to_list ratchet_tree2) in
+    let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 32 then (ps_to_pse ps_ratchet_tree_nt).serialize_exact ratchet_tree2 else empty in
     let tree_hash_after = extract_result (tree_hash (MLS.TreeMath.root l) ts2) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;

@@ -12,34 +12,19 @@ type message_content_type =
   | CT_proposal
   | CT_commit
 
-val valid_network_message_content_type: content_type_nt -> bool
-let valid_network_message_content_type content_type =
-  match content_type with
-  | NT.CT_application -> true
-  | NT.CT_proposal -> true
-  | NT.CT_commit -> true
-  | _ -> false
-
-val network_to_message_content_type_tot: content_type:content_type_nt{valid_network_message_content_type content_type} -> message_content_type
-let network_to_message_content_type_tot content_type =
-  match content_type with
-  | NT.CT_application -> CT_application
-  | NT.CT_proposal -> CT_proposal
-  | NT.CT_commit -> CT_commit
-
-val network_to_message_content_type: content_type_nt -> result message_content_type
+val network_to_message_content_type: content_type:content_type_nt -> message_content_type
 let network_to_message_content_type content_type =
-  if valid_network_message_content_type content_type then
-    return (network_to_message_content_type_tot content_type)
-  else
-    error "network_to_message_content_type: invalid content type"
+  match content_type with
+  | NT.CT_application () -> CT_application
+  | NT.CT_proposal () -> CT_proposal
+  | NT.CT_commit () -> CT_commit
 
 val message_content_type_to_network: message_content_type -> content_type_nt
 let message_content_type_to_network content_type =
   match content_type with
-  | CT_application -> NT.CT_application
-  | CT_proposal -> NT.CT_proposal
-  | CT_commit -> NT.CT_commit
+  | CT_application -> NT.CT_application ()
+  | CT_proposal -> NT.CT_proposal ()
+  | CT_commit -> NT.CT_commit ()
 
 noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
   | Add: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
@@ -103,20 +88,19 @@ let network_to_proposal_or_ref #bytes #bl por =
 val network_to_commit: #bytes:Type0 -> {|bytes_like bytes|} -> commit_nt bytes -> result (commit bytes)
 let network_to_commit #bytes #bl c =
   proposals <-- mapM network_to_proposal_or_ref (Seq.seq_to_list c.proposals);
-  path <-- network_to_option c.path;
   return ({
     c_proposals = proposals;
-    c_path = path;
+    c_path = c.path;
   })
 
-val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt{valid_network_message_content_type content_type} -> get_content_type #bytes content_type -> result (message_content bytes (network_to_message_content_type_tot content_type))
+val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> get_content_type #bytes content_type -> result (message_content bytes (network_to_message_content_type content_type))
 let network_to_message_content #bytes #bl #content_type content =
   match content_type with
-  | NT.CT_application ->
+  | NT.CT_application () ->
     return content
-  | NT.CT_proposal ->
+  | NT.CT_proposal () ->
     network_to_proposal (content <: proposal_nt bytes)
-  | NT.CT_commit ->
+  | NT.CT_commit () ->
     network_to_commit (content <: commit_nt bytes)
 
 let message_content_pair (bytes:Type0) {|bytes_like bytes|}: Type0 = content_type:message_content_type & message_content bytes content_type
@@ -169,12 +153,12 @@ val commit_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> comm
 let commit_to_network #bytes #cb c =
   proposals <-- mapM (proposal_or_ref_to_network) c.c_proposals;
   Seq.lemma_list_seq_bij proposals;
-  if not (Comparse.bytes_length ps_proposal_or_ref proposals < pow2 32) then
+  if not (Comparse.bytes_length ps_proposal_or_ref_nt proposals < pow2 32) then
     internal_failure "commit_to_network: proposals too long"
   else (
     return ({
       proposals = Seq.seq_of_list proposals;
-      path = option_to_network c.c_path;
+      path = c.c_path;
     })
   )
 

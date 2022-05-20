@@ -90,7 +90,7 @@ let encrypted_path_secret_tk_to_nt #bytes #cb x =
 val treekem_to_treesync_node_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> key_package bytes -> result (external_node_package_t bytes)
 let treekem_to_treesync_node_package #bytes #cb nb_left_leaves kp =
   ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext;
-  if not (bytes_length ps_hpke_ciphertext ciphertexts < pow2 16) then
+  if not (bytes_length ps_hpke_ciphertext_nt ciphertexts < pow2 16) then
     internal_failure "treekem_to_treesync: ciphertexts too long"
   else if not (length kp.last_group_context < pow2 64) then
     internal_failure "treekem_to_treesync: last group context too long (internal error)"

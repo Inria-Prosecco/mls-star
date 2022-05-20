@@ -59,7 +59,7 @@ let compute_group_context #l #n group_id epoch tree confirmed_transcript_hash =
   else if not (length confirmed_transcript_hash < 256) then
     internal_failure "state_to_group_context: confirmed_transcript_hash too long"
   else (
-    bytes_length_nil #bytes ps_extension;
+    bytes_length_nil #bytes ps_extension_nt;
     return ({
       group_id = group_id;
       epoch = epoch;
@@ -93,11 +93,11 @@ let state_to_group_context st =
 val hash_leaf_package: leaf_package_t bytes -> result bytes
 let hash_leaf_package leaf_package =
   key_package <-- treesync_to_keypackage leaf_package;
-  let key_package = (ps_to_pse ps_key_package).serialize_exact key_package in
+  let key_package = (ps_to_pse ps_key_package_nt).serialize_exact key_package in
   hash <-- hash_hash key_package;
   return (hash <: bytes)
 
-#push-options "--fuel 1"
+#push-options "--z3rlimit 50 --fuel 1"
 val reset_ratchet_states: state -> result state
 let reset_ratchet_states st =
   if not (st.leaf_index < st.tree_state.treesize) then
@@ -188,7 +188,7 @@ let process_commit state message message_auth =
     | None -> return state
     | Some path ->
       group_context <-- state_to_group_context state;
-      let group_context_bytes = (ps_to_pse ps_group_context).serialize_exact group_context in
+      let group_context_bytes = (ps_to_pse ps_group_context_nt).serialize_exact group_context in
       //It is not possible to move this `if` inside the definition of `update_pathkem`, because we need the information it gives to write the type of `update_pathkem`
       if not (sender_id < state.tree_state.treesize) then
         error "process_commit: sender_id is greater than treesize"
@@ -220,7 +220,7 @@ let process_commit state message message_auth =
   init_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_init state.epoch_secret;
   leaf_secret <-- (
     if state.leaf_index = sender_id && (Some? message_content.c_path) then (
-      match List.Tot.assoc ((ps_to_pse ps_key_package).serialize_exact (Some?.v message_content.c_path).leaf_key_package) state.pending_updatepath with
+      match List.Tot.assoc ((ps_to_pse ps_key_package_nt).serialize_exact (Some?.v message_content.c_path).leaf_key_package) state.pending_updatepath with
       | Some leaf_secret -> return leaf_secret
       | None -> internal_failure "Can't retrieve my own leaf secret"
     ) else (
@@ -239,7 +239,7 @@ let process_commit state message message_auth =
         return (Some commit_secret)
       )
   );
-  let serialized_group_context = (ps_to_pse ps_group_context).serialize_exact group_context in
+  let serialized_group_context = (ps_to_pse ps_group_context_nt).serialize_exact group_context in
   joiner_secret <-- MLS.TreeDEM.Keys.secret_init_to_joiner init_secret opt_commit_secret serialized_group_context;
   epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch joiner_secret None serialized_group_context;
   let state = { state with epoch_secret; leaf_secret; pending_updatepath = [];} in
@@ -269,14 +269,14 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   key_pair <-- MLS.TreeKEM.derive_keypair_from_path_secret #bytes leaf_secret;
   let (_, public_key) = key_pair in
   extensions <-- (
-    let versions = Seq.seq_of_list [PV_mls10] in
-    let ciphersuites = Seq.seq_of_list [CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519] in
-    let extensions = Seq.seq_of_list [ET_capabilities; ET_lifetime; (* ET_key_id; *) ET_parent_hash] in
-    if not (bytes_length #bytes ps_protocol_version (Seq.seq_to_list versions) < 256) then
+    let versions = Seq.seq_of_list [PV_mls10 ()] in
+    let ciphersuites = Seq.seq_of_list [CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
+    let extensions = Seq.seq_of_list [ET_capabilities (); ET_lifetime (); (* ET_key_id (); *) ET_parent_hash ()] in
+    if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < 256) then
       internal_failure "fresh_key_package: initial protocol versions too long"
-    else if not (bytes_length #bytes ps_extension_type (Seq.seq_to_list extensions) < 256) then
+    else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < 256) then
       internal_failure "fresh_key_package: initial extension types too long"
-    else if not (bytes_length #bytes ps_cipher_suite (Seq.seq_to_list ciphersuites) < 256) then
+    else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < 256) then
       internal_failure "fresh_key_package: initial cipher suites too long"
     else (
       let ext: bytes = empty_extensions #bytes #cb.base in
@@ -295,13 +295,13 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     };
     endpoint_id = empty; //TODO
     version = 0;
-    content = (ps_to_pse ps_leaf_package_content).serialize_exact ({public_key} <: leaf_package_content_nt bytes);
+    content = (ps_to_pse ps_leaf_package_content_nt).serialize_exact ({public_key} <: leaf_package_content_nt bytes);
     extensions;
     signature = Seq.empty;
   } in
   signature <-- (
     unsigned_key_package <-- treesync_to_keypackage unsigned_leaf_package;
-    let tbs = (ps_to_pse ps_key_package_tbs).serialize_exact (key_package_get_tbs unsigned_key_package) in
+    let tbs = (ps_to_pse ps_key_package_tbs_nt).serialize_exact unsigned_key_package.tbs in
     nonce <-- universal_sign_nonce;
     sign_sign private_sign_key tbs nonce
   );
@@ -312,7 +312,7 @@ let fresh_key_package e cred private_sign_key =
   tmp <-- fresh_key_package_internal e cred private_sign_key;
   let leaf_package, leaf_secret = tmp in
   key_package <-- treesync_to_keypackage leaf_package;
-  let key_package = (ps_to_pse ps_key_package).serialize_exact key_package in
+  let key_package = (ps_to_pse ps_key_package_nt).serialize_exact key_package in
   hash <-- hash_leaf_package leaf_package;
   return (key_package, hash, leaf_secret)
 
@@ -360,12 +360,12 @@ let send_helper st msg e =
   group_context <-- state_to_group_context st;
   confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation st.epoch_secret;
   sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data st.epoch_secret;
-  auth <-- message_compute_auth msg st.sign_private_key rand_nonce ((ps_to_pse ps_group_context).serialize_exact group_context) confirmation_secret st.interim_transcript_hash;
+  auth <-- message_compute_auth msg st.sign_private_key rand_nonce ((ps_to_pse ps_group_context_nt).serialize_exact group_context) confirmation_secret st.interim_transcript_hash;
   let ratchet = if msg.content_type = CT_application then st.application_state else st.handshake_state in
   ct_new_ratchet_state <-- message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret (msg, auth);
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
   ct_network <-- message_ciphertext_to_network ct;
-  let msg_bytes = (ps_to_pse ps_mls_message).serialize_exact (M_ciphertext ct_network) in
+  let msg_bytes = (ps_to_pse ps_mls_message_nt).serialize_exact (M_ciphertext ct_network) in
   let new_st = if msg.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
   let g:group_message = (st.tree_state.group_id, msg_bytes) in
   return (new_st, auth, g)
@@ -415,9 +415,9 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   tree_hash <-- MLS.TreeSync.Hash.tree_hash (MLS.TreeMath.root future_state.tree_state.levels) future_state.tree_state.tree;
   ratchet_tree <-- treesync_to_ratchet_tree future_state.tree_state.tree;
   ratchet_tree_bytes <-- (
-    let l = bytes_length (ps_option ps_node) (Seq.seq_to_list ratchet_tree) in
+    let l = bytes_length (ps_option ps_node_nt) (Seq.seq_to_list ratchet_tree) in
     if 1 <= l && l < pow2 32 then
-      return ((ps_to_pse ps_ratchet_tree).serialize_exact ratchet_tree)
+      return ((ps_to_pse ps_ratchet_tree_nt).serialize_exact ratchet_tree)
     else
       internal_failure "generate_welcome_message: ratchet_tree too big"
   );
@@ -469,7 +469,7 @@ let generate_update_path st e proposals =
     let sign_nonce = fresh in
     assume(length #bytes sign_nonce == Seq.length sign_nonce);
     group_context <-- state_to_group_context st;
-    let group_context_bytes = (ps_to_pse ps_group_context).serialize_exact group_context in
+    let group_context_bytes = (ps_to_pse ps_group_context_nt).serialize_exact group_context in
     let new_leaf_secret = Seq.create (hpke_private_key_length #bytes) (Lib.IntTypes.u8 0)  in
     assume(length new_leaf_secret == Seq.length new_leaf_secret);
     tmp <-- update_path tree_kem st.leaf_index new_leaf_secret group_context_bytes update_path_rand;
@@ -479,7 +479,7 @@ let generate_update_path st e proposals =
     update_path_ext_sync <-- treekem_to_treesync my_leaf_package update_path_kem;
     update_path_sync <-- external_pathsync_to_pathsync (Some (st.sign_private_key, sign_nonce)) st.tree_state.tree update_path_ext_sync;
     update_path_network <-- treesync_to_update_path update_path_sync;
-    let new_key_package_bytes = (ps_to_pse ps_key_package).serialize_exact update_path_network.leaf_key_package in
+    let new_key_package_bytes = (ps_to_pse ps_key_package_nt).serialize_exact update_path_network.leaf_key_package in
     return (update_path_network, (new_key_package_bytes, new_leaf_secret), e)
   )
 #pop-options
@@ -504,7 +504,7 @@ let generate_commit state e proposals =
   return ((msg <: message_commit), state, e)
 
 let add state key_package e =
-  kp <-- from_option "error message if it is malformed" ((ps_to_pse ps_key_package).parse_exact key_package);
+  kp <-- from_option "error message if it is malformed" ((ps_to_pse ps_key_package_nt).parse_exact key_package);
   lp <-- key_package_to_treesync kp;
   let proposals = [ (Add lp) ] in
   tmp <-- generate_commit state e proposals;
@@ -520,7 +520,7 @@ let add state key_package e =
   assert_norm (List.Tot.length [lp] == 1);
   welcome_msg <-- generate_welcome_message state msg msg_auth false [lp] rand;
   welcome_msg_network <-- welcome_to_network welcome_msg;
-  let w:welcome_message = (empty #bytes, (ps_to_pse ps_welcome).serialize_exact welcome_msg_network) in
+  let w:welcome_message = (empty #bytes, (ps_to_pse ps_welcome_nt).serialize_exact welcome_msg_network) in
   return (state, (g,w))
 
 let remove state p e =
@@ -577,7 +577,7 @@ let find_my_index #l #n t sign_pk =
 #push-options "--fuel 1 --z3rlimit 50"
 let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
-  welcome_network <-- from_option "process_welcome_message: can't parse welcome message" ((ps_to_pse ps_welcome).parse_exact welcome_bytes);
+  welcome_network <-- from_option "process_welcome_message: can't parse welcome message" ((ps_to_pse ps_welcome_nt).parse_exact welcome_bytes);
   let welcome = network_to_welcome welcome_network in
   tmp <-- decrypt_welcome welcome (fun kp_hash ->
     match lookup kp_hash with
@@ -590,7 +590,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     | None -> None
   ) None;
   let (group_info, secrets) = tmp in
-  ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes ps_ratchet_tree).parse_exact group_info.other_extensions);
+  ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes ps_ratchet_tree_nt).parse_exact group_info.other_extensions);
   ln <-- ratchet_tree_l_n ratchet_tree;
   let (|l, n|) = ln in
   tree <-- ratchet_tree_to_treesync l n ratchet_tree;
@@ -635,7 +635,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   );
   interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash (Some group_info.confirmation_tag) group_info.confirmed_transcript_hash;
   group_context <-- compute_group_context group_info.group_id group_info.epoch tree group_info.confirmed_transcript_hash;
-  epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_to_pse ps_group_context).serialize_exact group_context);
+  epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_to_pse ps_group_context_nt).serialize_exact group_context);
   leaf_secret <-- (
     let opt_my_leaf_package = get_leaf tree leaf_index in
     match opt_my_leaf_package with
@@ -677,7 +677,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
 
 let process_group_message state msg =
   msg <-- from_option "process_group_message: can't parse group message"
-    ((ps_to_pse MLS.NetworkTypes.ps_mls_message).parse_exact msg);
+    ((ps_to_pse MLS.NetworkTypes.ps_mls_message_nt).parse_exact msg);
   tmp <-- (
     match msg with
     | M_plaintext msg ->

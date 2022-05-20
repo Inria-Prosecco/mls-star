@@ -12,22 +12,23 @@ module Hash = Spec.Agile.Hash
 
 #set-options "--fuel 0 --ifuel 0"
 
+#push-options "--ifuel 1"
 let available_ciphersuite_from_network cs =
   match cs with
-  | CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519 -> return AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | CS_mls10_128_dhkemp256_aes128gcm_sha256_p256 -> return AC_mls_128_dhkemp256_aes128gcm_sha256_p256
-  | CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> return AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
-  | CS_mls10_256_dhkemx448_aes256gcm_sha512_ed448 -> error "available_ciphersuite_from_network: ciphersuite not available"
-  | CS_mls10_256_dhkemp521_aes256gcm_sha512_p521 -> error "available_ciphersuite_from_network: ciphersuite not available"
-  | CS_mls10_256_dhkemx448_chacha20poly1305_sha512_ed448 -> error "available_ciphersuite_from_network: ciphersuite not available"
-  | _ -> error "available_ciphersuite_from_network: bad ciphersuite"
+  | CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519 () -> return AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
+  | CS_mls10_128_dhkemp256_aes128gcm_sha256_p256 () -> return AC_mls_128_dhkemp256_aes128gcm_sha256_p256
+  | CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 () -> return AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+  | CS_mls10_256_dhkemx448_aes256gcm_sha512_ed448 () -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls10_256_dhkemp521_aes256gcm_sha512_p521 () -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls10_256_dhkemx448_chacha20poly1305_sha512_ed448 () -> error "available_ciphersuite_from_network: ciphersuite not available"
+#pop-options
 
 #push-options "--ifuel 1"
 let available_ciphersuite_to_network cs =
   match cs with
-  | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> CS_mls10_128_dhkemp256_aes128gcm_sha256_p256
-  | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+  | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519 ()
+  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> CS_mls10_128_dhkemp256_aes128gcm_sha256_p256 ()
+  | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()
 #pop-options
 
 #push-options "--ifuel 1"
@@ -47,19 +48,7 @@ noeq type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   context: blbytes bytes ({min=0; max=(pow2 32)-1});
 }
 
-#push-options "--ifuel 1"
-val ps_kdf_label: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (kdf_label_nt bytes)
-let ps_kdf_label #bytes #bl =
-  let open Comparse in
-  mk_isomorphism (kdf_label_nt bytes)
-    (
-      _ <-- ps_nat_lbytes 2;
-      _ <-- ps_blbytes _;
-      ps_blbytes #bytes _ //Why the annotation? See FStarLang/FStar#2583
-    )
-    (fun (|length, (|label, context|)|) -> {length=length; label=label; context=context;})
-    (fun x -> (|x.length, (|x.label, x.context|)|))
-#pop-options
+%splice [ps_kdf_label_nt] (gen_parser (`kdf_label_nt))
 
 let expand_with_label #bytes #cb secret label context len =
   assert_norm (String.strlen "mls10 " == 6);
@@ -73,7 +62,7 @@ let expand_with_label #bytes #cb secret label context len =
     internal_failure "expand_with_label: context too long"
   else (
     concat_length (string_to_bytes #bytes "mls10 ") label;
-    let kdf_label = (ps_to_pse ps_kdf_label).serialize_exact ({
+    let kdf_label = (ps_to_pse ps_kdf_label_nt).serialize_exact ({
       length = len;
       label = concat #bytes (string_to_bytes #bytes "mls10 ") label;
       context = context;

@@ -26,18 +26,19 @@ type psk_id_nonce (bytes:Type0) {|bytes_like bytes|} = {
 val psk_type_to_network: psk_type -> NT.psk_type_nt
 let psk_type_to_network pt =
   match pt with
-  | PSKT_external -> NT.PSKT_external
-  | PSKT_reinit -> NT.PSKT_reinit
-  | PSKT_branch -> NT.PSKT_branch
+  | PSKT_external -> NT.PSKT_external ()
+  | PSKT_reinit -> NT.PSKT_reinit ()
+  | PSKT_branch -> NT.PSKT_branch ()
 #pop-options
 
+#push-options "--ifuel 1"
 val network_to_psk_type: NT.psk_type_nt -> result psk_type
 let network_to_psk_type pt =
   match pt with
-  | NT.PSKT_external -> return PSKT_external
-  | NT.PSKT_reinit -> return PSKT_reinit
-  | NT.PSKT_branch -> return PSKT_branch
-  | _ -> error "network_to_psk_type: invalid psk type"
+  | NT.PSKT_external () -> return PSKT_external
+  | NT.PSKT_reinit () -> return PSKT_reinit
+  | NT.PSKT_branch () -> return PSKT_branch
+#pop-options
 
 #push-options "--ifuel 1"
 val psk_id_nonce_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> psk_id_nonce bytes -> result (NT.pre_shared_key_id_nt bytes)
@@ -69,13 +70,14 @@ let psk_id_nonce_to_network psk =
   )
 #pop-options
 
+#push-options "--ifuel 1"
 val network_to_psk_id_nonce: #bytes:Type0 -> {|bytes_like bytes|} -> NT.pre_shared_key_id_nt bytes -> result (psk_id_nonce bytes)
 let network_to_psk_id_nonce psk_id =
   match psk_id with
   | NT.PSKI_external id nonce -> return ({id = PSKI_external id; nonce = nonce})
   | NT.PSKI_reinit group_id epoch nonce -> return ({id = PSKI_reinit group_id epoch; nonce = nonce})
   | NT.PSKI_branch group_id epoch nonce -> return ({id = PSKI_reinit group_id epoch; nonce = nonce})
-  | _ -> error "network_to_psk: invalid psk type"
+#pop-options
 
 
 type psk_label (bytes:Type0) {|bytes_like bytes|} = {

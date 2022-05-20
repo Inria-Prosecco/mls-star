@@ -86,13 +86,13 @@ let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
   let (rng, identity) = gen_rand_bytes #bytes rng 8 in
   let identity: bytes = (identity <: bytes) in
   let extensions: bytes = (
-    let versions = Seq.seq_of_list [PV_mls10] in
+    let versions = Seq.seq_of_list [PV_mls10 ()] in
     let ciphersuite_network = available_ciphersuite_to_network (ciphersuite #bytes) in
     let ciphersuites = Seq.seq_of_list [ciphersuite_network] in
-    let extensions = Seq.seq_of_list [ET_capabilities; ET_lifetime; (* ET_key_id; *) ET_parent_hash] in
-    if not (bytes_length #bytes ps_protocol_version (Seq.seq_to_list versions) < 256) then failwith ""
-    else if not (bytes_length #bytes ps_extension_type (Seq.seq_to_list extensions) < 256) then failwith ""
-    else if not (bytes_length #bytes ps_cipher_suite (Seq.seq_to_list ciphersuites) < 256) then failwith ""
+    let extensions = Seq.seq_of_list [ET_capabilities (); ET_lifetime (); (* ET_key_id (); *) ET_parent_hash ()] in
+    if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < 256) then failwith ""
+    else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < 256) then failwith ""
+    else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < 256) then failwith ""
     else (
       let ext = empty_extensions in
       let ext = extract_result (set_capabilities_extension ext ({versions; ciphersuites; extensions})) in
@@ -108,14 +108,14 @@ let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
     };
     endpoint_id = empty;
     version = 0;
-    content = (ps_to_pse ps_leaf_package_content).serialize_exact ({public_key = hpke_pk});
+    content = (ps_to_pse ps_leaf_package_content_nt).serialize_exact ({public_key = hpke_pk});
     extensions;
     signature = empty;
   } in
   let (rng, sign_nonce) = gen_rand_bytes rng (sign_nonce_length #bytes) in
   let signature = extract_result (
     unsigned_key_package <-- treesync_to_keypackage unsigned_leaf_package;
-    let tbs = (ps_to_pse ps_key_package_tbs).serialize_exact (key_package_get_tbs unsigned_key_package) in
+    let tbs = (ps_to_pse ps_key_package_tbs_nt).serialize_exact unsigned_key_package.tbs in
     sign_sign secrets.sign_sk tbs sign_nonce
   ) in
   (rng, { unsigned_leaf_package with signature })

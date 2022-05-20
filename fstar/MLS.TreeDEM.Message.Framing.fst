@@ -94,7 +94,7 @@ let message_plaintext_to_network #bytes #cb pt =
     } <: mls_plaintext_nt bytes)
   )
 
-val network_to_ciphertext_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt{valid_network_message_content_type content_type} -> mls_ciphertext_content_nt bytes content_type -> result (message_ciphertext_content bytes (network_to_message_content_type_tot content_type))
+val network_to_ciphertext_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> mls_ciphertext_content_nt bytes content_type -> result (message_ciphertext_content bytes (network_to_message_content_type content_type))
 let network_to_ciphertext_content #content_type ciphertext_content =
   content <-- network_to_message_content ciphertext_content.content;
   confirmation_tag <-- opt_tag_to_opt_bytes ciphertext_content.confirmation_tag;
@@ -143,11 +143,10 @@ let encrypted_sender_data_to_network #bytes #bl sd =
 
 val network_to_message_ciphertext: #bytes:Type0 -> {|bytes_like bytes|} -> mls_ciphertext_nt bytes -> result (message_ciphertext bytes)
 let network_to_message_ciphertext #bytes #bl ct =
-  content_type <-- network_to_message_content_type ct.content_type;
   return ({
     group_id = ct.group_id;
     epoch = ct.epoch;
-    content_type = content_type;
+    content_type = network_to_message_content_type ct.content_type;
     authenticated_data = ct.authenticated_data;
     encrypted_sender_data = ct.encrypted_sender_data;
     ciphertext = ct.ciphertext;
@@ -214,7 +213,7 @@ let compute_tbm #bytes #cb msg auth =
       tbs = tbs;
       signature = auth.signature;
       confirmation_tag = confirmation_tag';
-    })
+    } <: mls_plaintext_tbm_nt bytes)
   )
 
 val compute_tbs_bytes: #bytes:Type0 -> {|crypto_bytes bytes|} -> message bytes -> bytes -> result bytes

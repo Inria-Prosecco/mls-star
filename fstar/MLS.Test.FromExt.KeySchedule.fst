@@ -19,8 +19,8 @@ let gen_group_context group_id epoch inp =
   let tree_hash = hex_string_to_bytes inp.tree_hash in
   let confirmed_transcript_hash = hex_string_to_bytes inp.confirmed_transcript_hash in
   if length group_id <= 255 && epoch < (pow2 64) && length tree_hash <= 255 && length confirmed_transcript_hash <= 255 then (
-    bytes_length_nil #bytes ps_extension;
-    (ps_to_pse ps_group_context).serialize_exact ({
+    bytes_length_nil #bytes ps_extension_nt;
+    (ps_to_pse ps_group_context_nt).serialize_exact ({
       group_id = group_id;
       epoch = epoch;
       tree_hash = tree_hash;
@@ -49,7 +49,7 @@ let gen_epoch_output #cb group_id last_init_secret epoch inp =
   let confirmation_key = extract_result (secret_epoch_to_confirmation epoch_secret) in
   let membership_key = extract_result (secret_epoch_to_membership epoch_secret) in
   let resumption_secret = extract_result (secret_epoch_to_resumption epoch_secret) in
-  let external_pub = (ps_to_pse ps_hpke_public_key).serialize_exact (snd (extract_result (secret_external_to_keypair external_secret))) in
+  let external_pub = (ps_to_pse ps_hpke_public_key_nt).serialize_exact (snd (extract_result (secret_external_to_keypair external_secret))) in
 
   //TODO (when this is standardized in the test vectors) move it in a more sensible place
   let my_psk_secret = extract_result (compute_psk_secret (List.map (fun (psk:keyschedule_test_epoch_psk) -> ({id = PSKI_external (hex_string_to_bytes psk.id); nonce = hex_string_to_bytes psk.nonce;}, hex_string_to_bytes psk.secret)) inp.external_psks)) in

@@ -15,28 +15,13 @@ open MLS.Result
 noeq type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   public_key: hpke_public_key_nt bytes;
   parent_hash: blbytes bytes ({min=0;max=255});
-  original_child_resolution: blseq (hpke_public_key_nt bytes) ps_hpke_public_key ({min=0; max=(pow2 32)-1});
+  original_child_resolution: blseq bytes ps_hpke_public_key_nt ({min=0; max=(pow2 32)-1});
 }
 
-val ps_parent_hash_input: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (parent_hash_input_nt bytes)
-let ps_parent_hash_input #bytes #bl =
-  let open Comparse in
-  mk_isomorphism (parent_hash_input_nt bytes)
-    (
-      _ <-- ps_hpke_public_key;
-      bind (ps_blbytes _) (fun (_:blbytes bytes ({min=0;max=255})) -> //See FStarLang/FStar#2589
-      ps_blseq _ ps_hpke_public_key
-      )
-    )
-  (fun (|public_key, (|parent_hash, original_child_resolution|)|) -> {
-    public_key = public_key;
-    parent_hash = parent_hash;
-    original_child_resolution = original_child_resolution;
-  })
-  (fun x -> (|x.public_key, (|x.parent_hash, x.original_child_resolution|)|))
+%splice [ps_parent_hash_input_nt] (gen_parser (`parent_hash_input_nt))
 
 instance parseable_serializeable_parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (parent_hash_input_nt bytes) =
-  mk_parseable_serializeable ps_parent_hash_input
+  mk_parseable_serializeable ps_parent_hash_input_nt
 
 val compute_parent_hash_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> hpke_public_key_nt bytes -> bytes -> treekem bytes l n -> list nat -> result (lbytes bytes (hash_length #bytes))
 let compute_parent_hash_treekem #bytes #cb #l #n public_key parent_hash sibling forbidden_leaves =
@@ -44,7 +29,7 @@ let compute_parent_hash_treekem #bytes #cb #l #n public_key parent_hash sibling 
   let original_child_resolution_nt = List.Tot.map (fun (x:hpke_public_key bytes) -> x <: hpke_public_key_nt bytes) original_child_resolution in
   if not (length parent_hash < 256) then
     internal_failure "compute_parent_hash: parent_hash too long"
-  else if not (bytes_length ps_hpke_public_key original_child_resolution_nt < pow2 32) then
+  else if not (bytes_length ps_hpke_public_key_nt original_child_resolution_nt < pow2 32) then
     internal_failure "compute_parent_hash: original_child_resolution too big"
   else (
     Seq.lemma_list_seq_bij original_child_resolution_nt;
@@ -59,7 +44,7 @@ val get_public_key_from_content: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -
 let get_public_key_from_content #bytes #bl content =
   let open MLS.NetworkBinder in
   content <-- from_option "get_public_key_from_content: Couldn't parse node content"
-    ((ps_to_pse ps_node_package_content).parse_exact content);
+    (parse (node_package_content_nt bytes) content);
   return content.public_key
 
 //TODO possible performance optimisation: no need to convert root from treesync to treekem: we only need to convert its content
@@ -96,4 +81,3 @@ let compute_parent_hash_from_dir #bytes #cb #l #n content parent_parent_hash nb_
     in
     compute_parent_hash_from_sibling content parent_parent_hash nb_left_leaves root nb_left_leaves_sibling sibling
   | _ -> internal_failure "compute_parent_hash_from_dir: `root` must be an internal node"
-

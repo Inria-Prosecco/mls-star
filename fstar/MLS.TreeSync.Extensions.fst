@@ -16,76 +16,38 @@ open MLS.Result
 (*** Extensions parser ***)
 
 type capabilities_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  versions: blseq #bytes protocol_version_nt ps_protocol_version ({min=0; max=255});
-  ciphersuites: blseq #bytes cipher_suite_nt  ps_cipher_suite ({min=0; max=255});
-  extensions: blseq #bytes extension_type_nt ps_extension_type ({min=0; max=255});
+  versions: blseq bytes ps_protocol_version_nt ({min=0; max=255});
+  ciphersuites: blseq bytes ps_cipher_suite_nt ({min=0; max=255});
+  extensions: blseq bytes ps_extension_type_nt ({min=0; max=255});
 }
 
-#push-options "--ifuel 1"
-val ps_capabilities_ext: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (capabilities_ext_nt bytes)
-let ps_capabilities_ext #bytes #bl =
-  let open Comparse in
-  mk_isomorphism (capabilities_ext_nt bytes)
-    (
-      _ <-- ps_blseq _ ps_protocol_version;
-      bind (ps_blseq _ ps_cipher_suite) (fun (_:blseq #bytes cipher_suite_nt ps_cipher_suite ({min=0; max=255})) -> //See FStarLang/FStar#2589
-      ps_blseq _ ps_extension_type
-      )
-    )
-    (fun (|versions, (|ciphersuites, extensions|)|) -> {
-      versions = versions;
-      ciphersuites = ciphersuites;
-      extensions = extensions;
-    })
-    (fun x -> (|x.versions, (|x.ciphersuites, x.extensions|)|))
-#pop-options
+%splice [ps_capabilities_ext_nt] (gen_parser (`capabilities_ext_nt))
 
 type lifetime_ext_nt = {
   not_before: nat_lbytes 8;
   not_after: nat_lbytes 8;
 }
 
-val ps_lifetime_ext: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes lifetime_ext_nt
-let ps_lifetime_ext #bytes #bl =
-  let open Comparse in
-  mk_isomorphism lifetime_ext_nt
-    (
-      _ <-- ps_nat_lbytes 8;
-      ps_nat_lbytes 8
-    )
-    (fun (|not_before, not_after|) -> {
-      not_before = not_before;
-      not_after = not_after;
-    })
-    (fun x -> (|x.not_before, x.not_after|))
+%splice [ps_lifetime_ext_nt] (gen_parser (`lifetime_ext_nt))
 
 type key_package_identifier_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
   key_id: blbytes bytes ({min=0; max=(pow2 16)-1});
 }
 
-val ps_key_package_identifier_ext: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_identifier_ext_nt bytes)
-let ps_key_package_identifier_ext #bytes #bl =
-  let open Comparse in
-  mk_isomorphism (key_package_identifier_ext_nt bytes) (ps_blbytes _)
-    (fun key_id -> {key_id = key_id})
-    (fun x -> x.key_id)
+%splice [ps_key_package_identifier_ext_nt] (gen_parser (`key_package_identifier_ext_nt))
 
 type parent_hash_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
   parent_hash: blbytes bytes ({min=0; max=255});
 }
 
-val ps_parent_hash_ext: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (parent_hash_ext_nt bytes)
-let ps_parent_hash_ext #bytes #bl =
-  mk_isomorphism (parent_hash_ext_nt bytes) (ps_blbytes _)
-    (fun key_id -> {parent_hash = key_id})
-    (fun x -> x.parent_hash)
+%splice [ps_parent_hash_ext_nt] (gen_parser (`parent_hash_ext_nt))
 
 (*** Utility functions ***)
 
 let extensions_min_size:nat = 0
 let extensions_max_size:nat = (pow2 32) - 1
-val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (blseq (extension_nt bytes) ps_extension ({min=extensions_min_size; max=extensions_max_size}))
-let ps_extensions #bytes #bl = ps_blseq ({min=extensions_min_size; max=extensions_max_size}) ps_extension
+val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (blseq bytes ps_extension_nt ({min=extensions_min_size; max=extensions_max_size}))
+let ps_extensions #bytes #bl = ps_blseq ps_extension_nt ({min=extensions_min_size; max=extensions_max_size})
 
 val find_extension_index: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> extensions:Seq.seq (extension_nt bytes) -> option (i:nat{i < Seq.length extensions})
 let find_extension_index t extensions =
@@ -117,7 +79,7 @@ let set_extension #bytes #bl t extensions_buf data =
       | None -> Seq.append extensions (Seq.create 1 ext)
       | Some i -> (Seq.upd extensions i ext)
     in
-    let ext_byte_length = bytes_length ps_extension (Seq.seq_to_list new_extensions) in
+    let ext_byte_length = bytes_length ps_extension_nt (Seq.seq_to_list new_extensions) in
     if not (extensions_min_size <= ext_byte_length) then
       error "set_extension: new extension buffer is too short"
     else if not (ext_byte_length <= extensions_max_size) then
@@ -143,7 +105,7 @@ let mk_set_extension #a ext_type ps_a buf ext_content =
 #push-options "--fuel 1"
 val empty_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> bytes
 let empty_extensions #bytes #bl =
-  bytes_length_nil #bytes ps_extension;
+  bytes_length_nil #bytes ps_extension_nt;
   (ps_to_pse ps_extensions).serialize_exact Seq.empty
 #pop-options
 
@@ -153,21 +115,21 @@ let get_extension_list #bytes #bl extensions_buf =
   return (List.Tot.map (fun x -> x.extension_type) (Seq.seq_to_list extensions))
 
 val get_capabilities_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (capabilities_ext_nt bytes)
-let get_capabilities_extension #bytes #bl = mk_get_extension ET_capabilities ps_capabilities_ext
+let get_capabilities_extension #bytes #bl = mk_get_extension (ET_capabilities ()) ps_capabilities_ext_nt
 val set_capabilities_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> capabilities_ext_nt bytes -> result bytes
-let set_capabilities_extension #bytes #bl = mk_set_extension ET_capabilities ps_capabilities_ext
+let set_capabilities_extension #bytes #bl = mk_set_extension (ET_capabilities ()) ps_capabilities_ext_nt
 
 val get_lifetime_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option lifetime_ext_nt
-let get_lifetime_extension #bytes #bl = mk_get_extension ET_lifetime ps_lifetime_ext
+let get_lifetime_extension #bytes #bl = mk_get_extension (ET_lifetime ()) ps_lifetime_ext_nt
 val set_lifetime_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> lifetime_ext_nt -> result bytes
-let set_lifetime_extension #bytes #bl = mk_set_extension ET_lifetime ps_lifetime_ext
+let set_lifetime_extension #bytes #bl = mk_set_extension (ET_lifetime ()) ps_lifetime_ext_nt
 
 val get_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (key_package_identifier_ext_nt bytes)
-let get_key_package_identifier_extension #bytes #bl = mk_get_extension ET_key_id ps_key_package_identifier_ext
+let get_key_package_identifier_extension #bytes #bl = mk_get_extension (ET_key_id ()) ps_key_package_identifier_ext_nt
 val set_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> key_package_identifier_ext_nt bytes -> result bytes
-let set_key_package_identifier_extension #bytes #bl = mk_set_extension ET_key_id ps_key_package_identifier_ext
+let set_key_package_identifier_extension #bytes #bl = mk_set_extension (ET_key_id ()) ps_key_package_identifier_ext_nt
 
 val get_parent_hash_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (parent_hash_ext_nt bytes)
-let get_parent_hash_extension #bytes #bl = mk_get_extension ET_parent_hash ps_parent_hash_ext
+let get_parent_hash_extension #bytes #bl = mk_get_extension (ET_parent_hash ()) ps_parent_hash_ext_nt
 val set_parent_hash_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> parent_hash_ext_nt bytes -> result bytes
-let set_parent_hash_extension #bytes #bl = mk_set_extension ET_parent_hash ps_parent_hash_ext
+let set_parent_hash_extension #bytes #bl = mk_set_extension (ET_parent_hash ()) ps_parent_hash_ext_nt

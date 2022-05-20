@@ -29,7 +29,7 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key paren
           new_extensions <-- set_parent_hash_extension lp.extensions ({parent_hash = parent_parent_hash});
           let lp = ({lp with extensions = new_extensions}) in
           key_package <-- treesync_to_keypackage lp;
-          let leaf_package_bytes = serialize (key_package_tbs_nt bytes) (key_package_get_tbs key_package) in
+          let leaf_package_bytes = serialize (key_package_tbs_nt bytes) key_package.tbs in
           new_signature <-- sign_sign sign_key leaf_package_bytes entropy;
           return ({lp with signature = new_signature} <: leaf_package_t bytes)
         )

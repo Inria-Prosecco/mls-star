@@ -11,23 +11,13 @@ noeq type tree_context_nt = {
   generation: nat_lbytes 4;
 }
 
-val ps_tree_context: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes tree_context_nt
-let ps_tree_context #bytes #bl =
-  let open Comparse in
-  mk_isomorphism tree_context_nt
-    (
-      _ <-- ps_nat_lbytes 4;
-      ps_nat_lbytes 4
-    )
-    (fun (|node, generation|) -> {node=node; generation=generation})
-    (fun x -> (|x.node, x.generation|))
+%splice [ps_tree_context_nt] (gen_parser (`tree_context_nt))
 
 instance parseable_serializeable_tree_context_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes tree_context_nt  =
-  mk_parseable_serializeable ps_tree_context
+  mk_parseable_serializeable ps_tree_context_nt
 
 val derive_tree_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> node:nat -> generation:nat -> len:nat -> result (lbytes bytes len)
 let derive_tree_secret #bytes #cb secret label node generation len =
-  let open Comparse in
   if not (node < pow2 32) then
     internal_failure "derive_tree_secret: node too high"
   else if not (generation < pow2 32) then

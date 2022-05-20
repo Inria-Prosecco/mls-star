@@ -41,8 +41,8 @@ let test_commit_transcript_one t =
   end
   | Success cs -> begin
     let cb = mk_concrete_crypto_bytes cs in
-    let credential_network = extract_option "malformed credential" ((ps_to_pse ps_credential).parse_exact (hex_string_to_bytes t.credential)) in
-    let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_message).parse_exact (hex_string_to_bytes t.commit)) in
+    let credential_network = extract_option "malformed credential" ((ps_to_pse ps_credential_nt).parse_exact (hex_string_to_bytes t.credential)) in
+    let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_message_nt).parse_exact (hex_string_to_bytes t.commit)) in
     let commit_plaintext_network =
       match commit_message_network with
       | M_plaintext p -> p
@@ -66,7 +66,7 @@ let test_commit_transcript_one t =
     in
     let membership_tag_ok =
       match commit_plaintext_network.membership_tag with
-      | Some_nt expected_membership_tag ->
+      | Some expected_membership_tag ->
         check_equal "membership_tag" bytes_to_hex_string expected_membership_tag.mac_value computed_membership_tag
       | _ ->
         IO.print_string "Missing membership tag\n";
