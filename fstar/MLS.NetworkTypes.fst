@@ -333,13 +333,6 @@ type content_type_nt =
 
 %splice [ps_content_type_nt] (gen_parser (`content_type_nt))
 
-val get_content_type: #bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
-let get_content_type #bytes #bl content_type =
-  match content_type with
-  | CT_application () -> blbytes bytes ({min=0; max=(pow2 32)-1})
-  | CT_proposal () -> proposal_nt bytes
-  | CT_commit () -> commit_nt bytes
-
 noeq type mls_content_nt (bytes:Type0) {|bytes_like bytes|} =
   | MC_application: [@@@ with_tag (CT_application ())] blbytes bytes ({min=0; max=(pow2 32)-1}) -> mls_content_nt bytes
   | MC_proposal: [@@@ with_tag (CT_proposal ())] proposal_nt bytes -> mls_content_nt bytes
@@ -373,36 +366,29 @@ noeq type mls_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_mls_ciphertext_nt] (gen_parser (`mls_ciphertext_nt))
 
+val mls_message_content_nt: bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
+let mls_message_content_nt bytes #bl content_type =
+  match content_type with
+  | CT_application () -> blbytes bytes ({min=0; max=(pow2 32)-1})
+  | CT_proposal () -> proposal_nt bytes
+  | CT_commit () -> commit_nt bytes
+
+val ps_mls_message_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer bytes (mls_message_content_nt bytes content_type)
+let ps_mls_message_content_nt #bytes #bl content_type =
+  match content_type with
+  | CT_application () -> ps_blbytes ({min=0; max=(pow2 32)-1})
+  | CT_proposal () -> ps_proposal_nt
+  | CT_commit () -> ps_commit_nt
+
 noeq type mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type: content_type_nt) = {
-  content: get_content_type #bytes content_type;
+  content: mls_message_content_nt bytes content_type;
   signature: blbytes bytes ({min=0; max=(pow2 16)-1});
+  [@@@ with_parser #bytes (ps_option ps_mac_nt)]
   confirmation_tag: option (mac_nt bytes);
   padding: blbytes bytes ({min=0; max=(pow2 16)-1});
 }
 
-val ps_mls_ciphertext_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer bytes (mls_ciphertext_content_nt bytes content_type)
-let ps_mls_ciphertext_content_nt #bytes #bl content_type =
-  mk_isomorphism (mls_ciphertext_content_nt bytes content_type)
-    (
-      _ <-- (
-        (match content_type with
-        | CT_application () -> ps_blbytes ({min=0; max=(pow2 32)-1})
-        | CT_proposal () -> ps_proposal_nt
-        | CT_commit () -> ps_commit_nt
-        ) <: parser_serializer_unit bytes (get_content_type content_type)
-      );
-      bind (ps_blbytes _) (fun (_:blbytes bytes ({min=0; max=(pow2 16)-1})) -> //See FStarLang/FStar#2589
-      _ <-- ps_option ps_mac_nt;
-      ps_blbytes _
-      )
-    )
-    (fun (|content, (|signature, (|confirmation_tag, padding|)|)|) -> ({
-      content = content;
-      signature = signature;
-      confirmation_tag = confirmation_tag;
-      padding = padding;
-    }))
-    (fun x -> (|x.content, (|x.signature, (|x.confirmation_tag, x.padding|)|)|))
+%splice [ps_mls_ciphertext_content_nt] (gen_parser (`mls_ciphertext_content_nt))
 
 instance parseable_serializeable_mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt): parseable_serializeable bytes (mls_ciphertext_content_nt bytes content_type) = mk_parseable_serializeable (ps_mls_ciphertext_content_nt content_type)
 

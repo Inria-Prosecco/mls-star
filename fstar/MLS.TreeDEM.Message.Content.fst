@@ -93,7 +93,7 @@ let network_to_commit #bytes #bl c =
     c_path = c.path;
   })
 
-val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> get_content_type #bytes content_type -> result (message_content bytes (network_to_message_content_type content_type))
+val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> mls_message_content_nt bytes content_type -> result (message_content bytes (network_to_message_content_type content_type))
 let network_to_message_content #bytes #bl #content_type content =
   match content_type with
   | NT.CT_application () ->
@@ -162,7 +162,7 @@ let commit_to_network #bytes #cb c =
     })
   )
 
-val message_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:message_content_type -> message_content bytes content_type -> result (get_content_type #bytes (message_content_type_to_network content_type))
+val message_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:message_content_type -> message_content bytes content_type -> result (mls_message_content_nt bytes (message_content_type_to_network content_type))
 let message_content_to_network #bytes #bl #content_type content =
   match content_type with
   | CT_application ->
