@@ -14,7 +14,7 @@ include $(FSTAR_HOME)/ulib/ml/Makefile.include
 HACL_SNAPSHOT_DIR = ../hacl-star-snapshot
 SOURCE_DIR = .
 
-INCLUDE_DIRS = $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)
+INCLUDE_DIRS = $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)/src
 FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
 
 FSTAR_EXTRACT = --extract '-* +MLS +Comparse -Comparse.Tactic'
