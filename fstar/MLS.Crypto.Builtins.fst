@@ -92,7 +92,7 @@ let p256_signature_functions = {
 }
 
 
-val available_ciphersuite_to_ciphersuite_t: available_ciphersuite -> concrete_ciphersuite & signature_functions hacl_star_bytes #bytes_like_hacl_star_bytes
+val available_ciphersuite_to_concrete_ciphersuite: available_ciphersuite -> concrete_ciphersuite & signature_functions hacl_star_bytes #bytes_like_hacl_star_bytes
 let available_ciphersuite_to_concrete_ciphersuite cs =
   match cs with
   | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> ({
