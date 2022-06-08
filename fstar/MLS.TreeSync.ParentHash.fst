@@ -14,8 +14,8 @@ open MLS.Result
 
 noeq type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   public_key: hpke_public_key_nt bytes;
-  parent_hash: blbytes bytes ({min=0;max=255});
-  original_child_resolution: blseq bytes ps_hpke_public_key_nt ({min=0; max=(pow2 32)-1});
+  parent_hash: tls_bytes bytes ({min=0;max=255});
+  original_child_resolution: tls_seq bytes ps_hpke_public_key_nt ({min=0; max=(pow2 32)-1});
 }
 
 %splice [ps_parent_hash_input_nt] (gen_parser (`parent_hash_input_nt))

@@ -19,8 +19,8 @@ instance parseable_serializeable_leaf_package_content_nt (bytes:Type0) {|bytes_l
 
 noeq type node_package_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   public_key: hpke_public_key_nt bytes;
-  encrypted_path_secret: blseq bytes ps_hpke_ciphertext_nt ({min=0; max=(pow2 32)-1});
-  last_group_context: blbytes bytes ({min=0; max=(pow2 64) - 1});
+  encrypted_path_secret: tls_seq bytes ps_hpke_ciphertext_nt ({min=0; max=(pow2 32)-1});
+  last_group_context: tls_bytes bytes ({min=0; max=(pow2 64) - 1});
 }
 
 %splice [ps_node_package_content_nt] (gen_parser (`node_package_content_nt))
@@ -43,7 +43,7 @@ let key_package_to_treesync #bytes #bl kp =
       TS.endpoint_id = kp.tbs.endpoint_id;
       TS.version = 0;
       TS.content = serialize (leaf_package_content_nt bytes) ({public_key = kp.tbs.public_key});
-      TS.extensions = (ps_to_pse (ps_blseq ps_extension_nt _)).serialize_exact (kp.tbs.extensions);
+      TS.extensions = (ps_to_pse (ps_tls_seq ps_extension_nt _)).serialize_exact (kp.tbs.extensions);
       TS.signature = kp.signature;
     })
   | _ -> error "key_package_to_treesync: credential type not supported"
@@ -60,7 +60,7 @@ let treesync_to_keypackage #bytes #cb lp =
     error "treesync_to_keypackage: signature too long"
   else (
     leaf_content <-- from_option "treesync_to_keypackage: can't parse leaf content" (parse (leaf_package_content_nt bytes) lp.TS.content);
-    extensions <-- from_option "treesync_to_keypackage: can't parse extensions" ((ps_to_pse (ps_blseq ps_extension_nt _)).parse_exact lp.TS.extensions);
+    extensions <-- from_option "treesync_to_keypackage: can't parse extensions" ((ps_to_pse (ps_tls_seq ps_extension_nt _)).parse_exact lp.TS.extensions);
     let cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes) in
     return ({
       tbs = {

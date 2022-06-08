@@ -7,7 +7,7 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-// Note: in this file, we parse and serialize with `ps_blseq ({min=0; max=(pow2 32)-1})`.
+// Note: in this file, we parse and serialize with `ps_tls_seq ({min=0; max=(pow2 32)-1})`.
 // However, when implementing it following closely the MLS RFC, we would want to use min=8.
 // This is because the extensions capabilities and lifetime are mandatory, so the size should be at least 8.
 // However, it is not done like this here, because it is quite useful to define `extensions_empty`.
@@ -16,9 +16,9 @@ open MLS.Result
 (*** Extensions parser ***)
 
 type capabilities_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  versions: blseq bytes ps_protocol_version_nt ({min=0; max=255});
-  ciphersuites: blseq bytes ps_cipher_suite_nt ({min=0; max=255});
-  extensions: blseq bytes ps_extension_type_nt ({min=0; max=255});
+  versions: tls_seq bytes ps_protocol_version_nt ({min=0; max=255});
+  ciphersuites: tls_seq bytes ps_cipher_suite_nt ({min=0; max=255});
+  extensions: tls_seq bytes ps_extension_type_nt ({min=0; max=255});
 }
 
 %splice [ps_capabilities_ext_nt] (gen_parser (`capabilities_ext_nt))
@@ -31,13 +31,13 @@ type lifetime_ext_nt = {
 %splice [ps_lifetime_ext_nt] (gen_parser (`lifetime_ext_nt))
 
 type key_package_identifier_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  key_id: blbytes bytes ({min=0; max=(pow2 16)-1});
+  key_id: tls_bytes bytes ({min=0; max=(pow2 16)-1});
 }
 
 %splice [ps_key_package_identifier_ext_nt] (gen_parser (`key_package_identifier_ext_nt))
 
 type parent_hash_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  parent_hash: blbytes bytes ({min=0; max=255});
+  parent_hash: tls_bytes bytes ({min=0; max=255});
 }
 
 %splice [ps_parent_hash_ext_nt] (gen_parser (`parent_hash_ext_nt))
@@ -46,8 +46,8 @@ type parent_hash_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 let extensions_min_size:nat = 0
 let extensions_max_size:nat = (pow2 32) - 1
-val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (blseq bytes ps_extension_nt ({min=extensions_min_size; max=extensions_max_size}))
-let ps_extensions #bytes #bl = ps_blseq ps_extension_nt ({min=extensions_min_size; max=extensions_max_size})
+val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (tls_seq bytes ps_extension_nt ({min=extensions_min_size; max=extensions_max_size}))
+let ps_extensions #bytes #bl = ps_tls_seq ps_extension_nt ({min=extensions_min_size; max=extensions_max_size})
 
 val find_extension_index: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> extensions:Seq.seq (extension_nt bytes) -> option (i:nat{i < Seq.length extensions})
 let find_extension_index t extensions =

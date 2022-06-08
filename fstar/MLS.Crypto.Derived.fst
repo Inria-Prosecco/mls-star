@@ -44,8 +44,8 @@ private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
 
 noeq type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
-  label: blbytes bytes ({min=7; max=255});
-  context: blbytes bytes ({min=0; max=(pow2 32)-1});
+  label: tls_bytes bytes ({min=7; max=255});
+  context: tls_bytes bytes ({min=0; max=(pow2 32)-1});
 }
 
 %splice [ps_kdf_label_nt] (gen_parser (`kdf_label_nt))

@@ -26,8 +26,8 @@ noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   node_index: nat_lbytes 4;
   [@@@ with_parser #bytes (ps_option ps_parent_node_nt)]
   parent_node: option (parent_node_nt bytes);
-  left_hash: blbytes bytes ({min=0;max=255});
-  right_hash: blbytes bytes ({min=0;max=255});
+  left_hash: tls_bytes bytes ({min=0;max=255});
+  right_hash: tls_bytes bytes ({min=0;max=255});
 }
 
 %splice [ps_parent_node_tree_hash_input_nt] (gen_parser (`parent_node_tree_hash_input_nt))
