@@ -1,0 +1,255 @@
+{
+  "nodes": {
+    "comparse_flake": {
+      "inputs": {
+        "everest": "everest",
+        "fstar-src": [
+          "fstar-src"
+        ],
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1654766491,
+        "narHash": "sha256-O/iDT+V5r6r3+biSI2nmo216xxzXkhPBUuK1H34zEVo=",
+        "ref": "refs/heads/main",
+        "rev": "2fa51847f924f7f8c69467cb99d41862596f39a4",
+        "revCount": 63,
+        "type": "git",
+        "url": "ssh://git@github.com/TWal/comparse.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/TWal/comparse.git"
+      }
+    },
+    "everest": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "fstar-src": [
+          "comparse_flake",
+          "fstar-src"
+        ],
+        "hacl-src": "hacl-src",
+        "karamel-src": "karamel-src",
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "dir": "projects",
+        "lastModified": 1654668000,
+        "narHash": "sha256-3C9CHaSMCHkS2SSUZPjczUFt0GdRmEyKNRukkkyZNIw=",
+        "owner": "project-everest",
+        "repo": "everest-nix",
+        "rev": "8baf6e0e20a5f13832bea0b69576c7700785bee9",
+        "type": "github"
+      },
+      "original": {
+        "dir": "projects",
+        "owner": "project-everest",
+        "repo": "everest-nix",
+        "type": "github"
+      }
+    },
+    "everest_2": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "fstar-src": [
+          "fstar-src"
+        ],
+        "hacl-src": "hacl-src_2",
+        "karamel-src": "karamel-src_2",
+        "nixpkgs": "nixpkgs_3"
+      },
+      "locked": {
+        "dir": "projects",
+        "lastModified": 1654668000,
+        "narHash": "sha256-kTUaq8kZ4KAtOFydn6iN9klkzcNROGm838j91DLtQCI=",
+        "owner": "project-everest",
+        "repo": "everest-nix",
+        "rev": "d09dc262860fe994a81db330b65dcf139cc3e350",
+        "type": "github"
+      },
+      "original": {
+        "dir": "projects",
+        "owner": "project-everest",
+        "repo": "everest-nix",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "locked": {
+        "lastModified": 1653893745,
+        "narHash": "sha256-0jntwV3Z8//YwuOjzhV2sgJJPt+HY6KhU7VZUL0fKZQ=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "1ed9fb1935d260de5fe1c2f7ee0ebaae17ed2fa1",
+        "type": "github"
+      },
+      "original": {
+        "id": "flake-utils",
+        "type": "indirect"
+      }
+    },
+    "flake-utils_2": {
+      "locked": {
+        "lastModified": 1653893745,
+        "narHash": "sha256-0jntwV3Z8//YwuOjzhV2sgJJPt+HY6KhU7VZUL0fKZQ=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "1ed9fb1935d260de5fe1c2f7ee0ebaae17ed2fa1",
+        "type": "github"
+      },
+      "original": {
+        "id": "flake-utils",
+        "type": "indirect"
+      }
+    },
+    "fstar-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1654738497,
+        "narHash": "sha256-JIXgb4o7Y1QaQXcQHx2+3piyv46HXfOi3cVf+7V0tac=",
+        "owner": "FStarLang",
+        "repo": "FStar",
+        "rev": "061f57e546f92f78de27a51d5b3fae9463585b7d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "FStarLang",
+        "repo": "FStar",
+        "type": "github"
+      }
+    },
+    "hacl-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1654274085,
+        "narHash": "sha256-0lETq4drfMfaNSb1NR7ufj7LqppMMtZGlGcFEWqtr+M=",
+        "owner": "project-everest",
+        "repo": "hacl-star",
+        "rev": "49c852f9b8bd67a208e402f97c79092953f4d504",
+        "type": "github"
+      },
+      "original": {
+        "owner": "project-everest",
+        "repo": "hacl-star",
+        "type": "github"
+      }
+    },
+    "hacl-src_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1654274085,
+        "narHash": "sha256-0lETq4drfMfaNSb1NR7ufj7LqppMMtZGlGcFEWqtr+M=",
+        "owner": "project-everest",
+        "repo": "hacl-star",
+        "rev": "49c852f9b8bd67a208e402f97c79092953f4d504",
+        "type": "github"
+      },
+      "original": {
+        "owner": "project-everest",
+        "repo": "hacl-star",
+        "type": "github"
+      }
+    },
+    "karamel-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1652387346,
+        "narHash": "sha256-AMAvgHRX/qFYQAEA1ri4VuZBFLg3Gjq1x33JZ50SXB0=",
+        "owner": "fstarlang",
+        "repo": "karamel",
+        "rev": "d67210df9520c3b1705dd540acf891b8030f73a8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fstarlang",
+        "repo": "karamel",
+        "type": "github"
+      }
+    },
+    "karamel-src_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1652387346,
+        "narHash": "sha256-AMAvgHRX/qFYQAEA1ri4VuZBFLg3Gjq1x33JZ50SXB0=",
+        "owner": "fstarlang",
+        "repo": "karamel",
+        "rev": "d67210df9520c3b1705dd540acf891b8030f73a8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fstarlang",
+        "repo": "karamel",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1654230545,
+        "narHash": "sha256-8Vlwf0x8ow6pPOK2a04bT+pxIeRnM1+O0Xv9/CuDzRs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "236cc2971ac72acd90f0ae3a797f9f83098b17ec",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-unstable",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1654665288,
+        "narHash": "sha256-7blJpfoZEu7GKb84uh3io/5eSJNdaagXD9d15P9iQMs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "43ecbe7840d155fa933ee8a500fb00dbbc651fc8",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1654230545,
+        "narHash": "sha256-8Vlwf0x8ow6pPOK2a04bT+pxIeRnM1+O0Xv9/CuDzRs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "236cc2971ac72acd90f0ae3a797f9f83098b17ec",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-unstable",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_4": {
+      "locked": {
+        "lastModified": 1654665288,
+        "narHash": "sha256-7blJpfoZEu7GKb84uh3io/5eSJNdaagXD9d15P9iQMs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "43ecbe7840d155fa933ee8a500fb00dbbc651fc8",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
+    "root": {
+      "inputs": {
+        "comparse_flake": "comparse_flake",
+        "everest": "everest_2",
+        "fstar-src": "fstar-src",
+        "nixpkgs": "nixpkgs_4"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

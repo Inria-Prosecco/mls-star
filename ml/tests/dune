@@ -1,0 +1,19 @@
+(copy_files# src/*)
+
+(test
+ (libraries fstarlib mls_star yojson)
+ (name MLS_Test))
+
+(env
+  (dev (flags
+    :standard
+    -safe-string
+    -g
+    -w -8-9-33-20-21-26-27-39
+  ))
+  (release (flags
+    :standard
+    -safe-string
+    -g
+    -w -8-9-33-20-21-26-27-39
+  )))

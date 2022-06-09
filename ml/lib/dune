@@ -1,0 +1,20 @@
+(copy_files# src/*)
+
+(library
+ (wrapped false)
+ (libraries fstarlib mls.haclml)
+ (name mls_star))
+
+(env
+  (dev (flags
+    :standard
+    -safe-string
+    -g
+    -w -8-9-33-20-21-26-27-39
+  ))
+  (release (flags
+    :standard
+    -safe-string
+    -g
+    -w -8-9-33-20-21-26-27-39
+  )))
