@@ -295,7 +295,10 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     };
     endpoint_id = empty; //TODO
     version = 0;
-    content = (ps_to_pse ps_leaf_package_content_nt).serialize_exact ({public_key} <: leaf_package_content_nt bytes);
+    content = {
+      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key} <: treekem_content_nt bytes);
+      impl_data = empty;
+    };
     extensions;
     signature = Seq.empty;
   } in

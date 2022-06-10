@@ -44,7 +44,7 @@ val get_public_key_from_content: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -
 let get_public_key_from_content #bytes #bl content =
   let open MLS.NetworkBinder in
   content <-- from_option "get_public_key_from_content: Couldn't parse node content"
-    (parse (node_package_content_nt bytes) content);
+    (parse (treekem_content_nt bytes) content);
   return content.public_key
 
 //TODO possible performance optimisation: no need to convert root from treesync to treekem: we only need to convert its content

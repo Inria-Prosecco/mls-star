@@ -101,7 +101,10 @@ let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
     };
     endpoint_id = empty;
     version = 0;
-    content = (ps_to_pse ps_leaf_package_content_nt).serialize_exact ({public_key = hpke_pk});
+    content = {
+      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key = hpke_pk});
+      impl_data = empty;
+    };
     extensions;
     signature = empty;
   } in

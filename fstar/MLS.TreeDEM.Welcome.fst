@@ -253,7 +253,7 @@ let encrypt_one_group_secrets #bytes #cb lp gs rand =
   gs_network <-- group_secrets_to_network gs;
   let gs_bytes = serialize #bytes (group_secrets_nt bytes) gs_network in
   leaf_hpke_pk <-- (
-    leaf_content <-- from_option "encrypt_one_group_secrets: malformed leaf content" (parse (leaf_package_content_nt bytes) lp.content);
+    leaf_content <-- from_option "encrypt_one_group_secrets: malformed leaf content" (parse (treekem_content_nt bytes) lp.content.content);
     let leaf_hpke_pk = leaf_content.public_key in
     if not (length (leaf_hpke_pk <: bytes) = hpke_public_key_length #bytes) then
       internal_failure "encrypt_one_group_secrets: public key has wrong size"

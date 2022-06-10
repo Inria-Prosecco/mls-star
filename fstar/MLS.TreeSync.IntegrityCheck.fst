@@ -149,7 +149,7 @@ let check_internal_node #bytes #cb #l #n nb_left_leaves t =
   | Some np -> (
     parent_hash_from_left_ok <-- (
       let real_parent_hash = get_parent_hash left in
-      computed_parent_hash <-- compute_parent_hash_from_dir np.content np.parent_hash nb_left_leaves t Left;
+      computed_parent_hash <-- compute_parent_hash_from_dir np.content.content np.parent_hash nb_left_leaves t Left;
       return (real_parent_hash = Some computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
@@ -157,7 +157,7 @@ let check_internal_node #bytes #cb #l #n nb_left_leaves t =
       | None -> return false
       | Some (|_, _, original_right|) -> (
         let real_parent_hash = get_parent_hash original_right in
-        computed_parent_hash <-- compute_parent_hash_from_dir np.content np.parent_hash nb_left_leaves t Right;
+        computed_parent_hash <-- compute_parent_hash_from_dir np.content.content np.parent_hash nb_left_leaves t Right;
         return (real_parent_hash = Some computed_parent_hash)
       )
     );

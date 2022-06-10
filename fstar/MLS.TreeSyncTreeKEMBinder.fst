@@ -24,8 +24,10 @@ let encrypted_path_secret_nt_to_tk #bytes #cb x =
 val treesync_to_treekem_node_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> node_package_t bytes -> result (key_package bytes)
 let treesync_to_treekem_node_package #bytes #cb nb_left_leaves np =
   content <-- from_option "treesync_to_treekem_node_package: Couldn't parse node content"
-    (parse (node_package_content_nt bytes) np.content);
-  path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk #bytes) (Seq.seq_to_list content.encrypted_path_secret);
+    (parse (treekem_content_nt bytes) np.content.content);
+  impl_data <-- from_option "treesync_to_treekem_node_package: Couldn't parse node impl data"
+    (parse (treekem_impl_data_nt bytes) np.content.impl_data);
+  path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk #bytes) (Seq.seq_to_list impl_data.encrypted_path_secret);
   unmerged_leaves <-- mapM (fun (unmerged_leaf:nat) ->
     if not (nb_left_leaves <= unmerged_leaf) then
       error "treesync_to_treekem_node_package: unmerged_leaf index too small"
@@ -38,9 +40,9 @@ let treesync_to_treekem_node_package #bytes #cb nb_left_leaves np =
     return ({
       public_key = content.public_key;
       version = np.version;
-      last_group_context = content.last_group_context;
+      last_group_context = impl_data.last_group_context;
       unmerged_leaves = unmerged_leaves;
-      path_secret_from = (np.content_dir);
+      path_secret_from = impl_data.content_dir;
       path_secret_ciphertext = path_secret_ciphertext;
     })
   )
@@ -52,7 +54,7 @@ let rec treesync_to_treekem_aux #bytes #cb #l #n nb_left_leaves t =
     return (TLeaf None)
   | TLeaf (Some lp) ->
     lpc <-- from_option "treesync_to_treekem: Couldn't parse leaf content"
-      (parse (leaf_package_content_nt bytes) lp.content);
+      (parse (treekem_content_nt bytes) lp.content.content);
     if length (lpc.public_key <: bytes) = hpke_public_key_length #bytes then
       return (TLeaf (Some ({public_key = lpc.public_key; version = lp.version} <: member_info bytes)))
     else
@@ -87,8 +89,8 @@ let encrypted_path_secret_tk_to_nt #bytes #cb x =
       ciphertext = x.ciphertext;
     } <: hpke_ciphertext_nt bytes)
 
-val treekem_to_treesync_node_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> key_package bytes -> result (external_node_package_t bytes)
-let treekem_to_treesync_node_package #bytes #cb nb_left_leaves kp =
+val treekem_to_treesync_node_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package bytes -> result (external_content bytes)
+let treekem_to_treesync_node_package #bytes #cb kp =
   ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext;
   if not (bytes_length ps_hpke_ciphertext_nt ciphertexts < pow2 16) then
     internal_failure "treekem_to_treesync: ciphertexts too long"
@@ -96,17 +98,16 @@ let treekem_to_treesync_node_package #bytes #cb nb_left_leaves kp =
     internal_failure "treekem_to_treesync: last group context too long (internal error)"
   else begin
     Seq.lemma_list_seq_bij ciphertexts;
-    return (({
-      version = kp.version;
-      content_dir = kp.path_secret_from;
-      unmerged_leaves = List.Tot.map (fun (x:nat) -> (x + nb_left_leaves <: nat)) kp.unmerged_leaves;
-      parent_hash = empty;
-      content = serialize (node_package_content_nt bytes) ({
+    return ({
+      content = serialize (treekem_content_nt bytes) ({
         public_key = kp.public_key;
+      });
+      impl_data = serialize (treekem_impl_data_nt bytes) ({
+        content_dir = kp.path_secret_from;
         encrypted_path_secret = Seq.seq_of_list ciphertexts;
         last_group_context = kp.last_group_context;
       });
-    } <: node_package_t bytes) <: external_node_package_t bytes)
+    } <: external_content bytes)
   end
 
 // Some remarks about the `new_leaf_package` argument
@@ -118,30 +119,27 @@ let treekem_to_treesync_node_package #bytes #cb nb_left_leaves kp =
 // - When we generate an updatepath, and convert it to treesync before converting it to an update_path_nt.
 //   In that case, `new_leaf_package` need to be equal to our previous leaf package. The HPKE public key will be updated here.
 //   The parent hash and signature need to be updated, but this will be done in the external_pathsync -> pathsync conversion.
-val treekem_to_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> nat -> leaf_package_t bytes -> pathkem bytes l n i -> result (external_pathsync bytes l n i)
-let rec treekem_to_treesync_aux #bytes #cb #l #n #i nb_left_leaves new_leaf_package pk =
+val treekem_to_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> leaf_package_t bytes -> pathkem bytes l n i -> result (external_pathsync bytes l n i)
+let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
   match pk with
   | PLeaf mi ->
     return (PLeaf ({
       credential = new_leaf_package.credential;
       endpoint_id = new_leaf_package.endpoint_id;
       version = (mi <: member_info bytes).version;
-      content = (serialize (leaf_package_content_nt bytes) ({
-        public_key = (mi <: member_info bytes).public_key;
-      }));
+      content = {
+        content = serialize (treekem_content_nt bytes) ({
+          public_key = (mi <: member_info bytes).public_key;
+        });
+        impl_data = empty;
+      };
       extensions = new_leaf_package.extensions;
       signature = new_leaf_package.signature;
     }))
   | PSkip _ pk' ->
-    result <-- treekem_to_treesync_aux nb_left_leaves new_leaf_package pk';
+    result <-- treekem_to_treesync new_leaf_package pk';
     return (PSkip _ result)
   | PNode kp pk_next ->
-    let (|dir, _|) = child_index l i in
-    let new_left_leaves = (if dir = Left then nb_left_leaves else nb_left_leaves + pow2 (l-1)) in
-    next <-- treekem_to_treesync_aux new_left_leaves new_leaf_package pk_next;
-    np <-- treekem_to_treesync_node_package nb_left_leaves kp;
+    next <-- treekem_to_treesync new_leaf_package pk_next;
+    np <-- treekem_to_treesync_node_package kp;
     return (PNode np next)
-
-val treekem_to_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> leaf_package_t bytes -> pathkem bytes l n i -> result (external_pathsync bytes l n i)
-let treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
-  treekem_to_treesync_aux 0 new_leaf_package pk

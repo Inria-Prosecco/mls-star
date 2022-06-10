@@ -55,7 +55,12 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key paren
     let child_nb_left_leaves = if dir = Left then nb_left_leaves else nb_left_leaves + (pow2 (l-1)) in
     parent_hash <-- compute_parent_hash_from_dir np.content parent_parent_hash nb_left_leaves t dir;
     result_p_next <-- external_pathsync_to_pathsync_aux opt_sign_key parent_hash child_nb_left_leaves child p_next;
-    return (PNode (Some ({np with parent_hash = parent_parent_hash;})) result_p_next)
+    return (PNode (Some ({
+      version = 0;
+      unmerged_leaves = [];
+      parent_hash = parent_parent_hash;
+      content = np;
+    } <: node_package_t bytes)) result_p_next)
 
 val external_pathsync_to_pathsync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> option (sign_private_key bytes & sign_nonce bytes) -> treesync bytes l n -> external_pathsync bytes l n i -> result (pathsync bytes l n i)
 let external_pathsync_to_pathsync #bytes #cb #l #n #i opt_sign_key t p =

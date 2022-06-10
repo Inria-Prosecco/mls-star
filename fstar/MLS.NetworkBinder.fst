@@ -8,25 +8,33 @@ open MLS.Tree
 module TS = MLS.TreeSync.Types
 module TK = MLS.TreeKEM.Types
 
-noeq type leaf_package_content_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type treekem_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   public_key: hpke_public_key_nt bytes;
 }
 
-%splice [ps_leaf_package_content_nt] (gen_parser (`leaf_package_content_nt))
+%splice [ps_treekem_content_nt] (gen_parser (`treekem_content_nt))
 
-instance parseable_serializeable_leaf_package_content_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (leaf_package_content_nt bytes) =
-  mk_parseable_serializeable ps_leaf_package_content_nt
+instance parseable_serializeable_treekem_content_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (treekem_content_nt bytes) =
+  mk_parseable_serializeable ps_treekem_content_nt
 
-noeq type node_package_content_nt (bytes:Type0) {|bytes_like bytes|} = {
-  public_key: hpke_public_key_nt bytes;
+[@@ is_parser; is_parser_for (`%direction)]
+val ps_direction: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes direction
+let ps_direction #bytes #bl =
+  let pred (x:nat_lbytes 1) = x < 2 in
+  mk_isomorphism direction (refine (ps_nat_lbytes 1) pred)
+    (fun x -> match x with | 0 -> Left | 1 -> Right)
+    (fun x -> match x with | Left -> 0 | Right -> 1)
+
+noeq type treekem_impl_data_nt (bytes:Type0) {|bytes_like bytes|} = {
+  content_dir: direction;
   encrypted_path_secret: tls_seq bytes ps_hpke_ciphertext_nt ({min=0; max=(pow2 32)-1});
   last_group_context: tls_bytes bytes ({min=0; max=(pow2 64) - 1});
 }
 
-%splice [ps_node_package_content_nt] (gen_parser (`node_package_content_nt))
+%splice [ps_treekem_impl_data_nt] (gen_parser (`treekem_impl_data_nt))
 
-instance parseable_serializeable_node_package_content_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (node_package_content_nt bytes) =
-  mk_parseable_serializeable ps_node_package_content_nt
+instance parseable_serializeable_treekem_impl_data_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (treekem_impl_data_nt bytes) =
+  mk_parseable_serializeable ps_treekem_impl_data_nt
 
 (*** NetworkTreeSyncBinder ***)
 
@@ -42,7 +50,10 @@ let key_package_to_treesync #bytes #bl kp =
       };
       TS.endpoint_id = kp.tbs.endpoint_id;
       TS.version = 0;
-      TS.content = serialize (leaf_package_content_nt bytes) ({public_key = kp.tbs.public_key});
+      TS.content = {
+        TS.content = serialize (treekem_content_nt bytes) ({public_key = kp.tbs.public_key});
+        TS.impl_data = empty;
+      };
       TS.extensions = (ps_to_pse (ps_tls_seq ps_extension_nt _)).serialize_exact (kp.tbs.extensions);
       TS.signature = kp.signature;
     })
@@ -59,14 +70,14 @@ let treesync_to_keypackage #bytes #cb lp =
   else if not (length lp.TS.signature < pow2 16) then
     error "treesync_to_keypackage: signature too long"
   else (
-    leaf_content <-- from_option "treesync_to_keypackage: can't parse leaf content" (parse (leaf_package_content_nt bytes) lp.TS.content);
+    content <-- from_option "treesync_to_keypackage: can't parse leaf content" (parse (treekem_content_nt bytes) lp.TS.content.content);
     extensions <-- from_option "treesync_to_keypackage: can't parse extensions" ((ps_to_pse (ps_tls_seq ps_extension_nt _)).parse_exact lp.TS.extensions);
     let cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes) in
     return ({
       tbs = {
         version = PV_mls10 ();
         cipher_suite = cipher_suite;
-        public_key = leaf_content.public_key;
+        public_key = content.public_key;
         endpoint_id = lp.TS.endpoint_id;
         credential = C_basic ({
           identity = lp.TS.credential.TS.identity;
@@ -88,7 +99,7 @@ let treesync_to_parent_node #bytes #bl np =
     internal_failure "treesync_to_parent_node: unmerged_leaves too long"
   else (
     Seq.lemma_list_seq_bij unmerged_leaves;
-    node_content <-- from_option "treesync_to_parent_node: can't parse content" (parse (node_package_content_nt bytes) np.TS.content);
+    node_content <-- from_option "treesync_to_parent_node: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
     return ({
       public_key = node_content.public_key;
       parent_hash = np.TS.parent_hash;
@@ -101,14 +112,18 @@ let parent_node_to_treesync #bytes #bl pn =
   bytes_length_nil #bytes ps_hpke_ciphertext_nt;
   return ({
         TS.version = 0;
-        TS.content_dir = Left; //We don't care I guess
         TS.unmerged_leaves = List.Tot.map (fun (x:nat_lbytes 4) -> x <: nat) (Seq.seq_to_list pn.unmerged_leaves);
         TS.parent_hash = pn.parent_hash;
-        TS.content = serialize (node_package_content_nt bytes) ({
-          public_key = pn.public_key;
-          encrypted_path_secret = Seq.empty;
-          last_group_context = empty #bytes;
-        });
+        TS.content = {
+          TS.content = serialize (treekem_content_nt bytes) ({
+            public_key = pn.public_key;
+          });
+          TS.impl_data = serialize (treekem_impl_data_nt bytes) ({
+            content_dir = Left; //We don't care
+            encrypted_path_secret = Seq.empty;
+            last_group_context = empty #bytes;
+          });
+        }
       } <: TS.node_package_t bytes)
 
 //TODO: this function should be equivalent to key_package_to_treesync followed by leaf_package_sync_to_kem (non-existant at this time)
@@ -178,14 +193,17 @@ let rec update_path_to_treekem #bytes #cb l n i group_context update_path =
   )
 #pop-options
 
+//TODO this function has really bad encapsulation and should not exist in a reasonable implementation
 val treesync_to_update_path_node: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (update_path_node_nt bytes)
 let treesync_to_update_path_node #bytes #bl np =
-  node_content <-- from_option "treesync_to_update_path_node: can't parse content" (parse (node_package_content_nt bytes) np.TS.content);
+  content <-- from_option "treesync_to_update_path_node: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
+  impl_data <-- from_option "treesync_to_update_path_node: can't parse impl data" (parse (treekem_impl_data_nt bytes) np.TS.content.impl_data);
   return ({
-    public_key = node_content.public_key;
-    encrypted_path_secret = node_content.encrypted_path_secret;
+    public_key = content.public_key;
+    encrypted_path_secret = impl_data.encrypted_path_secret;
   } <: update_path_node_nt bytes)
 
+//TODO same
 val treesync_to_update_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> TS.pathsync bytes l n i -> result (key_package_nt bytes & list (update_path_node_nt bytes))
 let rec treesync_to_update_path_aux #bytes #cb #l #n #i p =
   match p with
@@ -204,6 +222,7 @@ let rec treesync_to_update_path_aux #bytes #cb #l #n #i p =
   | PNode None p_next ->
     internal_failure "treesync_to_update_path: the path must not contain any blank node"
 
+//TODO same
 val treesync_to_update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> TS.pathsync bytes l n i -> result (update_path_nt bytes)
 let treesync_to_update_path #bytes #cb #l #n #i p =
   tmp <-- treesync_to_update_path_aux p;

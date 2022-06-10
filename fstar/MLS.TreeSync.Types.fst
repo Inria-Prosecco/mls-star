@@ -7,7 +7,7 @@ open MLS.Tree
 type principal_t = string
 
 type credential_t (bytes:Type0) {|bytes_like bytes|} = {
-  version: nat;
+  version: nat; //For security proofs, should be erasable
   identity: bytes;
   signature_key: bytes;
 }
@@ -17,42 +17,42 @@ noeq type leaf_secrets_t (bytes:Type0) {|bytes_like bytes|} = {
   identity_sig_key: bytes;
 }
 
+type external_content (bytes:Type0) {|bytes_like bytes|} = {
+  content: bytes; //Roughly, data sent on the wire
+  impl_data: bytes; //Roughly, internal data specific to the implementation details
+}
+
 (** Definition of a Leaf package *)
 type leaf_package_t (bytes:Type0) {|bytes_like bytes|} = {
+  version: nat; //For security proofs, should be erasable
   credential: credential_t bytes;
   endpoint_id: bytes;
-  version: nat;
-  content: bytes;
+  content: external_content bytes;
   extensions: bytes;
   signature: bytes;
 }
 
-
 (** Definition of a Node package *)
 type node_package_t (bytes:Type0) {|bytes_like bytes|} = {
-  version: nat;
-  content_dir: direction;
+  version: nat; //For security proofs, should be erasable
   unmerged_leaves: list nat;
   parent_hash: bytes;
-  content: bytes;
+  content: external_content bytes;
 }
 
 (** Tree and Paths definitions *)
 type level_n = nat
 
-//TODO: clarify the use of credential_t
 type treesync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) = tree l n (option (leaf_package_t bytes)) (option (node_package_t bytes))
 type pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option (leaf_package_t bytes)) (option (node_package_t bytes))
 
-//Data coming from TreeKEM
-type external_node_package_t (bytes:Type0) {|bytes_like bytes|} = np:node_package_t bytes{np.parent_hash == empty #bytes}
-type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (leaf_package_t bytes) (external_node_package_t bytes)
+type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (leaf_package_t bytes) (external_content bytes)
 
 type operation_t (bytes:Type0) {|bytes_like bytes|} =
   | Op_Add: lp:leaf_package_t bytes -> operation_t bytes
   | Op_Update: lp:leaf_package_t bytes -> operation_t bytes
   | Op_Remove: ind:nat -> operation_t bytes
-  | Op_UpdatePath: l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync bytes l n i -> operation_t bytes
+  | Op_UpdatePath: l:level_n -> n:tree_size l -> i:leaf_index n -> external_pathsync bytes l n i -> operation_t bytes
 
 (** TreeSync state and accessors *)
 type state_t (bytes:Type0) {|bytes_like bytes|} = {
