@@ -9,50 +9,60 @@ open MLS.TreeSync.Types
 
 val create_tree: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_package_t bytes -> treesync bytes 0 1
 let create_tree lp =
-  TLeaf (lp.credential, Some lp)
+  TLeaf (Some lp)
 
-(*** Paths ***)
+(*** Tree operations ***)
 
-val apply_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> credential_t bytes -> treesync bytes l n -> pathsync bytes l n i -> treesync bytes l n
-let rec apply_path #bytes #bl #l #n #i a t p =
+val tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> nat -> i:leaf_index n -> leaf_package_t bytes -> treesync bytes l n
+let rec tree_add #bytes #bl #l #n t original_i i lp =
+  match t with
+  | TLeaf _ -> TLeaf (Some lp)
+  | TSkip _ t' -> TSkip _ (tree_add t' original_i i lp)
+  | TNode opt_content left right -> (
+    let (|dir, new_i|) = child_index l i in
+    let new_opt_content =
+      match opt_content with
+      | None -> None
+      | Some content -> Some ({
+        content with unmerged_leaves = insert_sorted original_i content.unmerged_leaves
+      })
+    in
+    if dir = Left
+    then TNode new_opt_content (tree_add left original_i new_i lp) right
+    else TNode new_opt_content left (tree_add right original_i new_i lp)
+   )
+
+val tree_blank_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> i:leaf_index n -> option (leaf_package_t bytes) -> treesync bytes l n
+let rec tree_blank_path #bytes #bl #l #n t i opt_lp =
+  match t with
+  | TLeaf _ -> TLeaf opt_lp
+  | TSkip _ t' -> TSkip _ (tree_blank_path t' i opt_lp)
+  | TNode opt_node_content left right -> (
+    let (|dir, new_i|) = child_index l i in
+    if dir = Left
+    then TNode None (tree_blank_path left new_i opt_lp) right
+    else TNode None left (tree_blank_path right new_i opt_lp)
+  )
+
+val tree_update: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> i:leaf_index n -> leaf_package_t bytes -> treesync bytes l n
+let tree_update #bytes #bl #l #n t i lp =
+  tree_blank_path t i (Some lp)
+
+val tree_remove: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> i:leaf_index n -> treesync bytes l n
+let tree_remove #bytes #bl #l #n t i =
+  tree_blank_path t i None
+
+val apply_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> treesync bytes l n -> pathsync bytes l n i -> treesync bytes l n
+let rec apply_path #bytes #bl #l #n #i t p =
   match t,p with
-  | TLeaf (_, m), PLeaf m' -> TLeaf (a, m')
-  | TSkip _ t', PSkip _ p' -> TSkip _ (apply_path a t' p')
-  | TNode (_, _) left right, PNode onp next ->
+  | TLeaf _, PLeaf m' -> TLeaf m'
+  | TSkip _ t', PSkip _ p' -> TSkip _ (apply_path t' p')
+  | TNode _ left right, PNode onp next ->
      let (|dir,_|) = child_index l i in
      if dir = Left
-     then TNode (a, onp) (apply_path a left next) right
-     else TNode (a, onp) left (apply_path a right next)
+     then TNode onp (apply_path left next) right
+     else TNode onp left (apply_path right next)
 
-
-(** Create a blank path after modifying a leaf *)
-val blank_path: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> n:tree_size l -> i:leaf_index n -> option (leaf_package_t bytes) -> pathsync bytes l n i
-let rec blank_path #bytes #bl l n i olp =
-  if l = 0 then
-    PLeaf olp
-  else if n <= pow2 (l-1) then
-    PSkip _ (blank_path (l-1) n i olp)
-  else
-    let (|dir,j|) = child_index l i in
-    PNode None (blank_path (l-1) (if dir = Left then (pow2 (l-1)) else (n - (pow2 (l-1)))) j olp)
-
-val unmerged_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> nat -> leaf_ind:leaf_index n -> treesync bytes l n -> leaf_package_t bytes -> pathsync bytes l n leaf_ind
-let rec unmerged_path #bytes #bl #l #n original_leaf_ind leaf_ind t lp =
-  match t with
-  | TLeaf (_, _) ->
-    PLeaf (Some lp)
-  | TSkip _ t' -> PSkip _ (unmerged_path original_leaf_ind leaf_ind t' lp)
-  | TNode (_, onp) left right ->
-    let (|dir, new_leaf_ind|) = child_index l leaf_ind in
-    let (child, _) = order_subtrees dir (left, right) in
-    let path_next = unmerged_path original_leaf_ind new_leaf_ind child lp in
-    match onp with
-    | None ->
-      PNode None path_next
-    | Some np ->
-      PNode (Some (
-        {np with unmerged_leaves = insert_sorted original_leaf_ind np.unmerged_leaves}
-      )) path_next
 
 (*** Tree extension / truncation ***)
 
@@ -62,8 +72,8 @@ let rec is_tree_empty #bytes #bl #l #n t =
   | TNode _ left right ->
     is_tree_empty left && is_tree_empty right
   | TSkip _ t' -> is_tree_empty t'
-  | TLeaf (_, Some _) -> false
-  | TLeaf (_, None) -> true
+  | TLeaf (Some _) -> false
+  | TLeaf None -> true
 
 val add_skips: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> (n_res:tree_size l{n_res <= n} & treesync bytes l n_res)
 let rec add_skips #bytes #bl #l #n t =
@@ -109,31 +119,31 @@ let rec find_empty_leaf #bytes #bl #l #n t =
     | None, None -> None
   )
   | TSkip _ t' -> find_empty_leaf t'
-  | TLeaf (_, Some _) -> None
-  | TLeaf (_, None) -> Some 0
+  | TLeaf (Some _) -> None
+  | TLeaf None -> Some 0
 
-val mk_one_leaf_tree: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> credential_t bytes -> Pure (treesync bytes l 1) (requires True) (fun res -> Some? (find_empty_leaf res))
-let rec mk_one_leaf_tree #bytes #bl l c =
+val mk_one_leaf_tree: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> Pure (treesync bytes l 1) (requires True) (fun res -> Some? (find_empty_leaf res))
+let rec mk_one_leaf_tree #bytes #bl l =
   if l = 0 then
-    TLeaf (c, None)
+    TLeaf None
   else
-    TSkip () (mk_one_leaf_tree (l-1) c)
+    TSkip () (mk_one_leaf_tree (l-1))
 
-val add_one_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l{n <> pow2 l} -> credential_t bytes -> treesync bytes l n -> Pure (treesync bytes l (n+1)) (requires True) (fun res -> Some? (find_empty_leaf res))
-let rec add_one_leaf #bytes #bl #l #n c t =
+val add_one_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l{n <> pow2 l} -> treesync bytes l n -> Pure (treesync bytes l (n+1)) (requires True) (fun res -> Some? (find_empty_leaf res))
+let rec add_one_leaf #bytes #bl #l #n t =
   match t with
-  | TNode (nc, np) left right -> (
-    TNode (nc, np) left (add_one_leaf c right)
+  | TNode np left right -> (
+    TNode np left (add_one_leaf right)
   )
   | TSkip _ t' ->
     if n = pow2 (l-1) then
-      TNode (c, None) t' (mk_one_leaf_tree (l-1) c)
+      TNode None t' (mk_one_leaf_tree (l-1))
     else
-      TSkip () (add_one_leaf c t')
+      TSkip () (add_one_leaf t')
 
-val add_one_level: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> credential_t bytes -> treesync bytes l (pow2 l) -> Pure (treesync bytes (l+1) ((pow2 l)+1)) (requires True) (fun res -> Some? (find_empty_leaf res))
-let add_one_level #bytes #bl #l c t =
-  TNode (c, None) t (mk_one_leaf_tree l c)
+val add_one_level: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> treesync bytes l (pow2 l) -> Pure (treesync bytes (l+1) ((pow2 l)+1)) (requires True) (fun res -> Some? (find_empty_leaf res))
+let add_one_level #bytes #bl #l t =
+  TNode None t (mk_one_leaf_tree l)
 
 (*** Higher-level API ***)
 
@@ -151,33 +161,29 @@ let state_update_tree #bytes #bl #l #n st new_tree =
     //transcript = Seq.snoc st.transcript op //TODO
   })
 
-val add: #bytes:Type0 -> {|bytes_like bytes|} -> state_t bytes -> credential_t bytes -> leaf_package_t bytes -> (state_t bytes & nat)
-let add #bytes #bl st actor lp =
+val add: #bytes:Type0 -> {|bytes_like bytes|} -> state_t bytes -> leaf_package_t bytes -> (state_t bytes & nat)
+let add #bytes #bl st lp =
   match find_empty_leaf st.tree with
   | Some i ->
-    let p = unmerged_path i i st.tree lp in
-    (state_update_tree st (apply_path actor st.tree p), i)
+    (state_update_tree st (tree_add st.tree i i lp), i)
   | None ->
     let new_l = if st.treesize = pow2 st.levels then st.levels+1 else st.levels in
     let new_n = st.treesize+1 in
     let augmented_tree: treesync bytes new_l new_n =
       if st.treesize = pow2 st.levels then
-        add_one_level actor st.tree
+        add_one_level st.tree
       else
-        add_one_leaf actor st.tree
+        add_one_leaf st.tree
     in
     let i = Some?.v (find_empty_leaf augmented_tree) in
-    let p = unmerged_path i i augmented_tree lp in
-    (state_update_tree st (apply_path actor augmented_tree p), i)
+    (state_update_tree st (tree_add augmented_tree i i lp), i)
 
-val update: #bytes:Type0 -> {|bytes_like bytes|} -> st:state_t bytes -> credential_t bytes -> leaf_package_t bytes -> index_t st -> state_t bytes
-let update #bytes #bl st actor lp i =
-  let p = blank_path st.levels st.treesize i (Some lp) in
-  state_update_tree st (apply_path actor st.tree p)
+val update: #bytes:Type0 -> {|bytes_like bytes|} -> st:state_t bytes -> leaf_package_t bytes -> index_t st -> state_t bytes
+let update #bytes #bl st lp i =
+  state_update_tree st (tree_update st.tree i lp)
 
-val remove: #bytes:Type0 -> {|bytes_like bytes|} -> st:state_t bytes -> credential_t bytes -> i:index_t st -> state_t bytes
-let remove #bytes #bl st actor i =
-  let p = blank_path st.levels st.treesize i None in
-  let blanked_tree = (apply_path actor st.tree p) in
+val remove: #bytes:Type0 -> {|bytes_like bytes|} -> st:state_t bytes -> i:index_t st -> state_t bytes
+let remove #bytes #bl st i =
+  let blanked_tree = (tree_remove st.tree i) in
   let (|_, _, reduced_tree|) = canonicalize_tree blanked_tree in
   state_update_tree st reduced_tree

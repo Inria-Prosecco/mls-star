@@ -41,33 +41,18 @@ type node_package_t (bytes:Type0) {|bytes_like bytes|} = {
 type level_n = nat
 
 //TODO: clarify the use of credential_t
-type treesync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) = tree l n (credential_t bytes & option (leaf_package_t bytes)) (credential_t bytes & option (node_package_t bytes))
+type treesync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) = tree l n (option (leaf_package_t bytes)) (option (node_package_t bytes))
 type pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option (leaf_package_t bytes)) (option (node_package_t bytes))
 
 //Data coming from TreeKEM
 type external_node_package_t (bytes:Type0) {|bytes_like bytes|} = np:node_package_t bytes{np.parent_hash == empty #bytes}
 type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (leaf_package_t bytes) (external_node_package_t bytes)
 
-(*
-This way to describe operations doesn't work well in practice:
-- the number of leaves in the tree is needed for the type of `op_path` (because the number of nodes to update depends on the level, the tree size and the index)
-- operations such as Add, Remove change the tree size
-- therefore we can't pre-compute a bunch of operations and then apply them to the tree, because some operations will be converted with a wrong tree size
-(** Operations on the state *)
-type operation_t = {
-  op_levels: level_n;
-  op_treesize: tree_size op_levels;
-  op_index: leaf_index op_treesize;
-  op_actor: credential_t;
-  op_path: pathsync op_levels op_treesize op_index;
-}
-*)
-
 type operation_t (bytes:Type0) {|bytes_like bytes|} =
-  | Op_Add: actor:credential_t bytes -> lp:leaf_package_t bytes -> operation_t bytes
-  | Op_Update: actor:credential_t bytes -> lp:leaf_package_t bytes -> operation_t bytes
-  | Op_Remove: actor:credential_t bytes -> ind:nat -> operation_t bytes
-  | Op_UpdatePath: actor:credential_t bytes -> l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync bytes l n i -> operation_t bytes
+  | Op_Add: lp:leaf_package_t bytes -> operation_t bytes
+  | Op_Update: lp:leaf_package_t bytes -> operation_t bytes
+  | Op_Remove: ind:nat -> operation_t bytes
+  | Op_UpdatePath: l:level_n -> n:tree_size l -> i:leaf_index n -> pathsync bytes l n i -> operation_t bytes
 
 (** TreeSync state and accessors *)
 type state_t (bytes:Type0) {|bytes_like bytes|} = {

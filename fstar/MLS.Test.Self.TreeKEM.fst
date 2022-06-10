@@ -44,13 +44,6 @@ type state (bytes:Type0) {|crypto_bytes bytes|} = {
 
 type op_type = | Add | Update | Remove
 
-val dumb_credential: #bytes:Type0 -> {|bytes_like bytes|} -> credential_t bytes
-let dumb_credential #bytes #bl = {
-  version = 0;
-  identity = empty;
-  signature_key = empty;
-}
-
 val get_secret: #a:Type -> list (nat & a) -> nat -> ML a
 let rec get_secret #a l x =
   extract_result (from_option "" (List.Tot.assoc x l))
@@ -134,7 +127,7 @@ let create_participant #bytes #cb rng =
 val add_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> ML (rand_state & mls_state bytes)
 let add_rand #bytes #cb rng st =
   let (rng, leaf_package, my_secrets) = create_participant rng in
-  let (new_public_state, leaf_index) = MLS.TreeSync.add st.public dumb_credential leaf_package in
+  let (new_public_state, leaf_index) = MLS.TreeSync.add st.public leaf_package in
   (rng, {
     public = new_public_state;
     secrets = (leaf_index, my_secrets) :: st.secrets;
@@ -156,14 +149,14 @@ let update_leaf #bytes #cb rng st leaf_index =
   let (path_tk, _) = extract_result (update_path tree_tk leaf_index new_leaf_secret ad rand) in
   let leaf_package =
     match get_leaf tree_ts leaf_index with
-    | (_, Some lp) -> lp
+    | Some lp -> lp
     | _ -> failwith ""
   in
   let ext_path_ts = extract_result (treekem_to_treesync leaf_package path_tk) in
   let (rng, sign_nonce_bytes) = gen_rand_bytes rng (sign_nonce_length #bytes) in
   let sign_nonce = sign_nonce_bytes in
   let path_ts = extract_result (external_pathsync_to_pathsync (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts) in
-  let new_tree_ts = apply_path dumb_credential tree_ts path_ts in
+  let new_tree_ts = apply_path tree_ts path_ts in
   (rng, {
     public = {
       st.public with
@@ -184,7 +177,7 @@ val remove_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_sta
 let remove_leaf #bytes #cb rng st leaf_index =
   if not (leaf_index < st.public.treesize) then failwith "" else
   (rng, {
-    public = remove st.public dumb_credential leaf_index;
+    public = remove st.public leaf_index;
     secrets = List.Tot.filter (fun (x, _) -> x <> leaf_index) st.secrets;
   })
 

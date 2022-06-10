@@ -220,13 +220,6 @@ let treesync_to_update_path #bytes #cb #l #n #i p =
 
 (*** ratchet_tree extension (11.3) ***)
 
-val dumb_credential: #bytes:Type0 -> {|bytes_like bytes|} -> TS.credential_t bytes
-let dumb_credential #bytes #bl = {
-  TS.version = 0;
-  TS.identity = empty;
-  TS.signature_key = empty;
-}
-
 val ratchet_tree_l_n: #bytes:Type0 -> {|bytes_like bytes|} -> nodes:ratchet_tree_nt bytes -> result (l:nat & n:tree_size l{Seq.length nodes == n+n-1})
 let ratchet_tree_l_n #bytes #bl nodes =
   let n_nodes = Seq.length nodes in
@@ -244,10 +237,10 @@ let rec ratchet_tree_to_treesync #bytes #bl l n nodes =
     match (Seq.index nodes 0) with
     | Some (N_leaf kp) ->
       kp <-- key_package_to_treesync kp;
-      return (TLeaf (dumb_credential, Some kp))
+      return (TLeaf (Some kp))
     | Some _ -> error "ratchet_tree_to_treesync_aux: node must be a leaf!"
     | None ->
-      return (TLeaf (dumb_credential, None))
+      return (TLeaf None)
   ) else if n <= pow2 (l-1) then (
     res <-- ratchet_tree_to_treesync (l-1) n nodes;
     return (TSkip _ res)
@@ -260,23 +253,23 @@ let rec ratchet_tree_to_treesync #bytes #bl l n nodes =
     match my_node with
     | Some (N_parent pn) ->
       np <-- parent_node_to_treesync pn;
-      return (TNode (dumb_credential, Some np) left_res right_res)
+      return (TNode (Some np) left_res right_res)
     | Some _ -> error "ratchet_tree_to_treesync_aux: node must be a parent!"
     | None ->
-      return (TNode (dumb_credential, None) left_res right_res)
+      return (TNode None left_res right_res)
   )
 
 val treesync_to_ratchet_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> TS.treesync bytes l n -> result (Seq.seq (option (node_nt bytes)))
 let rec treesync_to_ratchet_tree #bytes #cb #l #n t =
   match t with
-  | TLeaf (_, None) ->
+  | TLeaf None ->
     return (Seq.create 1 None)
-  | TLeaf (_, Some lp) ->
+  | TLeaf (Some lp) ->
     key_package <-- treesync_to_keypackage lp;
     return (Seq.create 1 (Some (N_leaf (key_package))))
   | TSkip _ t' ->
     treesync_to_ratchet_tree t'
-  | TNode (_, onp) left right ->
+  | TNode onp left right ->
     parent_node <-- (
       match onp with
       | None -> return None

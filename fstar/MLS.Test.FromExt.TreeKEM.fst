@@ -49,8 +49,7 @@ let find_my_index #bl #l #n t kp =
     | C_basic c -> c.signature_key
     | _ -> failwith "unsupported credential!"; empty
   in
-  let test (x: credential_t bytes & option (leaf_package_t bytes)) =
-    let (_, olp) = x in
+  let test (olp: option (leaf_package_t bytes)) =
     match olp with
     | None -> false
     | Some lp -> lp.credential.signature_key = my_signature_key
@@ -88,10 +87,10 @@ let gen_treekem_output #cb t =
   else (
     let tree_hash_before = extract_result (tree_hash (MLS.TreeMath.root l) ts0) in
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret empty) in
-    let old_leaf_package = extract_option "leaf package for add sender is empty" (snd (get_leaf ts0 add_sender)) in
+    let old_leaf_package = extract_option "leaf package for add sender is empty" (get_leaf ts0 add_sender) in
     let ext_ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
     let ups0 = extract_result (external_pathsync_to_pathsync None ts0 ext_ups0) in
-    let ts1 = apply_path dumb_credential ts0 ups0 in
+    let ts1 = apply_path ts0 ups0 in
     let tk1 = extract_result (treesync_to_treekem ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let upk1 = extract_result (update_path_to_treekem l n update_sender update_group_context update_path) in
@@ -99,7 +98,7 @@ let gen_treekem_output #cb t =
     let update_leaf_package = extract_result (key_package_to_treesync update_path.leaf_key_package) in
     let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
     let ups1 = extract_result (external_pathsync_to_pathsync None ts1 ext_ups1) in
-    let ts2 = apply_path dumb_credential ts1 ups1 in
+    let ts2 = apply_path ts1 ups1 in
     let tk2 = extract_result (treesync_to_treekem ts2) in
 
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in

@@ -48,9 +48,9 @@ let treesync_to_treekem_node_package #bytes #cb nb_left_leaves np =
 val treesync_to_treekem_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result (treekem bytes l n)
 let rec treesync_to_treekem_aux #bytes #cb #l #n nb_left_leaves t =
   match t with
-  | TLeaf (_, None) ->
+  | TLeaf None ->
     return (TLeaf None)
-  | TLeaf (_, (Some lp)) ->
+  | TLeaf (Some lp) ->
     lpc <-- from_option "treesync_to_treekem: Couldn't parse leaf content"
       (parse (leaf_package_content_nt bytes) lp.content);
     if length (lpc.public_key <: bytes) = hpke_public_key_length #bytes then
@@ -60,7 +60,7 @@ let rec treesync_to_treekem_aux #bytes #cb #l #n nb_left_leaves t =
   | TSkip _ t' ->
     result <-- treesync_to_treekem_aux nb_left_leaves t';
     return (TSkip _ result)
-  | TNode (_, onp) left right -> begin
+  | TNode onp left right -> begin
     tk_left <-- treesync_to_treekem_aux nb_left_leaves left;
     tk_right <-- treesync_to_treekem_aux (nb_left_leaves + pow2 (l-1)) right;
     match onp with

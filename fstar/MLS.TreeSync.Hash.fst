@@ -39,7 +39,7 @@ val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size 
 let rec tree_hash #bytes #cb #l #n ind t =
   match t with
   | TSkip _ t' -> tree_hash (TM.left ind) t'
-  | TLeaf (_, olp) ->
+  | TLeaf olp ->
     key_package <-- (
       match olp with
       | None -> return None
@@ -54,7 +54,7 @@ let rec tree_hash #bytes #cb #l #n ind t =
         node_index = ind;
         key_package = key_package;
       }))
-  | TNode (_, onp) left right ->
+  | TNode onp left right ->
     parent_node <-- (
       match onp with
       | None -> return None

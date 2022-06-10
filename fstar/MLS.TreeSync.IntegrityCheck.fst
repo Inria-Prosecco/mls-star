@@ -113,15 +113,15 @@ let check_leaf #bytes #cb leaf_index olp =
 val get_original_right_node: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> option (l_res:nat & n_res:tree_size l_res & treesync bytes l_res n_res)
 let rec get_original_right_node #bytes #bl #l #n t =
   match t with
-  | TNode (_, Some np) _ _ ->
+  | TNode (Some np) _ _ ->
     Some (|l, n, t|)
-  | TNode (_, None) left _ ->
+  | TNode None left _ ->
     get_original_right_node left
   | TSkip _ t' ->
     get_original_right_node t'
-  | TLeaf (_, Some lp) ->
+  | TLeaf (Some lp) ->
     Some (|l, n, t|)
-  | TLeaf (_, None) ->
+  | TLeaf None ->
     None
 #pop-options
 
@@ -129,11 +129,11 @@ let rec get_original_right_node #bytes #bl #l #n t =
 val get_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> option bytes
 let get_parent_hash #bytes #bl #l #n t =
   match t with
-  | TNode (_, None) _ _ -> None
-  | TNode (_, Some np) _ _ -> Some np.parent_hash
+  | TNode None _ _ -> None
+  | TNode (Some np) _ _ -> Some np.parent_hash
   | TSkip _ _ -> None
-  | TLeaf (_, None) -> None
-  | TLeaf (_, Some lp) -> (
+  | TLeaf None -> None
+  | TLeaf (Some lp) -> (
     match get_parent_hash_extension lp.extensions with
     | Some parent_hash_ext -> Some (parent_hash_ext.parent_hash)
     | None -> None
@@ -143,7 +143,7 @@ let get_parent_hash #bytes #bl #l #n t =
 #push-options "--ifuel 1"
 val check_internal_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> t:treesync bytes l n{TNode? t} -> result integrity_either
 let check_internal_node #bytes #cb #l #n nb_left_leaves t =
-  let (TNode (_, onp) left right) = t in
+  let (TNode onp left right) = t in
   match onp with
   | None -> return IE_Good
   | Some np -> (
@@ -172,14 +172,14 @@ let check_internal_node #bytes #cb #l #n nb_left_leaves t =
 val check_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result integrity_either
 let rec check_treesync_aux #bytes #cb #l #n nb_left_leaves t =
   match t with
-  | TNode (_, onp) left right ->
+  | TNode onp left right ->
     left_ok <-- check_treesync_aux nb_left_leaves left;
     right_ok <-- check_treesync_aux (nb_left_leaves + pow2 (l-1)) right;
     cur_ok <-- check_internal_node nb_left_leaves t;
     return (left_ok &&& cur_ok &&& right_ok)
   | TSkip _ t' ->
     check_treesync_aux nb_left_leaves t'
-  | TLeaf (_, olp) ->
+  | TLeaf olp ->
     check_leaf nb_left_leaves olp
 #pop-options
 

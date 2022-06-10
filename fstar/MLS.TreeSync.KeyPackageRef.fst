@@ -24,7 +24,7 @@ let leaf_package_to_kp_ref #bytes #cb lp =
 val key_package_ref_to_index: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> key_package_ref_nt bytes -> result (option (leaf_index n))
 let key_package_ref_to_index #bytes #cb #l #n t kp_ref =
   let leaves = get_leaf_list t in
-  kp_refs <-- mapM (fun (_, olp) ->
+  kp_refs <-- mapM (fun olp ->
     match olp with
     | Some lp -> (
         kp_ref <-- leaf_package_to_kp_ref lp;

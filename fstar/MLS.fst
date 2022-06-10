@@ -76,7 +76,7 @@ let compute_kp_ref_of st index =
   if not (index < st.tree_state.treesize) then
     internal_failure "compute_kp_ref_of: my leaf_index is too big"
   else (
-    let (_, olp) = get_leaf st.tree_state.tree index in
+    let olp = get_leaf st.tree_state.tree index in
     match olp with
     | None -> internal_failure "compute_kp_ref_of: my own key package is missing"
     | Some lp -> leaf_package_to_kp_ref lp
@@ -118,7 +118,7 @@ let process_proposal sender_id st p =
     if not (sender_id < st.tree_state.treesize) then
       error "process_proposal: sender_id is greater than treesize"
     else (
-      let (_, opt_sender_leaf_package) = get_leaf st.tree_state.tree sender_id in
+      let opt_sender_leaf_package = get_leaf st.tree_state.tree sender_id in
       if not (Some? opt_sender_leaf_package) then
         error "process_proposal: sender_id points to a blank leaf"
       else
@@ -127,13 +127,13 @@ let process_proposal sender_id st p =
   );
   match p with
   | Add leaf_package ->
-    let (tree_state, _) = MLS.TreeSync.add st.tree_state sender_cred leaf_package in
+    let (tree_state, _) = MLS.TreeSync.add st.tree_state leaf_package in
     return ({ st with tree_state })
   | Update leaf_package ->
     if not (sender_id < st.tree_state.treesize) then
       error "process_proposal: leaf_ind is greater than treesize"
     else (
-      let tree_state = MLS.TreeSync.update st.tree_state sender_cred leaf_package sender_id in
+      let tree_state = MLS.TreeSync.update st.tree_state leaf_package sender_id in
       return ({ st with tree_state })
     )
   | Remove kp_ref ->
@@ -142,7 +142,7 @@ let process_proposal sender_id st p =
       error "process_proposal: cannot find kp_ref"
     else (
       let leaf_ind = Some?.v opt_leaf_ind in
-      let tree_state = MLS.TreeSync.remove st.tree_state sender_cred leaf_ind in
+      let tree_state = MLS.TreeSync.remove st.tree_state leaf_ind in
       return ({ st with tree_state })
     )
   | _ -> error "process_proposal: not implemented"
@@ -199,7 +199,7 @@ let process_commit state message message_auth =
         update_pathsync <-- external_pathsync_to_pathsync None state.tree_state.tree ext_update_pathsync;
         return ({ state with
           tree_state = { state.tree_state with
-            tree = MLS.TreeSync.apply_path dumb_credential state.tree_state.tree update_pathsync;
+            tree = MLS.TreeSync.apply_path state.tree_state.tree update_pathsync;
           }
         })
       )
@@ -390,7 +390,7 @@ let generate_leaf_package_and_path_secret future_state msg new_leaf_package =
   let x: option (update_path_nt bytes) = msg.message_content.c_path in
   match x with
   | Some _ -> (
-    match find_first (fun (_, lp) -> lp = Some (new_leaf_package)) (get_leaf_list future_state.tree_state.tree) with
+    match find_first (fun lp -> lp = Some (new_leaf_package)) (get_leaf_list future_state.tree_state.tree) with
     | None -> internal_failure "generate_welcome_message: can't find newly added leaf package"
     | Some new_leaf_index ->
       if not (future_state.leaf_index < future_state.tree_state.treesize) then
@@ -474,7 +474,7 @@ let generate_update_path st e proposals =
     assume(length new_leaf_secret == Seq.length new_leaf_secret);
     tmp <-- update_path tree_kem st.leaf_index new_leaf_secret group_context_bytes update_path_rand;
     let (update_path_kem, _) = tmp in
-    let (_, opt_my_leaf_package) =  get_leaf st.tree_state.tree st.leaf_index in
+    let opt_my_leaf_package =  get_leaf st.tree_state.tree st.leaf_index in
     my_leaf_package <-- (from_option "generate_update_path: my leaf is blanked" opt_my_leaf_package);
     update_path_ext_sync <-- treekem_to_treesync my_leaf_package update_path_kem;
     update_path_sync <-- external_pathsync_to_pathsync (Some (st.sign_private_key, sign_nonce)) st.tree_state.tree update_path_ext_sync;
@@ -524,7 +524,7 @@ let add state key_package e =
   return (state, (g,w))
 
 let remove state p e =
-  match find_first #(credential_t bytes & option (leaf_package_t bytes)) (fun (_, olp) -> match olp with | Some lp -> lp.credential.identity = p | None -> false) (get_leaf_list state.tree_state.tree) with
+  match find_first #(option (leaf_package_t bytes)) (fun olp -> match olp with | Some lp -> lp.credential.identity = p | None -> false) (get_leaf_list state.tree_state.tree) with
   | None -> error "remove: can't find the leaf to remove"
   | Some i -> (
     kp_ref <-- compute_kp_ref_of state i;
@@ -566,8 +566,8 @@ let send state e data =
 
 val find_my_index: #l:nat -> #n:tree_size l -> treesync bytes l n -> bytes -> result (res:nat{res<n})
 let find_my_index #l #n t sign_pk =
-  let test (x: credential_t bytes & option (leaf_package_t bytes)) =
-    let (_, olp) = x in
+  let test (x: option (leaf_package_t bytes)) =
+    let olp = x in
     match olp with
     | None -> false
     | Some lp -> lp.credential.signature_key = sign_pk
@@ -600,7 +600,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       match opt_leaf_ind with
       | None -> error "process_welcome_message: signer don't exist"
       | Some leaf_ind -> (
-        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (1)" (snd (get_leaf tree leaf_ind));
+        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (1)" (get_leaf tree leaf_ind);
         let result = sender_leaf_package.credential.signature_key in
         if not (length result = sign_public_key_length #bytes) then
           error "process_welcome_message: bad public key length"
@@ -627,10 +627,10 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       else (
         tree_kem <-- treesync_to_treekem tree;
         update_path_kem <-- mk_init_path tree_kem leaf_index signer_index path_secret (empty #bytes);
-        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (2)" (snd (get_leaf tree signer_index));
+        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (2)" (get_leaf tree signer_index);
         external_update_path <-- treekem_to_treesync sender_leaf_package update_path_kem;
         update_path <-- external_pathsync_to_pathsync None tree external_update_path;
-        return (MLS.TreeSync.apply_path sender_leaf_package.credential tree update_path)
+        return (MLS.TreeSync.apply_path tree update_path)
       )
   );
   interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash (Some group_info.confirmation_tag) group_info.confirmed_transcript_hash;
@@ -639,8 +639,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   leaf_secret <-- (
     let opt_my_leaf_package = get_leaf tree leaf_index in
     match opt_my_leaf_package with
-    | (_, None) -> internal_failure "process_welcome_message: leaf index points to a blank leaf"
-    | (_, Some my_leaf_package) -> (
+    | None -> internal_failure "process_welcome_message: leaf index points to a blank leaf"
+    | Some my_leaf_package -> (
       kp_hash <-- hash_leaf_package my_leaf_package;
       match lookup kp_hash with
       | Some leaf_secret -> return leaf_secret
