@@ -64,7 +64,7 @@ let network_to_welcome_group_info #bytes #bl gi =
     signature = gi.signature;
   }
 
-val welcome_group_info_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> welcome_group_info bytes -> result (group_info_nt bytes)
+val welcome_group_info_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome_group_info bytes -> result (group_info_nt bytes)
 let welcome_group_info_to_network #bytes #bl gi =
   if not (length gi.group_id < 256) then
     internal_failure "welcome_group_info_to_network: group_id too long"
@@ -84,7 +84,9 @@ let welcome_group_info_to_network #bytes #bl gi =
     internal_failure "welcome_group_info_to_network: signature_id too long"
   else
     return ({
+      version = PV_mls10 ();
       tbs = {
+        cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);
         group_id = gi.group_id;
         epoch = gi.epoch;
         tree_hash = gi.tree_hash;
@@ -186,7 +188,6 @@ let welcome_to_network #bytes #cb w =
     internal_failure "welcome_to_network: secrets too long"
   else (
     return ({
-      version = PV_mls10 ();
       cipher_suite = cipher_suite;
       secrets = Seq.seq_of_list secrets;
       encrypted_group_info = w.encrypted_group_info;

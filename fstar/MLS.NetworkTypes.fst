@@ -468,6 +468,7 @@ noeq type mls_plaintext_tbm_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_mls_plaintext_tbm_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_plaintext_tbm_nt bytes) = mk_parseable_serializeable ps_mls_plaintext_tbm_nt
 
 noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
+  cipher_suite: cipher_suite_nt;
   group_id: tls_bytes bytes ({min=0; max=255});
   epoch: nat_lbytes 8;
   tree_hash: tls_bytes bytes ({min=0; max=255});
@@ -483,6 +484,7 @@ noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_info_tbs_nt bytes) = mk_parseable_serializeable ps_group_info_tbs_nt
 
 noeq type group_info_nt (bytes:Type0) {|bytes_like bytes|} = {
+  version: protocol_version_nt;
   tbs: group_info_tbs_nt bytes;
   signature: tls_bytes bytes ({min=0; max=(pow2 16)-1});
 }
@@ -517,7 +519,6 @@ noeq type encrypted_group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_encrypted_group_secrets_nt] (gen_parser (`encrypted_group_secrets_nt))
 
 noeq type welcome_nt (bytes:Type0) {|bytes_like bytes|} = {
-  version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
   secrets: tls_seq bytes ps_encrypted_group_secrets_nt ({min=0; max=(pow2 32)-1});
   encrypted_group_info: tls_bytes bytes ({min=1; max=(pow2 32)-1});
