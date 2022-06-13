@@ -79,7 +79,7 @@ val add_skips: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l 
 let rec add_skips #bytes #bl #l #n t =
   match t with
   | TNode data left right ->
-    if is_tree_empty right then (
+    if is_tree_empty right && None? data then (
       let (|n_res, left_res|) = add_skips left in
       (|n_res, TSkip _ left_res|)
     ) else (
