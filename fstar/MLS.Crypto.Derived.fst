@@ -43,6 +43,38 @@ private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
 ) = ()
 #pop-options
 
+noeq type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
+  label: tls_bytes bytes ({min=9; max=255});
+  content: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+}
+
+%splice [ps_sign_content_nt] (gen_parser (`sign_content_nt))
+
+val get_sign_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> label:bytes -> content:bytes -> result bytes
+let get_sign_content #bytes #cb label content =
+  assert_norm (String.strlen "MLS 1.0 " == 8);
+  if not (1 <= length label) then
+    internal_failure "get_sign_content: label too short"
+  else if not (length label <= 255-8) then
+    internal_failure "get_sign_content: label too long"
+  else if not (length content < pow2 32) then
+    internal_failure "get_sign_content: context too long"
+  else (
+    concat_length (string_to_bytes #bytes "MLS 1.0 ") label;
+    return ((ps_to_pse ps_sign_content_nt).serialize_exact ({
+      label = concat #bytes (string_to_bytes #bytes "MLS 1.0 ") label;
+      content = content;
+    }))
+  )
+
+let sign_with_label #bytes #cb signature_key label content entropy =
+  sign_content <-- get_sign_content label content;
+  sign_sign signature_key sign_content entropy
+
+let verify_with_label #bytes #cb verification_key label content signature =
+  sign_content <-- get_sign_content label content;
+  return (sign_verify verification_key sign_content signature)
+
 noeq type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
   label: tls_bytes bytes ({min=7; max=255});
@@ -57,7 +89,7 @@ let expand_with_label #bytes #cb secret label context len =
     internal_failure "expand_with_label: len too high"
   else if not (1 <= length label) then
     internal_failure "expand_with_label: label too short"
-  else if not (length label < 255-6) then
+  else if not (length label <= 255-6) then
     internal_failure "expand_with_label: label too long"
   else if not (length context < pow2 32) then
     internal_failure "expand_with_label: context too long"

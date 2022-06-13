@@ -322,7 +322,7 @@ val sign_welcome_group_info: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_priv
 let sign_welcome_group_info #bytes #cb sign_sk gi rand =
   gi_network <-- welcome_group_info_to_network gi;
   let tbs_bytes = serialize (group_info_tbs_nt bytes) gi_network.tbs in
-  signature <-- sign_sign sign_sk tbs_bytes rand;
+  signature <-- sign_with_label sign_sk (string_to_bytes #bytes "GroupInfoTBS") tbs_bytes rand;
   return ({gi with signature = signature})
 
 val verify_welcome_group_info: #bytes:Type0 -> {|crypto_bytes bytes|} -> (key_package_ref_nt bytes -> result (sign_public_key bytes)) -> welcome_group_info bytes -> result bool
@@ -333,6 +333,5 @@ let verify_welcome_group_info #bytes #cb get_sign_pk gi =
     gi_network <-- welcome_group_info_to_network gi;
     let tbs_bytes = serialize (group_info_tbs_nt bytes) gi_network.tbs in
     sign_pk <-- get_sign_pk gi.signer;
-    let result = sign_verify sign_pk tbs_bytes gi.signature in
-    return result
+    verify_with_label sign_pk (string_to_bytes #bytes "GroupInfoTBS") tbs_bytes gi.signature
   )

@@ -56,7 +56,8 @@ let check_signature #bytes #cb lp =
   else (
     key_package <-- treesync_to_keypackage lp;
     let leaf_package_bytes: bytes = serialize (key_package_tbs_nt bytes) key_package.tbs in
-    if sign_verify lp.credential.signature_key leaf_package_bytes lp.signature then
+    signature_ok <-- verify_with_label lp.credential.signature_key (string_to_bytes #bytes "KeyPackageTBS") leaf_package_bytes lp.signature;
+    if signature_ok then
       return None
     else
       return (Some LIE_BadSignature)

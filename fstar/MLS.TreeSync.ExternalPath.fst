@@ -30,7 +30,7 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key paren
           let lp = ({lp with extensions = new_extensions}) in
           key_package <-- treesync_to_keypackage lp;
           let leaf_package_bytes = serialize (key_package_tbs_nt bytes) key_package.tbs in
-          new_signature <-- sign_sign sign_key leaf_package_bytes entropy;
+          new_signature <-- sign_with_label sign_key (string_to_bytes #bytes "KeyPackageTBS") leaf_package_bytes entropy;
           return ({lp with signature = new_signature} <: leaf_package_t bytes)
         )
       )

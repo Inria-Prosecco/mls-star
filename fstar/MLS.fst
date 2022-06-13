@@ -305,7 +305,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     unsigned_key_package <-- treesync_to_keypackage unsigned_leaf_package;
     let tbs = (ps_to_pse ps_key_package_tbs_nt).serialize_exact unsigned_key_package.tbs in
     nonce <-- universal_sign_nonce;
-    sign_sign private_sign_key tbs nonce
+    sign_with_label private_sign_key (string_to_bytes #bytes "KeyPackageTBS") tbs nonce
   );
   let leaf_package = { unsigned_leaf_package with signature } in
   return (leaf_package, (leaf_secret <: bytes))

@@ -230,12 +230,12 @@ let compute_tbs_bytes #bytes #cb msg group_context =
 val compute_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> sign_nonce bytes -> message bytes -> bytes -> result (sign_signature bytes)
 let compute_message_signature #bytes #cb sk rand msg group_context =
   serialized_tbs <-- compute_tbs_bytes msg group_context;
-  sign_sign sk serialized_tbs rand
+  sign_with_label sk (string_to_bytes #bytes "MLSPlaintextTBS") serialized_tbs rand
 
 val check_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_public_key bytes -> sign_signature bytes -> message bytes -> bytes -> result bool
 let check_message_signature #bytes #cb pk signature msg group_context =
   serialized_tbs <-- compute_tbs_bytes msg group_context;
-  return (sign_verify pk serialized_tbs signature)
+  verify_with_label pk (string_to_bytes #bytes "MLSPlaintextTBS") serialized_tbs signature
 
 val compute_message_membership_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> message bytes -> message_auth bytes -> bytes -> result (lbytes bytes (hmac_length #bytes))
 let compute_message_membership_tag #bytes #cb membership_key msg auth group_context =

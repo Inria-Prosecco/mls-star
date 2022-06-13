@@ -111,7 +111,7 @@ let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
   let signature = extract_result (
     unsigned_key_package <-- treesync_to_keypackage unsigned_leaf_package;
     let tbs = (ps_to_pse ps_key_package_tbs_nt).serialize_exact unsigned_key_package.tbs in
-    sign_sign secrets.sign_sk tbs sign_nonce
+    sign_with_label secrets.sign_sk (string_to_bytes #bytes "KeyPackageTBS") tbs sign_nonce
   ) in
   (rng, { unsigned_leaf_package with signature })
 #pop-options
