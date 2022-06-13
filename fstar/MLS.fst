@@ -269,7 +269,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   let (_, public_key) = key_pair in
   extensions <-- (
     let versions = Seq.seq_of_list [PV_mls10 ()] in
-    let ciphersuites = Seq.seq_of_list [CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
+    let ciphersuites = Seq.seq_of_list [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
     let extensions = Seq.seq_of_list [ET_capabilities (); ET_lifetime (); (* ET_key_id (); *) ET_parent_hash ()] in
     if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < 256) then
       internal_failure "fresh_key_package: initial protocol versions too long"

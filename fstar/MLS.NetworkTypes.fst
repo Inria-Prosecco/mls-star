@@ -35,13 +35,13 @@ type protocol_version_nt =
 %splice [ps_protocol_version_nt] (gen_parser (`protocol_version_nt))
 
 type cipher_suite_nt =
-  | CS_mls10_128_dhkemx25519_aes128gcm_sha256_ed25519: [@@@ with_num_tag 2 1] unit -> cipher_suite_nt
-  | CS_mls10_128_dhkemp256_aes128gcm_sha256_p256: [@@@ with_num_tag 2 2] unit -> cipher_suite_nt
-  | CS_mls10_128_dhkemx25519_chacha20poly1305_sha256_ed25519: [@@@ with_num_tag 2 3] unit -> cipher_suite_nt
-  | CS_mls10_256_dhkemx448_aes256gcm_sha512_ed448: [@@@ with_num_tag 2 4] unit -> cipher_suite_nt
-  | CS_mls10_256_dhkemp521_aes256gcm_sha512_p521: [@@@ with_num_tag 2 5] unit -> cipher_suite_nt
-  | CS_mls10_256_dhkemx448_chacha20poly1305_sha512_ed448: [@@@ with_num_tag 2 6] unit -> cipher_suite_nt
-  | CS_mls10_256_dhkemp384_aes256gcm_sha384_p384: [@@@ with_num_tag 2 7] unit -> cipher_suite_nt
+  | CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519: [@@@ with_num_tag 2 1] unit -> cipher_suite_nt
+  | CS_mls_128_dhkemp256_aes128gcm_sha256_p256: [@@@ with_num_tag 2 2] unit -> cipher_suite_nt
+  | CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519: [@@@ with_num_tag 2 3] unit -> cipher_suite_nt
+  | CS_mls_256_dhkemx448_aes256gcm_sha512_ed448: [@@@ with_num_tag 2 4] unit -> cipher_suite_nt
+  | CS_mls_256_dhkemp521_aes256gcm_sha512_p521: [@@@ with_num_tag 2 5] unit -> cipher_suite_nt
+  | CS_mls_256_dhkemx448_chacha20poly1305_sha512_ed448: [@@@ with_num_tag 2 6] unit -> cipher_suite_nt
+  | CS_mls_256_dhkemp384_aes256gcm_sha384_p384: [@@@ with_num_tag 2 7] unit -> cipher_suite_nt
 
 %splice [ps_cipher_suite_nt] (gen_parser (`cipher_suite_nt))
 
