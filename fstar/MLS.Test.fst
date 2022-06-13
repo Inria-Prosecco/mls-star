@@ -78,7 +78,7 @@ let main =
   MLS.Test.Internal.test ();
   run_treemath_tests ();
   //run_encryption_tests();
-  run_keyschedule_tests ();
+  //run_keyschedule_tests ();
   //run_treekem_tests ();
   //run_commit_transcript_tests ();
   run_self_treekem_test ();

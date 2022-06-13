@@ -84,20 +84,20 @@ noeq type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_kdf_label_nt] (gen_parser (`kdf_label_nt))
 
 let expand_with_label #bytes #cb secret label context len =
-  assert_norm (String.strlen "mls10 " == 6);
+  assert_norm (String.strlen "MLS 1.0 " == 8);
   if not (len < pow2 16) then
     internal_failure "expand_with_label: len too high"
   else if not (1 <= length label) then
     internal_failure "expand_with_label: label too short"
-  else if not (length label <= 255-6) then
+  else if not (length label <= 255-8) then
     internal_failure "expand_with_label: label too long"
   else if not (length context < pow2 32) then
     internal_failure "expand_with_label: context too long"
   else (
-    concat_length (string_to_bytes #bytes "mls10 ") label;
+    concat_length (string_to_bytes #bytes "MLS 1.0 ") label;
     let kdf_label = (ps_to_pse ps_kdf_label_nt).serialize_exact ({
       length = len;
-      label = concat #bytes (string_to_bytes #bytes "mls10 ") label;
+      label = concat #bytes (string_to_bytes #bytes "MLS 1.0 ") label;
       context = context;
     }) in
     kdf_expand secret kdf_label len
