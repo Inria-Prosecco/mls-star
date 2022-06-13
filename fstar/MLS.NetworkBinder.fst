@@ -48,7 +48,6 @@ let key_package_to_treesync #bytes #bl kp =
         TS.identity = cred.identity;
         TS.signature_key = cred.signature_key;
       };
-      TS.endpoint_id = kp.tbs.endpoint_id;
       TS.version = 0;
       TS.content = {
         TS.content = serialize (treekem_content_nt bytes) ({public_key = kp.tbs.public_key});
@@ -63,8 +62,6 @@ val treesync_to_keypackage: #bytes:Type0 -> {|crypto_bytes bytes|} -> TS.leaf_pa
 let treesync_to_keypackage #bytes #cb lp =
   if not (length lp.TS.credential.TS.identity < pow2 16) then
     error "treesync_to_keypackage: identity too long"
-  else if not (length lp.TS.endpoint_id < 256) then
-    error "treesync_to_keypackage: identity too long"
   else if not (length lp.TS.credential.TS.signature_key < pow2 16) then
     error "treesync_to_keypackage: signature_key too long"
   else if not (length lp.TS.signature < pow2 16) then
@@ -78,7 +75,6 @@ let treesync_to_keypackage #bytes #cb lp =
         version = PV_mls10 ();
         cipher_suite = cipher_suite;
         public_key = content.public_key;
-        endpoint_id = lp.TS.endpoint_id;
         credential = C_basic ({
           identity = lp.TS.credential.TS.identity;
           signature_scheme = SA_ed25519 (); //TODO

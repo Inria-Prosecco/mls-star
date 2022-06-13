@@ -26,7 +26,6 @@ type external_content (bytes:Type0) {|bytes_like bytes|} = {
 type leaf_package_t (bytes:Type0) {|bytes_like bytes|} = {
   version: nat; //For security proofs, should be erasable
   credential: credential_t bytes;
-  endpoint_id: bytes;
   content: external_content bytes;
   extensions: bytes;
   signature: bytes;

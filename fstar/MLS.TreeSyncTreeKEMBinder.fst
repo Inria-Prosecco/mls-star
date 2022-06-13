@@ -125,7 +125,6 @@ let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
   | PLeaf mi ->
     return (PLeaf ({
       credential = new_leaf_package.credential;
-      endpoint_id = new_leaf_package.endpoint_id;
       version = (mi <: member_info bytes).version;
       content = {
         content = serialize (treekem_content_nt bytes) ({

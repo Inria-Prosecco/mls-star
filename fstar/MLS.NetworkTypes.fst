@@ -95,7 +95,6 @@ noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
   public_key: hpke_public_key_nt bytes;
-  endpoint_id: tls_bytes bytes ({min=0; max=255});
   credential: credential_nt bytes;
   extensions: tls_seq bytes ps_extension_nt ({min=8; max=(pow2 32)-1});
 }

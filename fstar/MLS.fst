@@ -292,7 +292,6 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
       identity;
       signature_key;
     };
-    endpoint_id = empty; //TODO
     version = 0;
     content = {
       content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key} <: treekem_content_nt bytes);

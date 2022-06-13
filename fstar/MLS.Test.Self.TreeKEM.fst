@@ -98,7 +98,6 @@ let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
       identity;
       signature_key = sign_pk;
     };
-    endpoint_id = empty;
     version = 0;
     content = {
       content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key = hpke_pk});
