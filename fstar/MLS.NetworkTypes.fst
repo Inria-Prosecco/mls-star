@@ -84,7 +84,7 @@ noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
 type extension_type_nt: eqtype =
   | ET_capabilities: [@@@ with_num_tag 2 0x0001] unit -> extension_type_nt
   | ET_lifetime: [@@@ with_num_tag 2 0x0002] unit -> extension_type_nt
-  | ET_key_id: [@@@ with_num_tag 2 0x0003] unit -> extension_type_nt
+  | ET_external_key_id: [@@@ with_num_tag 2 0x0003] unit -> extension_type_nt
   | ET_parent_hash: [@@@ with_num_tag 2 0x0004] unit -> extension_type_nt
   | ET_ratchet_tree: [@@@ with_num_tag 2 0x0005] unit -> extension_type_nt
   | ET_required_capabilities: [@@@ with_num_tag 2 0x0006] unit -> extension_type_nt

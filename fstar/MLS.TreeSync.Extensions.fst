@@ -125,9 +125,9 @@ val set_lifetime_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> lif
 let set_lifetime_extension #bytes #bl = mk_set_extension (ET_lifetime ()) ps_lifetime_ext_nt
 
 val get_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (key_package_identifier_ext_nt bytes)
-let get_key_package_identifier_extension #bytes #bl = mk_get_extension (ET_key_id ()) ps_key_package_identifier_ext_nt
+let get_key_package_identifier_extension #bytes #bl = mk_get_extension (ET_external_key_id ()) ps_key_package_identifier_ext_nt
 val set_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> key_package_identifier_ext_nt bytes -> result bytes
-let set_key_package_identifier_extension #bytes #bl = mk_set_extension (ET_key_id ()) ps_key_package_identifier_ext_nt
+let set_key_package_identifier_extension #bytes #bl = mk_set_extension (ET_external_key_id ()) ps_key_package_identifier_ext_nt
 
 val get_parent_hash_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (parent_hash_ext_nt bytes)
 let get_parent_hash_extension #bytes #bl = mk_get_extension (ET_parent_hash ()) ps_parent_hash_ext_nt
