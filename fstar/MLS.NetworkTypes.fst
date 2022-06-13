@@ -6,17 +6,9 @@ type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = tls_bytes bytes ({m
 val ps_hpke_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (hpke_public_key_nt bytes)
 let ps_hpke_public_key_nt #bytes #bl = ps_tls_bytes _
 
-//This is from draft 12+
-(*
 type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
 let ps_key_package_ref_nt #bytes #bl = ps_lbytes 16
-*)
-
-//This is from draft 12
-type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = tls_bytes bytes ({min=0; max=255})
-val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
-let ps_key_package_ref_nt #bytes #bl = ps_tls_bytes _
 
 type proposal_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_proposal_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (proposal_ref_nt bytes)

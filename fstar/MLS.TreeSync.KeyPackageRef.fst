@@ -13,13 +13,7 @@ val leaf_package_to_kp_ref: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_packa
 let leaf_package_to_kp_ref #bytes #cb lp =
   kp <-- treesync_to_keypackage lp;
   let kp_bytes: bytes = serialize (key_package_nt bytes) kp in
-  (*
-  // This is from draft 12+
-  make_hash_ref cs kp_bytes
-  *)
-  // This is from draft 12
-  res <-- hash_hash kp_bytes;
-  if hash_length #bytes < 256 then return (res <: key_package_ref_nt bytes) else internal_failure "leaf_package_to_kp_ref: hash_length too long"
+  make_hash_ref kp_bytes
 
 val key_package_ref_to_index: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> key_package_ref_nt bytes -> result (option (leaf_index n))
 let key_package_ref_to_index #bytes #cb #l #n t kp_ref =
