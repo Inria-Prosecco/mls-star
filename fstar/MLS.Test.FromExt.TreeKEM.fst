@@ -85,7 +85,7 @@ let gen_treekem_output #cb t =
   else if not (update_sender < n) then
     failwith "update_sender is too big"
   else (
-    let tree_hash_before = extract_result (tree_hash (MLS.TreeMath.root l) ts0) in
+    let tree_hash_before = extract_result (tree_hash ts0) in
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret empty) in
     let old_leaf_package = extract_option "leaf package for add sender is empty" (get_leaf ts0 add_sender) in
     let ext_ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
@@ -106,7 +106,7 @@ let gen_treekem_output #cb t =
     let ratchet_tree2 = extract_result (treesync_to_ratchet_tree ts2) in
     let byte_length_ratchet_tree2 = bytes_length (ps_option ps_node_nt) (Seq.seq_to_list ratchet_tree2) in
     let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 32 then (ps_to_pse ps_ratchet_tree_nt).serialize_exact ratchet_tree2 else empty in
-    let tree_hash_after = extract_result (tree_hash (MLS.TreeMath.root l) ts2) in
+    let tree_hash_after = extract_result (tree_hash ts2) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;
       root_secret_after_add = bytes_to_hex_string root_secret_after_add;

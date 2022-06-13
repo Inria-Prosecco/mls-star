@@ -54,10 +54,9 @@ let rec test_leaf_generations #cb l n i encryption_secret sender_data_secret r_s
 
 val test_leaf: {|crypto_bytes bytes|} -> l:nat -> n:tree_size l -> i:leaf_index n -> bytes -> bytes -> encryption_leaf_test -> ML bool
 let test_leaf #cb l n i encryption_secret sender_data_secret test =
-  let leaf_encryption_secret = extract_result (leaf_kdf n encryption_secret (MLS.TreeMath.root l) i) in
-  let i_as_node_index: MLS.TreeMath.node_index 0 = i+i in
-  let handshake_ratchet = extract_result (init_handshake_ratchet i_as_node_index leaf_encryption_secret) in
-  let application_ratchet = extract_result (init_application_ratchet i_as_node_index leaf_encryption_secret) in
+  let leaf_encryption_secret = extract_result (leaf_kdf n encryption_secret i) in
+  let handshake_ratchet = extract_result (init_handshake_ratchet leaf_encryption_secret) in
+  let application_ratchet = extract_result (init_application_ratchet leaf_encryption_secret) in
   let handshake_ok = test_leaf_generations l n i encryption_secret sender_data_secret handshake_ratchet test.handshake in
   let application_ok = test_leaf_generations l n i encryption_secret sender_data_secret application_ratchet test.application in
   handshake_ok && application_ok

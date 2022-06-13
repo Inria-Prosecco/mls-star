@@ -49,7 +49,7 @@ type state = {
 #push-options "--fuel 1"
 val compute_group_context: #l:nat -> #n:tree_size l -> bytes -> nat -> treesync bytes #cb.base l n -> bytes -> result (group_context_nt bytes)
 let compute_group_context #l #n group_id epoch tree confirmed_transcript_hash =
-  tree_hash <-- MLS.TreeSync.Hash.tree_hash #bytes #cb (MLS.TreeMath.root l) tree;
+  tree_hash <-- MLS.TreeSync.Hash.tree_hash #bytes #cb tree;
   if not (length group_id < 256) then
     internal_failure "state_to_group_context: group_id too long"
   else if not (epoch < pow2 64) then
@@ -104,10 +104,9 @@ let reset_ratchet_states st =
      internal_failure "reset_ratchet_states: leaf_index too big"
   else (
     encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption st.epoch_secret;
-    leaf_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #st.tree_state.levels st.tree_state.treesize encryption_secret (MLS.TreeMath.root st.tree_state.levels) st.leaf_index;
-    let my_node_index: MLS.TreeMath.node_index 0 = st.leaf_index + st.leaf_index in
-    handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet my_node_index leaf_secret;
-    application_state <-- MLS.TreeDEM.Keys.init_application_ratchet my_node_index leaf_secret;
+    leaf_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #st.tree_state.levels st.tree_state.treesize encryption_secret st.leaf_index;
+    handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet leaf_secret;
+    application_state <-- MLS.TreeDEM.Keys.init_application_ratchet leaf_secret;
     return ({st with handshake_state; application_state})
   )
 #pop-options
@@ -334,9 +333,9 @@ let create e cred private_sign_key group_id =
   tmp <-- chop_entropy e 32;
   let epoch_secret, e = tmp in
   encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption #bytes epoch_secret;
-  leaf_dem_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 1 encryption_secret 0 0;
-  handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet 0 leaf_dem_secret;
-  application_state <-- MLS.TreeDEM.Keys.init_application_ratchet 0 leaf_dem_secret;
+  leaf_dem_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 1 encryption_secret 0;
+  handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet leaf_dem_secret;
+  application_state <-- MLS.TreeDEM.Keys.init_application_ratchet leaf_dem_secret;
   return ({
     tree_state;
     leaf_index = 0;
@@ -415,7 +414,7 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   tmp <-- process_commit st msg msg_auth;
   let (future_state, joiner_secret) = tmp in
   confirmation_tag <-- from_option "generate_welcome_message: confirmation tag is missing" msg_auth.confirmation_tag;
-  tree_hash <-- MLS.TreeSync.Hash.tree_hash (MLS.TreeMath.root future_state.tree_state.levels) future_state.tree_state.tree;
+  tree_hash <-- MLS.TreeSync.Hash.tree_hash future_state.tree_state.tree;
   ratchet_tree <-- treesync_to_ratchet_tree future_state.tree_state.tree;
   ratchet_tree_bytes <-- (
     let l = bytes_length (ps_option ps_node_nt) (Seq.seq_to_list ratchet_tree) in
@@ -577,7 +576,7 @@ let find_my_index #l #n t sign_pk =
   in
   from_option "couldn't find my_index" (find_first test (get_leaf_list t))
 
-#push-options "--fuel 1 --z3rlimit 50"
+#push-options "--z3rlimit 50"
 let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
   welcome_network <-- from_option "process_welcome_message: can't parse welcome message" ((ps_to_pse ps_welcome_nt).parse_exact welcome_bytes);
@@ -653,7 +652,6 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let dumb_ratchet_state: MLS.TreeDEM.Keys.ratchet_state bytes = {
     secret = mk_zero_vector (kdf_length #bytes);
     generation = 0;
-    node = 0; //fuel is for this field
   } in
   let st: state = {
     tree_state = {

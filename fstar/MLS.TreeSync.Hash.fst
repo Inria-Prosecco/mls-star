@@ -4,7 +4,6 @@ open Comparse
 open MLS.Tree
 open MLS.TreeSync.Types
 open MLS.Crypto
-module TM = MLS.TreeMath
 open MLS.NetworkTypes
 open MLS.NetworkBinder
 open MLS.Result
@@ -12,7 +11,7 @@ open MLS.Result
 #set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 
 noeq type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
-  node_index: nat_lbytes 4;
+  leaf_index: nat_lbytes 4;
   [@@@ with_parser #bytes (ps_option ps_key_package_nt)]
   key_package: option (key_package_nt bytes);
 }
@@ -23,7 +22,6 @@ instance parseable_serializeable_leaf_node_tree_hash_input (bytes:Type0) {|bytes
   mk_parseable_serializeable ps_leaf_node_tree_hash_input_nt
 
 noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
-  node_index: nat_lbytes 4;
   [@@@ with_parser #bytes (ps_option ps_parent_node_nt)]
   parent_node: option (parent_node_nt bytes);
   left_hash: tls_bytes bytes ({min=0;max=255});
@@ -35,10 +33,10 @@ noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_parent_node_tree_hash_input (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (parent_node_tree_hash_input_nt bytes) =
   mk_parseable_serializeable ps_parent_node_tree_hash_input_nt
 
-val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> TM.node_index l -> treesync bytes l n -> result (lbytes bytes (hash_length #bytes))
-let rec tree_hash #bytes #cb #l #n ind t =
+val tree_hash_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result (lbytes bytes (hash_length #bytes))
+let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
   match t with
-  | TSkip _ t' -> tree_hash (TM.left ind) t'
+  | TSkip _ t' -> tree_hash_aux nb_left_leaves t'
   | TLeaf olp ->
     key_package <-- (
       match olp with
@@ -47,11 +45,11 @@ let rec tree_hash #bytes #cb #l #n ind t =
         res <-- treesync_to_keypackage lp;
         return (Some res)
     );
-    if not (ind < pow2 32) then
-      internal_failure "tree_hash: node_index too big"
+    if not (nb_left_leaves < pow2 32) then
+      internal_failure "tree_hash: leaf_index too big"
     else
       hash_hash (serialize (leaf_node_tree_hash_input_nt bytes) ({
-        node_index = ind;
+        leaf_index = nb_left_leaves;
         key_package = key_package;
       }))
   | TNode onp left right ->
@@ -62,14 +60,14 @@ let rec tree_hash #bytes #cb #l #n ind t =
         res <-- treesync_to_parent_node np;
         return (Some res)
     );
-    left_hash <-- tree_hash (TM.left ind) left;
-    right_hash <-- tree_hash (TM.right ind) right;
-    if not (ind < pow2 32) then
-      internal_failure "tree_hash: node_index too big"
-    else
-      hash_hash (serialize (parent_node_tree_hash_input_nt bytes) ({
-        node_index = ind;
-        parent_node = parent_node;
-        left_hash = left_hash;
-        right_hash = right_hash;
-      }))
+    left_hash <-- tree_hash_aux nb_left_leaves left;
+    right_hash <-- tree_hash_aux (nb_left_leaves + (pow2 (l-1))) right;
+    hash_hash (serialize (parent_node_tree_hash_input_nt bytes) ({
+      parent_node = parent_node;
+      left_hash = left_hash;
+      right_hash = right_hash;
+    }))
+
+val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> result (lbytes bytes (hash_length #bytes))
+let tree_hash #bytes #cb #l #n t =
+  tree_hash_aux 0 t

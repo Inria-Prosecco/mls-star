@@ -415,12 +415,11 @@ let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_s
       opt_sender_index <-- kp_ref_to_leaf_index sender_data.sender;
       from_option "message_ciphertext_to_message: can't find sender's KeyPackageRef" opt_sender_index
     );
-    leaf_tree_secret <-- leaf_kdf n encryption_secret (MLS.TreeMath.root l) sender_index;
-    let sender_as_node_index: MLS.TreeMath.node_index 0 = sender_index + sender_index in
+    leaf_tree_secret <-- leaf_kdf n encryption_secret sender_index;
     init_ratchet <-- (
       match ct.content_type with
-      | Content.CT_application -> init_application_ratchet sender_as_node_index leaf_tree_secret
-      | _ -> init_handshake_ratchet sender_as_node_index leaf_tree_secret
+      | Content.CT_application -> init_application_ratchet leaf_tree_secret
+      | _ -> init_handshake_ratchet leaf_tree_secret
     );
     ratchet_get_generation_key init_ratchet sender_data.generation
   );

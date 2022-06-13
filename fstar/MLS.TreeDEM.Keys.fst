@@ -3,11 +3,9 @@ module MLS.TreeDEM.Keys
 open Comparse
 open MLS.Crypto
 open MLS.Tree
-open MLS.TreeMath
 open MLS.Result
 
 noeq type tree_context_nt = {
-  node: nat_lbytes 4;
   generation: nat_lbytes 4;
 }
 
@@ -16,41 +14,27 @@ noeq type tree_context_nt = {
 instance parseable_serializeable_tree_context_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes tree_context_nt  =
   mk_parseable_serializeable ps_tree_context_nt
 
-val derive_tree_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> node:nat -> generation:nat -> len:nat -> result (lbytes bytes len)
-let derive_tree_secret #bytes #cb secret label node generation len =
-  if not (node < pow2 32) then
-    internal_failure "derive_tree_secret: node too high"
-  else if not (generation < pow2 32) then
+val derive_tree_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> generation:nat -> len:nat -> result (lbytes bytes len)
+let derive_tree_secret #bytes #cb secret label generation len =
+  if not (generation < pow2 32) then
     internal_failure "derive_tree_secret: generation too high"
   else
     let tree_context = serialize tree_context_nt ({
-      node = node;
       generation = generation;
     }) in
     expand_with_label secret label tree_context len
 
-val leaf_kdf_aux_normalize_node: l:nat -> n:tree_size l -> node_index l -> nat
-let rec leaf_kdf_aux_normalize_node l n root =
-  if l = 0 then (
-    root
-  ) else if n <= pow2 (l-1) then (
-    leaf_kdf_aux_normalize_node (l-1) n (left root)
-  ) else (
-    root
-  )
-
-val leaf_kdf: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> n:tree_size l -> bytes -> node_index l -> leaf_index n -> result bytes
-let rec leaf_kdf #bytes #cb #l n encryption_secret root leaf_index =
+val leaf_kdf: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> n:tree_size l -> bytes -> leaf_index n -> result bytes
+let rec leaf_kdf #bytes #cb #l n encryption_secret leaf_index =
   if l = 0 then (
     return encryption_secret
   ) else if n <= pow2 (l-1) then (
-    leaf_kdf (n <: tree_size (l-1)) encryption_secret (left root) leaf_index
+    leaf_kdf (n <: tree_size (l-1)) encryption_secret leaf_index
   ) else (
     let (|dir, new_leaf_index|) = child_index l leaf_index in
-    let new_root = (if dir = Left then left root else right root) in
-    let new_n = (if dir = Left then pow2 (l-1) else n - pow2 (l-1)) in
-    new_encryption_secret <-- derive_tree_secret encryption_secret (string_to_bytes #bytes "tree") (leaf_kdf_aux_normalize_node (l-1) new_n new_root) 0 (kdf_length #bytes);
-    leaf_kdf #bytes new_n new_encryption_secret new_root new_leaf_index
+    let new_n: tree_size (l-1) = (if dir = Left then pow2 (l-1) else n - pow2 (l-1)) in
+    new_encryption_secret <-- expand_with_label encryption_secret (string_to_bytes #bytes "tree") (string_to_bytes #bytes (if dir = Left then "left" else "right")) (kdf_length #bytes);
+    leaf_kdf #bytes new_n new_encryption_secret new_leaf_index
   )
 
 val opt_secret_to_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> option bytes -> bytes
@@ -117,7 +101,6 @@ let secret_external_to_keypair #bytes #cb external_secret =
 noeq type ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = {
   secret: lbytes bytes (kdf_length #bytes);
   generation: nat;
-  node: node_index 0;
 }
 
 let init_ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = st:ratchet_state bytes{st.generation = 0}
@@ -127,29 +110,27 @@ noeq type ratchet_output (bytes:Type0) {|crypto_bytes bytes|} = {
   key: lbytes bytes (aead_key_length #bytes);
 }
 
-val init_handshake_ratchet: #bytes:Type0 -> {|crypto_bytes bytes|} -> node_index 0 -> bytes -> result (init_ratchet_state bytes)
-let init_handshake_ratchet #bytes #cb node tree_node_secret =
-  ratchet_secret <-- derive_tree_secret tree_node_secret (string_to_bytes #bytes "handshake") node 0 (kdf_length #bytes);
+val init_handshake_ratchet: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (init_ratchet_state bytes)
+let init_handshake_ratchet #bytes #cb tree_node_secret =
+  ratchet_secret <-- expand_with_label tree_node_secret (string_to_bytes #bytes "handshake") (string_to_bytes #bytes "") (kdf_length #bytes);
   return ({
     secret = ratchet_secret;
     generation = 0;
-    node = node;
   } <: init_ratchet_state bytes)
 
 //TODO: this is a copy-paste of init_handeshake_ratchet, factorize?
-val init_application_ratchet: #bytes:Type0 -> {|crypto_bytes bytes|} -> node_index 0 -> bytes -> result (init_ratchet_state bytes)
-let init_application_ratchet #bytes #cb node tree_node_secret =
-  ratchet_secret <-- derive_tree_secret tree_node_secret (string_to_bytes #bytes "application") node 0 (kdf_length #bytes);
+val init_application_ratchet: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (init_ratchet_state bytes)
+let init_application_ratchet #bytes #cb tree_node_secret =
+  ratchet_secret <-- expand_with_label tree_node_secret (string_to_bytes #bytes "application") (string_to_bytes #bytes "") (kdf_length #bytes);
   return ({
     secret = ratchet_secret;
     generation = 0;
-    node = node;
   } <: init_ratchet_state bytes)
 
 val ratchet_get_key: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> result (ratchet_output bytes)
 let ratchet_get_key #bytes #cb st =
-  nonce <-- derive_tree_secret st.secret (string_to_bytes #bytes "nonce") st.node st.generation (aead_nonce_length #bytes);
-  key <-- derive_tree_secret st.secret (string_to_bytes #bytes "key") st.node st.generation (aead_key_length #bytes);
+  nonce <-- derive_tree_secret st.secret (string_to_bytes #bytes "nonce") st.generation (aead_nonce_length #bytes);
+  key <-- derive_tree_secret st.secret (string_to_bytes #bytes "key") st.generation (aead_key_length #bytes);
   return ({
     nonce = nonce;
     key = key;
@@ -157,11 +138,10 @@ let ratchet_get_key #bytes #cb st =
 
 val ratchet_next_state: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> result (ratchet_state bytes)
 let ratchet_next_state #bytes #cb st =
-  new_secret <-- derive_tree_secret st.secret (string_to_bytes #bytes "secret") st.node st.generation (kdf_length #bytes);
+  new_secret <-- derive_tree_secret st.secret (string_to_bytes #bytes "secret") st.generation (kdf_length #bytes);
   return ({
     secret = new_secret;
     generation = st.generation + 1;
-    node = st.node;
   })
 
 //#push-options "--fuel 1 --ifuel 1"

@@ -12,7 +12,6 @@ open MLS.TreeSync.ExternalPath
 open MLS.TreeSync
 open MLS.TreeSync.Hash
 open MLS.TreeKEM
-open MLS.TreeMath
 open MLS.TreeSyncTreeKEMBinder
 open MLS.Test.Utils
 open MLS.StringUtils
@@ -145,7 +144,7 @@ let update_leaf #bytes #cb rng st leaf_index =
   let tree_ts = st.public.tree in
   let tree_tk = extract_result (treesync_to_treekem tree_ts) in
   let (rng, new_leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
-  let ad = extract_result (tree_hash (root st.public.levels) tree_ts) in
+  let ad = extract_result (tree_hash tree_ts) in
   let rand_length = (update_path_entropy_lengths tree_tk leaf_index) in
   //if not (rand_length < Lib.IntTypes.max_size_t) then failwith "" else
   let (rng, rand) = gen_rand_randomness rng rand_length in
