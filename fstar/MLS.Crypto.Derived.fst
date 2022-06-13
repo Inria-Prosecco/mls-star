@@ -21,6 +21,7 @@ let available_ciphersuite_from_network cs =
   | CS_mls10_256_dhkemx448_aes256gcm_sha512_ed448 () -> error "available_ciphersuite_from_network: ciphersuite not available"
   | CS_mls10_256_dhkemp521_aes256gcm_sha512_p521 () -> error "available_ciphersuite_from_network: ciphersuite not available"
   | CS_mls10_256_dhkemx448_chacha20poly1305_sha512_ed448 () -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls10_256_dhkemp384_aes256gcm_sha384_p384 () -> error "available_ciphersuite_from_network: ciphersuite not available"
 #pop-options
 
 #push-options "--ifuel 1"
