@@ -175,16 +175,20 @@ let ps_ratchet_tree_nt #bytes #bl = ps_tls_seq (ps_option ps_node_nt) _
 
 type psk_type_nt =
   | PSKT_external: [@@@ with_num_tag 1 1] unit -> psk_type_nt
-  | PSKT_reinit: [@@@ with_num_tag 1 2] unit -> psk_type_nt
-  | PSKT_branch: [@@@ with_num_tag 1 3] unit -> psk_type_nt
+  | PSKT_resumption: [@@@ with_num_tag 1 2] unit -> psk_type_nt
 
 %splice [ps_psk_type_nt] (gen_parser (`psk_type_nt))
 
+type resumption_psk_usage_nt =
+  | RPSKU_application: [@@@ with_num_tag 1 1] unit -> resumption_psk_usage_nt
+  | RPSKU_reinit: [@@@ with_num_tag 1 2] unit -> resumption_psk_usage_nt
+  | RPSKU_branch: [@@@ with_num_tag 1 3] unit -> resumption_psk_usage_nt
+
+%splice [ps_resumption_psk_usage_nt] (gen_parser (`resumption_psk_usage_nt))
+
 noeq type pre_shared_key_id_nt (bytes:Type0) {|bytes_like bytes|} =
-  //| PSKI_reserved: [@@@ with_tag (PSKT_reserved ())] psk_nonce:tls_bytes bytes ({min=0; max=255}) -> pre_shared_key_id_nt bytes
   | PSKI_external: [@@@ with_tag (PSKT_external ())] psk_id:tls_bytes bytes ({min=0; max=255}) -> psk_nonce:tls_bytes bytes ({min=0; max=255}) -> pre_shared_key_id_nt bytes
-  | PSKI_reinit: [@@@ with_tag (PSKT_reinit ())] psk_group_id:tls_bytes bytes ({min=0; max=255}) -> psk_epoch:nat_lbytes 8 -> psk_nonce:tls_bytes bytes ({min=0; max=255}) -> pre_shared_key_id_nt bytes
-  | PSKI_branch: [@@@ with_tag (PSKT_branch ())] psk_group_id:tls_bytes bytes ({min=0; max=255}) -> psk_epoch:nat_lbytes 8 -> psk_nonce:tls_bytes bytes ({min=0; max=255}) -> pre_shared_key_id_nt bytes
+  | PSKI_resumption: [@@@ with_tag (PSKT_resumption ())] usage: resumption_psk_usage_nt -> psk_group_id:tls_bytes bytes ({min=0; max=255}) -> psk_epoch:nat_lbytes 8 -> psk_nonce:tls_bytes bytes ({min=0; max=255}) -> pre_shared_key_id_nt bytes
 
 %splice [ps_pre_shared_key_id_nt] (gen_parser (`pre_shared_key_id_nt))
 

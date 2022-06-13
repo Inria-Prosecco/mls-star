@@ -7,38 +7,14 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-type psk_type =
-  | PSKT_external
-  | PSKT_reinit
-  | PSKT_branch
-
 type psk_id (bytes:Type0) {|bytes_like bytes|} =
   | PSKI_external: id:bytes -> psk_id bytes
-  | PSKI_reinit: group_id:bytes -> epoch:nat -> psk_id bytes
-  | PSKI_branch: group_id:bytes -> epoch:nat -> psk_id bytes
+  | PSKI_resumption: usage:NT.resumption_psk_usage_nt -> group_id:bytes -> epoch:nat -> psk_id bytes
 
 type psk_id_nonce (bytes:Type0) {|bytes_like bytes|} = {
   id: psk_id bytes;
   nonce: bytes;
 }
-
-#push-options "--ifuel 1"
-val psk_type_to_network: psk_type -> NT.psk_type_nt
-let psk_type_to_network pt =
-  match pt with
-  | PSKT_external -> NT.PSKT_external ()
-  | PSKT_reinit -> NT.PSKT_reinit ()
-  | PSKT_branch -> NT.PSKT_branch ()
-#pop-options
-
-#push-options "--ifuel 1"
-val network_to_psk_type: NT.psk_type_nt -> result psk_type
-let network_to_psk_type pt =
-  match pt with
-  | NT.PSKT_external () -> return PSKT_external
-  | NT.PSKT_reinit () -> return PSKT_reinit
-  | NT.PSKT_branch () -> return PSKT_branch
-#pop-options
 
 #push-options "--ifuel 1"
 val psk_id_nonce_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> psk_id_nonce bytes -> result (NT.pre_shared_key_id_nt bytes)
@@ -53,20 +29,13 @@ let psk_id_nonce_to_network psk =
       else
         return (NT.PSKI_external id psk.nonce)
     )
-    | PSKI_reinit group_id epoch ->
+    | PSKI_resumption usage group_id epoch ->
       if not (length group_id < 256) then
         error "psk_to_network: group_id is too long"
       else if not (epoch < pow2 64) then
         error "psk_to_network: epoch is too big"
       else
-        return (NT.PSKI_reinit group_id epoch psk.nonce)
-    | PSKI_branch group_id epoch ->
-      if not (length group_id < 256) then
-        error "psk_to_network: group_id is too long"
-      else if not (epoch < pow2 64) then
-        error "psk_to_network: epoch is too big"
-      else
-        return (NT.PSKI_branch group_id epoch psk.nonce)
+        return (NT.PSKI_resumption usage group_id epoch psk.nonce)
   )
 #pop-options
 
@@ -75,10 +44,8 @@ val network_to_psk_id_nonce: #bytes:Type0 -> {|bytes_like bytes|} -> NT.pre_shar
 let network_to_psk_id_nonce psk_id =
   match psk_id with
   | NT.PSKI_external id nonce -> return ({id = PSKI_external id; nonce = nonce})
-  | NT.PSKI_reinit group_id epoch nonce -> return ({id = PSKI_reinit group_id epoch; nonce = nonce})
-  | NT.PSKI_branch group_id epoch nonce -> return ({id = PSKI_reinit group_id epoch; nonce = nonce})
+  | NT.PSKI_resumption usage group_id epoch nonce -> return ({id = PSKI_resumption usage group_id epoch; nonce = nonce})
 #pop-options
-
 
 type psk_label (bytes:Type0) {|bytes_like bytes|} = {
   id_nonce: psk_id_nonce bytes;
