@@ -13,7 +13,7 @@ val leaf_package_to_kp_ref: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_packa
 let leaf_package_to_kp_ref #bytes #cb lp =
   kp <-- treesync_to_keypackage lp;
   let kp_bytes: bytes = serialize (key_package_nt bytes) kp in
-  make_hash_ref kp_bytes
+  make_keypackage_ref kp_bytes
 
 val key_package_ref_to_index: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> key_package_ref_nt bytes -> result (option (leaf_index n))
 let key_package_ref_to_index #bytes #cb #l #n t kp_ref =

@@ -106,9 +106,13 @@ let expand_with_label #bytes #cb secret label context len =
 let derive_secret #bytes #cb secret label =
   expand_with_label secret label (empty #bytes) (kdf_length #bytes)
 
-let make_hash_ref #bytes #cb buf =
+let make_keypackage_ref #bytes #cb buf =
   tmp <-- kdf_extract (empty #bytes) buf;
-  kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 ref") 16
+  kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 KeyPackage Reference") 16
+
+let make_proposal_ref #bytes #cb buf =
+  tmp <-- kdf_extract (empty #bytes) buf;
+  kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 Proposal Reference") 16
 
 #push-options "--fuel 1 --ifuel 1"
 let rec split_randomness #bytes #bl #l1 #l2 r =
