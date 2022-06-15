@@ -351,16 +351,7 @@ noeq type mls_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   content: mls_untagged_content_nt bytes content_type;
 }
 
-//TODO for Comparse
-//%splice [ps_mls_content_nt] (gen_parser (`mls_content_nt))
-val ps_mls_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_content_nt bytes)
-let ps_mls_content_nt #bytes #bl =
-  mk_isomorphism (mls_content_nt bytes)
-    (
-      bind ps_content_type_nt (fun content_type -> ps_mls_untagged_content_nt content_type)
-    )
-    (fun (|content_type, content|) -> {content_type; content})
-    (fun {content_type; content} -> (|content_type, content|))
+%splice [ps_mls_content_nt] (gen_parser (`mls_content_nt))
 
 noeq type mls_message_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_id: tls_bytes bytes ({min=0; max=255});
@@ -391,17 +382,7 @@ noeq type mls_message_content_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_context: mls_message_content_tbs_group_context_nt bytes (content.sender);
 }
 
-//TODO for Comparse
-//%splice [ps_mls_message_content_tbs_nt] (gen_parser (`mls_message_content_tbs_nt))
-val ps_mls_message_content_tbs_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_message_content_tbs_nt bytes)
-let ps_mls_message_content_tbs_nt #bytes #bl =
-  mk_isomorphism (mls_message_content_tbs_nt bytes)
-    (
-      ps_wire_format_nt;;
-      bind ps_mls_message_content_nt (fun content -> ps_mls_message_content_tbs_group_context_nt (content.sender))
-    )
-    (fun (|wire_format, (|content, group_context|)|) -> {wire_format; content; group_context})
-    (fun {wire_format; content; group_context} -> (|wire_format, (|content, group_context|)|))
+%splice [ps_mls_message_content_tbs_nt] (gen_parser (`mls_message_content_tbs_nt))
 
 instance parseable_serializeable_mls_message_content_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_message_content_tbs_nt bytes) = mk_parseable_serializeable ps_mls_message_content_tbs_nt
 
@@ -430,32 +411,14 @@ noeq type mls_message_content_auth_nt (bytes:Type0) {|bytes_like bytes|} = {
   auth: mls_message_auth_nt bytes content.content.content_type;
 }
 
-//TODO for Comparse
-//%splice [ps_mls_message_content_auth_nt] (gen_parser (`mls_message_content_auth_nt))
-val ps_mls_message_content_auth_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_message_content_auth_nt bytes)
-let ps_mls_message_content_auth_nt #bytes #bl =
-  mk_isomorphism (mls_message_content_auth_nt bytes)
-    (
-      ps_wire_format_nt;;
-      bind ps_mls_message_content_nt (fun (content:mls_message_content_nt bytes) -> ps_mls_message_auth_nt content.content.content_type)
-    )
-    (fun (|wire_format, (|content, auth|)|) -> {wire_format; content; auth})
-    (fun {wire_format; content; auth} -> (|wire_format, (|content, auth|)|))
+%splice [ps_mls_message_content_auth_nt] (gen_parser (`mls_message_content_auth_nt))
 
 noeq type mls_message_content_tbm_nt (bytes:Type0) {|bytes_like bytes|} = {
   content_tbs: mls_message_content_tbs_nt bytes;
   auth: mls_message_auth_nt bytes content_tbs.content.content.content_type;
 }
 
-//TODO for Comparse
-val ps_mls_message_content_tbm_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_message_content_tbm_nt bytes)
-let ps_mls_message_content_tbm_nt #bytes #bl =
-  mk_isomorphism (mls_message_content_tbm_nt bytes)
-    (
-      bind ps_mls_message_content_tbs_nt (fun content_tbs -> ps_mls_message_auth_nt content_tbs.content.content.content_type)
-    )
-    (fun (|content_tbs, auth|) -> {content_tbs; auth})
-    (fun {content_tbs; auth} -> (|content_tbs, auth|))
+%splice [ps_mls_message_content_tbm_nt] (gen_parser (`mls_message_content_tbm_nt))
 
 instance parseable_serializeable_mls_message_content_tbm_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_message_content_tbm_nt bytes) = mk_parseable_serializeable ps_mls_message_content_tbm_nt
 
@@ -476,23 +439,7 @@ noeq type mls_plaintext_nt (bytes:Type0) {|bytes_like bytes|} = {
   membership_tag: membership_tag_nt bytes content.sender;
 }
 
-//TODO for Comparse
-val ps_mls_plaintext_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_plaintext_nt bytes)
-let ps_mls_plaintext_nt #bytes #bl =
-  let iso = Mkisomorphism_between #(content: mls_message_content_nt bytes & (x:mls_message_auth_nt bytes content.content.content_type & membership_tag_nt bytes content.sender)) #(mls_plaintext_nt bytes)
-    (fun (|content, (|auth, membership_tag|)|) -> {content; auth; membership_tag})
-    (fun {content; auth; membership_tag} -> (|content, (|auth, membership_tag|)|))
-    (FStar.Tactics.synth_by_tactic (wrap_isomorphism_proof prove_record_isomorphism_from_pair))
-    (fun _ -> ())
-  in
-  isomorphism
-    (
-      bind ps_mls_message_content_nt (fun content ->
-        ps_mls_message_auth_nt content.content.content_type;;
-        ps_membership_tag_nt content.sender
-      )
-    )
-    iso
+%splice [ps_mls_plaintext_nt] (gen_parser (`mls_plaintext_nt))
 
 noeq type mls_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_id: tls_bytes bytes ({min=0; max=255});
