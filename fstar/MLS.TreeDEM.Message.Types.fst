@@ -8,53 +8,25 @@ open MLS.Result
 
 module NT = MLS.NetworkTypes
 
-(*
-type sender_type (bytes:Type0) {|bytes_like bytes|} =
-  | ST_member
-  | ST_preconfigured
-  | ST_new_member
-*)
-
 type sender (bytes:Type0) {|bytes_like bytes|} =
   | S_member: member:key_package_ref_nt bytes -> sender bytes
   | S_preconfigured: external_key_id:bytes -> sender bytes
   | S_new_member: sender bytes
 
-type wire_format =
-  | WF_plaintext
-  | WF_ciphertext
-
-noeq type message (bytes:Type0) {|bytes_like bytes|} = {
-  wire_format: wire_format;
+noeq type message_content (bytes:Type0) {|bytes_like bytes|} = {
+  wire_format: wire_format_nt;
   group_id: bytes;
   epoch: nat;
   sender: sender bytes;
   authenticated_data: bytes;
-  content_type: message_content_type;
-  message_content: message_content bytes content_type;
+  content_type: content_type_nt;
+  content: message_bare_content bytes content_type;
 }
 
 noeq type message_auth (bytes:Type0) {|bytes_like bytes|} = {
   signature: bytes;
   confirmation_tag: option bytes;
 }
-
-(*
-val network_to_sender_type: sender_type_nt -> result sender_type
-let network_to_sender_type s (bytes:Type0) {|bytes_like bytes|} =
-  match s with
-  | NT.ST_member -> return ST_member
-  | NT.ST_preconfigured -> return ST_preconfigured
-  | NT.ST_new_member -> return ST_new_member
-  | _ -> error "network_to_sender_type: invalid sender type"
-
-val sender_type_to_network: sender_type -> sender_type_nt
-let sender_type_to_network s =
-  match s with
-  | ST_member -> NT.ST_member
-  | ST_preconfigured -> NT.ST_preconfigured
-  | ST_new_member -> NT.ST_new_member
-*)
 
 val network_to_sender: #bytes:Type0 -> {|bytes_like bytes|} -> sender_nt bytes -> result (sender bytes)
 let network_to_sender #bytes #bl s =
@@ -77,28 +49,66 @@ let sender_to_network #bytes #bl s =
   )
   | S_new_member -> return (NT.S_new_member ())
 
-val network_to_wire_format: wire_format_nt -> result wire_format
-let network_to_wire_format s =
-  match s with
-  | NT.WF_plaintext () -> return WF_plaintext
-  | NT.WF_ciphertext () -> return WF_ciphertext
 
-val wire_format_to_network: wire_format -> wire_format_nt
-let wire_format_to_network s =
-  match s with
-  | WF_plaintext -> NT.WF_plaintext ()
-  | WF_ciphertext -> NT.WF_ciphertext ()
-
-val opt_tag_to_opt_bytes: #bytes:Type0 -> {|bytes_like bytes|} -> option (mac_nt bytes) -> result (option bytes)
-let opt_tag_to_opt_bytes #bytes #bl mac =
-  return (
-    match mac with
-    | None -> (None <: option bytes)
-    | Some m -> Some (m.mac_value)
+val message_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> message_content bytes -> result (mls_message_content_nt bytes)
+let message_content_to_network #bytes #cb msg =
+  if not (length msg.group_id < 256) then
+    internal_failure "compute_confirmed_transcript_hash: group_id too long"
+  else if not (msg.epoch < pow2 64) then
+    internal_failure "compute_confirmed_transcript_hash: epoch too big"
+  else if not (length msg.authenticated_data < pow2 32) then
+    internal_failure "compute_confirmed_transcript_hash: authenticated_data too long"
+  else (
+    sender <-- sender_to_network msg.sender;
+    content <-- message_content_pair_to_network #_ #_ #msg.content_type msg.content;
+    return ({
+      group_id = msg.group_id;
+      epoch = msg.epoch;
+      sender = sender;
+      authenticated_data = msg.authenticated_data;
+      content = content;
+    } <: mls_message_content_nt bytes)
   )
 
-val opt_bytes_to_opt_tag: #bytes:Type0 -> {|bytes_like bytes|} -> option bytes -> result (option (mac_nt bytes))
-let opt_bytes_to_opt_tag #bytes #bl mac =
-  match mac with
-    | None -> (return None)
-    | Some m -> if length m < 256 then return (Some ({mac_value = m})) else internal_failure "opt_bytes_to_opt_tag: mac too long"
+val network_to_message_content: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> wire_format_nt -> mls_message_content_nt bytes -> result (message_content bytes)
+let network_to_message_content #bytes #cb wire_format msg =
+  sender <-- network_to_sender msg.sender;
+  content_pair <-- network_to_message_content_pair msg.content;
+  let (|content_type, content|) = content_pair in
+  return ({
+    wire_format = wire_format;
+    group_id = msg.group_id;
+    epoch = msg.epoch;
+    sender = sender;
+    authenticated_data = msg.authenticated_data;
+    content_type = content_type;
+    content = content;
+  } <: message_content bytes)
+
+val message_auth_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> message_auth bytes -> result (mls_message_auth_nt bytes content_type)
+let message_auth_to_network #bytes #cb #content_type msg_auth =
+  if not (length msg_auth.signature < pow2 16) then
+    internal_failure "message_auth_to_network: signature too long"
+  else if not ((content_type = CT_commit ()) = (Some? msg_auth.confirmation_tag)) then
+    internal_failure "message_auth_to_network: confirmation_tag must be present iff content_type = Commit"
+  else if not (content_type <> CT_commit () || length (Some?.v msg_auth.confirmation_tag <: bytes) < 256) then
+    internal_failure "message_auth_to_network: confirmation_tag too long"
+  else (
+    return ({
+      signature = msg_auth.signature;
+      confirmation_tag = if content_type = CT_commit () then ({mac_value = Some?.v msg_auth.confirmation_tag} <: mac_nt bytes) else ();
+    } <: mls_message_auth_nt bytes content_type)
+  )
+
+val network_to_message_auth: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> mls_message_auth_nt bytes content_type -> result (message_auth bytes)
+let network_to_message_auth #bytes #cb #content_type msg_auth =
+  let confirmation_tag: option bytes =
+    if content_type = CT_commit() then (
+      let mac: mac_nt bytes = msg_auth.confirmation_tag in
+      Some mac.mac_value
+    ) else None
+  in
+  return ({
+    signature = msg_auth.signature;
+    confirmation_tag = confirmation_tag;
+  } <: message_auth bytes)

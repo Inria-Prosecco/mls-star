@@ -7,25 +7,6 @@ open MLS.Result
 
 module NT = MLS.NetworkTypes
 
-type message_content_type =
-  | CT_application
-  | CT_proposal
-  | CT_commit
-
-val network_to_message_content_type: content_type:content_type_nt -> message_content_type
-let network_to_message_content_type content_type =
-  match content_type with
-  | NT.CT_application () -> CT_application
-  | NT.CT_proposal () -> CT_proposal
-  | NT.CT_commit () -> CT_commit
-
-val message_content_type_to_network: message_content_type -> content_type_nt
-let message_content_type_to_network content_type =
-  match content_type with
-  | CT_application -> NT.CT_application ()
-  | CT_proposal -> NT.CT_proposal ()
-  | CT_commit -> NT.CT_commit ()
-
 noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
   | Add: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
   | Update: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
@@ -45,12 +26,12 @@ noeq type commit (bytes:Type0) {|bytes_like bytes|} = {
   c_path: option (update_path_nt bytes);
 }
 
-val message_content: bytes:Type0 -> {|bytes_like bytes|} -> message_content_type -> Type0
-let message_content bytes #bl content_type =
+val message_bare_content: bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
+let message_bare_content bytes #bl content_type =
   match content_type with
-  | CT_application -> bytes
-  | CT_proposal -> proposal bytes
-  | CT_commit -> commit bytes
+  | CT_application () -> bytes
+  | CT_proposal () -> proposal bytes
+  | CT_commit () -> commit bytes
 
 val network_to_proposal: #bytes:Type0 -> {|bytes_like bytes|} -> proposal_nt bytes -> result (proposal bytes)
 let network_to_proposal #bytes #bl p =
@@ -93,8 +74,8 @@ let network_to_commit #bytes #bl c =
     c_path = c.path;
   })
 
-val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> mls_message_content_nt bytes content_type -> result (message_content bytes (network_to_message_content_type content_type))
-let network_to_message_content #bytes #bl #content_type content =
+val network_to_message_bare_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> mls_untagged_content_nt bytes content_type -> result (message_bare_content bytes content_type)
+let network_to_message_bare_content #bytes #bl #content_type content =
   match content_type with
   | NT.CT_application () ->
     return content
@@ -103,19 +84,20 @@ let network_to_message_content #bytes #bl #content_type content =
   | NT.CT_commit () ->
     network_to_commit (content <: commit_nt bytes)
 
-let message_content_pair (bytes:Type0) {|bytes_like bytes|}: Type0 = content_type:message_content_type & message_content bytes content_type
+let message_content_pair (bytes:Type0) {|bytes_like bytes|}: Type0 = content_type:content_type_nt & message_bare_content bytes content_type
 
 val network_to_message_content_pair: #bytes:Type0 -> {|bytes_like bytes|} -> mls_content_nt bytes -> result (message_content_pair bytes)
 let network_to_message_content_pair #bytes #bl content =
-  let make_message_content_pair #bytes #bl (#content_type:message_content_type) (msg:message_content bytes content_type): message_content_pair bytes =
+  let make_message_content_pair #bytes #bl (#content_type:content_type_nt) (msg:message_bare_content bytes content_type): message_content_pair bytes =
     (|content_type, msg|)
   in
-  match content with
-  | MC_application msg
-  | MC_proposal msg
-  | MC_commit msg ->
-    res <-- network_to_message_content msg;
+  match content.content_type with
+  | NT.CT_application ()
+  | NT.CT_proposal ()
+  | NT.CT_commit () -> (
+    res <-- network_to_message_bare_content content.content;
     return (make_message_content_pair res)
+  )
   | _ -> error "network_to_message_content_pair: invalid content type"
 
 //TODO: not a crypto_bytes in latest draft (14)?
@@ -162,23 +144,23 @@ let commit_to_network #bytes #cb c =
     })
   )
 
-val message_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:message_content_type -> message_content bytes content_type -> result (mls_message_content_nt bytes (message_content_type_to_network content_type))
-let message_content_to_network #bytes #bl #content_type content =
+val message_bare_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_untagged_content_nt bytes content_type)
+let message_bare_content_to_network #bytes #bl #content_type content =
   match content_type with
-  | CT_application ->
+  | CT_application () ->
     if not (length (content <: bytes) < pow2 32) then
-      error "message_content_to_network: application content is too long"
+      error "message_bare_content_to_network: application content is too long"
     else
       return content
-  | CT_proposal ->
+  | CT_proposal () ->
     proposal_to_network (content <: proposal bytes)
-  | CT_commit ->
+  | CT_commit () ->
     commit_to_network (content <: commit bytes)
 
-val message_content_pair_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:message_content_type -> message_content bytes content_type -> result (mls_content_nt bytes)
+val message_content_pair_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_content_nt bytes)
 let message_content_pair_to_network #bytes #cb #content_type msg =
-  content <-- message_content_to_network msg;
+  network_content <-- message_bare_content_to_network msg;
   match content_type with
-  | CT_application -> return (MC_application content)
-  | CT_proposal -> return (MC_proposal content)
-  | CT_commit -> return (MC_commit content)
+  | CT_application () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_content_nt bytes)
+  | CT_proposal () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_content_nt bytes)
+  | CT_commit () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_content_nt bytes)

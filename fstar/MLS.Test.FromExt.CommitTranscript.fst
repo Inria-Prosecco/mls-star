@@ -21,11 +21,11 @@ let to_lbytes #bytes #bl n b =
   else
     failwith "to_lbytes: bad length"
 
-val is_signature_ok: {|cb:crypto_bytes bytes|} -> basic_credential_nt bytes -> message bytes #cb.base -> message_auth bytes #cb.base -> string -> ML bool
+val is_signature_ok: {|cb:crypto_bytes bytes|} -> basic_credential_nt bytes -> message_content bytes #cb.base -> message_auth bytes #cb.base -> group_context_nt bytes -> ML bool
 let is_signature_ok #cb cred commit_message commit_auth group_context =
   let signature_key = to_lbytes (sign_public_key_length #bytes) cred.signature_key in
   let signature_signature = to_lbytes (sign_signature_length #bytes) commit_auth.signature in
-  extract_result (check_message_signature signature_key signature_signature commit_message (hex_string_to_bytes group_context))
+  extract_result (check_message_signature signature_key signature_signature commit_message (Some group_context))
 
 #push-options "--ifuel 2 --z3rlimit 50"
 val test_commit_transcript_one: commit_transcript_test -> ML bool
@@ -41,6 +41,7 @@ let test_commit_transcript_one t =
   end
   | Success cs -> begin
     let cb = mk_concrete_crypto_bytes cs in
+    let group_context = extract_option "malformed group context" ((ps_to_pse ps_group_context_nt).parse_exact (hex_string_to_bytes t.group_context)) in
     let credential_network = extract_option "malformed credential" ((ps_to_pse ps_credential_nt).parse_exact (hex_string_to_bytes t.credential)) in
     let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_message_nt).parse_exact (hex_string_to_bytes t.commit)) in
     let commit_plaintext_network =
@@ -50,24 +51,25 @@ let test_commit_transcript_one t =
     in
     let commit_plaintext = extract_result (network_to_message_plaintext commit_plaintext_network) in
     let (commit_message, commit_auth) = message_plaintext_to_message commit_plaintext in
+    let confirmation_tag = extract_option "no confirmation tag" commit_auth.confirmation_tag in
     let computed_confirmed_transcript_hash = extract_result (compute_confirmed_transcript_hash commit_message commit_auth.signature (hex_string_to_bytes t.interim_transcript_hash_before)) in
-    let computed_interim_transcript_hash = extract_result (compute_interim_transcript_hash commit_auth.confirmation_tag computed_confirmed_transcript_hash) in
+    let computed_interim_transcript_hash = extract_result (compute_interim_transcript_hash confirmation_tag computed_confirmed_transcript_hash) in
     let computed_confirmation_tag = extract_result (compute_message_confirmation_tag (hex_string_to_bytes t.confirmation_key) computed_confirmed_transcript_hash) in
-    let computed_membership_tag = extract_result (compute_message_membership_tag (hex_string_to_bytes t.membership_key) commit_message commit_auth (hex_string_to_bytes t.group_context)) in
+    let computed_membership_tag = extract_result (compute_message_membership_tag (hex_string_to_bytes t.membership_key) commit_message commit_auth (Some group_context)) in
     let confirmed_transcript_hash_ok = check_equal "confirmed_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.confirmed_transcript_hash_after) computed_confirmed_transcript_hash in
     let interim_transcript_hash_ok = check_equal "interim_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.interim_transcript_hash_after) computed_interim_transcript_hash in
     let confirmation_tag_ok =
-      match commit_auth.confirmation_tag with
+      match commit_plaintext.auth.confirmation_tag with
       | Some expected_confirmation_tag ->
-        check_equal "confirmation_tag" string_to_string (bytes_to_hex_string expected_confirmation_tag) (bytes_to_hex_string computed_confirmation_tag)
+        check_equal "confirmation_tag" bytes_to_hex_string expected_confirmation_tag computed_confirmation_tag
       | _ ->
         IO.print_string "Missing confirmation tag\n";
         false
     in
     let membership_tag_ok =
-      match commit_plaintext_network.membership_tag with
+      match commit_plaintext.membership_tag with
       | Some expected_membership_tag ->
-        check_equal "membership_tag" bytes_to_hex_string expected_membership_tag.mac_value computed_membership_tag
+        check_equal "membership_tag" bytes_to_hex_string expected_membership_tag computed_membership_tag
       | _ ->
         IO.print_string "Missing membership tag\n";
         false
@@ -79,7 +81,7 @@ let test_commit_transcript_one t =
       ) else (
         match credential_network with
         | C_basic cred ->
-          is_signature_ok cred commit_message commit_auth t.group_context
+          is_signature_ok cred commit_message commit_auth group_context
         | _ -> false
       )
     in

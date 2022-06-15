@@ -164,10 +164,10 @@ let proposal_or_ref_to_proposal st prop_or_ref =
   | Reference ref -> error "proposal_or_ref_to_proposal: don't handle references for now (TODO)"
 #pop-options
 
-val process_commit: state -> msg:message bytes{msg.content_type = CT_commit} -> message_auth bytes -> result (state & bytes)
+val process_commit: state -> msg:message_content bytes{msg.content_type = CT_commit ()} -> message_auth bytes -> result (state & bytes)
 let process_commit state message message_auth =
-  let message: MLS.TreeDEM.Message.Types.message bytes = message in
-  let message_content: commit bytes = message.message_content in
+  let message: MLS.TreeDEM.Message.Types.message_content bytes = message in
+  let message_content: commit bytes = message.content in
   sender_id <-- (
     if not (S_member? message.sender) then
       error "process_commit: sender is not a member"
@@ -208,10 +208,11 @@ let process_commit state message message_auth =
   let tree_state = { tree_state with version = tree_state.version + 1 } in
   let state = { state with tree_state } in
   // 3. Update transcript
+  confirmation_tag <-- (match message_auth.confirmation_tag with | Some x -> return x | None -> error "process_commit: no confirmation tag");
   confirmed_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
     message message_auth.signature state.interim_transcript_hash;
   interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
-    message_auth.confirmation_tag confirmed_transcript_hash;
+    (confirmation_tag <: bytes) confirmed_transcript_hash;
   let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
   // 4. New group context
   group_context <-- state_to_group_context state;
@@ -349,9 +350,8 @@ let create e cred private_sign_key group_id =
   })
 #pop-options
 
-val send_helper: state -> msg:message bytes{msg.wire_format == WF_ciphertext} → e:entropy { Seq.length e == 4 } → result (state & message_auth bytes & group_message)
+val send_helper: state -> msg:message_content bytes{msg.wire_format == WF_mls_ciphertext ()} → e:entropy { Seq.length e == 4 } → result (state & message_auth bytes & group_message)
 let send_helper st msg e =
-  let msg: message bytes = msg in //Help the record field name disambiguation (see F* issue #2374)
   //FIXME
   assume (sign_nonce_length #bytes == 0);
   tmp <-- chop_entropy e 4; let (rand_reuse_guard, e) = tmp in
@@ -361,13 +361,13 @@ let send_helper st msg e =
   group_context <-- state_to_group_context st;
   confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation st.epoch_secret;
   sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data st.epoch_secret;
-  auth <-- message_compute_auth msg st.sign_private_key rand_nonce ((ps_to_pse ps_group_context_nt).serialize_exact group_context) confirmation_secret st.interim_transcript_hash;
-  let ratchet = if msg.content_type = CT_application then st.application_state else st.handshake_state in
+  auth <-- message_compute_auth msg st.sign_private_key rand_nonce (Some group_context) confirmation_secret st.interim_transcript_hash;
+  let ratchet = if msg.content_type = CT_application () then st.application_state else st.handshake_state in
   ct_new_ratchet_state <-- message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret (msg, auth);
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
   ct_network <-- message_ciphertext_to_network ct;
   let msg_bytes = (ps_to_pse ps_mls_message_nt).serialize_exact (M_ciphertext ct_network) in
-  let new_st = if msg.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
+  let new_st = if msg.content_type = CT_application () then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
   let g:group_message = (st.tree_state.group_id, msg_bytes) in
   return (new_st, auth, g)
 
@@ -386,9 +386,9 @@ let rec unsafe_mk_randomness #l e =
 // Have to factor out this function otherwise F* typecheck goes mad in `generate_welcome_message`
 // (Error 54) bytes_like bytes is not a subtype of the expected type bytes
 // Yeah thanks, but I don't see where it's relevant?
-val generate_leaf_package_and_path_secret: state -> msg:message bytes{msg.content_type == CT_commit} -> leaf_package_t bytes -> result (leaf_package_t bytes & option bytes)
+val generate_leaf_package_and_path_secret: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> leaf_package_t bytes -> result (leaf_package_t bytes & option bytes)
 let generate_leaf_package_and_path_secret future_state msg new_leaf_package =
-  let x: option (update_path_nt bytes) = msg.message_content.c_path in
+  let x: option (update_path_nt bytes) = msg.content.c_path in
   match x with
   | Some _ -> (
     match find_first (fun lp -> lp = Some (new_leaf_package)) (get_leaf_list future_state.tree_state.tree) with
@@ -408,7 +408,7 @@ let generate_leaf_package_and_path_secret future_state msg new_leaf_package =
     return (new_leaf_package, None)
   )
 
-val generate_welcome_message: state -> msg:message bytes{msg.content_type == CT_commit} -> message_auth bytes -> bool -> new_leaf_packages:list (leaf_package_t bytes) -> bytes -> result (welcome bytes)
+val generate_welcome_message: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> message_auth bytes -> bool -> new_leaf_packages:list (leaf_package_t bytes) -> bytes -> result (welcome bytes)
 let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packages e =
   tmp <-- process_commit st msg msg_auth;
   let (future_state, joiner_secret) = tmp in
@@ -485,7 +485,7 @@ let generate_update_path st e proposals =
   )
 #pop-options
 
-let message_commit = m:message bytes{m.wire_format == WF_ciphertext /\ m.content_type == CT_commit}
+let message_commit = m:message_content bytes{m.wire_format == WF_mls_ciphertext () /\ m.content_type == CT_commit ()}
 
 val generate_commit: state -> entropy -> list (proposal bytes) -> result (message_commit & state & entropy)
 let generate_commit state e proposals =
@@ -493,14 +493,14 @@ let generate_commit state e proposals =
   let (update_path, pending, e) = tmp in
   let state = { state with pending_updatepath = pending::state.pending_updatepath} in
   my_kp_ref <-- compute_my_kp_ref state;
-  let msg: message bytes = {
-    wire_format = WF_ciphertext;
+  let msg: message_content bytes = {
+    wire_format = WF_mls_ciphertext ();
     group_id = state.tree_state.group_id;
     epoch = state.tree_state.version;
     sender = S_member my_kp_ref;
     authenticated_data = Seq.empty; //TODO?
-    content_type = CT_commit;
-    message_content = { c_proposals = (List.Tot.map Proposal proposals); c_path = Some update_path };
+    content_type = CT_commit ();
+    content = { c_proposals = (List.Tot.map Proposal proposals); c_path = Some update_path };
   } in
   return ((msg <: message_commit), state, e)
 
@@ -551,14 +551,14 @@ let update state e =
 
 let send state e data =
   my_kp_ref <-- compute_my_kp_ref state;
-  let msg: message bytes = {
-    wire_format = WF_ciphertext;
+  let msg: message_content bytes = {
+    wire_format = WF_mls_ciphertext ();
     group_id = state.tree_state.group_id;
     epoch = state.tree_state.version;
     sender = S_member my_kp_ref;
     authenticated_data = Seq.empty; //TODO?
-    content_type = CT_application;
-    message_content = data;
+    content_type = CT_application ();
+    content = data;
   } in
   tmp <-- send_helper state msg e;
   let (new_state, msg_auth, g) = tmp in
@@ -634,7 +634,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
         return (MLS.TreeSync.apply_path tree update_path)
       )
   );
-  interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash (Some group_info.confirmation_tag) group_info.confirmed_transcript_hash;
+  interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.confirmed_transcript_hash;
   group_context <-- compute_group_context group_info.group_id group_info.epoch tree group_info.confirmed_transcript_hash;
   epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_to_pse ps_group_context_nt).serialize_exact group_context);
   leaf_secret <-- (
@@ -698,14 +698,14 @@ let process_group_message state msg =
   // Note: can't do a dependent pair pattern matching, have to nest matches +
   // annotations because of the dependency
   match message.content_type with
-  | MLS.TreeDEM.Message.Content.CT_proposal ->
-      let message_content: proposal bytes = message.message_content in
+  | CT_proposal () ->
+      let message_content: proposal bytes = message.content in
       begin match message_content with
       | Add _ -> internal_failure "TODO: proposal (add)"
       | _ -> internal_failure "TODO: proposal (other)"
       end
-  | MLS.TreeDEM.Message.Content.CT_commit ->
-      let message_content: commit bytes = message.message_content in
+  | CT_commit () ->
+      let message_content: commit bytes = message.content in
       begin match message_content with
       | { c_proposals = [ Proposal (Add leaf_package) ]; c_path = _ } ->
           tmp <-- process_commit state message message_auth;
@@ -713,8 +713,8 @@ let process_group_message state msg =
           return (state, MsgAdd leaf_package.credential.identity)
       | _ -> internal_failure "TODO: commit (general case)"
       end
-  | MLS.TreeDEM.Message.Content.CT_application ->
-      let data: bytes = message.message_content in
+  | CT_application () ->
+      let data: bytes = message.content in
       return (state, MsgData data)
   | _ ->
       internal_failure "unknown message content type"

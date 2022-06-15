@@ -13,30 +13,23 @@ open MLS.Result
 module NT = MLS.NetworkTypes
 
 noeq type message_plaintext (bytes:Type0) {|bytes_like bytes|} = {
-  group_id: bytes;
-  epoch: nat;
-  sender: sender bytes;
-  authenticated_data: bytes;
-  content_type: message_content_type;
-  message_content: message_content bytes content_type;
-  signature: bytes;
-  confirmation_tag: option bytes;
+  content: message_content bytes;
+  auth: message_auth bytes;
   membership_tag: option bytes;
 }
 
 noeq type message_ciphertext (bytes:Type0) {|bytes_like bytes|} = {
   group_id: bytes;
   epoch: nat;
-  content_type: message_content_type;
+  content_type: content_type_nt;
   authenticated_data: bytes;
   encrypted_sender_data: bytes;
   ciphertext: bytes;
 }
 
-noeq type message_ciphertext_content (bytes:Type0) {|bytes_like bytes|} (content_type:message_content_type) = {
-  message_content: message_content bytes content_type;
-  signature: bytes;
-  confirmation_tag: option bytes;
+noeq type message_ciphertext_content (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt) = {
+  content: message_bare_content bytes content_type;
+  auth: message_auth bytes;
   padding: bytes;
 }
 
@@ -48,78 +41,60 @@ noeq type encrypted_sender_data_content (bytes:Type0) {|bytes_like bytes|} = {
 
 (*** From/to network ***)
 
-val network_to_message_plaintext: #bytes:Type0 -> {|bytes_like bytes|} -> mls_plaintext_nt bytes -> result (message_plaintext bytes)
+val network_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> mls_plaintext_nt bytes -> result (message_plaintext bytes)
 let network_to_message_plaintext #bytes #bl pt =
-  sender <-- network_to_sender pt.sender;
-  content <-- network_to_message_content_pair pt.content;
-  let (|content_type, message_content|) = content in
-  confirmation_tag <-- opt_tag_to_opt_bytes pt.confirmation_tag;
-  membership_tag <-- opt_tag_to_opt_bytes pt.membership_tag;
+  content <-- network_to_message_content (WF_mls_plaintext ()) pt.content;
+  auth <-- network_to_message_auth pt.auth;
+  let membership_tag: option bytes =
+    if NT.S_member? pt.content.sender then (
+      let res: mac_nt bytes = pt.membership_tag in
+      Some res.mac_value
+    ) else None
+  in
   return ({
-    group_id = pt.group_id;
-    epoch = pt.epoch;
-    sender = sender;
-    authenticated_data = pt.authenticated_data;
-    content_type = content_type;
-    message_content = message_content;
-    signature = pt.signature;
-    confirmation_tag = confirmation_tag;
-    membership_tag = membership_tag;
+    content;
+    auth;
+    membership_tag;
   } <: message_plaintext bytes)
 
 val message_plaintext_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_plaintext bytes -> result (mls_plaintext_nt bytes)
 let message_plaintext_to_network #bytes #cb pt =
-  if not (length pt.group_id < 256) then
-    error "message_plaintext_to_network: group_id too long"
-  else if not (pt.epoch < pow2 64) then
-    error "message_plaintext_to_network: epoch too big"
-  else if not (length pt.authenticated_data < pow2 32) then
-    error "message_plaintext_to_network: authenticated_data too long"
-  else if not (length pt.signature < pow2 16) then
-    error "message_plaintext_to_network: signature too long"
+  content <-- message_content_to_network pt.content;
+  auth <-- message_auth_to_network pt.auth;
+  if not ((NT.S_member? content.sender) = (Some? pt.membership_tag)) then
+    internal_failure "message_plaintext_to_network: membership_tag must be present iff sender = Member"
+  else if not (not (NT.S_member? content.sender) || length (Some?.v pt.membership_tag <: bytes) < 256) then
+    internal_failure "message_plaintext_to_network: membership_tag too long"
   else (
-    sender <-- sender_to_network pt.sender;
-    content <-- message_content_pair_to_network pt.message_content;
-    confirmation_tag <-- opt_bytes_to_opt_tag pt.confirmation_tag;
-    membership_tag <-- opt_bytes_to_opt_tag pt.membership_tag;
     return ({
-      group_id = pt.group_id;
-      epoch = pt.epoch;
-      sender = sender;
-      authenticated_data = pt.authenticated_data;
-      content = content;
-      signature = pt.signature;
-      confirmation_tag = confirmation_tag;
-      membership_tag = membership_tag;
+      content;
+      auth;
+      membership_tag = if NT.S_member? content.sender then ({mac_value = Some?.v pt.membership_tag} <: mac_nt bytes) else ();
     } <: mls_plaintext_nt bytes)
   )
 
-val network_to_ciphertext_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> mls_ciphertext_content_nt bytes content_type -> result (message_ciphertext_content bytes (network_to_message_content_type content_type))
-let network_to_ciphertext_content #content_type ciphertext_content =
-  content <-- network_to_message_content ciphertext_content.content;
-  confirmation_tag <-- opt_tag_to_opt_bytes ciphertext_content.confirmation_tag;
+val network_to_ciphertext_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> #content_type: content_type_nt -> mls_ciphertext_content_nt bytes content_type -> result (message_ciphertext_content bytes content_type)
+let network_to_ciphertext_content #bytes #cb #content_type ciphertext_content =
+  content <-- network_to_message_bare_content ciphertext_content.content;
+  auth <-- network_to_message_auth ciphertext_content.auth;
   return ({
-    message_content = content;
-    signature = ciphertext_content.signature;
-    confirmation_tag = confirmation_tag;
+    content;
+    auth;
     padding = ciphertext_content.padding;
   })
 
-val ciphertext_content_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> #content_type: message_content_type -> message_ciphertext_content bytes content_type -> result (mls_ciphertext_content_nt bytes (message_content_type_to_network content_type))
-let ciphertext_content_to_network #bytes #cb #content_type content =
-  if not (length content.signature < pow2 16) then
-    internal_failure "ciphertext_content_to_network: signature too long"
-  else if not (length content.padding < pow2 16) then
+val ciphertext_content_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> #content_type: content_type_nt -> message_ciphertext_content bytes content_type -> result (mls_ciphertext_content_nt bytes content_type)
+let ciphertext_content_to_network #bytes #cb #content_type ciphertext_content =
+  content <-- message_bare_content_to_network ciphertext_content.content;
+  auth <-- message_auth_to_network ciphertext_content.auth;
+  if not (length ciphertext_content.padding < pow2 16) then
     internal_failure "ciphertext_content_to_network: padding too long"
   else (
-    network_content <-- message_content_to_network content.message_content;
-    confirmation_tag <-- opt_bytes_to_opt_tag content.confirmation_tag;
     return ({
-      content = network_content;
-      signature = content.signature;
-      confirmation_tag = confirmation_tag;
-      padding = content.padding;
-    } <: mls_ciphertext_content_nt bytes (message_content_type_to_network content_type))
+      content;
+      auth;
+      padding = ciphertext_content.padding;
+    } <: mls_ciphertext_content_nt bytes content_type)
   )
 
 val network_to_encrypted_sender_data: #bytes:Type0 -> {|bytes_like bytes|} -> mls_sender_data_nt bytes -> encrypted_sender_data_content bytes
@@ -146,7 +121,7 @@ let network_to_message_ciphertext #bytes #bl ct =
   return ({
     group_id = ct.group_id;
     epoch = ct.epoch;
-    content_type = network_to_message_content_type ct.content_type;
+    content_type = ct.content_type;
     authenticated_data = ct.authenticated_data;
     encrypted_sender_data = ct.encrypted_sender_data;
     ciphertext = ct.ciphertext;
@@ -168,7 +143,7 @@ let message_ciphertext_to_network #bytes #bl ct =
     return ({
       group_id = ct.group_id;
       epoch = ct.epoch;
-      content_type = message_content_type_to_network ct.content_type;
+      content_type = ct.content_type;
       authenticated_data = ct.authenticated_data;
       encrypted_sender_data = ct.encrypted_sender_data;
       ciphertext = ct.ciphertext;
@@ -181,79 +156,51 @@ val compute_message_confirmation_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> 
 let compute_message_confirmation_tag #bytes #cb confirmation_key confirmed_transcript_hash =
   hmac_hmac confirmation_key confirmed_transcript_hash
 
-val compute_tbs: #bytes:Type0 -> {|crypto_bytes bytes|} -> message bytes -> result (mls_plaintext_tbs_nt bytes)
-let compute_tbs #bytes #cb msg =
-  if not (length msg.group_id < 256) then
-    internal_failure "compute_tbs: group_id too long"
-  else if not (msg.epoch < pow2 64) then
-    internal_failure "compute_tbs: epoch too big"
-  else if not (length msg.authenticated_data < pow2 32) then
-    internal_failure "compute_tbs: authenticated_data too long"
+val compute_tbs: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbs_nt bytes)
+let compute_tbs #bytes #cb msg group_context =
+  content <-- message_content_to_network msg;
+  if not ((NT.S_member? content.sender || NT.S_new_member? content.sender) = Some? group_context) then
+    internal_failure "compute_tbs: group_context must be present iff sender is member or new_member"
   else (
-    sender <-- sender_to_network msg.sender;
-    content <-- message_content_pair_to_network msg.message_content;
     return ({
-      wire_format = wire_format_to_network msg.wire_format;
-      group_id = msg.group_id;
-      epoch = msg.epoch;
-      sender = sender;
-      authenticated_data = msg.authenticated_data;
-      content = content;
-    } <: mls_plaintext_tbs_nt bytes)
+      wire_format = msg.wire_format;
+      content;
+      group_context = (match group_context with | Some gc -> gc | None -> ());
+    } <: mls_message_content_tbs_nt bytes)
   )
 
-val compute_tbm: #bytes:Type0 -> {|crypto_bytes bytes|} -> message bytes -> message_auth bytes -> result (mls_plaintext_tbm_nt bytes)
-let compute_tbm #bytes #cb msg auth =
-  if not (length auth.signature < pow2 16) then
-    error "compute_tbm: signature too long"
-  else (
-    tbs <-- compute_tbs msg;
-    confirmation_tag' <-- opt_bytes_to_opt_tag auth.confirmation_tag;
-    return ({
-      tbs = tbs;
-      signature = auth.signature;
-      confirmation_tag = confirmation_tag';
-    } <: mls_plaintext_tbm_nt bytes)
-  )
+val compute_tbm: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> message_auth bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbm_nt bytes)
+let compute_tbm #bytes #cb msg auth group_context =
+  tbs <-- compute_tbs msg group_context;
+  auth <-- message_auth_to_network auth;
+  return ({
+    content_tbs = tbs;
+    auth;
+  } <: mls_message_content_tbm_nt bytes)
 
-val compute_tbs_bytes: #bytes:Type0 -> {|crypto_bytes bytes|} -> message bytes -> bytes -> result bytes
-let compute_tbs_bytes #bytes #cb msg group_context =
-  tbs <-- compute_tbs msg;
-  let partial_serialized_bytes = serialize (mls_plaintext_tbs_nt bytes) tbs in
-  return (
-    if S_member? msg.sender then
-      concat group_context partial_serialized_bytes
-    else
-      partial_serialized_bytes
-  )
-
-val compute_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> sign_nonce bytes -> message bytes -> bytes -> result (sign_signature bytes)
+val compute_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> sign_nonce bytes -> message_content bytes -> option (group_context_nt bytes) -> result (sign_signature bytes)
 let compute_message_signature #bytes #cb sk rand msg group_context =
-  serialized_tbs <-- compute_tbs_bytes msg group_context;
+  tbs <-- compute_tbs msg group_context;
+  let serialized_tbs = serialize (mls_message_content_tbs_nt bytes) tbs in
   sign_with_label sk (string_to_bytes #bytes "MLSPlaintextTBS") serialized_tbs rand
 
-val check_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_public_key bytes -> sign_signature bytes -> message bytes -> bytes -> result bool
+val check_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_public_key bytes -> sign_signature bytes -> message_content bytes -> option (group_context_nt bytes) -> result bool
 let check_message_signature #bytes #cb pk signature msg group_context =
-  serialized_tbs <-- compute_tbs_bytes msg group_context;
+  tbs <-- compute_tbs msg group_context;
+  let serialized_tbs = serialize (mls_message_content_tbs_nt bytes) tbs in
   verify_with_label pk (string_to_bytes #bytes "MLSPlaintextTBS") serialized_tbs signature
 
-val compute_message_membership_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> message bytes -> message_auth bytes -> bytes -> result (lbytes bytes (hmac_length #bytes))
+val compute_message_membership_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> message_content bytes -> message_auth bytes -> option (group_context_nt bytes) -> result (lbytes bytes (hmac_length #bytes))
 let compute_message_membership_tag #bytes #cb membership_key msg auth group_context =
-  tbm <-- compute_tbm msg auth;
-  let partial_serialized_bytes = serialize (mls_plaintext_tbm_nt bytes) tbm in
-  let serialized_bytes =
-    if S_member? msg.sender then
-      concat group_context partial_serialized_bytes
-    else
-      partial_serialized_bytes
-  in
-  hmac_hmac membership_key serialized_bytes
+  tbm <-- compute_tbm msg auth group_context;
+  let serialized_tbm = serialize (mls_message_content_tbm_nt bytes) tbm in
+  hmac_hmac membership_key serialized_tbm
 
-val message_compute_auth: #bytes:Type0 -> {|crypto_bytes bytes|} -> message bytes -> sign_private_key bytes -> sign_nonce bytes -> group_context:bytes -> bytes -> bytes -> result (message_auth bytes)
+val message_compute_auth: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes -> result (message_auth bytes)
 let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key interim_transcript_hash =
   signature <-- compute_message_signature sk rand msg group_context;
   confirmation_tag <-- (
-    if msg.content_type = Content.CT_commit then (
+    if msg.content_type = CT_commit () then (
       confirmed_transcript_hash <-- compute_confirmed_transcript_hash msg signature interim_transcript_hash;
       confirmation_tag <-- compute_message_confirmation_tag confirmation_key confirmed_transcript_hash;
       return (Some confirmation_tag <: option bytes)
@@ -268,35 +215,25 @@ let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key i
 
 (*** From/to plaintext ***)
 
-//TODO check membership tag?
-val message_plaintext_to_message: #bytes:Type0 -> {|bytes_like bytes|} -> message_plaintext bytes -> message bytes & message_auth bytes
+//TODO check membership tag
+val message_plaintext_to_message: #bytes:Type0 -> {|bytes_like bytes|} -> message_plaintext bytes -> message_content bytes & message_auth bytes
 let message_plaintext_to_message #bytes #bl pt =
-  (({
-    wire_format = WF_plaintext;
-    group_id = pt.group_id;
-    epoch = pt.epoch;
-    sender = pt.sender;
-    authenticated_data = pt.authenticated_data;
-    content_type = pt.content_type;
-    message_content = pt.message_content;
-  } <: message bytes), ({
-    signature = pt.signature;
-    confirmation_tag = pt.confirmation_tag;
-  } <: message_auth bytes))
+  (pt.content, pt.auth)
 
-val message_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> membership_key:bytes -> group_context:bytes -> (msg:message bytes{msg.wire_format == WF_plaintext}) * message_auth bytes -> result (message_plaintext bytes)
+val message_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> membership_key:bytes -> option (group_context_nt bytes) -> (msg:message_content bytes{msg.wire_format == WF_mls_plaintext ()}) * message_auth bytes -> result (message_plaintext bytes)
 let message_to_message_plaintext #bytes #cb membership_key group_context (msg, msg_auth) =
-  membership_tag <-- compute_message_membership_tag membership_key msg msg_auth group_context;
+  membership_tag <-- (
+    match msg.sender with
+    | S_member _ -> (
+      res <-- compute_message_membership_tag membership_key msg msg_auth group_context;
+      return (Some (res <: bytes))
+    )
+    | _ -> return None
+  );
   return ({
-    group_id = msg.group_id;
-    epoch = msg.epoch;
-    sender = msg.sender;
-    authenticated_data = msg.authenticated_data;
-    content_type = msg.content_type;
-    message_content = msg.message_content;
-    signature = msg_auth.signature;
-    confirmation_tag = msg_auth.confirmation_tag;
-    membership_tag = Some membership_tag; //TODO when can it be none? (don't have internet atm)
+    content = msg;
+    auth = msg_auth;
+    membership_tag;
   } <: message_plaintext bytes)
 
 (*** From/to ciphertext ***)
@@ -319,12 +256,12 @@ let message_ciphertext_to_sender_data_aad #bytes #bl ct =
     return ({
       group_id = ct.group_id;
       epoch = ct.epoch;
-      content_type = message_content_type_to_network ct.content_type;
+      content_type = ct.content_type;
     } <: mls_sender_data_aad_nt bytes)
   )
 
 //TODO (?): copy-pasted from above
-val message_to_sender_data_aad: #bytes:Type0 -> {|bytes_like bytes|} -> message bytes -> result (mls_sender_data_aad_nt bytes)
+val message_to_sender_data_aad: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_sender_data_aad_nt bytes)
 let message_to_sender_data_aad #bytes #bl ct =
   if not (length ct.group_id < 256) then (
     internal_failure "message_to_sender_data_aad: group_id too long"
@@ -334,7 +271,7 @@ let message_to_sender_data_aad #bytes #bl ct =
     return ({
       group_id = ct.group_id;
       epoch = ct.epoch;
-      content_type = message_content_type_to_network ct.content_type;
+      content_type = ct.content_type;
     } <: mls_sender_data_aad_nt bytes)
   )
 
@@ -351,7 +288,7 @@ let encrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret sende
   sender_data_nonce <-- expand_with_label sender_data_secret (string_to_bytes #bytes "nonce") ciphertext_sample (aead_nonce_length #bytes);
   aead_encrypt sender_data_key sender_data_nonce (serialize (mls_sender_data_aad_nt bytes) ad) (serialize (mls_sender_data_nt bytes) sender_data)
 
-val message_ciphertext_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> ct:message_ciphertext bytes -> result (res:mls_ciphertext_content_aad_nt bytes{res.content_type == message_content_type_to_network ct.content_type})
+val message_ciphertext_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> ct:message_ciphertext bytes -> result (res:mls_ciphertext_content_aad_nt bytes{res.content_type == ct.content_type})
 let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
   if not (length ct.group_id < 256) then (
     internal_failure "message_ciphertext_to_ciphertext_content_aad: group_id too long"
@@ -363,7 +300,7 @@ let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
     return ({
       group_id = ct.group_id;
       epoch = ct.epoch;
-      content_type = message_content_type_to_network ct.content_type;
+      content_type = ct.content_type;
       authenticated_data = ct.authenticated_data;
     } <: mls_ciphertext_content_aad_nt bytes)
   )
@@ -374,7 +311,7 @@ let decrypt_ciphertext_content #bytes #cb ad key nonce ct =
   from_option "decrypt_ciphertext_content: malformed ciphertext content" (parse (mls_ciphertext_content_nt bytes ad.content_type) ciphertext_content)
 
 //TODO (?): copy-pasted from message_ciphertext_to_ciphertext_content_aad, can we simplify?
-val message_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> msg:message bytes -> result (res:mls_ciphertext_content_aad_nt bytes{res.content_type == message_content_type_to_network msg.content_type})
+val message_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> msg:message_content bytes -> result (res:mls_ciphertext_content_aad_nt bytes{res.content_type == msg.content_type})
 let message_to_ciphertext_content_aad #bytes #bl msg =
   if not (length msg.group_id < 256) then (
     internal_failure "message_to_ciphertext_content_aad: group_id too long"
@@ -386,7 +323,7 @@ let message_to_ciphertext_content_aad #bytes #bl msg =
     return ({
       group_id = msg.group_id;
       epoch = msg.epoch;
-      content_type = message_content_type_to_network msg.content_type;
+      content_type = msg.content_type;
       authenticated_data = msg.authenticated_data;
     } <: mls_ciphertext_content_aad_nt bytes)
   )
@@ -403,7 +340,7 @@ let apply_reuse_guard #bytes #cb reuse_guard nonce =
   let new_nonce_head = xor nonce_head reuse_guard in
   concat #bytes new_nonce_head nonce_tail
 
-val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> (key_package_ref_nt bytes -> result (option (MLS.Tree.leaf_index n))) -> message_ciphertext bytes -> result (message bytes & message_auth bytes)
+val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> (key_package_ref_nt bytes -> result (option (MLS.Tree.leaf_index n))) -> message_ciphertext bytes -> result (message_content bytes & message_auth bytes)
 let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_secret kp_ref_to_leaf_index ct =
   sender_data <-- (
     sender_data_ad <-- message_ciphertext_to_sender_data_aad ct;
@@ -418,7 +355,7 @@ let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_s
     leaf_tree_secret <-- leaf_kdf n encryption_secret sender_index;
     init_ratchet <-- (
       match ct.content_type with
-      | Content.CT_application -> init_application_ratchet leaf_tree_secret
+      | CT_application () -> init_application_ratchet leaf_tree_secret
       | _ -> init_handshake_ratchet leaf_tree_secret
     );
     ratchet_get_generation_key init_ratchet sender_data.generation
@@ -429,31 +366,30 @@ let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_s
     let patched_nonce = apply_reuse_guard sender_data.reuse_guard nonce in
     ciphertext_content_ad <-- message_ciphertext_to_ciphertext_content_aad ct;
     ciphertext_content_network <-- decrypt_ciphertext_content ciphertext_content_ad key patched_nonce ct.ciphertext;
-    network_to_ciphertext_content (ciphertext_content_network <: mls_ciphertext_content_nt bytes (message_content_type_to_network ct.content_type))
+    network_to_ciphertext_content (ciphertext_content_network <: mls_ciphertext_content_nt bytes ct.content_type)
   );
   return (({
-    wire_format = WF_ciphertext;
+    wire_format = WF_mls_ciphertext ();
     group_id = ct.group_id;
     epoch = ct.epoch;
     sender = S_member sender_data.sender;
     authenticated_data = ct.authenticated_data;
     content_type = ct.content_type;
-    message_content = ciphertext_content.message_content;
-  } <: message bytes), ({
-    signature = ciphertext_content.signature;
-    confirmation_tag = ciphertext_content.confirmation_tag;
+    content = ciphertext_content.content;
+  } <: message_content bytes), ({
+    signature = ciphertext_content.auth.signature;
+    confirmation_tag = ciphertext_content.auth.confirmation_tag;
   } <: message_auth bytes))
 
-val message_to_message_ciphertext: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> lbytes bytes 4 -> bytes -> (msg:message bytes{msg.wire_format == WF_ciphertext} * message_auth bytes) -> result (message_ciphertext bytes & ratchet_state bytes)
+val message_to_message_ciphertext: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> lbytes bytes 4 -> bytes -> (msg:message_content bytes{msg.wire_format == WF_mls_ciphertext ()} * message_auth bytes) -> result (message_ciphertext bytes & ratchet_state bytes)
 let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_secret (msg, msg_auth) =
   ciphertext <-- (
     key_nonce <-- ratchet_get_key ratchet;
     let key = key_nonce.key in
     let patched_nonce = apply_reuse_guard reuse_guard key_nonce.nonce in
     let ciphertext_content: message_ciphertext_content bytes (msg.content_type) = {
-      message_content = msg.message_content;
-      signature = msg_auth.signature;
-      confirmation_tag = msg_auth.confirmation_tag;
+      content = msg.content;
+      auth = msg_auth;
       padding = empty; //TODO
     } in
     ciphertext_content_network <-- ciphertext_content_to_network ciphertext_content;
