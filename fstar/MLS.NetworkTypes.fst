@@ -424,7 +424,7 @@ type sender_type_nt =
 
 noeq type sender_nt (bytes:Type0) {|bytes_like bytes|} =
   | S_member: [@@@ with_tag (ST_member ())] member:leaf_node_ref_nt bytes -> sender_nt bytes
-  | S_preconfigured: [@@@ with_tag (ST_preconfigured ())] external_key_id:mls_bytes bytes -> sender_nt bytes
+  | S_preconfigured: [@@@ with_tag (ST_preconfigured ())] sender_id:mls_bytes bytes -> sender_nt bytes
   | S_new_member: [@@@ with_tag (ST_new_member ())] unit -> sender_nt bytes
 
 %splice [ps_sender_nt] (gen_parser (`sender_nt))
