@@ -9,7 +9,7 @@ open MLS.Crypto
 
 val compute_confirmed_transcript_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> bytes -> bytes -> result (lbytes bytes (hash_length #bytes))
 let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcript_hash =
-  if not (length signature < pow2 16) then
+  if not (length signature < pow2 30) then
     internal_failure "compute_confirmed_transcript_hash: signature too long"
   else if not (msg.content_type = CT_commit ()) then
     internal_failure "compute_confirmed_transcript_hash: should only be used on a commit message"
@@ -25,7 +25,7 @@ let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcrip
 
 val compute_interim_transcript_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> bytes -> result (lbytes bytes (hash_length #bytes))
 let compute_interim_transcript_hash #bytes #cb confirmation_tag confirmed_transcript_hash =
-  if not (length confirmation_tag < 256) then
+  if not (length confirmation_tag < pow2 30) then
     internal_failure "compute_interim_transcript_hash: confirmation_tag too long"
   else (
     let serialized_auth = serialize (mls_message_commit_auth_data_nt bytes) ({

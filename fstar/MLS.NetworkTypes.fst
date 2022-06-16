@@ -2,9 +2,23 @@ module MLS.NetworkTypes
 
 open Comparse
 
-type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = tls_bytes bytes ({min=1; max=(pow2 16)-1})
+let mls_nat_pred (n:nat) = n < normalize_term (pow2 30)
+let mls_nat_pred_eq (n:nat): Lemma(pow2 30 == normalize_term (pow2 30)) [SMTPat (mls_nat_pred n)] =
+  assert_norm(pow2 30 == normalize_term (pow2 30))
+type mls_nat = refined nat quic_nat_pred
+val ps_mls_nat: #bytes:Type0 -> {| bytes_like bytes |} -> nat_parser_serializer bytes mls_nat_pred
+let ps_mls_nat #bytes #bl =
+  mk_trivial_isomorphism (refine ps_quic_nat mls_nat_pred)
+
+type mls_bytes (bytes:Type0) {|bytes_like bytes|} = pre_length_bytes bytes mls_nat_pred
+type mls_seq (bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a) = pre_length_seq ps_a mls_nat_pred
+
+let ps_mls_bytes (#bytes:Type0) {|bytes_like bytes|}: parser_serializer bytes (mls_bytes bytes) = ps_pre_length_bytes mls_nat_pred ps_mls_nat
+let ps_mls_seq (#bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a): parser_serializer bytes (mls_seq bytes ps_a) = ps_pre_length_seq #bytes mls_nat_pred ps_mls_nat ps_a
+
+type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_hpke_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (hpke_public_key_nt bytes)
-let ps_hpke_public_key_nt #bytes #bl = ps_tls_bytes _
+let ps_hpke_public_key_nt #bytes #bl = ps_mls_bytes
 
 type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
@@ -20,15 +34,15 @@ let ps_proposal_ref_nt #bytes #bl = ps_lbytes 16
 
 
 noeq type hpke_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  kem_output: tls_bytes bytes ({min=0; max=(pow2 16)-1});
-  ciphertext: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  kem_output: mls_bytes bytes;
+  ciphertext: mls_bytes bytes;
 }
 
 %splice [ps_hpke_ciphertext_nt] (gen_parser (`hpke_ciphertext_nt))
 
 noeq type update_path_node_nt (bytes:Type0) {|bytes_like bytes|} = {
   public_key: hpke_public_key_nt bytes;
-  encrypted_path_secret: tls_seq bytes ps_hpke_ciphertext_nt ({min=0; max=(pow2 32)-1});
+  encrypted_path_secret: mls_seq bytes ps_hpke_ciphertext_nt;
 }
 
 %splice [ps_update_path_node_nt] (gen_parser (`update_path_node_nt))
@@ -60,21 +74,21 @@ type signature_scheme_nt =
 %splice [ps_signature_scheme_nt] (gen_parser (`signature_scheme_nt))
 
 noeq type basic_credential_nt (bytes:Type0) {|bytes_like bytes|} = {
-  identity: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  identity: mls_bytes bytes;
   signature_scheme: signature_scheme_nt;
-  signature_key: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  signature_key: mls_bytes bytes;
 }
 
 %splice [ps_basic_credential_nt] (gen_parser (`basic_credential_nt))
 
-type certificate_nt (bytes:Type0) {|bytes_like bytes|} = tls_bytes bytes ({min=0; max=(pow2 16)-1})
+type certificate_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 
 val ps_certificate_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (certificate_nt bytes)
-let ps_certificate_nt #bytes #bl = ps_tls_bytes _
+let ps_certificate_nt #bytes #bl = ps_mls_bytes
 
 noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
   | C_basic: [@@@ with_num_tag 2 1] basic_credential_nt bytes -> credential_nt bytes
-  | C_x509: [@@@ with_num_tag 2 2] tls_seq bytes ps_certificate_nt ({min=1; max=(pow2 32)-1}) -> credential_nt bytes
+  | C_x509: [@@@ with_num_tag 2 2] mls_seq bytes ps_certificate_nt -> credential_nt bytes
 
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
 
@@ -88,7 +102,7 @@ type extension_type_nt: eqtype =
 
 noeq type extension_nt (bytes:Type0) {|bytes_like bytes|} = {
   extension_type: extension_type_nt;
-  extension_data: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+  extension_data: mls_bytes bytes;
 }
 
 %splice [ps_extension_nt] (gen_parser (`extension_nt))
@@ -113,10 +127,10 @@ type proposal_type_nt =
 %splice [ps_proposal_type_nt] (gen_parser (`proposal_type_nt))
 
 type capabilities_nt (bytes:Type0) {|bytes_like bytes|} = {
-  versions: tls_seq bytes ps_protocol_version_nt ({min=0; max=255});
-  ciphersuites: tls_seq bytes ps_cipher_suite_nt ({min=0; max=255});
-  extensions: tls_seq bytes ps_extension_type_nt ({min=0; max=255});
-  proposals: tls_seq bytes ps_proposal_type_nt ({min=0; max=255});
+  versions: mls_seq bytes ps_protocol_version_nt;
+  ciphersuites: mls_seq bytes ps_cipher_suite_nt;
+  extensions: mls_seq bytes ps_extension_type_nt;
+  proposals: mls_seq bytes ps_proposal_type_nt;
 }
 
 %splice [ps_capabilities_nt] (gen_parser (`capabilities_nt))
@@ -143,13 +157,13 @@ let ps_leaf_node_lifetime_nt #bytes #bl source =
 val leaf_node_parent_hash_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
 let leaf_node_parent_hash_nt bytes #bl source =
   match source with
-  | LNS_commit () -> tls_bytes bytes ({min=0; max=255})
+  | LNS_commit () -> mls_bytes bytes
   | _ -> unit
 
 val ps_leaf_node_parent_hash_nt: #bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_parent_hash_nt bytes source)
 let ps_leaf_node_parent_hash_nt #bytes #bl source =
   match source with
-  | LNS_commit () -> ps_tls_bytes ({min=0; max=255})
+  | LNS_commit () -> ps_mls_bytes
   | _ -> ps_unit
 
 noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} = {
@@ -159,14 +173,14 @@ noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} = {
   source: leaf_node_source_nt;
   lifetime: leaf_node_lifetime_nt source;
   parent_hash: leaf_node_parent_hash_nt bytes source;
-  extensions: tls_seq bytes ps_extension_nt ({min=0; max=(pow2 32)-1});
+  extensions: mls_seq bytes ps_extension_nt;
 }
 
 %splice [ps_leaf_node_data_nt] (gen_parser (`leaf_node_data_nt))
 
 noeq type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} = {
   data: leaf_node_data_nt bytes;
-  signature: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  signature: mls_bytes bytes;
 }
 
 %splice [ps_leaf_node_nt] (gen_parser (`leaf_node_nt))
@@ -177,14 +191,14 @@ val leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_
 let leaf_node_tbs_group_id_nt bytes #bl source =
   match source with
   | LNS_update ()
-  | LNS_commit () -> tls_bytes bytes ({min=0; max=255})
+  | LNS_commit () -> mls_bytes bytes
   | _ -> unit
 
 val ps_leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_tbs_group_id_nt bytes source)
 let ps_leaf_node_tbs_group_id_nt bytes #bl source =
   match source with
   | LNS_update ()
-  | LNS_commit () -> ps_tls_bytes ({min=0; max=255})
+  | LNS_commit () -> ps_mls_bytes
   | _ -> ps_unit
 
 noeq type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
@@ -201,7 +215,7 @@ noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   cipher_suite: cipher_suite_nt;
   init_key: hpke_public_key_nt bytes;
   leaf_node: leaf_node_nt bytes;
-  extensions: tls_seq bytes ps_extension_nt ({min=0; max=(pow2 32)-1});
+  extensions: mls_seq bytes ps_extension_nt;
 }
 
 %splice [ps_key_package_tbs_nt] (gen_parser (`key_package_tbs_nt))
@@ -210,7 +224,7 @@ instance parseable_serializeable_key_package_tbs_nt (bytes:Type0) {|bytes_like b
 
 noeq type key_package_nt (bytes:Type0) {|bytes_like bytes|} = {
   tbs: key_package_tbs_nt bytes;
-  signature: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  signature: mls_bytes bytes;
 }
 
 %splice [ps_key_package_nt] (gen_parser (`key_package_nt))
@@ -219,25 +233,25 @@ instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes
 
 noeq type update_path_nt (bytes:Type0) {|bytes_like bytes|} = {
   leaf_node: leaf_node_nt bytes;
-  nodes: tls_seq bytes ps_update_path_node_nt ({min=0; max=(pow2 32)-1});
+  nodes: mls_seq bytes ps_update_path_node_nt;
 }
 
 %splice [ps_update_path_nt] (gen_parser (`update_path_nt))
 
 noeq type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
-  group_id: tls_bytes bytes ({min=0; max=255});
+  group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
-  tree_hash: tls_bytes bytes ({min=0; max=255});
-  confirmed_transcript_hash: tls_bytes bytes ({min=0; max=255});
-  extensions: tls_seq bytes ps_extension_nt ({min=0; max=(pow2 32)-1});
+  tree_hash: mls_bytes bytes;
+  confirmed_transcript_hash: mls_bytes bytes;
+  extensions: mls_seq bytes ps_extension_nt;
 }
 
 %splice [ps_group_context_nt] (gen_parser (`group_context_nt))
 
 noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} = {
   public_key: hpke_public_key_nt bytes;
-  parent_hash: tls_bytes bytes ({min=0; max=255});
-  unmerged_leaves: tls_seq bytes (ps_nat_lbytes #bytes 4) ({min=0; max=(pow2 32)-1});
+  parent_hash: mls_bytes bytes;
+  unmerged_leaves: mls_seq bytes (ps_nat_lbytes #bytes 4);
 }
 
 %splice [ps_parent_node_nt] (gen_parser (`parent_node_nt))
@@ -272,10 +286,10 @@ let ps_option #bytes #bl #a ps_a =
     | Some x -> (|1, x|)
   )
 
-type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} = tls_seq bytes (ps_option ps_node_nt) ({min=1; max=(pow2 32)-1})
+type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} = mls_seq bytes (ps_option ps_node_nt)
 
 val ps_ratchet_tree_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (ratchet_tree_nt bytes)
-let ps_ratchet_tree_nt #bytes #bl = ps_tls_seq (ps_option ps_node_nt) _
+let ps_ratchet_tree_nt #bytes #bl = ps_mls_seq (ps_option ps_node_nt)
 
 type psk_type_nt =
   | PSKT_external: [@@@ with_num_tag 1 1] unit -> psk_type_nt
@@ -291,13 +305,13 @@ type resumption_psk_usage_nt =
 %splice [ps_resumption_psk_usage_nt] (gen_parser (`resumption_psk_usage_nt))
 
 noeq type pre_shared_key_id_nt (bytes:Type0) {|bytes_like bytes|} =
-  | PSKI_external: [@@@ with_tag (PSKT_external ())] psk_id:tls_bytes bytes ({min=0; max=255}) -> psk_nonce:tls_bytes bytes ({min=0; max=255}) -> pre_shared_key_id_nt bytes
-  | PSKI_resumption: [@@@ with_tag (PSKT_resumption ())] usage: resumption_psk_usage_nt -> psk_group_id:tls_bytes bytes ({min=0; max=255}) -> psk_epoch:nat_lbytes 8 -> psk_nonce:tls_bytes bytes ({min=0; max=255}) -> pre_shared_key_id_nt bytes
+  | PSKI_external: [@@@ with_tag (PSKT_external ())] psk_id:mls_bytes bytes -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
+  | PSKI_resumption: [@@@ with_tag (PSKT_resumption ())] usage: resumption_psk_usage_nt -> psk_group_id:mls_bytes bytes -> psk_epoch:nat_lbytes 8 -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
 
 %splice [ps_pre_shared_key_id_nt] (gen_parser (`pre_shared_key_id_nt))
 
 noeq type pre_shared_keys_nt (bytes:Type0) {|bytes_like bytes|} = {
-  psks: tls_seq bytes ps_pre_shared_key_id_nt ({min=0; max=(pow2 16)-1});
+  psks: mls_seq bytes ps_pre_shared_key_id_nt;
 }
 
 %splice [ps_pre_shared_keys_nt] (gen_parser (`pre_shared_keys_nt))
@@ -339,16 +353,16 @@ noeq type pre_shared_key_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_pre_shared_key_nt] (gen_parser (`pre_shared_key_nt))
 
 noeq type reinit_nt (bytes:Type0) {|bytes_like bytes|} = {
-  group_id: tls_bytes bytes ({min=0; max=255});
+  group_id: mls_bytes bytes;
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
-  extensions: tls_seq bytes ps_extension_nt ({min=0; max=(pow2 32)-1})
+  extensions: mls_seq bytes ps_extension_nt
 }
 
 %splice [ps_reinit_nt] (gen_parser (`reinit_nt))
 
 noeq type external_init_nt (bytes:Type0) {|bytes_like bytes|} = {
-  kem_output: tls_bytes bytes ({min=0; max=(pow2 16)-1})
+  kem_output: mls_bytes bytes
 }
 
 %splice [ps_external_init_nt] (gen_parser (`external_init_nt))
@@ -362,13 +376,13 @@ noeq type message_range_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_message_range_nt] (gen_parser (`message_range_nt))
 
 noeq type app_ack_nt (bytes:Type0) {|bytes_like bytes|} = {
-  received_ranges: tls_seq bytes ps_message_range_nt ({min=0; max=(pow2 32)-1})
+  received_ranges: mls_seq bytes ps_message_range_nt
 }
 
 %splice [ps_app_ack_nt] (gen_parser (`app_ack_nt))
 
 noeq type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
-  extensions: tls_seq bytes ps_extension_nt ({min=0; max=(pow2 32)-1});
+  extensions: mls_seq bytes ps_extension_nt;
 }
 
 %splice [ps_group_context_extensions_nt] (gen_parser (`group_context_extensions_nt))
@@ -394,7 +408,7 @@ noeq type proposal_or_ref_nt (bytes:Type0) {|bytes_like bytes|} =
 %splice [ps_proposal_or_ref_nt] (gen_parser (`proposal_or_ref_nt))
 
 noeq type commit_nt (bytes:Type0) {|bytes_like bytes|} = {
-  proposals: tls_seq bytes ps_proposal_or_ref_nt ({min=0; max=(pow2 32)-1});
+  proposals: mls_seq bytes ps_proposal_or_ref_nt;
   [@@@ with_parser #bytes (ps_option ps_update_path_nt)]
   path: option (update_path_nt bytes);
 }
@@ -410,7 +424,7 @@ type sender_type_nt =
 
 noeq type sender_nt (bytes:Type0) {|bytes_like bytes|} =
   | S_member: [@@@ with_tag (ST_member ())] member:leaf_node_ref_nt bytes -> sender_nt bytes
-  | S_preconfigured: [@@@ with_tag (ST_preconfigured ())] external_key_id:tls_bytes bytes ({min=0; max=255}) -> sender_nt bytes
+  | S_preconfigured: [@@@ with_tag (ST_preconfigured ())] external_key_id:mls_bytes bytes -> sender_nt bytes
   | S_new_member: [@@@ with_tag (ST_new_member ())] unit -> sender_nt bytes
 
 %splice [ps_sender_nt] (gen_parser (`sender_nt))
@@ -425,7 +439,7 @@ type wire_format_nt =
 %splice [ps_wire_format_nt] (gen_parser (`wire_format_nt))
 
 noeq type mac_nt (bytes:Type0) {|bytes_like bytes|} = {
-  mac_value: tls_bytes bytes ({min=0; max=255});
+  mac_value: mls_bytes bytes;
 }
 
 %splice [ps_mac_nt] (gen_parser (`mac_nt))
@@ -440,14 +454,14 @@ type content_type_nt =
 val mls_untagged_content_nt: bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
 let mls_untagged_content_nt bytes #bl content_type =
   match content_type with
-  | CT_application () -> tls_bytes bytes ({min=0; max=(pow2 32)-1})
+  | CT_application () -> mls_bytes bytes
   | CT_proposal () -> proposal_nt bytes
   | CT_commit () -> commit_nt bytes
 
 val ps_mls_untagged_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer bytes (mls_untagged_content_nt bytes content_type)
 let ps_mls_untagged_content_nt #bytes #bl content_type =
   match content_type with
-  | CT_application () -> ps_tls_bytes ({min=0; max=(pow2 32)-1})
+  | CT_application () -> ps_mls_bytes
   | CT_proposal () -> ps_proposal_nt
   | CT_commit () -> ps_commit_nt
 
@@ -459,10 +473,10 @@ noeq type mls_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_mls_content_nt] (gen_parser (`mls_content_nt))
 
 noeq type mls_message_content_nt (bytes:Type0) {|bytes_like bytes|} = {
-  group_id: tls_bytes bytes ({min=0; max=255});
+  group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
   sender: sender_nt bytes;
-  authenticated_data: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+  authenticated_data: mls_bytes bytes;
   content: mls_content_nt bytes;
 }
 
@@ -504,7 +518,7 @@ let ps_confirmation_tag_nt #bytes #bl content_type =
   | _ -> ps_unit
 
 noeq type mls_message_auth_nt (bytes:Type0) {|bl:bytes_like bytes|} (content_type:content_type_nt) = {
-  signature: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  signature: mls_bytes bytes;
   confirmation_tag: confirmation_tag_nt bytes #bl content_type;
 }
 
@@ -547,12 +561,12 @@ noeq type mls_plaintext_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_mls_plaintext_nt] (gen_parser (`mls_plaintext_nt))
 
 noeq type mls_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  group_id: tls_bytes bytes ({min=0; max=255});
+  group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
   content_type: content_type_nt;
-  authenticated_data: tls_bytes bytes ({min=0; max=(pow2 32)-1});
-  encrypted_sender_data: tls_bytes bytes ({min=0; max=255});
-  ciphertext: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+  authenticated_data: mls_bytes bytes;
+  encrypted_sender_data: mls_bytes bytes;
+  ciphertext: mls_bytes bytes;
 }
 
 %splice [ps_mls_ciphertext_nt] (gen_parser (`mls_ciphertext_nt))
@@ -560,7 +574,7 @@ noeq type mls_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
 noeq type mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type: content_type_nt) = {
   content: mls_untagged_content_nt bytes content_type;
   auth: mls_message_auth_nt bytes content_type;
-  padding: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  padding: mls_bytes bytes;
 }
 
 %splice [ps_mls_ciphertext_content_nt] (gen_parser (`mls_ciphertext_content_nt))
@@ -568,10 +582,10 @@ noeq type mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_
 instance parseable_serializeable_mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt): parseable_serializeable bytes (mls_ciphertext_content_nt bytes content_type) = mk_parseable_serializeable (ps_mls_ciphertext_content_nt content_type)
 
 noeq type mls_ciphertext_content_aad_nt (bytes:Type0) {|bytes_like bytes|} = {
-  group_id: tls_bytes bytes ({min=0; max=255});
+  group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
   content_type: content_type_nt;
-  authenticated_data: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+  authenticated_data: mls_bytes bytes;
 }
 
 %splice [ps_mls_ciphertext_content_aad_nt] (gen_parser (`mls_ciphertext_content_aad_nt))
@@ -589,7 +603,7 @@ noeq type mls_sender_data_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_mls_sender_data_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_sender_data_nt bytes) = mk_parseable_serializeable ps_mls_sender_data_nt
 
 noeq type mls_sender_data_aad_nt (bytes:Type0) {|bytes_like bytes|} = {
-  group_id: tls_bytes bytes ({min=0; max=255});
+  group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
   content_type: content_type_nt;
 }
@@ -602,7 +616,7 @@ instance parseable_serializeable_mls_sender_data_aad_nt (bytes:Type0) {|bytes_li
 noeq type mls_message_commit_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
   content: mls_message_content_nt bytes;
-  signature: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  signature: mls_bytes bytes;
 }
 
 %splice [ps_mls_message_commit_content_nt] (gen_parser (`mls_message_commit_content_nt))
@@ -620,12 +634,12 @@ instance parseable_serializeable_mls_message_commit_auth_data_nt (bytes:Type0) {
 
 noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   cipher_suite: cipher_suite_nt;
-  group_id: tls_bytes bytes ({min=0; max=255});
+  group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
-  tree_hash: tls_bytes bytes ({min=0; max=255});
-  confirmed_transcript_hash: tls_bytes bytes ({min=0; max=255});
-  group_context_extensions: tls_bytes bytes ({min=0; max=(pow2 32)-1});
-  other_extensions: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+  tree_hash: mls_bytes bytes;
+  confirmed_transcript_hash: mls_bytes bytes;
+  group_context_extensions: mls_bytes bytes;
+  other_extensions: mls_bytes bytes;
   confirmation_tag: mac_nt bytes;
   signer: leaf_node_ref_nt bytes;
 }
@@ -637,7 +651,7 @@ instance parseable_serializeable_group_info_tbs_nt (bytes:Type0) {|bytes_like by
 noeq type group_info_nt (bytes:Type0) {|bytes_like bytes|} = {
   version: protocol_version_nt;
   tbs: group_info_tbs_nt bytes;
-  signature: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  signature: mls_bytes bytes;
 }
 
 %splice [ps_group_info_nt] (gen_parser (`group_info_nt))
@@ -646,13 +660,13 @@ noeq type group_info_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_group_info_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_info_nt bytes) = mk_parseable_serializeable ps_group_info_nt
 
 noeq type path_secret_nt (bytes:Type0) {|bytes_like bytes|} = {
-  path_secret: tls_bytes bytes ({min=0; max=255});
+  path_secret: mls_bytes bytes;
 }
 
 %splice [ps_path_secret_nt] (gen_parser (`path_secret_nt))
 
 noeq type group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
-  joiner_secret: tls_bytes bytes ({min=1; max=255});
+  joiner_secret: mls_bytes bytes;
   [@@@ with_parser #bytes (ps_option ps_path_secret_nt)]
   path_secret: option (path_secret_nt bytes);
   psks: pre_shared_keys_nt bytes;
@@ -671,8 +685,8 @@ noeq type encrypted_group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 noeq type welcome_nt (bytes:Type0) {|bytes_like bytes|} = {
   cipher_suite: cipher_suite_nt;
-  secrets: tls_seq bytes ps_encrypted_group_secrets_nt ({min=0; max=(pow2 32)-1});
-  encrypted_group_info: tls_bytes bytes ({min=1; max=(pow2 32)-1});
+  secrets: mls_seq bytes ps_encrypted_group_secrets_nt;
+  encrypted_group_info: mls_bytes bytes;
 }
 
 %splice [ps_welcome_nt] (gen_parser (`welcome_nt))

@@ -24,8 +24,8 @@ instance parseable_serializeable_leaf_node_tree_hash_input (bytes:Type0) {|bytes
 noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   [@@@ with_parser #bytes (ps_option ps_parent_node_nt)]
   parent_node: option (parent_node_nt bytes);
-  left_hash: tls_bytes bytes ({min=0;max=255});
-  right_hash: tls_bytes bytes ({min=0;max=255});
+  left_hash: mls_bytes bytes;
+  right_hash: mls_bytes bytes;
 }
 
 %splice [ps_parent_node_tree_hash_input_nt] (gen_parser (`parent_node_tree_hash_input_nt))

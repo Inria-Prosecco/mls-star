@@ -63,7 +63,7 @@ let message_plaintext_to_network #bytes #bl pt =
   auth <-- message_auth_to_network pt.auth;
   if not ((NT.S_member? content.sender) = (Some? pt.membership_tag)) then
     internal_failure "message_plaintext_to_network: membership_tag must be present iff sender = Member"
-  else if not (not (NT.S_member? content.sender) || length (Some?.v pt.membership_tag <: bytes) < 256) then
+  else if not (not (NT.S_member? content.sender) || length (Some?.v pt.membership_tag <: bytes) < pow2 30) then
     internal_failure "message_plaintext_to_network: membership_tag too long"
   else (
     return ({
@@ -87,7 +87,7 @@ val ciphertext_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #cont
 let ciphertext_content_to_network #bytes #bl #content_type ciphertext_content =
   content <-- message_bare_content_to_network ciphertext_content.content;
   auth <-- message_auth_to_network ciphertext_content.auth;
-  if not (length ciphertext_content.padding < pow2 16) then
+  if not (length ciphertext_content.padding < pow2 30) then
     internal_failure "ciphertext_content_to_network: padding too long"
   else (
     return ({
@@ -129,15 +129,15 @@ let network_to_message_ciphertext #bytes #bl ct =
 
 val message_ciphertext_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_ciphertext bytes -> result (mls_ciphertext_nt bytes)
 let message_ciphertext_to_network #bytes #bl ct =
-  if not (length ct.group_id < 256) then
+  if not (length ct.group_id < pow2 30) then
      internal_failure "message_ciphertext_to_network: group_id too long"
   else if not (ct.epoch < pow2 64) then
      internal_failure "message_ciphertext_to_network: epoch too big"
-  else if not (length ct.authenticated_data < pow2 32) then
+  else if not (length ct.authenticated_data < pow2 30) then
      internal_failure "message_ciphertext_to_network: authenticated_data too long"
-  else if not (length ct.encrypted_sender_data < 256) then
+  else if not (length ct.encrypted_sender_data < pow2 30) then
      internal_failure "message_ciphertext_to_network: encrypted_sender_data too long"
-  else if not (length ct.ciphertext < pow2 32) then
+  else if not (length ct.ciphertext < pow2 30) then
      internal_failure "message_ciphertext_to_network: ciphertext too long"
   else (
     return ({
@@ -248,7 +248,7 @@ let get_ciphertext_sample #bytes #cb ct =
 
 val message_ciphertext_to_sender_data_aad: #bytes:Type0 -> {|bytes_like bytes|} -> message_ciphertext bytes -> result (mls_sender_data_aad_nt bytes)
 let message_ciphertext_to_sender_data_aad #bytes #bl ct =
-  if not (length ct.group_id < 256) then (
+  if not (length ct.group_id < pow2 30) then (
     internal_failure "message_ciphertext_to_sender_data_aad: group_id too long"
   ) else if not (ct.epoch < pow2 64) then (
     internal_failure "message_ciphertext_to_sender_data_aad: epoch too big"
@@ -263,9 +263,9 @@ let message_ciphertext_to_sender_data_aad #bytes #bl ct =
 //TODO (?): copy-pasted from above
 val message_to_sender_data_aad: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_sender_data_aad_nt bytes)
 let message_to_sender_data_aad #bytes #bl ct =
-  if not (length ct.group_id < 256) then (
+  if not (length ct.group_id < pow2 30) then (
     internal_failure "message_to_sender_data_aad: group_id too long"
-  ) else if not (ct.epoch < pow2 64) then (
+  ) else if not (ct.epoch < pow2 30) then (
     internal_failure "message_to_sender_data_aad: epoch too big"
   ) else (
     return ({
@@ -290,11 +290,11 @@ let encrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret sende
 
 val message_ciphertext_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> ct:message_ciphertext bytes -> result (res:mls_ciphertext_content_aad_nt bytes{res.content_type == ct.content_type})
 let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
-  if not (length ct.group_id < 256) then (
+  if not (length ct.group_id < pow2 30) then (
     internal_failure "message_ciphertext_to_ciphertext_content_aad: group_id too long"
   ) else if not (ct.epoch < pow2 64) then (
     internal_failure "message_ciphertext_to_ciphertext_content_aad: epoch too big"
-  ) else if not (length ct.authenticated_data < pow2 32) then (
+  ) else if not (length ct.authenticated_data < pow2 30) then (
     internal_failure "message_ciphertext_to_ciphertext_content_aad: authenticated_data too long"
   ) else (
     return ({
@@ -313,11 +313,11 @@ let decrypt_ciphertext_content #bytes #cb ad key nonce ct =
 //TODO (?): copy-pasted from message_ciphertext_to_ciphertext_content_aad, can we simplify?
 val message_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> msg:message_content bytes -> result (res:mls_ciphertext_content_aad_nt bytes{res.content_type == msg.content_type})
 let message_to_ciphertext_content_aad #bytes #bl msg =
-  if not (length msg.group_id < 256) then (
+  if not (length msg.group_id < pow2 30) then (
     internal_failure "message_to_ciphertext_content_aad: group_id too long"
   ) else if not (msg.epoch < pow2 64) then (
     internal_failure "message_to_ciphertext_content_aad: epoch too big"
-  ) else if not (length msg.authenticated_data < pow2 32) then (
+  ) else if not (length msg.authenticated_data < pow2 30) then (
     internal_failure "message_to_ciphertext_content_aad: authenticated_data too long"
   ) else (
     return ({

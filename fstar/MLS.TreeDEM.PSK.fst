@@ -19,18 +19,18 @@ type psk_id_nonce (bytes:Type0) {|bytes_like bytes|} = {
 #push-options "--ifuel 1"
 val psk_id_nonce_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> psk_id_nonce bytes -> result (NT.pre_shared_key_id_nt bytes)
 let psk_id_nonce_to_network psk =
-  if not (length psk.nonce < 256) then
+  if not (length psk.nonce < pow2 30) then
     error "psk_to_network: nonce is too long"
   else (
     match psk.id with
     | PSKI_external id -> (
-      if not (length id < 256) then
+      if not (length id < pow2 30) then
         error "psk_to_network: id is too long"
       else
         return (NT.PSKI_external id psk.nonce)
     )
     | PSKI_resumption usage group_id epoch ->
-      if not (length group_id < 256) then
+      if not (length group_id < pow2 30) then
         error "psk_to_network: group_id is too long"
       else if not (epoch < pow2 64) then
         error "psk_to_network: epoch is too big"

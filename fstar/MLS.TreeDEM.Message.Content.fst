@@ -122,7 +122,7 @@ let proposal_or_ref_to_network #bytes #bl por =
     res <-- proposal_to_network p;
     return (POR_proposal res)
   | Reference ref ->
-    if not (length (ref <: bytes) < 256) then
+    if not (length (ref <: bytes) < pow2 30) then
       internal_failure "proposal_or_ref_to_network: reference too long"
     else
       return (POR_reference ref)
@@ -131,7 +131,7 @@ val commit_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> commit bytes -> r
 let commit_to_network #bytes #bl c =
   proposals <-- mapM (proposal_or_ref_to_network) c.c_proposals;
   Seq.lemma_list_seq_bij proposals;
-  if not (Comparse.bytes_length ps_proposal_or_ref_nt proposals < pow2 32) then
+  if not (Comparse.bytes_length ps_proposal_or_ref_nt proposals < pow2 30) then
     internal_failure "commit_to_network: proposals too long"
   else (
     return ({
@@ -144,7 +144,7 @@ val message_bare_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #co
 let message_bare_content_to_network #bytes #bl #content_type content =
   match content_type with
   | CT_application () ->
-    if not (length (content <: bytes) < pow2 32) then
+    if not (length (content <: bytes) < pow2 30) then
       error "message_bare_content_to_network: application content is too long"
     else
       return content

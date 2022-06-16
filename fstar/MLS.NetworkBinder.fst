@@ -27,8 +27,8 @@ let ps_direction #bytes #bl =
 
 noeq type treekem_impl_data_nt (bytes:Type0) {|bytes_like bytes|} = {
   content_dir: direction;
-  encrypted_path_secret: tls_seq bytes ps_hpke_ciphertext_nt ({min=0; max=(pow2 32)-1});
-  last_group_context: tls_bytes bytes ({min=0; max=(pow2 64) - 1});
+  encrypted_path_secret: mls_seq bytes ps_hpke_ciphertext_nt;
+  last_group_context: mls_bytes bytes;
 }
 
 %splice [ps_treekem_impl_data_nt] (gen_parser (`treekem_impl_data_nt))
@@ -57,22 +57,22 @@ let network_to_leaf_package #bytes #bl ln =
       TS.source = ln.data.source;
       TS.lifetime = ln.data.lifetime;
       TS.parent_hash = ln.data.parent_hash;
-      TS.extensions = (ps_to_pse (ps_tls_seq ps_extension_nt _)).serialize_exact (ln.data.extensions);
+      TS.extensions = (ps_to_pse (ps_mls_seq ps_extension_nt)).serialize_exact (ln.data.extensions);
       TS.signature = ln.signature;
     } <: TS.leaf_package_t bytes)
   | _ -> error "network_to_leaf_package: credential type not supported"
 
 val leaf_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.leaf_package_t bytes -> result (leaf_node_nt bytes)
 let leaf_package_to_network #bytes #bl lp =
-  if not (length lp.TS.credential.TS.identity < pow2 16) then
+  if not (length lp.TS.credential.TS.identity < pow2 30) then
     error "leaf_package_to_network: identity too long"
-  else if not (length lp.TS.credential.TS.signature_key < pow2 16) then
+  else if not (length lp.TS.credential.TS.signature_key < pow2 30) then
     error "leaf_package_to_network: signature_key too long"
-  else if not (length lp.TS.signature < pow2 16) then
+  else if not (length lp.TS.signature < pow2 30) then
     error "leaf_package_to_network: signature too long"
   else (
     content <-- from_option "leaf_package_to_network: can't parse leaf content" (parse (treekem_content_nt bytes) lp.TS.content.content);
-    extensions <-- from_option "leaf_package_to_network: can't parse extensions" ((ps_to_pse (ps_tls_seq ps_extension_nt _)).parse_exact lp.TS.extensions);
+    extensions <-- from_option "leaf_package_to_network: can't parse extensions" ((ps_to_pse (ps_mls_seq ps_extension_nt)).parse_exact lp.TS.extensions);
     return ({
       data = {
         public_key = content.public_key;
@@ -94,9 +94,9 @@ let leaf_package_to_network #bytes #bl lp =
 val node_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (parent_node_nt bytes)
 let node_package_to_network #bytes #bl np =
   unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (x <: nat_lbytes 4) else internal_failure "") np.TS.unmerged_leaves;
-  if not (length np.TS.parent_hash < 256) then
+  if not (length np.TS.parent_hash < pow2 30) then
     internal_failure "node_package_to_network: parent_hash too long"
-  else if not ((bytes_length #bytes (ps_nat_lbytes 4) unmerged_leaves) < pow2 32) then
+  else if not ((bytes_length #bytes (ps_nat_lbytes 4) unmerged_leaves) < pow2 30) then
     internal_failure "node_package_to_network: unmerged_leaves too long"
   else (
     Seq.lemma_list_seq_bij unmerged_leaves;
@@ -230,7 +230,7 @@ let treesync_to_update_path #bytes #bl #l #n #i p =
   let (kp, upns) = tmp in
   let upns = List.rev upns in
   Seq.lemma_list_seq_bij upns;
-  if not (bytes_length ps_update_path_node_nt upns < pow2 32) then
+  if not (bytes_length ps_update_path_node_nt upns < pow2 30) then
     error "treesync_to_update_path: nodes too long"
   else
     return ({

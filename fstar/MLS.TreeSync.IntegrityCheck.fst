@@ -51,8 +51,8 @@ let check_signature #bytes #cb lp group_id =
     error "check_leaf_package: signature key has wrong length"
   else if not (length lp.signature = sign_signature_length #bytes) then
     error "check_leaf_package: signature has wrong length"
-  else if not (length group_id < 256) then
-    error "check_leaf_package: signature has wrong length"
+  else if not (length group_id < pow2 30) then
+    error "check_leaf_package: group_id too long"
   else (
     leaf_node <-- leaf_package_to_network lp;
     let tbs = {

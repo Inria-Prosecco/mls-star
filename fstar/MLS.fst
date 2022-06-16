@@ -50,13 +50,13 @@ type state = {
 val compute_group_context: #l:nat -> #n:tree_size l -> bytes -> nat -> treesync bytes #cb.base l n -> bytes -> result (group_context_nt bytes)
 let compute_group_context #l #n group_id epoch tree confirmed_transcript_hash =
   tree_hash <-- MLS.TreeSync.Hash.tree_hash #bytes #cb tree;
-  if not (length group_id < 256) then
+  if not (length group_id < pow2 30) then
     internal_failure "state_to_group_context: group_id too long"
   else if not (epoch < pow2 64) then
     internal_failure "state_to_group_context: epoch too big"
-  else if not (length #bytes tree_hash < 256) then
+  else if not (length #bytes tree_hash < pow2 30) then
     internal_failure "state_to_group_context: tree_hash too long"
-  else if not (length confirmed_transcript_hash < 256) then
+  else if not (length confirmed_transcript_hash < pow2 30) then
     internal_failure "state_to_group_context: confirmed_transcript_hash too long"
   else (
     bytes_length_nil #bytes ps_extension_nt;
@@ -268,13 +268,13 @@ let default_capabilities =
   let ciphersuites = Seq.seq_of_list [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
   let extensions = Seq.seq_of_list [] in
   let proposals = Seq.seq_of_list [] in
-  if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < 256) then
+  if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < pow2 30) then
     internal_failure "fresh_key_package: initial protocol versions too long"
-  else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < 256) then
+  else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < pow2 30) then
     internal_failure "fresh_key_package: initial extension types too long"
-  else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < 256) then
+  else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < pow2 30) then
     internal_failure "fresh_key_package: initial cipher suites too long"
-  else if not (bytes_length #bytes ps_proposal_type_nt (Seq.seq_to_list proposals) < 256) then
+  else if not (bytes_length #bytes ps_proposal_type_nt (Seq.seq_to_list proposals) < pow2 30) then
     internal_failure "fresh_key_package: initial proposals too long"
   else (
     return ({versions; ciphersuites; extensions; proposals;} <: capabilities_nt bytes)
@@ -334,7 +334,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   } <: key_package_tbs_nt bytes) in
   nonce <-- universal_sign_nonce;
   signature <-- sign_with_label private_sign_key (string_to_bytes #bytes "KeyPackageTBS") ((ps_to_pse ps_key_package_tbs_nt).serialize_exact kp_tbs) nonce;
-  if not (length (signature <: bytes) < pow2 16) then
+  if not (length (signature <: bytes) < pow2 30) then
     internal_failure "fresh_key_package_internal: signature too long"
   else (
     return (({
@@ -452,7 +452,7 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   ratchet_tree <-- treesync_to_ratchet_tree future_state.tree_state.tree;
   ratchet_tree_bytes <-- (
     let l = bytes_length (ps_option ps_node_nt) (Seq.seq_to_list ratchet_tree) in
-    if 1 <= l && l < pow2 32 then
+    if l < pow2 30 then
       return #bytes ((ps_to_pse ps_ratchet_tree_nt).serialize_exact ratchet_tree)
     else
       internal_failure "generate_welcome_message: ratchet_tree too big"

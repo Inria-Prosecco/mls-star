@@ -104,7 +104,7 @@ let gen_treekem_output #cb t =
 
     let ratchet_tree2 = extract_result (treesync_to_ratchet_tree ts2) in
     let byte_length_ratchet_tree2 = bytes_length (ps_option ps_node_nt) (Seq.seq_to_list ratchet_tree2) in
-    let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 32 then (ps_to_pse ps_ratchet_tree_nt).serialize_exact ratchet_tree2 else empty in
+    let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 30 then (ps_to_pse ps_ratchet_tree_nt).serialize_exact ratchet_tree2 else empty in
     let tree_hash_after = extract_result (tree_hash ts2) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;

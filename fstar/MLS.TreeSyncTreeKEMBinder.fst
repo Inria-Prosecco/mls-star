@@ -79,9 +79,9 @@ let treesync_to_treekem #bytes #cb #l #n t =
 
 val encrypted_path_secret_tk_to_nt: #bytes:Type0 -> {|crypto_bytes bytes|} -> path_secret_ciphertext bytes -> result (hpke_ciphertext_nt bytes)
 let encrypted_path_secret_tk_to_nt #bytes #cb x =
-  if not (length (x.kem_output <: bytes) < pow2 16) then
+  if not (length (x.kem_output <: bytes) < pow2 30) then
     internal_failure "encrypted_path_secret_tk_to_nt: kem_output too long"
-  else if not (length (x.ciphertext <: bytes) < pow2 16) then
+  else if not (length (x.ciphertext <: bytes) < pow2 30) then
     internal_failure "encrypted_path_secret_tk_to_nt: ciphertext too long"
   else
     return ({
@@ -92,9 +92,9 @@ let encrypted_path_secret_tk_to_nt #bytes #cb x =
 val treekem_to_treesync_node_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package bytes -> result (external_content bytes)
 let treekem_to_treesync_node_package #bytes #cb kp =
   ciphertexts <-- mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext;
-  if not (bytes_length ps_hpke_ciphertext_nt ciphertexts < pow2 16) then
+  if not (bytes_length ps_hpke_ciphertext_nt ciphertexts < pow2 30) then
     internal_failure "treekem_to_treesync: ciphertexts too long"
-  else if not (length kp.last_group_context < pow2 64) then
+  else if not (length kp.last_group_context < pow2 30) then
     internal_failure "treekem_to_treesync: last group context too long (internal error)"
   else begin
     Seq.lemma_list_seq_bij ciphertexts;

@@ -41,7 +41,7 @@ let sender_to_network #bytes #bl s =
   match s with
   | S_member kp_ref -> return (NT.S_member kp_ref)
   | S_preconfigured external_key_id -> (
-    if not (length external_key_id < 256) then (
+    if not (length external_key_id < pow2 30) then (
       internal_failure "sender_to_network: external_key_id too long"
     ) else (
       return (NT.S_preconfigured external_key_id)
@@ -52,11 +52,11 @@ let sender_to_network #bytes #bl s =
 
 val message_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_message_content_nt bytes)
 let message_content_to_network #bytes #bl msg =
-  if not (length msg.group_id < 256) then
+  if not (length msg.group_id < pow2 30) then
     internal_failure "compute_confirmed_transcript_hash: group_id too long"
   else if not (msg.epoch < pow2 64) then
     internal_failure "compute_confirmed_transcript_hash: epoch too big"
-  else if not (length msg.authenticated_data < pow2 32) then
+  else if not (length msg.authenticated_data < pow2 30) then
     internal_failure "compute_confirmed_transcript_hash: authenticated_data too long"
   else (
     sender <-- sender_to_network msg.sender;
@@ -87,11 +87,11 @@ let network_to_message_content #bytes #bl wire_format msg =
 
 val message_auth_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_auth bytes -> result (mls_message_auth_nt bytes content_type)
 let message_auth_to_network #bytes #bl #content_type msg_auth =
-  if not (length msg_auth.signature < pow2 16) then
+  if not (length msg_auth.signature < pow2 30) then
     internal_failure "message_auth_to_network: signature too long"
   else if not ((content_type = CT_commit ()) = (Some? msg_auth.confirmation_tag)) then
     internal_failure "message_auth_to_network: confirmation_tag must be present iff content_type = Commit"
-  else if not (content_type <> CT_commit () || length (Some?.v msg_auth.confirmation_tag <: bytes) < 256) then
+  else if not (content_type <> CT_commit () || length (Some?.v msg_auth.confirmation_tag <: bytes) < pow2 30) then
     internal_failure "message_auth_to_network: confirmation_tag too long"
   else (
     return ({

@@ -44,8 +44,8 @@ private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
 #pop-options
 
 noeq type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
-  label: tls_bytes bytes ({min=9; max=255});
-  content: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+  label: mls_bytes bytes;
+  content: mls_bytes bytes;
 }
 
 %splice [ps_sign_content_nt] (gen_parser (`sign_content_nt))
@@ -53,11 +53,9 @@ noeq type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 val get_sign_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> label:bytes -> content:bytes -> result bytes
 let get_sign_content #bytes #cb label content =
   assert_norm (String.strlen "MLS 1.0 " == 8);
-  if not (1 <= length label) then
-    internal_failure "get_sign_content: label too short"
-  else if not (length label <= 255-8) then
+  if not (length label < (pow2 30)-8) then
     internal_failure "get_sign_content: label too long"
-  else if not (length content < pow2 32) then
+  else if not (length content < pow2 30) then
     internal_failure "get_sign_content: context too long"
   else (
     concat_length (string_to_bytes #bytes "MLS 1.0 ") label;
@@ -77,8 +75,8 @@ let verify_with_label #bytes #cb verification_key label content signature =
 
 noeq type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
-  label: tls_bytes bytes ({min=7; max=255});
-  context: tls_bytes bytes ({min=0; max=(pow2 32)-1});
+  label: mls_bytes bytes;
+  context: mls_bytes bytes;
 }
 
 %splice [ps_kdf_label_nt] (gen_parser (`kdf_label_nt))
@@ -87,11 +85,9 @@ let expand_with_label #bytes #cb secret label context len =
   assert_norm (String.strlen "MLS 1.0 " == 8);
   if not (len < pow2 16) then
     internal_failure "expand_with_label: len too high"
-  else if not (1 <= length label) then
-    internal_failure "expand_with_label: label too short"
-  else if not (length label <= 255-8) then
+  else if not (length label < (pow2 30)-8) then
     internal_failure "expand_with_label: label too long"
-  else if not (length context < pow2 32) then
+  else if not (length context < pow2 30) then
     internal_failure "expand_with_label: context too long"
   else (
     concat_length (string_to_bytes #bytes "MLS 1.0 ") label;

@@ -77,13 +77,13 @@ let default_capabilities #bytes #bl =
   let ciphersuites = Seq.seq_of_list [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
   let extensions = Seq.seq_of_list [] in
   let proposals = Seq.seq_of_list [] in
-  if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < 256) then
+  if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < pow2 30) then
     internal_failure "fresh_key_package: initial protocol versions too long"
-  else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < 256) then
+  else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < pow2 30) then
     internal_failure "fresh_key_package: initial extension types too long"
-  else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < 256) then
+  else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < pow2 30) then
     internal_failure "fresh_key_package: initial cipher suites too long"
-  else if not (bytes_length #bytes ps_proposal_type_nt (Seq.seq_to_list proposals) < 256) then
+  else if not (bytes_length #bytes ps_proposal_type_nt (Seq.seq_to_list proposals) < pow2 30) then
     internal_failure "fresh_key_package: initial proposals too long"
   else (
     return ({versions; ciphersuites; extensions; proposals;} <: capabilities_nt bytes)

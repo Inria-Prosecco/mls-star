@@ -130,7 +130,7 @@ val init_rand_state: seed:nat -> rand_state
 let init_rand_state seed =
   { internal_state = (seed % (pow2 64)) }
 
-#push-options "--z3rlimit 100"
+#push-options "--fuel 0 --ifuel 0"
 val gen_rand_bits: rand_state -> n_bits:pos{n_bits <= 64} -> rand_state & (x:nat{x<pow2 n_bits})
 let gen_rand_bits st n_bits =
   let open FStar.Mul in

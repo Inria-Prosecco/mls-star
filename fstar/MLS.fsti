@@ -14,8 +14,7 @@ instance bytes_crypto_bytes: MLS.Crypto.crypto_bytes bytes = cb
 val group_id: Type0
 val state: Type0
 
-// TODO: update this to identity *and* endpoint once we switch to Draft 12
-let identity = Comparse.tls_bytes bytes ({min=0; max=pow2 16-1})
+let identity = MLS.NetworkTypes.mls_bytes bytes
 let entropy = bytes
 
 let group_message = group_id & bytes
@@ -29,7 +28,7 @@ type private_info = {
 // Always Ed25519 for the time being.
 noeq
 type credential = {
-  signature_key: Comparse.tls_bytes bytes ({min=0; max=pow2 16-1});
+  signature_key: MLS.NetworkTypes.mls_bytes bytes;
   identity: identity;
 }
 

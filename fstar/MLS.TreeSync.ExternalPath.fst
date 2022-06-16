@@ -15,7 +15,7 @@ open MLS.Result
 
 val sign_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> sign_nonce bytes -> leaf_package_t bytes -> bytes -> bytes -> result (leaf_package_t bytes)
 let sign_leaf #bytes #cb sign_key entropy lp parent_parent_hash group_id =
-  if not (length parent_parent_hash < 256) then
+  if not (length parent_parent_hash < pow2 30) then
     internal_failure "sign_leaf: parent hash too long"
   else if not (lp.source = LNS_commit ()) then
     error "sign_leaf: source is not a commit"
@@ -24,7 +24,7 @@ let sign_leaf #bytes #cb sign_key entropy lp parent_parent_hash group_id =
     ln <-- leaf_package_to_network lp;
     if not (ln.data.source = LNS_commit ()) then
       internal_failure "sign_leaf: source is not a commit (???)"
-    else if not (length group_id < 256) then
+    else if not (length group_id < pow2 30) then
       internal_failure "sign_leaf: group_id is too long"
     else (
       let ln_tbs = {

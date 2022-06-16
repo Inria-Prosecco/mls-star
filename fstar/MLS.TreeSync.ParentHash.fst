@@ -14,8 +14,8 @@ open MLS.Result
 
 noeq type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   public_key: hpke_public_key_nt bytes;
-  parent_hash: tls_bytes bytes ({min=0;max=255});
-  original_child_resolution: tls_seq bytes ps_hpke_public_key_nt ({min=0; max=(pow2 32)-1});
+  parent_hash: mls_bytes bytes;
+  original_child_resolution: mls_seq bytes ps_hpke_public_key_nt;
 }
 
 %splice [ps_parent_hash_input_nt] (gen_parser (`parent_hash_input_nt))
@@ -27,9 +27,9 @@ val compute_parent_hash_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:na
 let compute_parent_hash_treekem #bytes #cb #l #n public_key parent_hash sibling forbidden_leaves =
   let original_child_resolution = original_tree_resolution forbidden_leaves sibling in
   let original_child_resolution_nt = List.Tot.map (fun (x:hpke_public_key bytes) -> x <: hpke_public_key_nt bytes) original_child_resolution in
-  if not (length parent_hash < 256) then
+  if not (length parent_hash < pow2 30) then
     internal_failure "compute_parent_hash: parent_hash too long"
-  else if not (bytes_length ps_hpke_public_key_nt original_child_resolution_nt < pow2 32) then
+  else if not (bytes_length ps_hpke_public_key_nt original_child_resolution_nt < pow2 30) then
     internal_failure "compute_parent_hash: original_child_resolution too big"
   else (
     Seq.lemma_list_seq_bij original_child_resolution_nt;

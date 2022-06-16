@@ -7,26 +7,18 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-// Note: in this file, we parse and serialize with `ps_tls_seq ({min=0; max=(pow2 32)-1})`.
-// However, when implementing it following closely the MLS RFC, we would want to use min=8.
-// This is because the extensions capabilities and lifetime are mandatory, so the size should be at least 8.
-// However, it is not done like this here, because it is quite useful to define `extensions_empty`.
-// This is fine because the check min=8 is done elsewhere since it is correctly defined in `key_package_nt`.
-
 (*** Extensions parser ***)
 
 type key_package_identifier_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  key_id: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+  key_id: mls_bytes bytes;
 }
 
 %splice [ps_key_package_identifier_ext_nt] (gen_parser (`key_package_identifier_ext_nt))
 
 (*** Utility functions ***)
 
-let extensions_min_size:nat = 0
-let extensions_max_size:nat = (pow2 32) - 1
-val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (tls_seq bytes ps_extension_nt ({min=extensions_min_size; max=extensions_max_size}))
-let ps_extensions #bytes #bl = ps_tls_seq ps_extension_nt ({min=extensions_min_size; max=extensions_max_size})
+val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_seq bytes ps_extension_nt)
+let ps_extensions #bytes #bl = ps_mls_seq ps_extension_nt
 
 val find_extension_index: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> extensions:Seq.seq (extension_nt bytes) -> option (i:nat{i < Seq.length extensions})
 let find_extension_index t extensions =
@@ -49,7 +41,7 @@ let get_extension #bytes #bl t extensions_buf =
 val set_extension: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> bytes -> bytes -> result bytes
 let set_extension #bytes #bl t extensions_buf data =
   extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse ps_extensions).parse_exact extensions_buf);
-  if not (length data < pow2 16) then
+  if not (length data < pow2 30) then
     error "set_extension: data is too long"
   else (
     let ext = ({extension_type = t; extension_data = data;}) in
@@ -59,9 +51,7 @@ let set_extension #bytes #bl t extensions_buf data =
       | Some i -> (Seq.upd extensions i ext)
     in
     let ext_byte_length = bytes_length ps_extension_nt (Seq.seq_to_list new_extensions) in
-    if not (extensions_min_size <= ext_byte_length) then
-      error "set_extension: new extension buffer is too short"
-    else if not (ext_byte_length <= extensions_max_size) then
+    if not (ext_byte_length < pow2 30) then
       error "set_extension: new extension buffer is too long"
     else (
       return ((ps_to_pse ps_extensions).serialize_exact new_extensions)

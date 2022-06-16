@@ -66,21 +66,21 @@ let network_to_welcome_group_info #bytes #bl gi =
 
 val welcome_group_info_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome_group_info bytes -> result (group_info_nt bytes)
 let welcome_group_info_to_network #bytes #bl gi =
-  if not (length gi.group_id < 256) then
+  if not (length gi.group_id < pow2 30) then
     internal_failure "welcome_group_info_to_network: group_id too long"
   else if not (gi.epoch < pow2 64) then
     internal_failure "welcome_group_info_to_network: epoch too big"
-  else if not (length gi.tree_hash < 256) then
+  else if not (length gi.tree_hash < pow2 30) then
     internal_failure "welcome_group_info_to_network: tree_hash too long"
-  else if not (length gi.confirmed_transcript_hash < 256) then
+  else if not (length gi.confirmed_transcript_hash < pow2 30) then
     internal_failure "welcome_group_info_to_network: confirmed_transcript_hash too long"
-  else if not (length gi.group_context_extensions < pow2 32) then
+  else if not (length gi.group_context_extensions < pow2 30) then
     internal_failure "welcome_group_info_to_network: group_context_extensions too long"
-  else if not (length gi.other_extensions < pow2 32) then
+  else if not (length gi.other_extensions < pow2 30) then
     internal_failure "welcome_group_info_to_network: other_extensions too long"
-  else if not (length gi.confirmation_tag < 255) then
+  else if not (length gi.confirmation_tag < pow2 30) then
     internal_failure "welcome_group_info_to_network: confirmation_tag too long"
-  else if not (length gi.signature < pow2 16) then
+  else if not (length gi.signature < pow2 30) then
     internal_failure "welcome_group_info_to_network: signature_id too long"
   else
     return ({
@@ -117,15 +117,13 @@ let group_secrets_to_network #bytes #bl gs =
     match gs.path_secret with
     | None -> return None
     | Some p -> (
-      if not (length p < 256) then
+      if not (length p < pow2 30) then
         internal_failure ""
       else
         return (Some ({ path_secret = p } <: path_secret_nt bytes))
     )
   );
-  if not (1 <= length gs.joiner_secret) then
-    internal_failure "group_secrets_to_network: joiner_secret too short"
-  else if not (length gs.joiner_secret < 256) then
+  if not (length gs.joiner_secret < pow2 30) then
     internal_failure "group_secrets_to_network: joiner_secret too long"
   else
     return ({
@@ -143,9 +141,9 @@ let network_to_hpke_ciphertext x =
 
 val hpke_ciphertext_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> hpke_ciphertext bytes -> result (hpke_ciphertext_nt bytes)
 let hpke_ciphertext_to_network #bytes #bl x =
-  if not (length x.kem_output < pow2 16) then
+  if not (length x.kem_output < pow2 30) then
     internal_failure "hpke_ciphertext_to_network: kem_output too long"
-  else if not (length x.ciphertext < pow2 16) then
+  else if not (length x.ciphertext < pow2 30) then
     internal_failure "hpke_ciphertext_to_network: ciphertext too long"
   else
     return ({
@@ -180,11 +178,9 @@ let welcome_to_network #bytes #cb w =
   secrets <-- mapM encrypted_group_secrets_to_network w.secrets;
   let cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes) in
   Seq.lemma_list_seq_bij secrets;
-  if not (1 <= length w.encrypted_group_info) then
-    internal_failure "welcome_to_network: encrypted_group_info too short"
-  else if not (length w.encrypted_group_info < pow2 32) then
+  if not (length w.encrypted_group_info < pow2 30) then
     internal_failure "welcome_to_network: encrypted_group_info too long"
-  else if not (bytes_length ps_encrypted_group_secrets_nt secrets < pow2 32) then
+  else if not (bytes_length ps_encrypted_group_secrets_nt secrets < pow2 30) then
     internal_failure "welcome_to_network: secrets too long"
   else (
     return ({
