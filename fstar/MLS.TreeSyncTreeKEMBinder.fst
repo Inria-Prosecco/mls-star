@@ -136,7 +136,13 @@ let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
   | PSkip _ pk' ->
     result <-- treekem_to_treesync new_leaf_package pk';
     return (PSkip _ result)
-  | PNode kp pk_next ->
+  | PNode okp pk_next ->
     next <-- treekem_to_treesync new_leaf_package pk_next;
-    np <-- treekem_to_treesync_node_package kp;
-    return (PNode np next)
+    match okp with
+    | Some kp -> (
+      np <-- treekem_to_treesync_node_package kp;
+      return (PNode (Some np) next)
+    )
+    | None -> (
+      return (PNode None next)
+    )

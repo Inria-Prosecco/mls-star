@@ -50,7 +50,7 @@ type level_n = nat
 type treesync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) = tree l n (option (leaf_package_t bytes)) (option (node_package_t bytes))
 type pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option (leaf_package_t bytes)) (option (node_package_t bytes))
 
-type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (leaf_package_t bytes) (external_content bytes)
+type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (leaf_package_t bytes) (option (external_content bytes))
 
 type operation_t (bytes:Type0) {|bytes_like bytes|} =
   | Op_Add: lp:leaf_package_t bytes -> operation_t bytes

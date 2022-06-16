@@ -193,7 +193,8 @@ let process_commit state message message_auth =
       if not (sender_id < state.tree_state.treesize) then
         error "process_commit: sender_id is greater than treesize"
       else (
-        update_pathkem <-- update_path_to_treekem state.tree_state.levels state.tree_state.treesize sender_id group_context_bytes path;
+        tree_kem <-- treesync_to_treekem state.tree_state.tree;
+        update_pathkem <-- update_path_to_treekem #_ #_ #_ #state.tree_state.treesize sender_id tree_kem group_context_bytes path;
         update_leaf_package <-- network_to_leaf_package path.leaf_node;
         ext_update_pathsync <-- treekem_to_treesync update_leaf_package update_pathkem;
         update_pathsync <-- external_pathsync_to_pathsync None state.tree_state.tree ext_update_pathsync state.tree_state.group_id;

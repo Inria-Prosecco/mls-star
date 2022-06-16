@@ -92,7 +92,7 @@ let gen_treekem_output #cb t =
     let ts1 = apply_path ts0 ups0 in
     let tk1 = extract_result (treesync_to_treekem ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
-    let upk1 = extract_result (update_path_to_treekem l n update_sender update_group_context update_path) in
+    let upk1 = extract_result (update_path_to_treekem update_sender tk1 update_group_context update_path) in
 
     let update_leaf_package = extract_result (network_to_leaf_package update_path.leaf_node) in
     let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in

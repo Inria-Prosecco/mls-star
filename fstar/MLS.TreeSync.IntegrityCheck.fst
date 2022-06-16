@@ -120,18 +120,21 @@ let rec get_original_right_node #bytes #bl #l #n t =
 #pop-options
 
 #push-options "--ifuel 1"
-val get_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> option bytes
-let get_parent_hash #bytes #bl #l #n t =
+val has_child_with_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> t:treesync bytes l n -> bytes -> bool
+let rec has_child_with_parent_hash #bytes #cb #l #n t parent_hash =
   match t with
-  | TNode None _ _ -> None
-  | TNode (Some np) _ _ -> Some np.parent_hash
-  | TSkip _ _ -> None
-  | TLeaf None -> None
+  | TLeaf None -> false
   | TLeaf (Some lp) -> (
     match lp.source with
-    | LNS_commit () -> Some lp.parent_hash
-    | _ -> None
+    | LNS_commit () -> (lp.parent_hash <: bytes) = parent_hash
+    | _ -> false
   )
+  | TSkip _ t' ->
+    has_child_with_parent_hash t' parent_hash
+  | TNode (Some kp) _ _ ->
+    kp.parent_hash = parent_hash
+  | TNode None left right ->
+    has_child_with_parent_hash left parent_hash || has_child_with_parent_hash right parent_hash
 #pop-options
 
 #push-options "--ifuel 1"
@@ -142,18 +145,12 @@ let check_internal_node #bytes #cb #l #n nb_left_leaves t =
   | None -> return IE_Good
   | Some np -> (
     parent_hash_from_left_ok <-- (
-      let real_parent_hash = get_parent_hash left in
       computed_parent_hash <-- compute_parent_hash_from_dir np.content.content np.parent_hash nb_left_leaves t Left;
-      return (real_parent_hash = Some computed_parent_hash)
+      return (has_child_with_parent_hash left computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
-      match get_original_right_node right with
-      | None -> return false
-      | Some (|_, _, original_right|) -> (
-        let real_parent_hash = get_parent_hash original_right in
-        computed_parent_hash <-- compute_parent_hash_from_dir np.content.content np.parent_hash nb_left_leaves t Right;
-        return (real_parent_hash = Some computed_parent_hash)
-      )
+      computed_parent_hash <-- compute_parent_hash_from_dir np.content.content np.parent_hash nb_left_leaves t Right;
+      return (has_child_with_parent_hash right computed_parent_hash)
     );
     if (parent_hash_from_left_ok || parent_hash_from_right_ok) then
       return IE_Good

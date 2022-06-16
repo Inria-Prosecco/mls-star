@@ -183,7 +183,10 @@ let rec update_path_entropy_lengths #bytes #cb #l #n t leaf_index =
   | TNode _ left right ->
     let (|dir, new_leaf_index|) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
-    hpke_multirecipient_encrypt_entropy_lengths (tree_resolution sibling) @ update_path_entropy_lengths child new_leaf_index
+    if tree_resolution sibling = [] then
+      update_path_entropy_lengths child new_leaf_index
+    else
+      hpke_multirecipient_encrypt_entropy_lengths (tree_resolution sibling) @ update_path_entropy_lengths child new_leaf_index
 
 val update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> t:treekem bytes l n -> leaf_index:leaf_index n -> leaf_secret:bytes -> ad:bytes -> randomness bytes (update_path_entropy_lengths t leaf_index) -> Pure (result (pathkem bytes l n leaf_index & bytes))
   (requires length leaf_secret >= hpke_private_key_length #bytes)
@@ -210,13 +213,19 @@ let rec update_path #bytes #cb #l #n t leaf_index leaf_secret ad rand =
     in
     let (|dir, next_leaf_index|) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
-    // WOW, F* don't need type annotation for the `split_randomness` call? Impressive!
-    let (rand_cur, rand_next) = split_randomness rand in
-    recursive_call <-- update_path child next_leaf_index leaf_secret ad rand_next;
-    let (child_path, child_path_secret) = recursive_call in
-    node_encap_call <-- node_encap version child_path_secret ad dir (tree_resolution sibling) rand_cur;
-    let (node_kp, node_path_secret) = node_encap_call in
-    return (PNode node_kp child_path, node_path_secret)
+    if tree_resolution sibling = [] then (
+      let next_rand: randomness bytes (update_path_entropy_lengths #_ #_ #(l-1) child next_leaf_index) = rand in
+      recursive_call <-- update_path child next_leaf_index leaf_secret ad next_rand;
+      let (child_path, child_path_secret) = recursive_call in
+      return (PNode None child_path, child_path_secret)
+    ) else (
+      let (rand_cur, rand_next) = split_randomness rand in
+      recursive_call <-- update_path child next_leaf_index leaf_secret ad rand_next;
+      let (child_path, child_path_secret) = recursive_call in
+      node_encap_call <-- node_encap version child_path_secret ad dir (tree_resolution sibling) rand_cur;
+      let (node_kp, node_path_secret) = node_encap_call in
+      return (PNode (Some node_kp) child_path, node_path_secret)
+    )
 
 val root_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> t:treekem bytes l n -> leaf_index n -> leaf_secret:bytes -> result (bytes)
 let rec root_secret #bytes #cb #l #n t leaf_index leaf_secret =
@@ -279,17 +288,18 @@ let rec mk_init_path_aux #bytes #cb #l #n t update_index =
   | TSkip _ t' ->
     res <-- mk_init_path_aux t' update_index;
     return (PSkip _ res)
-  | TNode None left right -> begin
-    error "mk_init_path_aux: path from the root to update leaf cannot contain blank node"
-  end
-  | TNode (Some kp) left right -> begin
+  | TNode okp left right -> begin
     let (|update_dir, next_update_index|) = child_index l update_index in
     let (child, sibling) = order_subtrees update_dir (left, right) in
-    let new_kp = { kp with
-      path_secret_from = update_dir;
-    } in
+    let new_okp =
+      match okp with
+      | Some kp -> Some ({ kp with
+          path_secret_from = update_dir;
+        })
+      | None -> None
+    in
     next <-- mk_init_path_aux child next_update_index;
-    return (PNode new_kp next)
+    return (PNode okp next)
   end
 
 val mk_init_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> my_index:leaf_index n -> update_index:leaf_index n{my_index <> update_index} -> path_secret:bytes -> hpke_info:bytes -> result (pathkem bytes l n update_index)
@@ -298,23 +308,25 @@ let rec mk_init_path #bytes #cb #l #n t my_index update_index path_secret hpke_i
   | TSkip _ t' ->
     res <-- mk_init_path t' my_index update_index path_secret hpke_info;
     return (PSkip _ res)
-  | TNode None left right -> begin
-    error "mk_init_path: path from the root to update leaf cannot contain blank node"
-  end
-  | TNode (Some kp) left right -> begin
+  | TNode okp left right -> begin
     let (|my_dir, next_my_index|) = child_index l my_index in
     let (|update_dir, next_update_index|) = child_index l update_index in
     let (child, sibling) = order_subtrees update_dir (left, right) in
     if my_dir = update_dir then (
-      let new_kp = { kp with
-        path_secret_from = update_dir;
-      } in
+      let new_okp =
+        match okp with
+        | Some kp -> Some ({ kp with
+          path_secret_from = update_dir;
+        })
+        | None -> None
+      in
       next <-- mk_init_path child next_my_index next_update_index path_secret hpke_info;
-      return (PNode new_kp next)
+      return (PNode new_okp next)
     ) else (
-      if not (kp.unmerged_leaves = []) then
-        error "mk_init_path: the lowest common ancestor must have empty unmerged leaves"
+      if not (Some? okp && (Some?.v okp).unmerged_leaves = []) then
+        error "mk_init_path: the lowest common ancestor must be non-blank and have empty unmerged leaves"
       else (
+        let kp = Some?.v okp in
         let resol_size = List.Tot.length (original_tree_resolution [] sibling) in
         let resol_index = original_resolution_index [] sibling next_my_index in
         let fake_randomness = mk_zero_vector (hpke_private_key_length #bytes) in
@@ -327,7 +339,7 @@ let rec mk_init_path #bytes #cb #l #n t my_index update_index path_secret hpke_i
           path_secret_ciphertext = Seq.seq_to_list (Seq.upd (Seq.create resol_size (empty_path_secret_ciphertext)) resol_index ({kem_output=fst my_path_secret_ciphertext; ciphertext = snd my_path_secret_ciphertext}));
         } in
         next <-- mk_init_path_aux child next_update_index;
-        return (PNode new_kp next)
+        return (PNode (Some new_kp) next)
       )
     )
   end
