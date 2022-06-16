@@ -25,9 +25,7 @@ val leaf_integrity_error_to_string: leaf_integrity_error -> string
 let leaf_integrity_error_to_string err =
   match err with
   | LIE_BadSignature -> "BadSignature"
-  | LIE_NoCapabilities -> "NoCapabilities"
   | LIE_ExtensionsNotInCapabilities -> "ExtensionsNotInCapabilities"
-  | LIE_NoLifetime -> "NoLifetime"
 
 val node_integrity_error_to_string: node_integrity_error -> string
 let node_integrity_error_to_string err =
@@ -45,7 +43,7 @@ let integrity_error_to_string ie =
 val find_my_index: {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> key_package_nt bytes -> ML (res:nat{res<n})
 let find_my_index #bl #l #n t kp =
   let my_signature_key =
-    match kp.tbs.credential with
+    match kp.tbs.leaf_node.data.credential with
     | C_basic c -> c.signature_key
     | _ -> failwith "unsupported credential!"; empty
   in
@@ -60,6 +58,7 @@ let find_my_index #bl #l #n t kp =
 #push-options "--z3rlimit 100"
 val gen_treekem_output: {|crypto_bytes bytes|} -> treekem_test_input -> ML treekem_test_output
 let gen_treekem_output #cb t =
+  let group_id: bytes = empty in (* TODO *)
   let ratchet_tree = extract_option "bad ratchet tree" ((ps_to_pse ps_ratchet_tree_nt).parse_exact (hex_string_to_bytes t.ratchet_tree_before)) in
   let add_sender = FStar.UInt32.v t.add_sender in
   let my_leaf_secret = (hex_string_to_bytes t.my_leaf_secret) in
@@ -70,7 +69,7 @@ let gen_treekem_output #cb t =
   let update_group_context = hex_string_to_bytes t.update_group_context in
   let (|l, n|) = extract_result (ratchet_tree_l_n ratchet_tree) in
   let ts0 = extract_result (ratchet_tree_to_treesync l n ratchet_tree) in
-  let ts0_valid = extract_result (check_treesync ts0) in
+  let ts0_valid = extract_result (check_treesync ts0 group_id) in
   (
     match ts0_valid with
     | IE_Good -> ()
@@ -89,15 +88,15 @@ let gen_treekem_output #cb t =
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret empty) in
     let old_leaf_package = extract_option "leaf package for add sender is empty" (get_leaf ts0 add_sender) in
     let ext_ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
-    let ups0 = extract_result (external_pathsync_to_pathsync None ts0 ext_ups0) in
+    let ups0 = extract_result (external_pathsync_to_pathsync None ts0 ext_ups0 group_id) in
     let ts1 = apply_path ts0 ups0 in
     let tk1 = extract_result (treesync_to_treekem ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let upk1 = extract_result (update_path_to_treekem l n update_sender update_group_context update_path) in
 
-    let update_leaf_package = extract_result (key_package_to_treesync update_path.leaf_key_package) in
+    let update_leaf_package = extract_result (network_to_leaf_package update_path.leaf_node) in
     let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
-    let ups1 = extract_result (external_pathsync_to_pathsync None ts1 ext_ups1) in
+    let ups1 = extract_result (external_pathsync_to_pathsync None ts1 ext_ups1 group_id) in
     let ts2 = apply_path ts1 ups1 in
     let tk2 = extract_result (treesync_to_treekem ts2) in
 

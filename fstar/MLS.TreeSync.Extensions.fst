@@ -15,32 +15,11 @@ open MLS.Result
 
 (*** Extensions parser ***)
 
-type capabilities_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  versions: tls_seq bytes ps_protocol_version_nt ({min=0; max=255});
-  ciphersuites: tls_seq bytes ps_cipher_suite_nt ({min=0; max=255});
-  extensions: tls_seq bytes ps_extension_type_nt ({min=0; max=255});
-}
-
-%splice [ps_capabilities_ext_nt] (gen_parser (`capabilities_ext_nt))
-
-type lifetime_ext_nt = {
-  not_before: nat_lbytes 8;
-  not_after: nat_lbytes 8;
-}
-
-%splice [ps_lifetime_ext_nt] (gen_parser (`lifetime_ext_nt))
-
 type key_package_identifier_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
   key_id: tls_bytes bytes ({min=0; max=(pow2 16)-1});
 }
 
 %splice [ps_key_package_identifier_ext_nt] (gen_parser (`key_package_identifier_ext_nt))
-
-type parent_hash_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  parent_hash: tls_bytes bytes ({min=0; max=255});
-}
-
-%splice [ps_parent_hash_ext_nt] (gen_parser (`parent_hash_ext_nt))
 
 (*** Utility functions ***)
 
@@ -114,22 +93,7 @@ let get_extension_list #bytes #bl extensions_buf =
   extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse ps_extensions).parse_exact extensions_buf);
   return (List.Tot.map (fun x -> x.extension_type) (Seq.seq_to_list extensions))
 
-val get_capabilities_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (capabilities_ext_nt bytes)
-let get_capabilities_extension #bytes #bl = mk_get_extension (ET_capabilities ()) ps_capabilities_ext_nt
-val set_capabilities_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> capabilities_ext_nt bytes -> result bytes
-let set_capabilities_extension #bytes #bl = mk_set_extension (ET_capabilities ()) ps_capabilities_ext_nt
-
-val get_lifetime_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option lifetime_ext_nt
-let get_lifetime_extension #bytes #bl = mk_get_extension (ET_lifetime ()) ps_lifetime_ext_nt
-val set_lifetime_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> lifetime_ext_nt -> result bytes
-let set_lifetime_extension #bytes #bl = mk_set_extension (ET_lifetime ()) ps_lifetime_ext_nt
-
 val get_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (key_package_identifier_ext_nt bytes)
 let get_key_package_identifier_extension #bytes #bl = mk_get_extension (ET_external_key_id ()) ps_key_package_identifier_ext_nt
 val set_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> key_package_identifier_ext_nt bytes -> result bytes
 let set_key_package_identifier_extension #bytes #bl = mk_set_extension (ET_external_key_id ()) ps_key_package_identifier_ext_nt
-
-val get_parent_hash_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (parent_hash_ext_nt bytes)
-let get_parent_hash_extension #bytes #bl = mk_get_extension (ET_parent_hash ()) ps_parent_hash_ext_nt
-val set_parent_hash_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> parent_hash_ext_nt bytes -> result bytes
-let set_parent_hash_extension #bytes #bl = mk_set_extension (ET_parent_hash ()) ps_parent_hash_ext_nt

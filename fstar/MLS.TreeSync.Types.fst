@@ -1,6 +1,7 @@
 module MLS.TreeSync.Types
 
 open Comparse.Bytes
+open MLS.NetworkTypes
 open MLS.Tree
 
 (** Identity and Credentials *)
@@ -25,8 +26,12 @@ type external_content (bytes:Type0) {|bytes_like bytes|} = {
 (** Definition of a Leaf package *)
 type leaf_package_t (bytes:Type0) {|bytes_like bytes|} = {
   version: nat; //For security proofs, should be erasable
-  credential: credential_t bytes;
   content: external_content bytes;
+  credential: credential_t bytes;
+  capabilities: capabilities_nt bytes;
+  source: leaf_node_source_nt;
+  lifetime: leaf_node_lifetime_nt source;
+  parent_hash: leaf_node_parent_hash_nt bytes source;
   extensions: bytes;
   signature: bytes;
 }

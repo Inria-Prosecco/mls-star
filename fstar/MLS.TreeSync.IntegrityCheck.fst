@@ -17,9 +17,7 @@ open MLS.Result
 
 type leaf_integrity_error =
   | LIE_BadSignature
-  | LIE_NoCapabilities
   | LIE_ExtensionsNotInCapabilities
-  | LIE_NoLifetime
 
 type node_integrity_error =
   | NIE_BadParentHash
@@ -47,16 +45,22 @@ let integrity_either_to_bool ie =
   | IE_Good -> true
   | _ -> false
 
-val check_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_package_t bytes -> result (option leaf_integrity_error)
-let check_signature #bytes #cb lp =
+val check_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_package_t bytes -> bytes -> result (option leaf_integrity_error)
+let check_signature #bytes #cb lp group_id =
   if not (length lp.credential.signature_key = sign_public_key_length #bytes) then
     error "check_leaf_package: signature key has wrong length"
   else if not (length lp.signature = sign_signature_length #bytes) then
     error "check_leaf_package: signature has wrong length"
+  else if not (length group_id < 256) then
+    error "check_leaf_package: signature has wrong length"
   else (
-    key_package <-- treesync_to_keypackage lp;
-    let leaf_package_bytes: bytes = serialize (key_package_tbs_nt bytes) key_package.tbs in
-    signature_ok <-- verify_with_label lp.credential.signature_key (string_to_bytes #bytes "KeyPackageTBS") leaf_package_bytes lp.signature;
+    leaf_node <-- leaf_package_to_network lp;
+    let tbs = {
+      data = leaf_node.data;
+      group_id = (match leaf_node.data.source with | LNS_commit () | LNS_update () -> group_id | _ -> ());
+    } in
+    let leaf_package_bytes: bytes = serialize (leaf_node_tbs_nt bytes) tbs in
+    signature_ok <-- verify_with_label lp.credential.signature_key (string_to_bytes #bytes "LeafNodeTBS") leaf_package_bytes lp.signature;
     if signature_ok then
       return None
     else
@@ -66,29 +70,18 @@ let check_signature #bytes #cb lp =
 val check_capabilities: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_package_t bytes -> result (option leaf_integrity_error)
 let check_capabilities #bytes #bl lp =
   extensions_list <-- get_extension_list lp.extensions;
-  let opt_capabilities_extension = get_capabilities_extension lp.extensions in
-  return (
-    match opt_capabilities_extension with
-    | None -> Some LIE_NoCapabilities
-    | Some capabilities ->
-      let extension_inclusion = (
-        List.Tot.for_all (fun ext_type ->
-          List.Tot.mem ext_type (Seq.seq_to_list capabilities.extensions)
-        ) extensions_list
-      ) in
-      if extension_inclusion then None
-      else Some LIE_ExtensionsNotInCapabilities
-  )
+  let capabilities = lp.capabilities in
+  let extension_inclusion = (
+    List.Tot.for_all (fun ext_type ->
+      List.Tot.mem ext_type (Seq.seq_to_list capabilities.extensions)
+    ) extensions_list
+  ) in
+  if extension_inclusion then return None
+  else return (Some LIE_ExtensionsNotInCapabilities)
 
 val check_lifetime: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_package_t bytes -> result (option leaf_integrity_error)
 let check_lifetime #bytes #bl lp =
-  let opt_lifetime_extension = get_lifetime_extension lp.extensions in
-  return (
-    match opt_lifetime_extension with
-    | None -> Some LIE_NoLifetime
-    | Some lifetime ->
-      None //TODO
-  )
+  return None //TODO
 
 val convert_opt_leaf_error_to_either: option leaf_integrity_error -> nat -> integrity_either
 let convert_opt_leaf_error_to_either opt leaf_index =
@@ -96,12 +89,12 @@ let convert_opt_leaf_error_to_either opt leaf_index =
   | None -> IE_Good
   | Some x -> IE_Errors [IE_LeafError x leaf_index]
 
-val check_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> olp:option (leaf_package_t bytes) -> result integrity_either
-let check_leaf #bytes #cb leaf_index olp =
+val check_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> olp:option (leaf_package_t bytes) -> bytes -> result integrity_either
+let check_leaf #bytes #cb leaf_index olp group_id =
   match olp with
   | None -> return IE_Good
   | Some lp -> (
-    signature_check <-- check_signature lp;
+    signature_check <-- check_signature lp group_id;
     capabilities_check <-- check_capabilities lp;
     lifetime_check <-- check_lifetime lp;
     let signature_either = convert_opt_leaf_error_to_either signature_check leaf_index in
@@ -135,9 +128,9 @@ let get_parent_hash #bytes #bl #l #n t =
   | TSkip _ _ -> None
   | TLeaf None -> None
   | TLeaf (Some lp) -> (
-    match get_parent_hash_extension lp.extensions with
-    | Some parent_hash_ext -> Some (parent_hash_ext.parent_hash)
-    | None -> None
+    match lp.source with
+    | LNS_commit () -> Some lp.parent_hash
+    | _ -> None
   )
 #pop-options
 
@@ -170,20 +163,20 @@ let check_internal_node #bytes #cb #l #n nb_left_leaves t =
 #pop-options
 
 #push-options "--ifuel 1"
-val check_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result integrity_either
-let rec check_treesync_aux #bytes #cb #l #n nb_left_leaves t =
+val check_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> bytes -> result integrity_either
+let rec check_treesync_aux #bytes #cb #l #n nb_left_leaves t group_id =
   match t with
   | TNode onp left right ->
-    left_ok <-- check_treesync_aux nb_left_leaves left;
-    right_ok <-- check_treesync_aux (nb_left_leaves + pow2 (l-1)) right;
+    left_ok <-- check_treesync_aux nb_left_leaves left group_id;
+    right_ok <-- check_treesync_aux (nb_left_leaves + pow2 (l-1)) right group_id;
     cur_ok <-- check_internal_node nb_left_leaves t;
     return (left_ok &&& cur_ok &&& right_ok)
   | TSkip _ t' ->
-    check_treesync_aux nb_left_leaves t'
+    check_treesync_aux nb_left_leaves t' group_id
   | TLeaf olp ->
-    check_leaf nb_left_leaves olp
+    check_leaf nb_left_leaves olp group_id
 #pop-options
 
-val check_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> result integrity_either
-let check_treesync #bytes #cb #l #n t =
-  check_treesync_aux 0 t
+val check_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> bytes -> result integrity_either
+let check_treesync #bytes #cb #l #n t group_id =
+  check_treesync_aux 0 t group_id

@@ -50,8 +50,8 @@ let sender_to_network #bytes #bl s =
   | S_new_member -> return (NT.S_new_member ())
 
 
-val message_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> message_content bytes -> result (mls_message_content_nt bytes)
-let message_content_to_network #bytes #cb msg =
+val message_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_message_content_nt bytes)
+let message_content_to_network #bytes #bl msg =
   if not (length msg.group_id < 256) then
     internal_failure "compute_confirmed_transcript_hash: group_id too long"
   else if not (msg.epoch < pow2 64) then
@@ -70,8 +70,8 @@ let message_content_to_network #bytes #cb msg =
     } <: mls_message_content_nt bytes)
   )
 
-val network_to_message_content: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> wire_format_nt -> mls_message_content_nt bytes -> result (message_content bytes)
-let network_to_message_content #bytes #cb wire_format msg =
+val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> wire_format_nt -> mls_message_content_nt bytes -> result (message_content bytes)
+let network_to_message_content #bytes #bl wire_format msg =
   sender <-- network_to_sender msg.sender;
   content_pair <-- network_to_message_content_pair msg.content;
   let (|content_type, content|) = content_pair in
@@ -85,8 +85,8 @@ let network_to_message_content #bytes #cb wire_format msg =
     content = content;
   } <: message_content bytes)
 
-val message_auth_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> message_auth bytes -> result (mls_message_auth_nt bytes content_type)
-let message_auth_to_network #bytes #cb #content_type msg_auth =
+val message_auth_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_auth bytes -> result (mls_message_auth_nt bytes content_type)
+let message_auth_to_network #bytes #bl #content_type msg_auth =
   if not (length msg_auth.signature < pow2 16) then
     internal_failure "message_auth_to_network: signature too long"
   else if not ((content_type = CT_commit ()) = (Some? msg_auth.confirmation_tag)) then
@@ -100,8 +100,8 @@ let message_auth_to_network #bytes #cb #content_type msg_auth =
     } <: mls_message_auth_nt bytes content_type)
   )
 
-val network_to_message_auth: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> mls_message_auth_nt bytes content_type -> result (message_auth bytes)
-let network_to_message_auth #bytes #cb #content_type msg_auth =
+val network_to_message_auth: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> mls_message_auth_nt bytes content_type -> result (message_auth bytes)
+let network_to_message_auth #bytes #bl #content_type msg_auth =
   let confirmation_tag: option bytes =
     if content_type = CT_commit() then (
       let mac: mac_nt bytes = msg_auth.confirmation_tag in

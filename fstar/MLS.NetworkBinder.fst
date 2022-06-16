@@ -38,64 +38,69 @@ instance parseable_serializeable_treekem_impl_data_nt (bytes:Type0) {|bytes_like
 
 (*** NetworkTreeSyncBinder ***)
 
-val key_package_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> key_package_nt bytes -> result (TS.leaf_package_t bytes)
-let key_package_to_treesync #bytes #bl kp =
-  match kp.tbs.credential with
+val network_to_leaf_package: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_nt bytes -> result (TS.leaf_package_t bytes)
+let network_to_leaf_package #bytes #bl ln =
+  match ln.data.credential with
   | C_basic cred ->
     return ({
+      TS.version = 0;
+      TS.content = {
+        TS.content = serialize (treekem_content_nt bytes) ({public_key = ln.data.public_key});
+        TS.impl_data = empty;
+      };
       TS.credential = {
         TS.version = 0;
         TS.identity = cred.identity;
         TS.signature_key = cred.signature_key;
       };
-      TS.version = 0;
-      TS.content = {
-        TS.content = serialize (treekem_content_nt bytes) ({public_key = kp.tbs.public_key});
-        TS.impl_data = empty;
-      };
-      TS.extensions = (ps_to_pse (ps_tls_seq ps_extension_nt _)).serialize_exact (kp.tbs.extensions);
-      TS.signature = kp.signature;
-    })
-  | _ -> error "key_package_to_treesync: credential type not supported"
+      TS.capabilities = ln.data.capabilities;
+      TS.source = ln.data.source;
+      TS.lifetime = ln.data.lifetime;
+      TS.parent_hash = ln.data.parent_hash;
+      TS.extensions = (ps_to_pse (ps_tls_seq ps_extension_nt _)).serialize_exact (ln.data.extensions);
+      TS.signature = ln.signature;
+    } <: TS.leaf_package_t bytes)
+  | _ -> error "network_to_leaf_package: credential type not supported"
 
-val treesync_to_keypackage: #bytes:Type0 -> {|crypto_bytes bytes|} -> TS.leaf_package_t bytes -> result (key_package_nt bytes)
-let treesync_to_keypackage #bytes #cb lp =
+val leaf_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.leaf_package_t bytes -> result (leaf_node_nt bytes)
+let leaf_package_to_network #bytes #bl lp =
   if not (length lp.TS.credential.TS.identity < pow2 16) then
-    error "treesync_to_keypackage: identity too long"
+    error "leaf_package_to_network: identity too long"
   else if not (length lp.TS.credential.TS.signature_key < pow2 16) then
-    error "treesync_to_keypackage: signature_key too long"
+    error "leaf_package_to_network: signature_key too long"
   else if not (length lp.TS.signature < pow2 16) then
-    error "treesync_to_keypackage: signature too long"
+    error "leaf_package_to_network: signature too long"
   else (
-    content <-- from_option "treesync_to_keypackage: can't parse leaf content" (parse (treekem_content_nt bytes) lp.TS.content.content);
-    extensions <-- from_option "treesync_to_keypackage: can't parse extensions" ((ps_to_pse (ps_tls_seq ps_extension_nt _)).parse_exact lp.TS.extensions);
-    let cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes) in
+    content <-- from_option "leaf_package_to_network: can't parse leaf content" (parse (treekem_content_nt bytes) lp.TS.content.content);
+    extensions <-- from_option "leaf_package_to_network: can't parse extensions" ((ps_to_pse (ps_tls_seq ps_extension_nt _)).parse_exact lp.TS.extensions);
     return ({
-      tbs = {
-        version = PV_mls10 ();
-        cipher_suite = cipher_suite;
+      data = {
         public_key = content.public_key;
         credential = C_basic ({
           identity = lp.TS.credential.TS.identity;
           signature_scheme = SA_ed25519 (); //TODO
           signature_key = lp.TS.credential.TS.signature_key;
         });
+        capabilities = lp.TS.capabilities;
+        source = lp.TS.source;
+        lifetime = lp.TS.lifetime;
+        parent_hash = lp.TS.parent_hash;
         extensions = extensions;
       };
       signature = lp.TS.signature;
-    } <: key_package_nt bytes)
+    } <: leaf_node_nt bytes)
   )
 
-val treesync_to_parent_node: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (parent_node_nt bytes)
-let treesync_to_parent_node #bytes #bl np =
+val node_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (parent_node_nt bytes)
+let node_package_to_network #bytes #bl np =
   unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (x <: nat_lbytes 4) else internal_failure "") np.TS.unmerged_leaves;
   if not (length np.TS.parent_hash < 256) then
-    internal_failure "treesync_to_parent_node: parent_hash too long"
+    internal_failure "node_package_to_network: parent_hash too long"
   else if not ((bytes_length #bytes (ps_nat_lbytes 4) unmerged_leaves) < pow2 32) then
-    internal_failure "treesync_to_parent_node: unmerged_leaves too long"
+    internal_failure "node_package_to_network: unmerged_leaves too long"
   else (
     Seq.lemma_list_seq_bij unmerged_leaves;
-    node_content <-- from_option "treesync_to_parent_node: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
+    node_content <-- from_option "node_package_to_network: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
     return ({
       public_key = node_content.public_key;
       parent_hash = np.TS.parent_hash;
@@ -103,8 +108,8 @@ let treesync_to_parent_node #bytes #bl np =
     } <: parent_node_nt bytes)
   )
 
-val parent_node_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> parent_node_nt bytes -> result (TS.node_package_t bytes)
-let parent_node_to_treesync #bytes #bl pn =
+val network_to_node_package: #bytes:Type0 -> {|bytes_like bytes|} -> parent_node_nt bytes -> result (TS.node_package_t bytes)
+let network_to_node_package #bytes #bl pn =
   bytes_length_nil #bytes ps_hpke_ciphertext_nt;
   return ({
         TS.version = 0;
@@ -124,13 +129,13 @@ let parent_node_to_treesync #bytes #bl pn =
 
 //TODO: this function should be equivalent to key_package_to_treesync followed by leaf_package_sync_to_kem (non-existant at this time)
 //Refactor?
-val key_package_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes -> result (TK.member_info bytes)
-let key_package_to_treekem #bytes #cb kp =
-  if not (length (kp.tbs.public_key <: bytes) = hpke_public_key_length #bytes) then
-    error "key_package_to_treekem: public key has wrong length"
+val leaf_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_node_nt bytes -> result (TK.member_info bytes)
+let leaf_node_to_treekem #bytes #cb ln =
+  if not (length (ln.data.public_key <: bytes) = hpke_public_key_length #bytes) then
+    error "leaf_node_to_treekem: public key has wrong length"
   else
     return ({
-      TK.public_key = kp.tbs.public_key;
+      TK.public_key = ln.data.public_key;
       TK.version = 0;
     } <: TK.member_info bytes)
 
@@ -165,7 +170,7 @@ let rec update_path_to_treekem #bytes #cb l n i group_context update_path =
     if not (Seq.length update_path.nodes = 0) then
       internal_failure "update_path_to_treekem: update_path.nodes is too long"
     else (
-      leaf_package <-- key_package_to_treekem update_path.leaf_key_package;
+      leaf_package <-- leaf_node_to_treekem update_path.leaf_node;
       return (PLeaf leaf_package)
     )
   ) else if (n <= pow2 (l-1)) then (
@@ -200,11 +205,11 @@ let treesync_to_update_path_node #bytes #bl np =
   } <: update_path_node_nt bytes)
 
 //TODO same
-val treesync_to_update_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> TS.pathsync bytes l n i -> result (key_package_nt bytes & list (update_path_node_nt bytes))
-let rec treesync_to_update_path_aux #bytes #cb #l #n #i p =
+val treesync_to_update_path_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> TS.pathsync bytes l n i -> result (leaf_node_nt bytes & list (update_path_node_nt bytes))
+let rec treesync_to_update_path_aux #bytes #bl #l #n #i p =
   match p with
   | PLeaf (Some lp) ->
-    kp <-- treesync_to_keypackage lp;
+    kp <-- leaf_package_to_network lp;
     return (kp, [])
   | PLeaf None ->
     internal_failure "treesync_to_update_path: the path must not contain any blank node"
@@ -219,8 +224,8 @@ let rec treesync_to_update_path_aux #bytes #cb #l #n #i p =
     internal_failure "treesync_to_update_path: the path must not contain any blank node"
 
 //TODO same
-val treesync_to_update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> TS.pathsync bytes l n i -> result (update_path_nt bytes)
-let treesync_to_update_path #bytes #cb #l #n #i p =
+val treesync_to_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> TS.pathsync bytes l n i -> result (update_path_nt bytes)
+let treesync_to_update_path #bytes #bl #l #n #i p =
   tmp <-- treesync_to_update_path_aux p;
   let (kp, upns) = tmp in
   let upns = List.rev upns in
@@ -229,9 +234,9 @@ let treesync_to_update_path #bytes #cb #l #n #i p =
     error "treesync_to_update_path: nodes too long"
   else
     return ({
-      leaf_key_package = kp;
+      leaf_node = kp;
       nodes = Seq.seq_of_list upns;
-    })
+    } <: update_path_nt bytes)
 
 (*** ratchet_tree extension (11.3) ***)
 
@@ -251,7 +256,7 @@ let rec ratchet_tree_to_treesync #bytes #bl l n nodes =
     assert (Seq.length nodes == 1);
     match (Seq.index nodes 0) with
     | Some (N_leaf kp) ->
-      kp <-- key_package_to_treesync kp;
+      kp <-- network_to_leaf_package kp;
       return (TLeaf (Some kp))
     | Some _ -> error "ratchet_tree_to_treesync_aux: node must be a leaf!"
     | None ->
@@ -267,20 +272,20 @@ let rec ratchet_tree_to_treesync #bytes #bl l n nodes =
     right_res <-- ratchet_tree_to_treesync (l-1) (n-pow2 (l-1)) right_nodes;
     match my_node with
     | Some (N_parent pn) ->
-      np <-- parent_node_to_treesync pn;
+      np <-- network_to_node_package pn;
       return (TNode (Some np) left_res right_res)
     | Some _ -> error "ratchet_tree_to_treesync_aux: node must be a parent!"
     | None ->
       return (TNode None left_res right_res)
   )
 
-val treesync_to_ratchet_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> TS.treesync bytes l n -> result (Seq.seq (option (node_nt bytes)))
-let rec treesync_to_ratchet_tree #bytes #cb #l #n t =
+val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> TS.treesync bytes l n -> result (Seq.seq (option (node_nt bytes)))
+let rec treesync_to_ratchet_tree #bytes #bl #l #n t =
   match t with
   | TLeaf None ->
     return (Seq.create 1 None)
   | TLeaf (Some lp) ->
-    key_package <-- treesync_to_keypackage lp;
+    key_package <-- leaf_package_to_network lp;
     return (Seq.create 1 (Some (N_leaf (key_package))))
   | TSkip _ t' ->
     treesync_to_ratchet_tree t'
@@ -289,7 +294,7 @@ let rec treesync_to_ratchet_tree #bytes #cb #l #n t =
       match onp with
       | None -> return None
       | Some np ->
-        result <-- treesync_to_parent_node np;
+        result <-- node_package_to_network np;
         return (Some (N_parent result))
     );
     left_ratchet <-- treesync_to_ratchet_tree left;

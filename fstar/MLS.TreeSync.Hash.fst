@@ -12,8 +12,8 @@ open MLS.Result
 
 noeq type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   leaf_index: nat_lbytes 4;
-  [@@@ with_parser #bytes (ps_option ps_key_package_nt)]
-  key_package: option (key_package_nt bytes);
+  [@@@ with_parser #bytes (ps_option ps_leaf_node_nt)]
+  leaf_node: option (leaf_node_nt bytes);
 }
 
 %splice [ps_leaf_node_tree_hash_input_nt] (gen_parser (`leaf_node_tree_hash_input_nt))
@@ -38,11 +38,11 @@ let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
   match t with
   | TSkip _ t' -> tree_hash_aux nb_left_leaves t'
   | TLeaf olp ->
-    key_package <-- (
+    leaf_node <-- (
       match olp with
       | None -> return None
       | Some lp ->
-        res <-- treesync_to_keypackage lp;
+        res <-- leaf_package_to_network lp;
         return (Some res)
     );
     if not (nb_left_leaves < pow2 32) then
@@ -50,14 +50,14 @@ let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
     else
       hash_hash (serialize (leaf_node_tree_hash_input_nt bytes) ({
         leaf_index = nb_left_leaves;
-        key_package = key_package;
+        leaf_node = leaf_node;
       }))
   | TNode onp left right ->
     parent_node <-- (
       match onp with
       | None -> return None
       | Some np ->
-        res <-- treesync_to_parent_node np;
+        res <-- node_package_to_network np;
         return (Some res)
     );
     left_hash <-- tree_hash_aux nb_left_leaves left;

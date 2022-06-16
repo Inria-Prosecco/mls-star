@@ -71,46 +71,63 @@ let rec remove_secret #a l x =
       (hx,hs)::(remove_secret t x)
 #pop-options
 
+val default_capabilities: #bytes:Type0 -> {|bytes_like bytes|} -> result (capabilities_nt bytes)
+let default_capabilities #bytes #bl =
+  let versions = Seq.seq_of_list [PV_mls10 ()] in
+  let ciphersuites = Seq.seq_of_list [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
+  let extensions = Seq.seq_of_list [] in
+  let proposals = Seq.seq_of_list [] in
+  if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < 256) then
+    internal_failure "fresh_key_package: initial protocol versions too long"
+  else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < 256) then
+    internal_failure "fresh_key_package: initial extension types too long"
+  else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < 256) then
+    internal_failure "fresh_key_package: initial cipher suites too long"
+  else if not (bytes_length #bytes ps_proposal_type_nt (Seq.seq_to_list proposals) < 256) then
+    internal_failure "fresh_key_package: initial proposals too long"
+  else (
+    return ({versions; ciphersuites; extensions; proposals;} <: capabilities_nt bytes)
+  )
+
 #push-options "--ifuel 1"
 //TODO: copy-pasted from MLS.fst
 val gen_leaf_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> participant_secrets bytes -> sign_public_key bytes -> hpke_public_key bytes -> ML (rand_state & leaf_package_t bytes)
 let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
   let (rng, identity) = gen_rand_bytes #bytes rng 8 in
   let identity: bytes = (identity <: bytes) in
-  let extensions: bytes = (
-    let versions = Seq.seq_of_list [PV_mls10 ()] in
-    let ciphersuite_network = available_ciphersuite_to_network (ciphersuite #bytes) in
-    let ciphersuites = Seq.seq_of_list [ciphersuite_network] in
-    let extensions = Seq.seq_of_list [ET_capabilities (); ET_lifetime (); (* ET_key_id (); *) ET_parent_hash ()] in
-    if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < 256) then failwith ""
-    else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < 256) then failwith ""
-    else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < 256) then failwith ""
-    else (
-      let ext = empty_extensions in
-      let ext = extract_result (set_capabilities_extension ext ({versions; ciphersuites; extensions})) in
-      let ext = extract_result (set_lifetime_extension ext ({not_before = 0; not_after = 0})) in
-      ext
-    )
-  ) in
+  let capabilities = extract_result default_capabilities in
+  let extensions: bytes = empty_extensions #bytes #cb.base in
+  cb.hpke_public_key_length_bound;
   let unsigned_leaf_package: leaf_package_t bytes = {
+    version = 0;
+    content = {
+      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key = hpke_pk} <: treekem_content_nt bytes);
+      impl_data = empty;
+    };
     credential = {
       version = 0;
       identity;
       signature_key = sign_pk;
     };
-    version = 0;
-    content = {
-      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key = hpke_pk});
-      impl_data = empty;
-    };
+    capabilities;
+    source = LNS_key_package ();
+    lifetime = {not_before = 0; not_after = 0;};
+    parent_hash = ();
     extensions;
     signature = empty;
   } in
   let (rng, sign_nonce) = gen_rand_bytes rng (sign_nonce_length #bytes) in
   let signature = extract_result (
-    unsigned_key_package <-- treesync_to_keypackage unsigned_leaf_package;
-    let tbs = (ps_to_pse ps_key_package_tbs_nt).serialize_exact unsigned_key_package.tbs in
-    sign_with_label secrets.sign_sk (string_to_bytes #bytes "KeyPackageTBS") tbs sign_nonce
+    unsigned_key_package <-- leaf_package_to_network unsigned_leaf_package;
+    if not (unsigned_key_package.data.source = LNS_key_package ()) then
+      internal_failure "fresh_key_package_internal: source changed??"
+    else (
+      let tbs = (ps_to_pse ps_leaf_node_tbs_nt).serialize_exact ({
+        data = unsigned_key_package.data;
+        group_id = ()
+      }) in
+      sign_with_label secrets.sign_sk (string_to_bytes #bytes "LeafNodeTBS") tbs sign_nonce
+    )
   ) in
   (rng, { unsigned_leaf_package with signature })
 #pop-options
@@ -125,14 +142,27 @@ let create_participant #bytes #cb rng =
   let (rng, leaf_package) = gen_leaf_package rng my_secrets sign_pk hpke_pk in
   (rng, leaf_package, my_secrets)
 
+#push-options "--fuel 1 --ifuel 1"
 val add_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> ML (rand_state & mls_state bytes)
 let add_rand #bytes #cb rng st =
-  let (rng, leaf_package, my_secrets) = create_participant rng in
-  let (new_public_state, leaf_index) = MLS.TreeSync.add st.public leaf_package in
+  let (rng, leaf_package, my_secrets) = create_participant #bytes #cb rng in
+  let leaf_node_network = extract_result (leaf_package_to_network leaf_package) in
+  bytes_length_nil #bytes ps_extension_nt;
+  let (new_public_state, leaf_index) = extract_result (MLS.TreeSync.add st.public ({
+    tbs = {
+      version = PV_mls10 ();
+      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
+      init_key = leaf_node_network.data.public_key;
+      leaf_node = leaf_node_network;
+      extensions = Seq.empty;
+    };
+    signature = empty #bytes; (*TODO currently not checked by treesync*)
+  })) in
   (rng, {
     public = new_public_state;
     secrets = (leaf_index, my_secrets) :: st.secrets;
   })
+#pop-options
 
 //TODO: the group context is replaced with only the tree hash
 #push-options "--z3rlimit 50 --ifuel 1 --fuel 0"
@@ -153,10 +183,16 @@ let update_leaf #bytes #cb rng st leaf_index =
     | Some lp -> lp
     | _ -> failwith ""
   in
-  let ext_path_ts = extract_result (treekem_to_treesync leaf_package path_tk) in
+  let new_leaf_package = {
+    leaf_package with
+    source = LNS_commit ();
+    lifetime = ();
+    parent_hash = empty #bytes;
+  } in
+  let ext_path_ts = extract_result (treekem_to_treesync new_leaf_package path_tk) in
   let (rng, sign_nonce_bytes) = gen_rand_bytes rng (sign_nonce_length #bytes) in
   let sign_nonce = sign_nonce_bytes in
-  let path_ts = extract_result (external_pathsync_to_pathsync (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts) in
+  let path_ts = extract_result (external_pathsync_to_pathsync (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts empty) in
   let new_tree_ts = apply_path tree_ts path_ts in
   (rng, {
     public = {

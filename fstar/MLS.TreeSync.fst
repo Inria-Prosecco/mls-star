@@ -147,6 +147,11 @@ let add_one_level #bytes #bl #l t =
 
 (*** Higher-level API ***)
 
+open MLS.NetworkTypes
+open MLS.NetworkBinder
+open MLS.Crypto
+open MLS.Result
+
 val create: #bytes:Type0 -> {|bytes_like bytes|} -> gid:bytes -> leaf_package_t bytes -> state_t bytes
 let create #bytes #bl gid lp =
   mk_initial_state gid 0 1 (create_tree lp)
@@ -161,11 +166,21 @@ let state_update_tree #bytes #bl #l #n st new_tree =
     //transcript = Seq.snoc st.transcript op //TODO
   })
 
-val add: #bytes:Type0 -> {|bytes_like bytes|} -> state_t bytes -> leaf_package_t bytes -> (state_t bytes & nat)
-let add #bytes #bl st lp =
+val get_leaf_package_from_key_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes -> result (leaf_package_t bytes)
+let get_leaf_package_from_key_package #bytes #cb kp =
+  //TODO check signature
+  if not (kp.tbs.leaf_node.data.source = LNS_key_package ()) then
+    error "get_leaf_package_from_key_package: source is not add"
+  else (
+    network_to_leaf_package kp.tbs.leaf_node
+  )
+
+val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> state_t bytes -> NetworkTypes.key_package_nt bytes -> result (state_t bytes & nat)
+let add #bytes #bl st kp =
+  lp <-- get_leaf_package_from_key_package kp;
   match find_empty_leaf st.tree with
   | Some i ->
-    (state_update_tree st (tree_add st.tree i i lp), i)
+    return (state_update_tree st (tree_add st.tree i i lp), (i <: nat))
   | None ->
     let new_l = if st.treesize = pow2 st.levels then st.levels+1 else st.levels in
     let new_n = st.treesize+1 in
@@ -176,7 +191,7 @@ let add #bytes #bl st lp =
         add_one_leaf st.tree
     in
     let i = Some?.v (find_empty_leaf augmented_tree) in
-    (state_update_tree st (tree_add augmented_tree i i lp), i)
+    return (state_update_tree st (tree_add augmented_tree i i lp), i)
 
 val update: #bytes:Type0 -> {|bytes_like bytes|} -> st:state_t bytes -> leaf_package_t bytes -> index_t st -> state_t bytes
 let update #bytes #bl st lp i =

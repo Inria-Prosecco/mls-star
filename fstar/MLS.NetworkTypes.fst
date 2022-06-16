@@ -10,6 +10,10 @@ type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
 let ps_key_package_ref_nt #bytes #bl = ps_lbytes 16
 
+type leaf_node_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
+val ps_leaf_node_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (leaf_node_ref_nt bytes)
+let ps_leaf_node_ref_nt #bytes #bl = ps_lbytes 16
+
 type proposal_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_proposal_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (proposal_ref_nt bytes)
 let ps_proposal_ref_nt #bytes #bl = ps_lbytes 16
@@ -75,12 +79,10 @@ noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
 
 type extension_type_nt: eqtype =
-  | ET_capabilities: [@@@ with_num_tag 2 0x0001] unit -> extension_type_nt
-  | ET_lifetime: [@@@ with_num_tag 2 0x0002] unit -> extension_type_nt
-  | ET_external_key_id: [@@@ with_num_tag 2 0x0003] unit -> extension_type_nt
-  | ET_parent_hash: [@@@ with_num_tag 2 0x0004] unit -> extension_type_nt
-  | ET_ratchet_tree: [@@@ with_num_tag 2 0x0005] unit -> extension_type_nt
-  | ET_required_capabilities: [@@@ with_num_tag 2 0x0006] unit -> extension_type_nt
+  | ET_external_key_id: [@@@ with_num_tag 2 0x0001] unit -> extension_type_nt
+  | ET_ratchet_tree: [@@@ with_num_tag 2 0x0002] unit -> extension_type_nt
+  | ET_required_capabilities: [@@@ with_num_tag 2 0x0003] unit -> extension_type_nt
+  | ET_external_pub: [@@@ with_num_tag 2 0x0004] unit -> extension_type_nt
 
 %splice [ps_extension_type_nt] (gen_parser (`extension_type_nt))
 
@@ -91,12 +93,115 @@ noeq type extension_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_extension_nt] (gen_parser (`extension_nt))
 
+type leaf_node_source_nt =
+  | LNS_key_package: [@@@ with_num_tag 1 1] unit -> leaf_node_source_nt
+  | LNS_update:      [@@@ with_num_tag 1 2] unit -> leaf_node_source_nt
+  | LNS_commit:      [@@@ with_num_tag 1 3] unit -> leaf_node_source_nt
+
+%splice [ps_leaf_node_source_nt] (gen_parser (`leaf_node_source_nt))
+
+type proposal_type_nt =
+  | PT_add: [@@@ with_num_tag 2 1] unit -> proposal_type_nt
+  | PT_update: [@@@ with_num_tag 2 2] unit -> proposal_type_nt
+  | PT_remove: [@@@ with_num_tag 2 3] unit -> proposal_type_nt
+  | PT_psk: [@@@ with_num_tag 2 4] unit -> proposal_type_nt
+  | PT_reinit: [@@@ with_num_tag 2 5] unit -> proposal_type_nt
+  | PT_external_init: [@@@ with_num_tag 2 6] unit -> proposal_type_nt
+  | PT_app_ack: [@@@ with_num_tag 2 7] unit -> proposal_type_nt
+  | PT_group_context_extensions: [@@@ with_num_tag 2 8] unit -> proposal_type_nt
+
+%splice [ps_proposal_type_nt] (gen_parser (`proposal_type_nt))
+
+type capabilities_nt (bytes:Type0) {|bytes_like bytes|} = {
+  versions: tls_seq bytes ps_protocol_version_nt ({min=0; max=255});
+  ciphersuites: tls_seq bytes ps_cipher_suite_nt ({min=0; max=255});
+  extensions: tls_seq bytes ps_extension_type_nt ({min=0; max=255});
+  proposals: tls_seq bytes ps_proposal_type_nt ({min=0; max=255});
+}
+
+%splice [ps_capabilities_nt] (gen_parser (`capabilities_nt))
+
+type lifetime_nt = {
+  not_before: nat_lbytes 8;
+  not_after: nat_lbytes 8;
+}
+
+%splice [ps_lifetime_nt] (gen_parser (`lifetime_nt))
+
+val leaf_node_lifetime_nt: leaf_node_source_nt -> Type0
+let leaf_node_lifetime_nt source =
+  match source with
+  | LNS_key_package () -> lifetime_nt
+  | _ -> unit
+
+val ps_leaf_node_lifetime_nt: #bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_lifetime_nt source)
+let ps_leaf_node_lifetime_nt #bytes #bl source =
+  match source with
+  | LNS_key_package () -> ps_lifetime_nt
+  | _ -> ps_unit
+
+val leaf_node_parent_hash_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
+let leaf_node_parent_hash_nt bytes #bl source =
+  match source with
+  | LNS_commit () -> tls_bytes bytes ({min=0; max=255})
+  | _ -> unit
+
+val ps_leaf_node_parent_hash_nt: #bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_parent_hash_nt bytes source)
+let ps_leaf_node_parent_hash_nt #bytes #bl source =
+  match source with
+  | LNS_commit () -> ps_tls_bytes ({min=0; max=255})
+  | _ -> ps_unit
+
+noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} = {
+  public_key: hpke_public_key_nt bytes;
+  credential: credential_nt bytes;
+  capabilities: capabilities_nt bytes;
+  source: leaf_node_source_nt;
+  lifetime: leaf_node_lifetime_nt source;
+  parent_hash: leaf_node_parent_hash_nt bytes source;
+  extensions: tls_seq bytes ps_extension_nt ({min=0; max=(pow2 32)-1});
+}
+
+%splice [ps_leaf_node_data_nt] (gen_parser (`leaf_node_data_nt))
+
+noeq type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} = {
+  data: leaf_node_data_nt bytes;
+  signature: tls_bytes bytes ({min=0; max=(pow2 16)-1});
+}
+
+%splice [ps_leaf_node_nt] (gen_parser (`leaf_node_nt))
+
+instance parseable_serializeable_leaf_node_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (leaf_node_nt bytes) = mk_parseable_serializeable ps_leaf_node_nt
+
+val leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
+let leaf_node_tbs_group_id_nt bytes #bl source =
+  match source with
+  | LNS_update ()
+  | LNS_commit () -> tls_bytes bytes ({min=0; max=255})
+  | _ -> unit
+
+val ps_leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_tbs_group_id_nt bytes source)
+let ps_leaf_node_tbs_group_id_nt bytes #bl source =
+  match source with
+  | LNS_update ()
+  | LNS_commit () -> ps_tls_bytes ({min=0; max=255})
+  | _ -> ps_unit
+
+noeq type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
+  data: leaf_node_data_nt bytes;
+  group_id: leaf_node_tbs_group_id_nt bytes data.source;
+}
+
+%splice [ps_leaf_node_tbs_nt] (gen_parser (`leaf_node_tbs_nt))
+
+instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (leaf_node_tbs_nt bytes) = mk_parseable_serializeable ps_leaf_node_tbs_nt
+
 noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
-  public_key: hpke_public_key_nt bytes;
-  credential: credential_nt bytes;
-  extensions: tls_seq bytes ps_extension_nt ({min=8; max=(pow2 32)-1});
+  init_key: hpke_public_key_nt bytes;
+  leaf_node: leaf_node_nt bytes;
+  extensions: tls_seq bytes ps_extension_nt ({min=0; max=(pow2 32)-1});
 }
 
 %splice [ps_key_package_tbs_nt] (gen_parser (`key_package_tbs_nt))
@@ -113,7 +218,7 @@ noeq type key_package_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (key_package_nt bytes) = mk_parseable_serializeable ps_key_package_nt
 
 noeq type update_path_nt (bytes:Type0) {|bytes_like bytes|} = {
-  leaf_key_package: key_package_nt bytes;
+  leaf_node: leaf_node_nt bytes;
   nodes: tls_seq bytes ps_update_path_node_nt ({min=0; max=(pow2 32)-1});
 }
 
@@ -138,7 +243,7 @@ noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_parent_node_nt] (gen_parser (`parent_node_nt))
 
 noeq type node_nt (bytes:Type0) {|bytes_like bytes|} =
-  | N_leaf: [@@@ with_num_tag 1 1] key_package_nt bytes -> node_nt bytes
+  | N_leaf: [@@@ with_num_tag 1 1] leaf_node_nt bytes -> node_nt bytes
   | N_parent: [@@@ with_num_tag 1 2] parent_node_nt bytes -> node_nt bytes
 
 %splice [ps_node_nt] (gen_parser (`node_nt))
@@ -216,13 +321,13 @@ noeq type add_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_add_nt] (gen_parser (`add_nt))
 
 noeq type update_nt (bytes:Type0) {|bytes_like bytes|} = {
-  key_package: key_package_nt bytes;
+  leaf_node: leaf_node_nt bytes;
 }
 
 %splice [ps_update_nt] (gen_parser (`update_nt))
 
 noeq type remove_nt (bytes:Type0) {|bytes_like bytes|} = {
-  removed: key_package_ref_nt bytes;
+  removed: leaf_node_ref_nt bytes;
 }
 
 %splice [ps_remove_nt] (gen_parser (`remove_nt))
@@ -249,7 +354,7 @@ noeq type external_init_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_external_init_nt] (gen_parser (`external_init_nt))
 
 noeq type message_range_nt (bytes:Type0) {|bytes_like bytes|} = {
-  sender: key_package_ref_nt bytes;
+  sender: leaf_node_ref_nt bytes;
   first_generation: nat_lbytes 4;
   last_generation: nat_lbytes 4;
 }
@@ -269,14 +374,14 @@ noeq type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_group_context_extensions_nt] (gen_parser (`group_context_extensions_nt))
 
 noeq type proposal_nt (bytes:Type0) {|bytes_like bytes|} =
-  | P_add: [@@@ with_num_tag 2 1] add_nt bytes -> proposal_nt bytes
-  | P_update: [@@@ with_num_tag 2 2] update_nt bytes -> proposal_nt bytes
-  | P_remove: [@@@ with_num_tag 2 3] remove_nt bytes -> proposal_nt bytes
-  | P_psk: [@@@ with_num_tag 2 4] pre_shared_key_nt bytes -> proposal_nt bytes
-  | P_reinit: [@@@ with_num_tag 2 5] reinit_nt bytes -> proposal_nt bytes
-  | P_external_init: [@@@ with_num_tag 2 6] external_init_nt bytes -> proposal_nt bytes
-  | P_app_ack: [@@@ with_num_tag 2 7] app_ack_nt bytes -> proposal_nt bytes
-  | P_group_context_extensions: [@@@ with_num_tag 2 8] group_context_extensions_nt bytes -> proposal_nt bytes
+  | P_add: [@@@ with_tag (PT_add ())] add_nt bytes -> proposal_nt bytes
+  | P_update: [@@@ with_tag (PT_update ())] update_nt bytes -> proposal_nt bytes
+  | P_remove: [@@@ with_tag (PT_remove ())] remove_nt bytes -> proposal_nt bytes
+  | P_psk: [@@@ with_tag (PT_psk ())] pre_shared_key_nt bytes -> proposal_nt bytes
+  | P_reinit: [@@@ with_tag (PT_reinit ())] reinit_nt bytes -> proposal_nt bytes
+  | P_external_init: [@@@ with_tag (PT_external_init ())] external_init_nt bytes -> proposal_nt bytes
+  | P_app_ack: [@@@ with_tag (PT_app_ack ())] app_ack_nt bytes -> proposal_nt bytes
+  | P_group_context_extensions: [@@@ with_tag (PT_group_context_extensions ())] group_context_extensions_nt bytes -> proposal_nt bytes
 
 %splice [ps_proposal_nt] (gen_parser (`proposal_nt))
 
@@ -304,7 +409,7 @@ type sender_type_nt =
 %splice [ps_sender_type_nt] (gen_parser (`sender_type_nt))
 
 noeq type sender_nt (bytes:Type0) {|bytes_like bytes|} =
-  | S_member: [@@@ with_tag (ST_member ())] member:key_package_ref_nt bytes -> sender_nt bytes
+  | S_member: [@@@ with_tag (ST_member ())] member:leaf_node_ref_nt bytes -> sender_nt bytes
   | S_preconfigured: [@@@ with_tag (ST_preconfigured ())] external_key_id:tls_bytes bytes ({min=0; max=255}) -> sender_nt bytes
   | S_new_member: [@@@ with_tag (ST_new_member ())] unit -> sender_nt bytes
 
@@ -474,7 +579,7 @@ noeq type mls_ciphertext_content_aad_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_mls_ciphertext_content_aad_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_ciphertext_content_aad_nt bytes) = mk_parseable_serializeable ps_mls_ciphertext_content_aad_nt
 
 noeq type mls_sender_data_nt (bytes:Type0) {|bytes_like bytes|} = {
-  sender: key_package_ref_nt bytes;
+  sender: leaf_node_ref_nt bytes;
   generation: nat_lbytes 4;
   reuse_guard: lbytes bytes 4;
 }
@@ -522,7 +627,7 @@ noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_context_extensions: tls_bytes bytes ({min=0; max=(pow2 32)-1});
   other_extensions: tls_bytes bytes ({min=0; max=(pow2 32)-1});
   confirmation_tag: mac_nt bytes;
-  signer: key_package_ref_nt bytes;
+  signer: leaf_node_ref_nt bytes;
 }
 
 %splice [ps_group_info_tbs_nt] (gen_parser (`group_info_tbs_nt))

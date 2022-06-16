@@ -8,7 +8,7 @@ open MLS.Result
 module NT = MLS.NetworkTypes
 
 noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
-  | Add: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
+  | Add: key_package_nt bytes -> proposal bytes
   | Update: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
   | Remove: key_package_ref_nt bytes -> proposal bytes
   | PreSharedKey: pre_shared_key_id_nt bytes -> proposal bytes
@@ -37,10 +37,9 @@ val network_to_proposal: #bytes:Type0 -> {|bytes_like bytes|} -> proposal_nt byt
 let network_to_proposal #bytes #bl p =
   match p with
   | P_add add ->
-    kp <-- key_package_to_treesync add.key_package;
-    return (Add kp)
+    return (Add add.key_package)
   | P_update update ->
-    kp <-- key_package_to_treesync update.key_package;
+    kp <-- network_to_leaf_package update.leaf_node;
     return (Update kp)
   | P_remove remove ->
     return (Remove remove.removed)
@@ -100,16 +99,14 @@ let network_to_message_content_pair #bytes #bl content =
   )
   | _ -> error "network_to_message_content_pair: invalid content type"
 
-//TODO: not a crypto_bytes in latest draft (14)?
-val proposal_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> proposal bytes -> result (proposal_nt bytes)
-let proposal_to_network #bytes #cb p =
+val proposal_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> proposal bytes -> result (proposal_nt bytes)
+let proposal_to_network #bytes #bl p =
   match p with
-  | Add lp ->
-    kp <-- treesync_to_keypackage lp;
+  | Add kp ->
     return (P_add ({key_package = kp}))
   | Update lp ->
-    kp <-- treesync_to_keypackage lp;
-    return (P_update ({key_package = kp}))
+    kp <-- leaf_package_to_network lp;
+    return (P_update ({leaf_node = kp}))
   | Remove id ->
       return (P_remove ({removed = id}))
   | PreSharedKey x -> return (P_psk ({psk = x}))
@@ -118,8 +115,7 @@ let proposal_to_network #bytes #cb p =
   | AppAck x -> return (P_app_ack x)
   | GroupContextExtensions x -> return (P_group_context_extensions x)
 
-//TODO: not a crypto_bytes in latest draft (14)?
-val proposal_or_ref_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> proposal_or_ref bytes -> result (proposal_or_ref_nt bytes)
+val proposal_or_ref_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> proposal_or_ref bytes -> result (proposal_or_ref_nt bytes)
 let proposal_or_ref_to_network #bytes #bl por =
   match por with
   | Proposal p ->
@@ -131,8 +127,8 @@ let proposal_or_ref_to_network #bytes #bl por =
     else
       return (POR_reference ref)
 
-val commit_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> commit bytes -> result (commit_nt bytes)
-let commit_to_network #bytes #cb c =
+val commit_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> commit bytes -> result (commit_nt bytes)
+let commit_to_network #bytes #bl c =
   proposals <-- mapM (proposal_or_ref_to_network) c.c_proposals;
   Seq.lemma_list_seq_bij proposals;
   if not (Comparse.bytes_length ps_proposal_or_ref_nt proposals < pow2 32) then
@@ -144,7 +140,7 @@ let commit_to_network #bytes #cb c =
     })
   )
 
-val message_bare_content_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_untagged_content_nt bytes content_type)
+val message_bare_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_untagged_content_nt bytes content_type)
 let message_bare_content_to_network #bytes #bl #content_type content =
   match content_type with
   | CT_application () ->
@@ -157,7 +153,7 @@ let message_bare_content_to_network #bytes #bl #content_type content =
   | CT_commit () ->
     commit_to_network (content <: commit bytes)
 
-val message_content_pair_to_network: #bytes:Type0 -> {|MLS.Crypto.crypto_bytes bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_content_nt bytes)
+val message_content_pair_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_content_nt bytes)
 let message_content_pair_to_network #bytes #cb #content_type msg =
   network_content <-- message_bare_content_to_network msg;
   match content_type with

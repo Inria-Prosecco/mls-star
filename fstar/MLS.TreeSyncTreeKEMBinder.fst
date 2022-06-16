@@ -124,7 +124,7 @@ let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
   match pk with
   | PLeaf mi ->
     return (PLeaf ({
-      credential = new_leaf_package.credential;
+      new_leaf_package with
       version = (mi <: member_info bytes).version;
       content = {
         content = serialize (treekem_content_nt bytes) ({
@@ -132,9 +132,7 @@ let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
         });
         impl_data = empty;
       };
-      extensions = new_leaf_package.extensions;
-      signature = new_leaf_package.signature;
-    }))
+    } <: leaf_package_t bytes))
   | PSkip _ pk' ->
     result <-- treekem_to_treesync new_leaf_package pk';
     return (PSkip _ result)

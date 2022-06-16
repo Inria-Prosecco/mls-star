@@ -41,7 +41,7 @@ noeq type encrypted_sender_data_content (bytes:Type0) {|bytes_like bytes|} = {
 
 (*** From/to network ***)
 
-val network_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> mls_plaintext_nt bytes -> result (message_plaintext bytes)
+val network_to_message_plaintext: #bytes:Type0 -> {|bytes_like bytes|} -> mls_plaintext_nt bytes -> result (message_plaintext bytes)
 let network_to_message_plaintext #bytes #bl pt =
   content <-- network_to_message_content (WF_mls_plaintext ()) pt.content;
   auth <-- network_to_message_auth pt.auth;
@@ -57,8 +57,8 @@ let network_to_message_plaintext #bytes #bl pt =
     membership_tag;
   } <: message_plaintext bytes)
 
-val message_plaintext_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_plaintext bytes -> result (mls_plaintext_nt bytes)
-let message_plaintext_to_network #bytes #cb pt =
+val message_plaintext_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_plaintext bytes -> result (mls_plaintext_nt bytes)
+let message_plaintext_to_network #bytes #bl pt =
   content <-- message_content_to_network pt.content;
   auth <-- message_auth_to_network pt.auth;
   if not ((NT.S_member? content.sender) = (Some? pt.membership_tag)) then
@@ -73,8 +73,8 @@ let message_plaintext_to_network #bytes #cb pt =
     } <: mls_plaintext_nt bytes)
   )
 
-val network_to_ciphertext_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> #content_type: content_type_nt -> mls_ciphertext_content_nt bytes content_type -> result (message_ciphertext_content bytes content_type)
-let network_to_ciphertext_content #bytes #cb #content_type ciphertext_content =
+val network_to_ciphertext_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> mls_ciphertext_content_nt bytes content_type -> result (message_ciphertext_content bytes content_type)
+let network_to_ciphertext_content #bytes #bl #content_type ciphertext_content =
   content <-- network_to_message_bare_content ciphertext_content.content;
   auth <-- network_to_message_auth ciphertext_content.auth;
   return ({
@@ -83,8 +83,8 @@ let network_to_ciphertext_content #bytes #cb #content_type ciphertext_content =
     padding = ciphertext_content.padding;
   })
 
-val ciphertext_content_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> #content_type: content_type_nt -> message_ciphertext_content bytes content_type -> result (mls_ciphertext_content_nt bytes content_type)
-let ciphertext_content_to_network #bytes #cb #content_type ciphertext_content =
+val ciphertext_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> message_ciphertext_content bytes content_type -> result (mls_ciphertext_content_nt bytes content_type)
+let ciphertext_content_to_network #bytes #bl #content_type ciphertext_content =
   content <-- message_bare_content_to_network ciphertext_content.content;
   auth <-- message_auth_to_network ciphertext_content.auth;
   if not (length ciphertext_content.padding < pow2 16) then
@@ -156,8 +156,8 @@ val compute_message_confirmation_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> 
 let compute_message_confirmation_tag #bytes #cb confirmation_key confirmed_transcript_hash =
   hmac_hmac confirmation_key confirmed_transcript_hash
 
-val compute_tbs: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbs_nt bytes)
-let compute_tbs #bytes #cb msg group_context =
+val compute_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbs_nt bytes)
+let compute_tbs #bytes #bl msg group_context =
   content <-- message_content_to_network msg;
   if not ((NT.S_member? content.sender || NT.S_new_member? content.sender) = Some? group_context) then
     internal_failure "compute_tbs: group_context must be present iff sender is member or new_member"
@@ -169,8 +169,8 @@ let compute_tbs #bytes #cb msg group_context =
     } <: mls_message_content_tbs_nt bytes)
   )
 
-val compute_tbm: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> message_auth bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbm_nt bytes)
-let compute_tbm #bytes #cb msg auth group_context =
+val compute_tbm: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> message_auth bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbm_nt bytes)
+let compute_tbm #bytes #bl msg auth group_context =
   tbs <-- compute_tbs msg group_context;
   auth <-- message_auth_to_network auth;
   return ({

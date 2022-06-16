@@ -248,14 +248,13 @@ let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
 
 (*** Encrypting a welcome ***)
 
-val encrypt_one_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_package_t bytes -> group_secrets bytes -> lbytes bytes (hpke_private_key_length #bytes) -> result (encrypted_group_secrets bytes)
-let encrypt_one_group_secrets #bytes #cb lp gs rand =
-  kp_ref <-- leaf_package_to_kp_ref lp;
+val encrypt_one_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes -> group_secrets bytes -> lbytes bytes (hpke_private_key_length #bytes) -> result (encrypted_group_secrets bytes)
+let encrypt_one_group_secrets #bytes #cb kp gs rand =
+  kp_ref <-- compute_key_package_ref kp;
   gs_network <-- group_secrets_to_network gs;
   let gs_bytes = serialize #bytes (group_secrets_nt bytes) gs_network in
   leaf_hpke_pk <-- (
-    leaf_content <-- from_option "encrypt_one_group_secrets: malformed leaf content" (parse (treekem_content_nt bytes) lp.content.content);
-    let leaf_hpke_pk = leaf_content.public_key in
+    let leaf_hpke_pk = kp.tbs.init_key in
     if not (length (leaf_hpke_pk <: bytes) = hpke_public_key_length #bytes) then
       internal_failure "encrypt_one_group_secrets: public key has wrong size"
     else
@@ -272,7 +271,7 @@ let encrypt_one_group_secrets #bytes #cb lp gs rand =
   })
 
 #push-options "--fuel 1 --ifuel 1"
-val encrypt_welcome_entropy_length: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (leaf_package_t bytes & option bytes) -> list nat
+val encrypt_welcome_entropy_length: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (key_package_nt bytes & option bytes) -> list nat
 let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
   match leaf_packages with
   | [] -> []
@@ -280,26 +279,26 @@ let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
 #pop-options
 
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
-val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> leaf_packages:list (leaf_package_t bytes & option bytes) -> pre_shared_keys_nt bytes -> randomness bytes (encrypt_welcome_entropy_length leaf_packages) -> result (list (encrypted_group_secrets bytes))
-let rec encrypt_group_secrets #bytes #cb joiner_secret leaf_packages psks rand =
-  match leaf_packages with
+val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> key_packages:list (key_package_nt bytes & option bytes) -> pre_shared_keys_nt bytes -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (list (encrypted_group_secrets bytes))
+let rec encrypt_group_secrets #bytes #cb joiner_secret key_packages psks rand =
+  match key_packages with
   | [] -> return []
-  | (lp, path_secret)::tail -> (
+  | (kp, path_secret)::tail -> (
     let (cur_rand, rand_next) = dest_randomness rand in
     let group_secrets = {
       joiner_secret = joiner_secret;
       path_secret = path_secret;
       psks = psks;
     } in
-    res_head <-- encrypt_one_group_secrets lp group_secrets cur_rand;
+    res_head <-- encrypt_one_group_secrets kp group_secrets cur_rand;
     res_tail <-- encrypt_group_secrets joiner_secret tail psks rand_next;
     return (res_head::res_tail)
   )
 #pop-options
 
 #push-options "--fuel 1"
-val encrypt_welcome: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome_group_info bytes -> bytes -> leaf_packages:list (leaf_package_t bytes & option bytes) -> randomness bytes (encrypt_welcome_entropy_length leaf_packages) -> result (welcome bytes)
-let encrypt_welcome #bytes #cb group_info joiner_secret leaf_packages rand =
+val encrypt_welcome: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome_group_info bytes -> bytes -> key_packages:list (key_package_nt bytes & option bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (welcome bytes)
+let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
   encrypted_group_info <-- (
     welcome_secret <-- secret_joiner_to_welcome joiner_secret None (*TODO psk*);
     welcome_key <-- welcome_secret_to_key #bytes welcome_secret;
@@ -309,7 +308,7 @@ let encrypt_welcome #bytes #cb group_info joiner_secret leaf_packages rand =
     aead_encrypt welcome_key welcome_nonce empty group_info_bytes
   );
   bytes_length_nil #bytes ps_pre_shared_key_id_nt;
-  group_secrets <-- encrypt_group_secrets joiner_secret leaf_packages ({psks = Seq.empty (*TODO psks*)}) rand;
+  group_secrets <-- encrypt_group_secrets joiner_secret key_packages ({psks = Seq.empty (*TODO psks*)}) rand;
   return ({
     secrets = group_secrets;
     encrypted_group_info = encrypted_group_info;

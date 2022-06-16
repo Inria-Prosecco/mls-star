@@ -15,6 +15,7 @@ val expand_with_label: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes ->
 val derive_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> result (lbytes bytes (kdf_length #bytes))
 
 val make_keypackage_ref: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes 16)
+val make_leafnode_ref: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes 16)
 val make_proposal_ref: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes 16)
 
 val split_randomness: #bytes:Type0 -> {|bytes_like bytes|} -> #l1:list nat -> #l2:list nat -> randomness bytes (List.Tot.append l1 l2) -> (randomness bytes l1 & randomness bytes l2)
