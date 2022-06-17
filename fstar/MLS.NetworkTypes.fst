@@ -417,14 +417,14 @@ noeq type commit_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 type sender_type_nt =
   | ST_member: [@@@ with_num_tag 1 1] unit -> sender_type_nt
-  | ST_preconfigured: [@@@ with_num_tag 1 2] unit -> sender_type_nt
+  | ST_external: [@@@ with_num_tag 1 2] unit -> sender_type_nt
   | ST_new_member: [@@@ with_num_tag 1 3] unit -> sender_type_nt
 
 %splice [ps_sender_type_nt] (gen_parser (`sender_type_nt))
 
 noeq type sender_nt (bytes:Type0) {|bytes_like bytes|} =
   | S_member: [@@@ with_tag (ST_member ())] member:leaf_node_ref_nt bytes -> sender_nt bytes
-  | S_preconfigured: [@@@ with_tag (ST_preconfigured ())] sender_id:mls_bytes bytes -> sender_nt bytes
+  | S_external: [@@@ with_tag (ST_external ())] sender_index:nat_lbytes 4 -> sender_nt bytes
   | S_new_member: [@@@ with_tag (ST_new_member ())] unit -> sender_nt bytes
 
 %splice [ps_sender_nt] (gen_parser (`sender_nt))

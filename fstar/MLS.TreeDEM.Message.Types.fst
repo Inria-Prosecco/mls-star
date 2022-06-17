@@ -10,7 +10,7 @@ module NT = MLS.NetworkTypes
 
 type sender (bytes:Type0) {|bytes_like bytes|} =
   | S_member: member:key_package_ref_nt bytes -> sender bytes
-  | S_preconfigured: sender_id:bytes -> sender bytes
+  | S_external: sender_index:nat -> sender bytes
   | S_new_member: sender bytes
 
 noeq type message_content (bytes:Type0) {|bytes_like bytes|} = {
@@ -32,7 +32,7 @@ val network_to_sender: #bytes:Type0 -> {|bytes_like bytes|} -> sender_nt bytes -
 let network_to_sender #bytes #bl s =
   match s with
   | NT.S_member kp_ref -> return (S_member kp_ref)
-  | NT.S_preconfigured sender_id -> return (S_preconfigured sender_id)
+  | NT.S_external sender_index -> return (S_external sender_index)
   | NT.S_new_member () -> return S_new_member
   | _ -> error "network_to_sender: invalid sender type"
 
@@ -40,11 +40,11 @@ val sender_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> sender bytes -> r
 let sender_to_network #bytes #bl s =
   match s with
   | S_member kp_ref -> return (NT.S_member kp_ref)
-  | S_preconfigured sender_id -> (
-    if not (length sender_id < pow2 30) then (
-      internal_failure "sender_to_network: sender_id too long"
+  | S_external sender_index -> (
+    if not (sender_index < pow2 32) then (
+      internal_failure "sender_to_network: sender_index too big"
     ) else (
-      return (NT.S_preconfigured sender_id)
+      return (NT.S_external sender_index)
     )
   )
   | S_new_member -> return (NT.S_new_member ())
