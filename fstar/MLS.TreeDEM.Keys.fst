@@ -70,10 +70,6 @@ val secret_epoch_to_exporter: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes ->
 let secret_epoch_to_exporter #bytes #cb epoch_secret =
   derive_secret epoch_secret (string_to_bytes #bytes "exporter")
 
-val secret_epoch_to_authentication: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes (kdf_length #bytes))
-let secret_epoch_to_authentication #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "authentication")
-
 val secret_epoch_to_external: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_external #bytes #cb epoch_secret =
   derive_secret epoch_secret (string_to_bytes #bytes "external")
@@ -89,6 +85,10 @@ let secret_epoch_to_membership #bytes #cb epoch_secret =
 val secret_epoch_to_resumption: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_resumption #bytes #cb epoch_secret =
   derive_secret epoch_secret (string_to_bytes #bytes "resumption")
+
+val secret_epoch_to_authentication: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes (kdf_length #bytes))
+let secret_epoch_to_authentication #bytes #cb epoch_secret =
+  derive_secret epoch_secret (string_to_bytes #bytes "authentication")
 
 val secret_epoch_to_init: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_init #bytes #cb epoch_secret =
