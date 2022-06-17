@@ -86,9 +86,15 @@ type certificate_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_certificate_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (certificate_nt bytes)
 let ps_certificate_nt #bytes #bl = ps_mls_bytes
 
+type credential_type_nt =
+  | CT_basic: [@@@ with_num_tag 2 1] unit -> credential_type_nt
+  | CT_x509:  [@@@ with_num_tag 2 2] unit -> credential_type_nt
+
+%splice [ps_credential_type_nt] (gen_parser (`credential_type_nt))
+
 noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
-  | C_basic: [@@@ with_num_tag 2 1] basic_credential_nt bytes -> credential_nt bytes
-  | C_x509: [@@@ with_num_tag 2 2] mls_seq bytes ps_certificate_nt -> credential_nt bytes
+  | C_basic: [@@@ with_tag (CT_basic ())] basic_credential_nt bytes -> credential_nt bytes
+  | C_x509: [@@@ with_tag (CT_x509 ())] mls_seq bytes ps_certificate_nt -> credential_nt bytes
 
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
 
@@ -131,6 +137,7 @@ type capabilities_nt (bytes:Type0) {|bytes_like bytes|} = {
   ciphersuites: mls_seq bytes ps_cipher_suite_nt;
   extensions: mls_seq bytes ps_extension_type_nt;
   proposals: mls_seq bytes ps_proposal_type_nt;
+  credentials: mls_seq bytes ps_credential_type_nt;
 }
 
 %splice [ps_capabilities_nt] (gen_parser (`capabilities_nt))
