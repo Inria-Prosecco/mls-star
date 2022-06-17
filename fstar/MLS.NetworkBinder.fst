@@ -9,7 +9,7 @@ module TS = MLS.TreeSync.Types
 module TK = MLS.TreeKEM.Types
 
 noeq type treekem_content_nt (bytes:Type0) {|bytes_like bytes|} = {
-  public_key: hpke_public_key_nt bytes;
+  encryption_key: hpke_public_key_nt bytes;
 }
 
 %splice [ps_treekem_content_nt] (gen_parser (`treekem_content_nt))
@@ -41,17 +41,17 @@ instance parseable_serializeable_treekem_impl_data_nt (bytes:Type0) {|bytes_like
 val network_to_leaf_package: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_nt bytes -> result (TS.leaf_package_t bytes)
 let network_to_leaf_package #bytes #bl ln =
   match ln.data.credential with
-  | C_basic cred ->
+  | C_basic identity ->
     return ({
       TS.version = 0;
       TS.content = {
-        TS.content = serialize (treekem_content_nt bytes) ({public_key = ln.data.public_key});
+        TS.content = serialize (treekem_content_nt bytes) ({encryption_key = ln.data.encryption_key});
         TS.impl_data = empty;
       };
       TS.credential = {
         TS.version = 0;
-        TS.identity = cred.identity;
-        TS.signature_key = cred.signature_key;
+        TS.identity = identity;
+        TS.signature_key = ln.data.signature_key;
       };
       TS.capabilities = ln.data.capabilities;
       TS.source = ln.data.source;
@@ -75,12 +75,9 @@ let leaf_package_to_network #bytes #bl lp =
     extensions <-- from_option "leaf_package_to_network: can't parse extensions" ((ps_to_pse (ps_mls_seq ps_extension_nt)).parse_exact lp.TS.extensions);
     return ({
       data = {
-        public_key = content.public_key;
-        credential = C_basic ({
-          identity = lp.TS.credential.TS.identity;
-          signature_scheme = SA_ed25519 (); //TODO
-          signature_key = lp.TS.credential.TS.signature_key;
-        });
+        encryption_key = content.encryption_key;
+        signature_key = lp.TS.credential.TS.signature_key;
+        credential = C_basic lp.TS.credential.TS.identity;
         capabilities = lp.TS.capabilities;
         source = lp.TS.source;
         lifetime = lp.TS.lifetime;
@@ -102,7 +99,7 @@ let node_package_to_network #bytes #bl np =
     Seq.lemma_list_seq_bij unmerged_leaves;
     node_content <-- from_option "node_package_to_network: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
     return ({
-      public_key = node_content.public_key;
+      encryption_key = node_content.encryption_key;
       parent_hash = np.TS.parent_hash;
       unmerged_leaves = Seq.seq_of_list unmerged_leaves;
     } <: parent_node_nt bytes)
@@ -117,7 +114,7 @@ let network_to_node_package #bytes #bl pn =
         TS.parent_hash = pn.parent_hash;
         TS.content = {
           TS.content = serialize (treekem_content_nt bytes) ({
-            public_key = pn.public_key;
+            encryption_key = pn.encryption_key;
           });
           TS.impl_data = serialize (treekem_impl_data_nt bytes) ({
             content_dir = Left; //We don't care
@@ -131,17 +128,17 @@ let network_to_node_package #bytes #bl pn =
 //Refactor?
 val leaf_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_node_nt bytes -> result (TK.member_info bytes)
 let leaf_node_to_treekem #bytes #cb ln =
-  if not (length (ln.data.public_key <: bytes) = hpke_public_key_length #bytes) then
+  if not (length (ln.data.encryption_key <: bytes) = hpke_public_key_length #bytes) then
     error "leaf_node_to_treekem: public key has wrong length"
   else
     return ({
-      TK.public_key = ln.data.public_key;
+      TK.public_key = ln.data.encryption_key;
       TK.version = 0;
     } <: TK.member_info bytes)
 
 val update_path_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> direction -> update_path_node_nt bytes -> result (TK.key_package bytes)
 let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
-  if not (length (update_path_node.public_key <: bytes) = hpke_public_key_length #bytes) then
+  if not (length (update_path_node.encryption_key <: bytes) = hpke_public_key_length #bytes) then
     error "update_path_node_to_treekem: public key has wrong length"
   else (
     path_secret_ciphertext <-- mapM (fun (hpke_ciphertext: hpke_ciphertext_nt bytes) ->
@@ -154,7 +151,7 @@ let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
         } <: TK.path_secret_ciphertext bytes)
     ) (Seq.seq_to_list update_path_node.encrypted_path_secret);
     return ({
-      TK.public_key = update_path_node.public_key;
+      TK.public_key = update_path_node.encryption_key;
       TK.version = 0;
       TK.last_group_context = group_context;
       TK.unmerged_leaves = [];
@@ -220,7 +217,7 @@ let treesync_to_update_path_node #bytes #bl np =
   content <-- from_option "treesync_to_update_path_node: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
   impl_data <-- from_option "treesync_to_update_path_node: can't parse impl data" (parse (treekem_impl_data_nt bytes) np.TS.content.impl_data);
   return ({
-    public_key = content.public_key;
+    encryption_key = content.encryption_key;
     encrypted_path_secret = impl_data.encrypted_path_secret;
   } <: update_path_node_nt bytes)
 

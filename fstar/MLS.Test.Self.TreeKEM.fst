@@ -104,7 +104,7 @@ let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
   let unsigned_leaf_package: leaf_package_t bytes = {
     version = 0;
     content = {
-      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key = hpke_pk} <: treekem_content_nt bytes);
+      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({encryption_key = hpke_pk} <: treekem_content_nt bytes);
       impl_data = empty;
     };
     credential = {
@@ -155,7 +155,7 @@ let add_rand #bytes #cb rng st =
     tbs = {
       version = PV_mls10 ();
       cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
-      init_key = leaf_node_network.data.public_key;
+      init_key = leaf_node_network.data.encryption_key;
       leaf_node = leaf_node_network;
       extensions = Seq.empty;
     };

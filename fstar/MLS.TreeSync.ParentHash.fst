@@ -11,7 +11,7 @@ open MLS.Result
 #set-options "--ifuel 1 --fuel 1"
 
 noeq type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
-  public_key: hpke_public_key_nt bytes;
+  encryption_key: hpke_public_key_nt bytes;
   parent_hash: mls_bytes bytes;
   original_sibling_tree_hash: mls_bytes bytes;
 }
@@ -21,12 +21,12 @@ noeq type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (parent_hash_input_nt bytes) =
   mk_parseable_serializeable ps_parent_hash_input_nt
 
-val get_public_key_from_content: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> result (hpke_public_key_nt bytes)
-let get_public_key_from_content #bytes #bl content =
+val get_encryption_key_from_content: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> result (hpke_public_key_nt bytes)
+let get_encryption_key_from_content #bytes #bl content =
   let open MLS.NetworkBinder in
-  content <-- from_option "get_public_key_from_content: Couldn't parse node content"
+  content <-- from_option "get_encryption_key_from_content: Couldn't parse node content"
     (parse (treekem_content_nt bytes) content);
-  return content.public_key
+  return content.encryption_key
 
 val mk_full_blank_tree: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> treesync bytes l (pow2 l)
 let rec mk_full_blank_tree #bytes #bl l =
@@ -71,13 +71,13 @@ let rec un_add #bytes #bl #l #n t leaves nb_left_leaves =
 
 val compute_parent_hash_from_sibling: #bytes:Type0 -> {|crypto_bytes bytes|} -> #ls:nat -> #ns:tree_size ls -> node_package_t bytes -> nat -> treesync bytes ls ns -> result (lbytes bytes (hash_length #bytes))
 let compute_parent_hash_from_sibling #bytes #cb #ls #ns root_np nb_left_leaves_sibling sibling =
-  public_key <-- get_public_key_from_content root_np.content.content;
+  encryption_key <-- get_encryption_key_from_content root_np.content.content;
   original_sibling_tree_hash <-- tree_hash (fully_extend (un_add sibling root_np.unmerged_leaves nb_left_leaves_sibling));
   if not (length root_np.parent_hash < pow2 30) then
     internal_failure "compute_parent_hash_from_sibling: parent_hash too long"
   else (
     hash_hash (serialize (parent_hash_input_nt bytes) ({
-      public_key;
+      encryption_key;
       parent_hash = root_np.parent_hash;
       original_sibling_tree_hash;
     }))

@@ -20,6 +20,10 @@ type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_hpke_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (hpke_public_key_nt bytes)
 let ps_hpke_public_key_nt #bytes #bl = ps_mls_bytes
 
+type signature_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
+val ps_signature_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (signature_public_key_nt bytes)
+let ps_signature_public_key_nt #bytes #bl = ps_mls_bytes
+
 type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
 let ps_key_package_ref_nt #bytes #bl = ps_lbytes 16
@@ -41,7 +45,7 @@ noeq type hpke_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_hpke_ciphertext_nt] (gen_parser (`hpke_ciphertext_nt))
 
 noeq type update_path_node_nt (bytes:Type0) {|bytes_like bytes|} = {
-  public_key: hpke_public_key_nt bytes;
+  encryption_key: hpke_public_key_nt bytes;
   encrypted_path_secret: mls_seq bytes ps_hpke_ciphertext_nt;
 }
 
@@ -63,24 +67,6 @@ type cipher_suite_nt =
 
 %splice [ps_cipher_suite_nt] (gen_parser (`cipher_suite_nt))
 
-//TODO: these are signature algorithms supported in MLS ciphersuites, it is not complete
-//(see <https://tools.ietf.org/html/rfc8446#appendix-B.3.1.3>)
-type signature_scheme_nt =
-  | SA_ecdsa_secp256r1_sha256: [@@@ with_num_tag 2 0x403] unit -> signature_scheme_nt
-  | SA_ecdsa_secp521r1_sha512: [@@@ with_num_tag 2 0x603] unit -> signature_scheme_nt
-  | SA_ed25519: [@@@ with_num_tag 2 0x807] unit -> signature_scheme_nt
-  | SA_ed448: [@@@ with_num_tag 2 0x808] unit -> signature_scheme_nt
-
-%splice [ps_signature_scheme_nt] (gen_parser (`signature_scheme_nt))
-
-noeq type basic_credential_nt (bytes:Type0) {|bytes_like bytes|} = {
-  identity: mls_bytes bytes;
-  signature_scheme: signature_scheme_nt;
-  signature_key: mls_bytes bytes;
-}
-
-%splice [ps_basic_credential_nt] (gen_parser (`basic_credential_nt))
-
 type certificate_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 
 val ps_certificate_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (certificate_nt bytes)
@@ -93,8 +79,8 @@ type credential_type_nt =
 %splice [ps_credential_type_nt] (gen_parser (`credential_type_nt))
 
 noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
-  | C_basic: [@@@ with_tag (CT_basic ())] basic_credential_nt bytes -> credential_nt bytes
-  | C_x509: [@@@ with_tag (CT_x509 ())] mls_seq bytes ps_certificate_nt -> credential_nt bytes
+  | C_basic: [@@@ with_tag (CT_basic ())] identity: mls_bytes bytes -> credential_nt bytes
+  | C_x509: [@@@ with_tag (CT_x509 ())] chain: mls_seq bytes ps_certificate_nt -> credential_nt bytes
 
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
 
@@ -174,7 +160,8 @@ let ps_leaf_node_parent_hash_nt #bytes #bl source =
   | _ -> ps_unit
 
 noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} = {
-  public_key: hpke_public_key_nt bytes;
+  encryption_key: hpke_public_key_nt bytes;
+  signature_key: signature_public_key_nt bytes;
   credential: credential_nt bytes;
   capabilities: capabilities_nt bytes;
   source: leaf_node_source_nt;
@@ -256,7 +243,7 @@ noeq type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_group_context_nt] (gen_parser (`group_context_nt))
 
 noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} = {
-  public_key: hpke_public_key_nt bytes;
+  encryption_key: hpke_public_key_nt bytes;
   parent_hash: mls_bytes bytes;
   unmerged_leaves: mls_seq bytes (ps_nat_lbytes #bytes 4);
 }

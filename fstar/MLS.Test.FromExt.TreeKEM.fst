@@ -42,11 +42,7 @@ let integrity_error_to_string ie =
 
 val find_my_index: {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> key_package_nt bytes -> ML (res:nat{res<n})
 let find_my_index #bl #l #n t kp =
-  let my_signature_key =
-    match kp.tbs.leaf_node.data.credential with
-    | C_basic c -> c.signature_key
-    | _ -> failwith "unsupported credential!"; empty
-  in
+  let my_signature_key = kp.tbs.leaf_node.data.signature_key in
   let test (olp: option (leaf_package_t bytes)) =
     match olp with
     | None -> false

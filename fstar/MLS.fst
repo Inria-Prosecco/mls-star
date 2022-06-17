@@ -290,14 +290,14 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   let fresh, e = tmp in
   let leaf_secret = fresh in
   key_pair <-- MLS.TreeKEM.derive_keypair_from_path_secret #bytes leaf_secret;
-  let (_, public_key) = key_pair in
+  let (_, encryption_key) = key_pair in
   capabilities <-- default_capabilities;
   let extensions: bytes = empty_extensions #bytes #cb.base in
   cb.hpke_public_key_length_bound;
   let unsigned_leaf_package: leaf_package_t bytes = {
     version = 0;
     content = {
-      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({public_key} <: treekem_content_nt bytes);
+      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({encryption_key} <: treekem_content_nt bytes);
       impl_data = empty;
     };
     credential = {
@@ -332,7 +332,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   let kp_tbs = ({
     version = PV_mls10 ();
     cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
-    init_key = public_key;
+    init_key = encryption_key;
     leaf_node;
     extensions = Seq.empty;
   } <: key_package_tbs_nt bytes) in

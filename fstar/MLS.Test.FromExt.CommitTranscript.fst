@@ -21,9 +21,9 @@ let to_lbytes #bytes #bl n b =
   else
     failwith "to_lbytes: bad length"
 
-val is_signature_ok: {|cb:crypto_bytes bytes|} -> basic_credential_nt bytes -> message_content bytes #cb.base -> message_auth bytes #cb.base -> group_context_nt bytes -> ML bool
-let is_signature_ok #cb cred commit_message commit_auth group_context =
-  let signature_key = to_lbytes (sign_public_key_length #bytes) cred.signature_key in
+val is_signature_ok: {|cb:crypto_bytes bytes|} -> signature_public_key_nt bytes -> message_content bytes #cb.base -> message_auth bytes #cb.base -> group_context_nt bytes -> ML bool
+let is_signature_ok #cb signature_key commit_message commit_auth group_context =
+  let signature_key = to_lbytes (sign_public_key_length #bytes) signature_key in
   let signature_signature = to_lbytes (sign_signature_length #bytes) commit_auth.signature in
   extract_result (check_message_signature signature_key signature_signature commit_message (Some group_context))
 
@@ -79,10 +79,7 @@ let test_commit_transcript_one t =
         IO.print_string "Skipping signature check because only Ed25519 is supported\n";
         true
       ) else (
-        match credential_network with
-        | C_basic cred ->
-          is_signature_ok cred commit_message commit_auth group_context
-        | _ -> false
+        is_signature_ok (magic() (*TODO signature key? *)) commit_message commit_auth group_context
       )
     in
     confirmed_transcript_hash_ok && interim_transcript_hash_ok && confirmation_tag_ok && membership_tag_ok && signature_ok

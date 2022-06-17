@@ -34,11 +34,11 @@ let treesync_to_treekem_node_package #bytes #cb nb_left_leaves np =
     else
       return ((unmerged_leaf - nb_left_leaves) <: nat)
   ) np.unmerged_leaves;
-  if not (length (content.public_key <: bytes) = hpke_public_key_length #bytes) then
+  if not (length (content.encryption_key <: bytes) = hpke_public_key_length #bytes) then
     error "treesync_to_treekem_node_package: public key has wrong length"
   else (
     return ({
-      public_key = content.public_key;
+      public_key = content.encryption_key;
       version = np.version;
       last_group_context = impl_data.last_group_context;
       unmerged_leaves = unmerged_leaves;
@@ -55,8 +55,8 @@ let rec treesync_to_treekem_aux #bytes #cb #l #n nb_left_leaves t =
   | TLeaf (Some lp) ->
     lpc <-- from_option "treesync_to_treekem: Couldn't parse leaf content"
       (parse (treekem_content_nt bytes) lp.content.content);
-    if length (lpc.public_key <: bytes) = hpke_public_key_length #bytes then
-      return (TLeaf (Some ({public_key = lpc.public_key; version = lp.version} <: member_info bytes)))
+    if length (lpc.encryption_key <: bytes) = hpke_public_key_length #bytes then
+      return (TLeaf (Some ({public_key = lpc.encryption_key; version = lp.version} <: member_info bytes)))
     else
       error "treesync_to_treekem: public key has wrong length"
   | TSkip _ t' ->
@@ -100,7 +100,7 @@ let treekem_to_treesync_node_package #bytes #cb kp =
     Seq.lemma_list_seq_bij ciphertexts;
     return ({
       content = serialize (treekem_content_nt bytes) ({
-        public_key = kp.public_key;
+        encryption_key = kp.public_key;
       });
       impl_data = serialize (treekem_impl_data_nt bytes) ({
         content_dir = kp.path_secret_from;
@@ -128,7 +128,7 @@ let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
       version = (mi <: member_info bytes).version;
       content = {
         content = serialize (treekem_content_nt bytes) ({
-          public_key = (mi <: member_info bytes).public_key;
+          encryption_key = (mi <: member_info bytes).public_key;
         });
         impl_data = empty;
       };
