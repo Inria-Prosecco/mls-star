@@ -401,7 +401,7 @@ let send_helper st msg e =
   ct_new_ratchet_state <-- message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret (msg, auth);
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
   ct_network <-- message_ciphertext_to_network ct;
-  let msg_bytes = (ps_to_pse ps_mls_message_nt).serialize_exact (M_ciphertext ct_network) in
+  let msg_bytes = (ps_to_pse ps_mls_message_nt).serialize_exact (M_mls10 (M_ciphertext ct_network)) in
   let new_st = if msg.content_type = CT_application () then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
   let g:group_message = (st.tree_state.group_id, msg_bytes) in
   return (new_st, auth, g)
@@ -721,10 +721,10 @@ let process_group_message state msg =
     ((ps_to_pse MLS.NetworkTypes.ps_mls_message_nt).parse_exact msg);
   tmp <-- (
     match msg with
-    | M_plaintext msg ->
+    | M_mls10 (M_plaintext msg) ->
         msg <-- MLS.TreeDEM.Message.Framing.network_to_message_plaintext #bytes msg;
         return (MLS.TreeDEM.Message.Framing.message_plaintext_to_message msg)
-    | M_ciphertext msg ->
+    | M_mls10  (M_ciphertext msg) ->
         msg <-- MLS.TreeDEM.Message.Framing.network_to_message_ciphertext msg;
         encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption state.epoch_secret;
         sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret;

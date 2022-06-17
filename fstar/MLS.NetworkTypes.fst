@@ -691,11 +691,16 @@ noeq type welcome_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_welcome_nt] (gen_parser (`welcome_nt))
 
+noeq type mls_10_message_nt (bytes:Type0) {|bytes_like bytes|} =
+  | M_plaintext: [@@@ with_tag (WF_mls_plaintext ())] mls_plaintext_nt bytes -> mls_10_message_nt bytes
+  | M_ciphertext: [@@@ with_tag (WF_mls_ciphertext ())] mls_ciphertext_nt bytes -> mls_10_message_nt bytes
+  | M_welcome: [@@@ with_tag (WF_mls_welcome ())] welcome_nt bytes -> mls_10_message_nt bytes
+  | M_group_info: [@@@ with_tag (WF_mls_group_info ())] group_info_nt bytes -> mls_10_message_nt bytes
+  | M_key_package: [@@@ with_tag (WF_mls_key_package ())] key_package_nt bytes -> mls_10_message_nt bytes
+
+%splice [ps_mls_10_message_nt] (gen_parser (`mls_10_message_nt))
+
 noeq type mls_message_nt (bytes:Type0) {|bytes_like bytes|} =
-  | M_plaintext: [@@@ with_tag (WF_mls_plaintext ())] mls_plaintext_nt bytes -> mls_message_nt bytes
-  | M_ciphertext: [@@@ with_tag (WF_mls_ciphertext ())] mls_ciphertext_nt bytes -> mls_message_nt bytes
-  | M_welcome: [@@@ with_tag (WF_mls_welcome ())] welcome_nt bytes -> mls_message_nt bytes
-  | M_group_info: [@@@ with_tag (WF_mls_group_info ())] group_info_nt bytes -> mls_message_nt bytes
-  | M_key_package: [@@@ with_tag (WF_mls_key_package ())] key_package_nt bytes -> mls_message_nt bytes
+  | M_mls10: [@@@ with_tag (PV_mls10 ())] mls_10_message_nt bytes -> mls_message_nt bytes
 
 %splice [ps_mls_message_nt] (gen_parser (`mls_message_nt))

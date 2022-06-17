@@ -46,7 +46,7 @@ let test_commit_transcript_one t =
     let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_message_nt).parse_exact (hex_string_to_bytes t.commit)) in
     let commit_plaintext_network =
       match commit_message_network with
-      | M_plaintext p -> p
+      | M_mls10 (M_plaintext p) -> p
       | _ -> failwith "commit is not in a plaintext"
     in
     let commit_plaintext = extract_result (network_to_message_plaintext commit_plaintext_network) in
