@@ -145,11 +145,11 @@ let check_internal_node #bytes #cb #l #n nb_left_leaves t =
   | None -> return IE_Good
   | Some np -> (
     parent_hash_from_left_ok <-- (
-      computed_parent_hash <-- compute_parent_hash_from_dir np.content.content np.parent_hash nb_left_leaves t Left;
+      computed_parent_hash <-- compute_parent_hash_from_dir nb_left_leaves t Left;
       return (has_child_with_parent_hash left computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
-      computed_parent_hash <-- compute_parent_hash_from_dir np.content.content np.parent_hash nb_left_leaves t Right;
+      computed_parent_hash <-- compute_parent_hash_from_dir nb_left_leaves t Right;
       return (has_child_with_parent_hash right computed_parent_hash)
     );
     if (parent_hash_from_left_ok || parent_hash_from_right_ok) then

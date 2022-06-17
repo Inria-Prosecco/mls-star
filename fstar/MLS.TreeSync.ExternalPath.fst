@@ -64,15 +64,6 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key paren
     let (|dir, next_i|) = child_index l i in
     let (child, sibling) = order_subtrees dir (left, right) in
     let child_nb_left_leaves = if dir = Left then nb_left_leaves else nb_left_leaves + (pow2 (l-1)) in
-    parent_hash <-- (
-      match onp with
-      | Some np -> (
-        res <-- compute_parent_hash_from_dir np.content parent_parent_hash nb_left_leaves t dir;
-        return (res <: bytes)
-      )
-      | None -> return parent_parent_hash
-    );
-    result_p_next <-- external_pathsync_to_pathsync_aux opt_sign_key parent_hash child_nb_left_leaves child p_next group_id;
     let new_onp =
       match onp with
       | Some np -> (Some ({
@@ -83,6 +74,15 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key paren
       } <: node_package_t bytes))
       | None -> None
     in
+    parent_hash <-- (
+      match onp with
+      | Some np -> (
+        res <-- compute_parent_hash_from_dir nb_left_leaves (TNode new_onp left right) dir;
+        return (res <: bytes)
+      )
+      | None -> return parent_parent_hash
+    );
+    result_p_next <-- external_pathsync_to_pathsync_aux opt_sign_key parent_hash child_nb_left_leaves child p_next group_id;
     return (PNode new_onp result_p_next)
 
 val external_pathsync_to_pathsync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> option (sign_private_key bytes & sign_nonce bytes) -> treesync bytes l n -> external_pathsync bytes l n i -> bytes -> result (pathsync bytes l n i)
