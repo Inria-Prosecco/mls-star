@@ -565,15 +565,33 @@ noeq type mls_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_mls_ciphertext_nt] (gen_parser (`mls_ciphertext_nt))
 
-noeq type mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type: content_type_nt) = {
+noeq type mls_ciphertext_content_data_nt (bytes:Type0) {|bytes_like bytes|} (content_type: content_type_nt) = {
   content: mls_untagged_content_nt bytes content_type;
   auth: mls_message_auth_nt bytes content_type;
-  padding: mls_bytes bytes;
 }
 
-%splice [ps_mls_ciphertext_content_nt] (gen_parser (`mls_ciphertext_content_nt))
+%splice [ps_mls_ciphertext_content_data_nt] (gen_parser (`mls_ciphertext_content_data_nt))
 
-instance parseable_serializeable_mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt): parseable_serializeable bytes (mls_ciphertext_content_nt bytes content_type) = mk_parseable_serializeable (ps_mls_ciphertext_content_nt content_type)
+let is_nat_zero (n:nat_lbytes 1) = n = 0
+let zero_byte = refined (nat_lbytes 1) is_nat_zero
+let ps_zero_byte (#bytes:Type0) {|bytes_like bytes|} = refine #bytes (ps_nat_lbytes 1) is_nat_zero
+
+noeq type mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type: content_type_nt) = {
+  data: mls_ciphertext_content_data_nt bytes content_type;
+  padding: list zero_byte;
+}
+
+val pse_mls_ciphertext_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer_exact bytes (mls_ciphertext_content_nt bytes content_type)
+let pse_mls_ciphertext_content_nt #bytes #bl content_type =
+  let iso = mk_isomorphism_between
+    (fun (|data, padding|) -> {data; padding})
+    (fun {data; padding} -> (|data, padding|))
+  in
+  isomorphism_exact
+    (bind_exact (ps_mls_ciphertext_content_data_nt content_type) (fun _ -> pse_list ps_zero_byte))
+    iso
+
+instance parseable_serializeable_mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt): parseable_serializeable bytes (mls_ciphertext_content_nt bytes content_type) = mk_parseable_serializeable_from_exact (pse_mls_ciphertext_content_nt content_type)
 
 noeq type mls_ciphertext_content_aad_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_id: mls_bytes bytes;

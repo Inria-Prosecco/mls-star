@@ -27,10 +27,10 @@ let sign_leaf #bytes #cb sign_key entropy lp parent_parent_hash group_id =
     else if not (length group_id < pow2 30) then
       internal_failure "sign_leaf: group_id is too long"
     else (
-      let ln_tbs = {
+      let ln_tbs = ({
         data = ln.data;
         group_id = group_id;
-      } in
+      } <: leaf_node_tbs_nt bytes) in
       let tbs_bytes = serialize (leaf_node_tbs_nt bytes) ln_tbs in
       new_signature <-- sign_with_label sign_key (string_to_bytes #bytes "LeafNodeTBS") tbs_bytes entropy;
       return ({lp with signature = new_signature} <: leaf_package_t bytes)

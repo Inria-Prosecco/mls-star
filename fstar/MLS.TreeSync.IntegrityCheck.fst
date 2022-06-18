@@ -55,10 +55,10 @@ let check_signature #bytes #cb lp group_id =
     error "check_leaf_package: group_id too long"
   else (
     leaf_node <-- leaf_package_to_network lp;
-    let tbs = {
+    let tbs = ({
       data = leaf_node.data;
       group_id = (match leaf_node.data.source with | LNS_commit () | LNS_update () -> group_id | _ -> ());
-    } in
+    } <: leaf_node_tbs_nt bytes) in
     let leaf_package_bytes: bytes = serialize (leaf_node_tbs_nt bytes) tbs in
     signature_ok <-- verify_with_label lp.credential.signature_key (string_to_bytes #bytes "LeafNodeTBS") leaf_package_bytes lp.signature;
     if signature_ok then

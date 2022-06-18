@@ -30,7 +30,7 @@ noeq type message_ciphertext (bytes:Type0) {|bytes_like bytes|} = {
 noeq type message_ciphertext_content (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt) = {
   content: message_bare_content bytes content_type;
   auth: message_auth bytes;
-  padding: bytes;
+  padding: list zero_byte;
 }
 
 noeq type encrypted_sender_data_content (bytes:Type0) {|bytes_like bytes|} = {
@@ -75,8 +75,8 @@ let message_plaintext_to_network #bytes #bl pt =
 
 val network_to_ciphertext_content: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type: content_type_nt -> mls_ciphertext_content_nt bytes content_type -> result (message_ciphertext_content bytes content_type)
 let network_to_ciphertext_content #bytes #bl #content_type ciphertext_content =
-  content <-- network_to_message_bare_content ciphertext_content.content;
-  auth <-- network_to_message_auth ciphertext_content.auth;
+  content <-- network_to_message_bare_content ciphertext_content.data.content;
+  auth <-- network_to_message_auth ciphertext_content.data.auth;
   return ({
     content;
     auth;
@@ -87,15 +87,13 @@ val ciphertext_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #cont
 let ciphertext_content_to_network #bytes #bl #content_type ciphertext_content =
   content <-- message_bare_content_to_network ciphertext_content.content;
   auth <-- message_auth_to_network ciphertext_content.auth;
-  if not (length ciphertext_content.padding < pow2 30) then
-    internal_failure "ciphertext_content_to_network: padding too long"
-  else (
-    return ({
+  return ({
+    data = {
       content;
       auth;
-      padding = ciphertext_content.padding;
-    } <: mls_ciphertext_content_nt bytes content_type)
-  )
+    };
+    padding = ciphertext_content.padding;
+  } <: mls_ciphertext_content_nt bytes content_type)
 
 val network_to_encrypted_sender_data: #bytes:Type0 -> {|bytes_like bytes|} -> mls_sender_data_nt bytes -> encrypted_sender_data_content bytes
 let network_to_encrypted_sender_data #bytes #bl sd =
@@ -390,7 +388,7 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
     let ciphertext_content: message_ciphertext_content bytes (msg.content_type) = {
       content = msg.content;
       auth = msg_auth;
-      padding = empty; //TODO
+      padding = []; //TODO
     } in
     ciphertext_content_network <-- ciphertext_content_to_network ciphertext_content;
     ciphertext_content_ad <-- message_to_ciphertext_content_aad msg;
