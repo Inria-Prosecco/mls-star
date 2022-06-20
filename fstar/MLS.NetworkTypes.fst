@@ -610,25 +610,23 @@ noeq type mls_sender_data_aad_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 instance parseable_serializeable_mls_sender_data_aad_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_sender_data_aad_nt bytes) = mk_parseable_serializeable ps_mls_sender_data_aad_nt
 
-//Structure used for confirmed transcript hash
-noeq type mls_message_commit_content_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type confirmed_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
   content: mls_message_content_nt bytes;
   signature: mls_bytes bytes;
 }
 
-%splice [ps_mls_message_commit_content_nt] (gen_parser (`mls_message_commit_content_nt))
+%splice [ps_confirmed_transcript_hash_input_nt] (gen_parser (`confirmed_transcript_hash_input_nt))
 
-instance parseable_serializeable_mls_message_commit_content_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_message_commit_content_nt bytes) = mk_parseable_serializeable ps_mls_message_commit_content_nt
+instance parseable_serializeable_confirmed_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (confirmed_transcript_hash_input_nt bytes) = mk_parseable_serializeable ps_confirmed_transcript_hash_input_nt
 
-//Structure used for interim transcript hash
-noeq type mls_message_commit_auth_data_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   confirmation_tag: mac_nt bytes;
 }
 
-%splice [ps_mls_message_commit_auth_data_nt] (gen_parser (`mls_message_commit_auth_data_nt))
+%splice [ps_interim_transcript_hash_input_nt] (gen_parser (`interim_transcript_hash_input_nt))
 
-instance parseable_serializeable_mls_message_commit_auth_data_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_message_commit_auth_data_nt bytes) = mk_parseable_serializeable ps_mls_message_commit_auth_data_nt
+instance parseable_serializeable_interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (interim_transcript_hash_input_nt bytes) = mk_parseable_serializeable ps_interim_transcript_hash_input_nt
 
 noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   cipher_suite: cipher_suite_nt;

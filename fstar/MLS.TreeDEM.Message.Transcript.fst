@@ -15,7 +15,7 @@ let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcrip
     internal_failure "compute_confirmed_transcript_hash: should only be used on a commit message"
   else (
     msg_network <-- message_content_to_network msg;
-    let serialized_msg = serialize (mls_message_commit_content_nt bytes) ({
+    let serialized_msg = serialize (confirmed_transcript_hash_input_nt bytes) ({
       wire_format = msg.wire_format;
       content = msg_network;
       signature = signature;
@@ -28,7 +28,7 @@ let compute_interim_transcript_hash #bytes #cb confirmation_tag confirmed_transc
   if not (length confirmation_tag < pow2 30) then
     internal_failure "compute_interim_transcript_hash: confirmation_tag too long"
   else (
-    let serialized_auth = serialize (mls_message_commit_auth_data_nt bytes) ({
+    let serialized_auth = serialize (interim_transcript_hash_input_nt bytes) ({
       confirmation_tag;
     }) in
     hash_hash (concat confirmed_transcript_hash serialized_auth)
