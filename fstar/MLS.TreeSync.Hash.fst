@@ -36,10 +36,9 @@ noeq type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} =
 instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (tree_hash_input_nt bytes) =
   mk_parseable_serializeable ps_tree_hash_input_nt
 
-val tree_hash_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result (lbytes bytes (hash_length #bytes))
-let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
+val tree_hash_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> nat -> treesync bytes l -> result (lbytes bytes (hash_length #bytes))
+let rec tree_hash_aux #bytes #cb #l nb_left_leaves t =
   match t with
-  | TSkip _ t' -> tree_hash_aux nb_left_leaves t'
   | TLeaf olp ->
     leaf_node <-- (
       match olp with
@@ -71,6 +70,6 @@ let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
       right_hash = right_hash;
     })))
 
-val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> result (lbytes bytes (hash_length #bytes))
-let tree_hash #bytes #cb #l #n t =
+val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treesync bytes l -> result (lbytes bytes (hash_length #bytes))
+let tree_hash #bytes #cb #l t =
   tree_hash_aux 0 t

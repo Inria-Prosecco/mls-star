@@ -339,8 +339,8 @@ let apply_reuse_guard #bytes #cb reuse_guard nonce =
   let new_nonce_head = xor nonce_head reuse_guard in
   concat #bytes new_nonce_head nonce_tail
 
-val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> message_ciphertext bytes -> result (message_content bytes & message_auth bytes)
-let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_secret ct =
+val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> encryption_secret:bytes -> sender_data_secret:bytes -> message_ciphertext bytes -> result (message_content bytes & message_auth bytes)
+let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_secret ct =
   sender_data <-- (
     sender_data_ad <-- message_ciphertext_to_sender_data_aad ct;
     sender_data <-- decrypt_sender_data sender_data_ad (get_ciphertext_sample ct.ciphertext) sender_data_secret ct.encrypted_sender_data;
@@ -348,12 +348,12 @@ let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_s
   );
   rs_output <-- (
     sender_index <-- (
-      if not (sender_data.leaf_index < n) then
+      if not (sender_data.leaf_index < pow2 l) then
         error "message_ciphertext_to_message: leaf_index too big"
       else
         return sender_data.leaf_index
     );
-    leaf_tree_secret <-- leaf_kdf n encryption_secret sender_index;
+    leaf_tree_secret <-- leaf_kdf encryption_secret (sender_index <: MLS.Tree.leaf_index l);
     init_ratchet <-- (
       match ct.content_type with
       | CT_application () -> init_application_ratchet leaf_tree_secret

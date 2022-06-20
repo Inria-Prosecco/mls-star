@@ -172,7 +172,7 @@ let add_rand #bytes #cb rng st =
 val update_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> nat -> ML (rand_state & mls_state bytes)
 let update_leaf #bytes #cb rng st leaf_index =
   let leaf_secrets = get_secret st.secrets leaf_index in
-  if not (leaf_index < st.public.treesize) then failwith "" else
+  if not (leaf_index < pow2 st.public.levels) then failwith "" else
   let tree_ts = st.public.tree in
   let tree_tk = extract_result (treesync_to_treekem tree_ts) in
   let (rng, new_leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
@@ -195,8 +195,8 @@ let update_leaf #bytes #cb rng st leaf_index =
   let ext_path_ts = extract_result (treekem_to_treesync new_leaf_package path_tk) in
   let (rng, sign_nonce_bytes) = gen_rand_bytes rng (sign_nonce_length #bytes) in
   let sign_nonce = sign_nonce_bytes in
-  let path_ts = extract_result (external_pathsync_to_pathsync (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts empty) in
-  let new_tree_ts = apply_path tree_ts path_ts in
+  let path_ts = extract_result (external_pathsync_to_pathsync leaf_index (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts empty) in
+  let new_tree_ts = apply_path tree_ts path_ts leaf_index in
   (rng, {
     public = {
       st.public with
@@ -215,7 +215,7 @@ let update_rand #bytes #cb rng st =
 
 val remove_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> nat -> ML (rand_state & mls_state bytes)
 let remove_leaf #bytes #cb rng st leaf_index =
-  if not (leaf_index < st.public.treesize) then failwith "" else
+  if not (leaf_index < pow2 st.public.levels) then failwith "" else
   (rng, {
     public = remove st.public leaf_index;
     secrets = List.Tot.filter (fun (x, _) -> x <> leaf_index) st.secrets;
@@ -282,10 +282,10 @@ let check_root_secret #cb st =
   //    tree_tk
   //);
   //IO.print_string "\n";
-  if not (first_index < st.public.treesize) then failwith "" else
+  if not (first_index < pow2 st.public.levels) then failwith "" else
   let first_root_secret = extract_result (root_secret tree_tk first_index first_secret.leaf_secret) in
   List.iter #(nat & participant_secrets bytes) (fun (index, secret) ->
-    if not (index < st.public.treesize) then failwith "" else
+    if not (index < pow2 st.public.levels) then failwith "" else
     let cur_root_secret = extract_result (root_secret tree_tk index secret.leaf_secret) in
     if not (first_root_secret = cur_root_secret) then
       failwith ("check_root_secret: " ^ nat_to_string first_index ^ " has " ^ bytes_to_hex_string first_root_secret ^ ", " ^ nat_to_string index ^ " has " ^ bytes_to_hex_string cur_root_secret)

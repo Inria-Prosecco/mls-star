@@ -47,34 +47,32 @@ type node_package_t (bytes:Type0) {|bytes_like bytes|} = {
 (** Tree and Paths definitions *)
 type level_n = nat
 
-type treesync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) = tree l n (option (leaf_package_t bytes)) (option (node_package_t bytes))
-type pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (option (leaf_package_t bytes)) (option (node_package_t bytes))
+type treesync (bytes:Type0) {|bytes_like bytes|} (l:level_n) = tree l (option (leaf_package_t bytes)) (option (node_package_t bytes))
+type pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) = path l (option (leaf_package_t bytes)) (option (node_package_t bytes))
 
-type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) (n:tree_size l) (i:leaf_index n) = path l n i (leaf_package_t bytes) (option (external_content bytes))
+type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:level_n) = path l (leaf_package_t bytes) (option (external_content bytes))
 
 type operation_t (bytes:Type0) {|bytes_like bytes|} =
   | Op_Add: lp:leaf_package_t bytes -> operation_t bytes
   | Op_Update: lp:leaf_package_t bytes -> operation_t bytes
   | Op_Remove: ind:nat -> operation_t bytes
-  | Op_UpdatePath: l:level_n -> n:tree_size l -> i:leaf_index n -> external_pathsync bytes l n i -> operation_t bytes
+  | Op_UpdatePath: l:level_n -> external_pathsync bytes l -> operation_t bytes
 
 (** TreeSync state and accessors *)
 type state_t (bytes:Type0) {|bytes_like bytes|} = {
   group_id: bytes;
   levels: level_n;
-  treesize: tree_size levels;
-  tree: treesync bytes levels treesize;
+  tree: treesync bytes levels;
   version: nat;
   //initial_tree: treesync levels treesize;
   transcript: Seq.seq (operation_t bytes);
 }
 
-val mk_initial_state: #bytes:Type0 -> {|bytes_like bytes|} -> gid:bytes -> l:level_n -> n:tree_size l -> treesync bytes l n -> state_t bytes
-let mk_initial_state gid l n t = {
+val mk_initial_state: #bytes:Type0 -> {|bytes_like bytes|} -> gid:bytes -> l:level_n -> treesync bytes l -> state_t bytes
+let mk_initial_state gid l t = {
   group_id = gid; levels = l;
-  treesize = n;
   tree = t; version = 0;
   //initial_tree = t;
   transcript = Seq.empty;}
 
-type index_t (#bytes:Type0) {|bytes_like bytes|} (st:state_t bytes) = i:nat{i < st.treesize}
+type index_t (#bytes:Type0) {|bytes_like bytes|} (st:state_t bytes) = i:nat{i < pow2 st.levels}

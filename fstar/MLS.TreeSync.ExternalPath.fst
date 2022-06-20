@@ -37,8 +37,8 @@ let sign_leaf #bytes #cb sign_key entropy lp parent_parent_hash group_id =
     )
   )
 
-val external_pathsync_to_pathsync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> option (sign_private_key bytes & sign_nonce bytes) -> bytes -> nat -> treesync bytes l n -> external_pathsync bytes l n i -> bytes -> result (pathsync bytes l n i)
-let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key parent_parent_hash nb_left_leaves t p group_id =
+val external_pathsync_to_pathsync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> leaf_index l -> option (sign_private_key bytes & sign_nonce bytes) -> bytes -> nat -> treesync bytes l -> external_pathsync bytes l -> bytes -> result (pathsync bytes l)
+let rec external_pathsync_to_pathsync_aux #bytes #cb #l i opt_sign_key parent_parent_hash nb_left_leaves t p group_id =
   match t, p with
   | _, PLeaf lp ->
     lp <-- (
@@ -57,13 +57,11 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key paren
       error "external_pathsync_to_pathsync_aux: leaf contain an invalid parent hash"
     else
       return (PLeaf (Some lp))
-  | TSkip _ t', PSkip _ p' ->
-    result <-- external_pathsync_to_pathsync_aux opt_sign_key parent_parent_hash nb_left_leaves t' p' group_id;
-    return (PSkip _ result)
   | TNode _ left right, PNode onp p_next ->
-    let (|dir, next_i|) = child_index l i in
+    let p_next: external_pathsync bytes (l-1) = p_next in //Why F*, why???
+    let (dir, next_i) = child_index l i in
     let (child, sibling) = order_subtrees dir (left, right) in
-    let child_nb_left_leaves = if dir = Left then nb_left_leaves else nb_left_leaves + (pow2 (l-1)) in
+    let child_nb_left_leaves: nat = if dir = Left then nb_left_leaves else nb_left_leaves + (pow2 (l-1)) in
     let new_onp =
       match onp with
       | Some np -> (Some ({
@@ -82,10 +80,9 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #n #i opt_sign_key paren
       )
       | None -> return parent_parent_hash
     );
-    result_p_next <-- external_pathsync_to_pathsync_aux opt_sign_key parent_hash child_nb_left_leaves child p_next group_id;
+    result_p_next <-- external_pathsync_to_pathsync_aux next_i opt_sign_key parent_hash child_nb_left_leaves child p_next  group_id;
     return (PNode new_onp result_p_next)
 
-val external_pathsync_to_pathsync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> option (sign_private_key bytes & sign_nonce bytes) -> treesync bytes l n -> external_pathsync bytes l n i -> bytes -> result (pathsync bytes l n i)
-let external_pathsync_to_pathsync #bytes #cb #l #n #i opt_sign_key t p group_id =
-  external_pathsync_to_pathsync_aux opt_sign_key empty 0 t p group_id
-
+val external_pathsync_to_pathsync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> i:leaf_index l -> option (sign_private_key bytes & sign_nonce bytes) -> treesync bytes l -> external_pathsync bytes l -> bytes -> result (pathsync bytes l)
+let external_pathsync_to_pathsync #bytes #cb #l i opt_sign_key t p group_id =
+  external_pathsync_to_pathsync_aux i opt_sign_key empty 0 t p group_id

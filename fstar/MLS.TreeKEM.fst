@@ -9,24 +9,23 @@ open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 
-val leaf_public_key: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> leaf_index n -> option (hpke_public_key bytes)
-let rec leaf_public_key #bytes #cb #l #n t leaf_index =
+val leaf_public_key: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> leaf_index l -> option (hpke_public_key bytes)
+let rec leaf_public_key #bytes #cb #l t leaf_index =
   match t with
   | TLeaf None -> None
   | TLeaf (Some mi) -> Some (mi.public_key)
-  | TSkip _ t' -> leaf_public_key t' leaf_index
   | TNode _ left right ->
-    let (|dir, new_leaf_index|) = child_index l leaf_index in
+    let (dir, new_leaf_index) = child_index l leaf_index in
     if dir = Left then
       leaf_public_key left new_leaf_index
     else
       leaf_public_key right new_leaf_index
 
 //This is a special case of the original_* functions below
-val unmerged_leaves_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> list nat -> list (hpke_public_key bytes)
-let unmerged_leaves_resolution #bytes #cb #l #n t indexes =
+val unmerged_leaves_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> list nat -> list (hpke_public_key bytes)
+let unmerged_leaves_resolution #bytes #cb #l t indexes =
   List.Tot.concatMap (fun (index:nat) ->
-    if index < n then
+    if index < pow2 l then
       match leaf_public_key t index with
       | None -> []
       | Some res -> [res]
@@ -35,19 +34,18 @@ let unmerged_leaves_resolution #bytes #cb #l #n t indexes =
   ) indexes
 
 //This is a special case of the original_* functions below
-val tree_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> list (hpke_public_key bytes)
+val tree_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> list (hpke_public_key bytes)
 let rec tree_resolution #bytes #cb #l t =
   match t with
   | TLeaf None -> []
   | TLeaf (Some mi) -> [mi.public_key]
-  | TSkip _ t' -> tree_resolution t'
   | TNode (Some kp) left right -> (kp.public_key)::(unmerged_leaves_resolution t kp.unmerged_leaves)
   | TNode None left right -> (tree_resolution left)@(tree_resolution right)
 
-val original_unmerged_leaves_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> list nat -> treekem bytes l n -> list nat -> list (hpke_public_key bytes)
-let original_unmerged_leaves_resolution #bytes #cb #l #n forbidden_leaves t indexes =
+val original_unmerged_leaves_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> list nat -> treekem bytes l -> list nat -> list (hpke_public_key bytes)
+let original_unmerged_leaves_resolution #bytes #cb #l forbidden_leaves t indexes =
   List.Tot.concatMap (fun (index:nat) ->
-    if index < n && not (List.Tot.mem index forbidden_leaves) then
+    if index < pow2 l && not (List.Tot.mem index forbidden_leaves) then
       match leaf_public_key t index with
       | None -> []
       | Some res -> [res]
@@ -55,49 +53,35 @@ let original_unmerged_leaves_resolution #bytes #cb #l #n forbidden_leaves t inde
       []
   ) indexes
 
-val split_forbidden_leaves: l:pos -> n:tree_size l{pow2 (l-1) < n} -> list nat -> list nat & list nat
-let rec split_forbidden_leaves l n forbidden_leaves =
+val split_forbidden_leaves: l:pos -> list nat -> list nat & list nat
+let rec split_forbidden_leaves l forbidden_leaves =
   match forbidden_leaves with
   | [] -> ([], [])
   | h::t ->
-    let (res_l, res_r) = split_forbidden_leaves l n t in
+    let (res_l, res_r) = split_forbidden_leaves l t in
     if h < pow2 (l-1) then
       (h::res_l, res_r)
     else
       (res_l, (h-(pow2 (l-1)))::res_r)
 
-//TODO: can't do the proof in the type of `split_forbidden_leaves` because we don't have the `< n` property on the `unmerged_leaves` of TreeKEM
-//(not a useful lemma, it's just for fun)
-val split_forbidden_leaves_lemma: l:pos -> n:tree_size l{pow2 (l-1) < n} -> forbidden_leaves:list nat -> Lemma (
-    let (res_l, res_r) = split_forbidden_leaves l n forbidden_leaves in
-    (forall x. List.Tot.mem x res_l ==> x < pow2 (l-1)) /\
-    ((forall x. List.Tot.mem x forbidden_leaves ==> x < n) ==> (forall x. List.Tot.mem x res_r ==> x < (n - pow2 (l-1))))
-  )
-let rec split_forbidden_leaves_lemma l n forbidden_leaves =
-  match forbidden_leaves with
-  | [] -> ()
-  | h::t -> split_forbidden_leaves_lemma l n t
-
-val original_tree_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> list nat -> treekem bytes l n -> list (hpke_public_key bytes)
-let rec original_tree_resolution #bytes #cb #l #n forbidden_leaves t =
+val original_tree_resolution: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> list nat -> treekem bytes l -> list (hpke_public_key bytes)
+let rec original_tree_resolution #bytes #cb #l forbidden_leaves t =
   match t with
   | TLeaf None -> []
   | TLeaf (Some mi) -> if forbidden_leaves = [] then [mi.public_key] else []
-  | TSkip _ t' -> original_tree_resolution forbidden_leaves t'
   | TNode (Some kp) left right -> (kp.public_key)::(original_unmerged_leaves_resolution forbidden_leaves t kp.unmerged_leaves)
   | TNode None left right ->
-    let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l n forbidden_leaves in
+    let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l forbidden_leaves in
     (original_tree_resolution left_forbidden_leaves left)@(original_tree_resolution right_forbidden_leaves right)
 
-val original_resolution_index: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> forbidden_leaves:list nat -> t:treekem bytes l n -> leaf_index n -> nat_less (List.Tot.length (original_tree_resolution forbidden_leaves t))
-let rec original_resolution_index #bytes #cb #l #n forbidden_leaves t leaf_index =
+val original_resolution_index: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> forbidden_leaves:list nat -> t:treekem bytes l -> leaf_index l -> nat_less (List.Tot.length (original_tree_resolution forbidden_leaves t))
+let rec original_resolution_index #bytes #cb #l forbidden_leaves t leaf_index =
   match t with
   | TLeaf (Some mi) -> (
     assume (forbidden_leaves = []); //TODO: We should be able to prove it
     0
   )
   | TLeaf None -> admit() //TODO: There should be a precondition that prevent this case
-  | TSkip _ t' -> original_resolution_index forbidden_leaves t' leaf_index
   | TNode (Some kp) left right -> (
     match find_index forbidden_leaves leaf_index kp.unmerged_leaves with
     | Some res ->
@@ -107,9 +91,9 @@ let rec original_resolution_index #bytes #cb #l #n forbidden_leaves t leaf_index
     | None -> 0
   )
   | TNode None left right ->
-    let (|child_dir, child_leaf_index|) = child_index l leaf_index in
+    let (child_dir, child_leaf_index) = child_index l leaf_index in
     let (child, _) = order_subtrees child_dir (left, right) in
-    let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l n forbidden_leaves in
+    let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l forbidden_leaves in
     let child_forbidden_leaves = if child_dir = Left then left_forbidden_leaves else right_forbidden_leaves in
     let child_resolution_index = original_resolution_index child_forbidden_leaves child child_leaf_index in
     List.Tot.Properties.append_length (original_tree_resolution left_forbidden_leaves left) (original_tree_resolution right_forbidden_leaves right);
@@ -175,43 +159,38 @@ let node_decap #bytes #cb child_secret i dir kp =
     hpke_decrypt ciphertext.kem_output child_sk (kp.last_group_context) empty ciphertext.ciphertext
   )
 
-val update_path_entropy_lengths: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> leaf_index n -> list nat
-let rec update_path_entropy_lengths #bytes #cb #l #n t leaf_index =
+val update_path_entropy_lengths: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> leaf_index l -> list nat
+let rec update_path_entropy_lengths #bytes #cb #l t leaf_index =
   match t with
   | TLeaf _ -> []
-  | TSkip _ t' -> update_path_entropy_lengths t' leaf_index
   | TNode _ left right ->
-    let (|dir, new_leaf_index|) = child_index l leaf_index in
+    let (dir, new_leaf_index) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
     if tree_resolution sibling = [] then
       update_path_entropy_lengths child new_leaf_index
     else
       hpke_multirecipient_encrypt_entropy_lengths (tree_resolution sibling) @ update_path_entropy_lengths child new_leaf_index
 
-val update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> t:treekem bytes l n -> leaf_index:leaf_index n -> leaf_secret:bytes -> ad:bytes -> randomness bytes (update_path_entropy_lengths t leaf_index) -> Pure (result (pathkem bytes l n leaf_index & bytes))
+val update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> t:treekem bytes l -> leaf_index:leaf_index l -> leaf_secret:bytes -> ad:bytes -> randomness bytes (update_path_entropy_lengths t leaf_index) -> Pure (result (pathkem bytes l & bytes))
   (requires length leaf_secret >= hpke_private_key_length #bytes)
   (ensures fun res -> match res with
     | Success (_, node_secret) -> length leaf_secret >= hpke_private_key_length #bytes
     | _ -> True
   )
-let rec update_path #bytes #cb #l #n t leaf_index leaf_secret ad rand =
+let rec update_path #bytes #cb #l t leaf_index leaf_secret ad rand =
   match t with
   | TLeaf None -> admit() //TODO: in the previous code, it fails in this case
   | TLeaf (Some mi) ->
     //TODO: in the previous code, it does some credential check here
     leaf_keys <-- derive_keypair_from_path_secret leaf_secret;
     return (PLeaf ({public_key=snd leaf_keys; version=mi.version+1;} <: member_info bytes), leaf_secret)
-  | TSkip _ t' ->
-    result <-- update_path t' leaf_index leaf_secret ad rand;
-    let (result_path, result_secret) = result in
-    return (PSkip _ result_path, result_secret)
   | TNode okp left right ->
     let version =
       match okp with
       | None -> 0
       | Some kp -> kp.version+1
     in
-    let (|dir, next_leaf_index|) = child_index l leaf_index in
+    let (dir, next_leaf_index) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
     if tree_resolution sibling = [] then (
       let next_rand: randomness bytes (update_path_entropy_lengths #_ #_ #(l-1) child next_leaf_index) = rand in
@@ -227,22 +206,21 @@ let rec update_path #bytes #cb #l #n t leaf_index leaf_secret ad rand =
       return (PNode (Some node_kp) child_path, node_path_secret)
     )
 
-val root_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> t:treekem bytes l n -> leaf_index n -> leaf_secret:bytes -> result (bytes)
-let rec root_secret #bytes #cb #l #n t leaf_index leaf_secret =
+val root_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> t:treekem bytes l -> leaf_index l -> leaf_secret:bytes -> result (bytes)
+let rec root_secret #bytes #cb #l t leaf_index leaf_secret =
   match t with
   | TLeaf None -> internal_failure "root_secret: leaf_index corresponds to an empty leaf"
   | TLeaf (Some _) -> return leaf_secret
-  | TSkip _ t' -> root_secret t' leaf_index leaf_secret
   | TNode (Some kp) left right -> begin
     if List.Tot.mem leaf_index kp.unmerged_leaves then (
       return leaf_secret
     ) else (
-      let (|dir, next_leaf_index|) = child_index l leaf_index in
+      let (dir, next_leaf_index) = child_index l leaf_index in
       let (child, sibling) = order_subtrees dir (left, right) in
       child_path_secret <-- root_secret child next_leaf_index leaf_secret;
       //The condition is here becaus the `i` argument has not sense when dir = kp.path_secret_from.
       //Maybe we should refactor `node_decap`?
-      let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l n kp.unmerged_leaves in
+      let (left_forbidden_leaves, right_forbidden_leaves) = split_forbidden_leaves l kp.unmerged_leaves in
       let child_forbidden_leaves = if dir = Left then left_forbidden_leaves else right_forbidden_leaves in
       let i = if dir = kp.path_secret_from then 0 else original_resolution_index child_forbidden_leaves child next_leaf_index in
       assume (dir <> kp.path_secret_from ==> List.Tot.length (original_tree_resolution child_forbidden_leaves child) == List.Tot.length kp.path_secret_ciphertext);
@@ -250,28 +228,27 @@ let rec root_secret #bytes #cb #l #n t leaf_index leaf_secret =
     )
   end
   | TNode None left right -> begin
-    let (|dir, next_leaf_index|) = child_index l leaf_index in
+    let (dir, next_leaf_index) = child_index l leaf_index in
     let (child, sibling) = order_subtrees dir (left, right) in
     root_secret child next_leaf_index leaf_secret
   end
 
-val find_least_common_ancestor: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> my_ind:leaf_index n -> other_ind:leaf_index n{my_ind <> other_ind} -> (res_l:nat & res_n:tree_size res_l & treekem bytes res_l res_n & leaf_index res_n)
-let rec find_least_common_ancestor #bytes #cb #l #n t my_ind other_ind =
+val find_least_common_ancestor: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> my_ind:leaf_index l -> other_ind:leaf_index l{my_ind <> other_ind} -> (res_l:nat & treekem bytes res_l & leaf_index res_l)
+let rec find_least_common_ancestor #bytes #cb #l t my_ind other_ind =
   match t with
-  | TSkip _ t' -> find_least_common_ancestor t' my_ind other_ind
   | TNode _ left right ->
-      let (|my_dir, next_my_ind|) = child_index l my_ind in
-      let (|other_dir, next_other_ind|) = child_index l other_ind in
+      let (my_dir, next_my_ind) = child_index l my_ind in
+      let (other_dir, next_other_ind) = child_index l other_ind in
       if my_dir = other_dir then (
         let (child, sibling) = order_subtrees my_dir (left, right) in
         find_least_common_ancestor child next_my_ind next_other_ind
       ) else (
-        (|l, n, t, my_ind|)
+        (|l, t, my_ind|)
       )
 
-val path_secret_at_least_common_ancestor: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> my_ind:leaf_index n -> other_ind:leaf_index n{my_ind <> other_ind} -> leaf_secret:bytes -> result bytes
-let path_secret_at_least_common_ancestor #bytes #cb #l #n t my_ind other_ind leaf_secret =
-  let (|_, _, lca, lca_my_ind|) = find_least_common_ancestor t my_ind other_ind in
+val path_secret_at_least_common_ancestor: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> my_ind:leaf_index l -> other_ind:leaf_index l{my_ind <> other_ind} -> leaf_secret:bytes -> result bytes
+let path_secret_at_least_common_ancestor #bytes #cb #l t my_ind other_ind leaf_secret =
+  let (|_, lca, lca_my_ind|) = find_least_common_ancestor t my_ind other_ind in
   root_secret lca lca_my_ind leaf_secret
 
 val empty_path_secret_ciphertext: #bytes:Type0 -> {|crypto_bytes bytes|} -> path_secret_ciphertext bytes
@@ -280,16 +257,13 @@ let empty_path_secret_ciphertext #bytes #cb = {
     ciphertext = empty;
   }
 
-val mk_init_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> update_index:leaf_index n -> result (pathkem bytes l n update_index)
-let rec mk_init_path_aux #bytes #cb #l #n t update_index =
+val mk_init_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> update_index:leaf_index l -> result (pathkem bytes l)
+let rec mk_init_path_aux #bytes #cb #l t update_index =
   match t with
   | TLeaf None -> error "mk_init_path_aux: update leaf cannot be blanked"
   | TLeaf (Some mi) -> return (PLeaf mi)
-  | TSkip _ t' ->
-    res <-- mk_init_path_aux t' update_index;
-    return (PSkip _ res)
   | TNode okp left right -> begin
-    let (|update_dir, next_update_index|) = child_index l update_index in
+    let (update_dir, next_update_index) = child_index l update_index in
     let (child, sibling) = order_subtrees update_dir (left, right) in
     let new_okp =
       match okp with
@@ -302,15 +276,12 @@ let rec mk_init_path_aux #bytes #cb #l #n t update_index =
     return (PNode okp next)
   end
 
-val mk_init_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treekem bytes l n -> my_index:leaf_index n -> update_index:leaf_index n{my_index <> update_index} -> path_secret:bytes -> hpke_info:bytes -> result (pathkem bytes l n update_index)
-let rec mk_init_path #bytes #cb #l #n t my_index update_index path_secret hpke_info =
+val mk_init_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l -> my_index:leaf_index l -> update_index:leaf_index l{my_index <> update_index} -> path_secret:bytes -> hpke_info:bytes -> result (pathkem bytes l)
+let rec mk_init_path #bytes #cb #l t my_index update_index path_secret hpke_info =
   match t with
-  | TSkip _ t' ->
-    res <-- mk_init_path t' my_index update_index path_secret hpke_info;
-    return (PSkip _ res)
   | TNode okp left right -> begin
-    let (|my_dir, next_my_index|) = child_index l my_index in
-    let (|update_dir, next_update_index|) = child_index l update_index in
+    let (my_dir, next_my_index) = child_index l my_index in
+    let (update_dir, next_update_index) = child_index l update_index in
     let (child, sibling) = order_subtrees update_dir (left, right) in
     if my_dir = update_dir then (
       let new_okp =

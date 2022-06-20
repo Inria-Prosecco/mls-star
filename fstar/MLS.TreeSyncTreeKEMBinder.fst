@@ -47,8 +47,8 @@ let treesync_to_treekem_node_package #bytes #cb nb_left_leaves np =
     })
   )
 
-val treesync_to_treekem_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result (treekem bytes l n)
-let rec treesync_to_treekem_aux #bytes #cb #l #n nb_left_leaves t =
+val treesync_to_treekem_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> nat -> treesync bytes l -> result (treekem bytes l)
+let rec treesync_to_treekem_aux #bytes #cb #l nb_left_leaves t =
   match t with
   | TLeaf None ->
     return (TLeaf None)
@@ -59,9 +59,6 @@ let rec treesync_to_treekem_aux #bytes #cb #l #n nb_left_leaves t =
       return (TLeaf (Some ({public_key = lpc.encryption_key; version = lp.version} <: member_info bytes)))
     else
       error "treesync_to_treekem: public key has wrong length"
-  | TSkip _ t' ->
-    result <-- treesync_to_treekem_aux nb_left_leaves t';
-    return (TSkip _ result)
   | TNode onp left right -> begin
     tk_left <-- treesync_to_treekem_aux nb_left_leaves left;
     tk_right <-- treesync_to_treekem_aux (nb_left_leaves + pow2 (l-1)) right;
@@ -73,8 +70,8 @@ let rec treesync_to_treekem_aux #bytes #cb #l #n nb_left_leaves t =
       return (TNode (Some kp) tk_left tk_right)
   end
 
-val treesync_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> result (treekem bytes l n)
-let treesync_to_treekem #bytes #cb #l #n t =
+val treesync_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treesync bytes l -> result (treekem bytes l)
+let treesync_to_treekem #bytes #cb #l t =
   treesync_to_treekem_aux 0 t
 
 val encrypted_path_secret_tk_to_nt: #bytes:Type0 -> {|crypto_bytes bytes|} -> path_secret_ciphertext bytes -> result (hpke_ciphertext_nt bytes)
@@ -119,8 +116,8 @@ let treekem_to_treesync_node_package #bytes #cb kp =
 // - When we generate an updatepath, and convert it to treesync before converting it to an update_path_nt.
 //   In that case, `new_leaf_package` need to be equal to our previous leaf package. The HPKE public key will be updated here.
 //   The parent hash and signature need to be updated, but this will be done in the external_pathsync -> pathsync conversion.
-val treekem_to_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> #i:leaf_index n -> leaf_package_t bytes -> pathkem bytes l n i -> result (external_pathsync bytes l n i)
-let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
+val treekem_to_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> leaf_package_t bytes -> pathkem bytes l -> result (external_pathsync bytes l)
+let rec treekem_to_treesync #bytes #cb #l new_leaf_package pk =
   match pk with
   | PLeaf mi ->
     return (PLeaf ({
@@ -133,9 +130,6 @@ let rec treekem_to_treesync #bytes #cb #l #n #i new_leaf_package pk =
         impl_data = empty;
       };
     } <: leaf_package_t bytes))
-  | PSkip _ pk' ->
-    result <-- treekem_to_treesync new_leaf_package pk';
-    return (PSkip _ result)
   | PNode okp pk_next ->
     next <-- treekem_to_treesync new_leaf_package pk_next;
     match okp with

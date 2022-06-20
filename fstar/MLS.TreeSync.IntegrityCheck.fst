@@ -104,24 +104,8 @@ let check_leaf #bytes #cb leaf_index olp group_id =
   )
 
 #push-options "--ifuel 1"
-val get_original_right_node: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> option (l_res:nat & n_res:tree_size l_res & treesync bytes l_res n_res)
-let rec get_original_right_node #bytes #bl #l #n t =
-  match t with
-  | TNode (Some np) _ _ ->
-    Some (|l, n, t|)
-  | TNode None left _ ->
-    get_original_right_node left
-  | TSkip _ t' ->
-    get_original_right_node t'
-  | TLeaf (Some lp) ->
-    Some (|l, n, t|)
-  | TLeaf None ->
-    None
-#pop-options
-
-#push-options "--ifuel 1"
-val has_child_with_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> t:treesync bytes l n -> bytes -> bool
-let rec has_child_with_parent_hash #bytes #cb #l #n t parent_hash =
+val has_child_with_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> t:treesync bytes l -> bytes -> bool
+let rec has_child_with_parent_hash #bytes #cb #l t parent_hash =
   match t with
   | TLeaf None -> false
   | TLeaf (Some lp) -> (
@@ -129,8 +113,6 @@ let rec has_child_with_parent_hash #bytes #cb #l #n t parent_hash =
     | LNS_commit () -> (lp.parent_hash <: bytes) = parent_hash
     | _ -> false
   )
-  | TSkip _ t' ->
-    has_child_with_parent_hash t' parent_hash
   | TNode (Some kp) _ _ ->
     kp.parent_hash = parent_hash
   | TNode None left right ->
@@ -138,8 +120,8 @@ let rec has_child_with_parent_hash #bytes #cb #l #n t parent_hash =
 #pop-options
 
 #push-options "--ifuel 1"
-val check_internal_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> t:treesync bytes l n{TNode? t} -> result integrity_either
-let check_internal_node #bytes #cb #l #n nb_left_leaves t =
+val check_internal_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> nat -> t:treesync bytes l{TNode? t} -> result integrity_either
+let check_internal_node #bytes #cb #l nb_left_leaves t =
   let (TNode onp left right) = t in
   match onp with
   | None -> return IE_Good
@@ -160,20 +142,18 @@ let check_internal_node #bytes #cb #l #n nb_left_leaves t =
 #pop-options
 
 #push-options "--ifuel 1"
-val check_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> bytes -> result integrity_either
-let rec check_treesync_aux #bytes #cb #l #n nb_left_leaves t group_id =
+val check_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> nat -> treesync bytes l -> bytes -> result integrity_either
+let rec check_treesync_aux #bytes #cb #l nb_left_leaves t group_id =
   match t with
   | TNode onp left right ->
     left_ok <-- check_treesync_aux nb_left_leaves left group_id;
     right_ok <-- check_treesync_aux (nb_left_leaves + pow2 (l-1)) right group_id;
     cur_ok <-- check_internal_node nb_left_leaves t;
     return (left_ok &&& cur_ok &&& right_ok)
-  | TSkip _ t' ->
-    check_treesync_aux nb_left_leaves t' group_id
   | TLeaf olp ->
     check_leaf nb_left_leaves olp group_id
 #pop-options
 
-val check_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> bytes -> result integrity_either
-let check_treesync #bytes #cb #l #n t group_id =
+val check_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treesync bytes l -> bytes -> result integrity_either
+let check_treesync #bytes #cb #l t group_id =
   check_treesync_aux 0 t group_id

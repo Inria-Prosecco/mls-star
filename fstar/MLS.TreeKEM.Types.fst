@@ -24,5 +24,5 @@ noeq type key_package (bytes:Type0) {|crypto_bytes bytes|} = {
   path_secret_ciphertext: list (path_secret_ciphertext bytes);
 }
 
-type treekem (bytes:Type0) {|crypto_bytes bytes|} (l:nat) (n:tree_size l) = tree l n (option (member_info bytes)) (option (key_package bytes))
-type pathkem (bytes:Type0) {|crypto_bytes bytes|} (l:nat) (n:tree_size l) (i:leaf_index n) = path l n i (member_info bytes) (option (key_package bytes))
+type treekem (bytes:Type0) {|crypto_bytes bytes|} (l:nat) = tree l (option (member_info bytes)) (option (key_package bytes))
+type pathkem (bytes:Type0) {|crypto_bytes bytes|} (l:nat) = path l (member_info bytes) (option (key_package bytes))
