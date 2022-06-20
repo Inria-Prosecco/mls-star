@@ -245,9 +245,15 @@ noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_parent_node_nt] (gen_parser (`parent_node_nt))
 
+type node_type_nt =
+  | NT_leaf: [@@@ with_num_tag 1 1] unit -> node_type_nt
+  | NT_parent: [@@@ with_num_tag 1 2] unit -> node_type_nt
+
+%splice [ps_node_type_nt] (gen_parser (`node_type_nt))
+
 noeq type node_nt (bytes:Type0) {|bytes_like bytes|} =
-  | N_leaf: [@@@ with_num_tag 1 1] leaf_node_nt bytes -> node_nt bytes
-  | N_parent: [@@@ with_num_tag 1 2] parent_node_nt bytes -> node_nt bytes
+  | N_leaf: [@@@ with_tag (NT_leaf ())] leaf_node_nt bytes -> node_nt bytes
+  | N_parent: [@@@ with_tag (NT_parent ())] parent_node_nt bytes -> node_nt bytes
 
 %splice [ps_node_nt] (gen_parser (`node_nt))
 

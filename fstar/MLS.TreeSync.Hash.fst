@@ -18,9 +18,6 @@ noeq type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_leaf_node_tree_hash_input_nt] (gen_parser (`leaf_node_tree_hash_input_nt))
 
-instance parseable_serializeable_leaf_node_tree_hash_input (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (leaf_node_tree_hash_input_nt bytes) =
-  mk_parseable_serializeable ps_leaf_node_tree_hash_input_nt
-
 noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   [@@@ with_parser #bytes (ps_option ps_parent_node_nt)]
   parent_node: option (parent_node_nt bytes);
@@ -30,8 +27,14 @@ noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_parent_node_tree_hash_input_nt] (gen_parser (`parent_node_tree_hash_input_nt))
 
-instance parseable_serializeable_parent_node_tree_hash_input (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (parent_node_tree_hash_input_nt bytes) =
-  mk_parseable_serializeable ps_parent_node_tree_hash_input_nt
+noeq type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} =
+  | LeafTreeHashInput: [@@@ with_tag (NT_leaf ())] leaf_node: leaf_node_tree_hash_input_nt bytes -> tree_hash_input_nt bytes
+  | ParentTreeHashInput: [@@@ with_tag (NT_parent ())] parent_node: parent_node_tree_hash_input_nt bytes -> tree_hash_input_nt bytes
+
+%splice [ps_tree_hash_input_nt] (gen_parser (`tree_hash_input_nt))
+
+instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (tree_hash_input_nt bytes) =
+  mk_parseable_serializeable ps_tree_hash_input_nt
 
 val tree_hash_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> nat -> treesync bytes l n -> result (lbytes bytes (hash_length #bytes))
 let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
@@ -48,10 +51,10 @@ let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
     if not (nb_left_leaves < pow2 32) then
       internal_failure "tree_hash: leaf_index too big"
     else
-      hash_hash (serialize (leaf_node_tree_hash_input_nt bytes) ({
+      hash_hash (serialize (tree_hash_input_nt bytes) (LeafTreeHashInput ({
         leaf_index = nb_left_leaves;
         leaf_node = leaf_node;
-      }))
+      })))
   | TNode onp left right ->
     parent_node <-- (
       match onp with
@@ -62,11 +65,11 @@ let rec tree_hash_aux #bytes #cb #l #n nb_left_leaves t =
     );
     left_hash <-- tree_hash_aux nb_left_leaves left;
     right_hash <-- tree_hash_aux (nb_left_leaves + (pow2 (l-1))) right;
-    hash_hash (serialize (parent_node_tree_hash_input_nt bytes) ({
+    hash_hash (serialize (tree_hash_input_nt bytes) (ParentTreeHashInput ({
       parent_node = parent_node;
       left_hash = left_hash;
       right_hash = right_hash;
-    }))
+    })))
 
 val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #n:tree_size l -> treesync bytes l n -> result (lbytes bytes (hash_length #bytes))
 let tree_hash #bytes #cb #l #n t =
