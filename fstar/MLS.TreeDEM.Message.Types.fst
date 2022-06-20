@@ -101,7 +101,7 @@ let message_auth_to_network #bytes #bl #content_type msg_auth =
   else (
     return ({
       signature = msg_auth.signature;
-      confirmation_tag = if content_type = CT_commit () then ({mac_value = Some?.v msg_auth.confirmation_tag} <: mac_nt bytes) else ();
+      confirmation_tag = if content_type = CT_commit () then (Some?.v msg_auth.confirmation_tag) else ();
     } <: mls_message_auth_nt bytes content_type)
   )
 
@@ -109,8 +109,7 @@ val network_to_message_auth: #bytes:Type0 -> {|bytes_like bytes|} -> #content_ty
 let network_to_message_auth #bytes #bl #content_type msg_auth =
   let confirmation_tag: option bytes =
     if content_type = CT_commit() then (
-      let mac: mac_nt bytes = msg_auth.confirmation_tag in
-      Some mac.mac_value
+      Some msg_auth.confirmation_tag
     ) else None
   in
   return ({

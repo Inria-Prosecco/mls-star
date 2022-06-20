@@ -47,8 +47,7 @@ let network_to_message_plaintext #bytes #bl pt =
   auth <-- network_to_message_auth pt.auth;
   let membership_tag: option bytes =
     if NT.S_member? pt.content.sender then (
-      let res: mac_nt bytes = pt.membership_tag in
-      Some res.mac_value
+      Some pt.membership_tag
     ) else None
   in
   return ({
@@ -69,7 +68,7 @@ let message_plaintext_to_network #bytes #bl pt =
     return ({
       content;
       auth;
-      membership_tag = if NT.S_member? content.sender then ({mac_value = Some?.v pt.membership_tag} <: mac_nt bytes) else ();
+      membership_tag = if NT.S_member? content.sender then (Some?.v pt.membership_tag) else ();
     } <: mls_plaintext_nt bytes)
   )
 

@@ -420,11 +420,9 @@ type wire_format_nt =
 
 %splice [ps_wire_format_nt] (gen_parser (`wire_format_nt))
 
-noeq type mac_nt (bytes:Type0) {|bytes_like bytes|} = {
-  mac_value: mls_bytes bytes;
-}
-
-%splice [ps_mac_nt] (gen_parser (`mac_nt))
+type mac_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
+val ps_mac_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mac_nt bytes)
+let ps_mac_nt #bytes #bl = ps_mls_bytes
 
 type content_type_nt =
   | CT_application: [@@@ with_num_tag 1 1] unit -> content_type_nt

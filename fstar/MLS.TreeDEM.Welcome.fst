@@ -59,7 +59,7 @@ let network_to_welcome_group_info #bytes #bl gi =
     confirmed_transcript_hash = gi.tbs.confirmed_transcript_hash;
     group_context_extensions = gi.tbs.group_context_extensions;
     other_extensions = gi.tbs.other_extensions;
-    confirmation_tag = gi.tbs.confirmation_tag.mac_value;
+    confirmation_tag = gi.tbs.confirmation_tag;
     signer = gi.tbs.signer;
     signature = gi.signature;
   }
@@ -95,7 +95,7 @@ let welcome_group_info_to_network #bytes #bl gi =
         confirmed_transcript_hash = gi.confirmed_transcript_hash;
         group_context_extensions = gi.group_context_extensions;
         other_extensions = gi.other_extensions;
-        confirmation_tag = {mac_value = gi.confirmation_tag};
+        confirmation_tag = gi.confirmation_tag;
         signer = gi.signer;
       };
       signature = gi.signature;

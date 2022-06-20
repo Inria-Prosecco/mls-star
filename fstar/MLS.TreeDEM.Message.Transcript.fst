@@ -29,7 +29,7 @@ let compute_interim_transcript_hash #bytes #cb confirmation_tag confirmed_transc
     internal_failure "compute_interim_transcript_hash: confirmation_tag too long"
   else (
     let serialized_auth = serialize (mls_message_commit_auth_data_nt bytes) ({
-      confirmation_tag = {mac_value = confirmation_tag};
+      confirmation_tag;
     }) in
     hash_hash (concat confirmed_transcript_hash serialized_auth)
   )
