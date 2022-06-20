@@ -11,7 +11,8 @@ module NT = MLS.NetworkTypes
 type sender (bytes:Type0) {|bytes_like bytes|} =
   | S_member: leaf_index:nat -> sender bytes
   | S_external: sender_index:nat -> sender bytes
-  | S_new_member: sender bytes
+  | S_new_member_proposal: sender bytes
+  | S_new_member_commit: sender bytes
 
 noeq type message_content (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
@@ -33,7 +34,8 @@ let network_to_sender #bytes #bl s =
   match s with
   | NT.S_member kp_ref -> return (S_member kp_ref)
   | NT.S_external sender_index -> return (S_external sender_index)
-  | NT.S_new_member () -> return S_new_member
+  | NT.S_new_member_proposal () -> return S_new_member_proposal
+  | NT.S_new_member_commit () -> return S_new_member_commit
   | _ -> error "network_to_sender: invalid sender type"
 
 val sender_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> sender bytes -> result (sender_nt bytes)
@@ -52,7 +54,8 @@ let sender_to_network #bytes #bl s =
       return (NT.S_external sender_index)
     )
   )
-  | S_new_member -> return (NT.S_new_member ())
+  | S_new_member_proposal -> return (NT.S_new_member_proposal ())
+  | S_new_member_commit -> return (NT.S_new_member_commit ())
 
 
 val message_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_message_content_nt bytes)

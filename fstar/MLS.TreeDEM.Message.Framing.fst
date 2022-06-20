@@ -158,7 +158,7 @@ let compute_message_confirmation_tag #bytes #cb confirmation_key confirmed_trans
 val compute_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbs_nt bytes)
 let compute_tbs #bytes #bl msg group_context =
   content <-- message_content_to_network msg;
-  if not ((NT.S_member? content.sender || NT.S_new_member? content.sender) = Some? group_context) then
+  if not ((NT.S_member? content.sender || NT.S_new_member_commit? content.sender) = Some? group_context) then
     internal_failure "compute_tbs: group_context must be present iff sender is member or new_member"
   else (
     return ({
