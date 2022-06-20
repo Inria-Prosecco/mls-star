@@ -14,7 +14,6 @@ noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
   | PreSharedKey: pre_shared_key_id_nt bytes -> proposal bytes
   | ReInit: reinit_nt bytes -> proposal bytes
   | ExternalInit: external_init_nt bytes -> proposal bytes
-  | AppAck: app_ack_nt bytes -> proposal bytes
   | GroupContextExtensions: group_context_extensions_nt bytes -> proposal bytes
 
 noeq type proposal_or_ref (bytes:Type0) {|bytes_like bytes|} =
@@ -49,8 +48,6 @@ let network_to_proposal #bytes #bl p =
     return (ReInit reinit)
   | P_external_init external_init ->
     return (ExternalInit external_init)
-  | P_app_ack app_ack ->
-    return (AppAck app_ack)
   | P_group_context_extensions group_context_extensions ->
     return (GroupContextExtensions group_context_extensions)
   | _ -> error "network_to_proposal: invalid proposal"
@@ -115,7 +112,6 @@ let proposal_to_network #bytes #bl p =
   | PreSharedKey x -> return (P_psk ({psk = x}))
   | ReInit x -> return (P_reinit x)
   | ExternalInit x -> return (P_external_init x)
-  | AppAck x -> return (P_app_ack x)
   | GroupContextExtensions x -> return (P_group_context_extensions x)
 
 val proposal_or_ref_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> proposal_or_ref bytes -> result (proposal_or_ref_nt bytes)

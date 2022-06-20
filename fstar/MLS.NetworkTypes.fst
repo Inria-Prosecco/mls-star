@@ -109,8 +109,7 @@ type proposal_type_nt =
   | PT_psk: [@@@ with_num_tag 2 4] unit -> proposal_type_nt
   | PT_reinit: [@@@ with_num_tag 2 5] unit -> proposal_type_nt
   | PT_external_init: [@@@ with_num_tag 2 6] unit -> proposal_type_nt
-  | PT_app_ack: [@@@ with_num_tag 2 7] unit -> proposal_type_nt
-  | PT_group_context_extensions: [@@@ with_num_tag 2 8] unit -> proposal_type_nt
+  | PT_group_context_extensions: [@@@ with_num_tag 2 7] unit -> proposal_type_nt
 
 %splice [ps_proposal_type_nt] (gen_parser (`proposal_type_nt))
 
@@ -365,12 +364,6 @@ noeq type message_range_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_message_range_nt] (gen_parser (`message_range_nt))
 
-noeq type app_ack_nt (bytes:Type0) {|bytes_like bytes|} = {
-  received_ranges: mls_seq bytes ps_message_range_nt
-}
-
-%splice [ps_app_ack_nt] (gen_parser (`app_ack_nt))
-
 noeq type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
   extensions: mls_seq bytes ps_extension_nt;
 }
@@ -384,7 +377,6 @@ noeq type proposal_nt (bytes:Type0) {|bytes_like bytes|} =
   | P_psk: [@@@ with_tag (PT_psk ())] pre_shared_key_nt bytes -> proposal_nt bytes
   | P_reinit: [@@@ with_tag (PT_reinit ())] reinit_nt bytes -> proposal_nt bytes
   | P_external_init: [@@@ with_tag (PT_external_init ())] external_init_nt bytes -> proposal_nt bytes
-  | P_app_ack: [@@@ with_tag (PT_app_ack ())] app_ack_nt bytes -> proposal_nt bytes
   | P_group_context_extensions: [@@@ with_tag (PT_group_context_extensions ())] group_context_extensions_nt bytes -> proposal_nt bytes
 
 %splice [ps_proposal_nt] (gen_parser (`proposal_nt))
