@@ -299,12 +299,6 @@ noeq type pre_shared_key_id_nt (bytes:Type0) {|bytes_like bytes|} =
 
 %splice [ps_pre_shared_key_id_nt] (gen_parser (`pre_shared_key_id_nt))
 
-noeq type pre_shared_keys_nt (bytes:Type0) {|bytes_like bytes|} = {
-  psks: mls_seq bytes ps_pre_shared_key_id_nt;
-}
-
-%splice [ps_pre_shared_keys_nt] (gen_parser (`pre_shared_keys_nt))
-
 noeq type psk_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   id: pre_shared_key_id_nt bytes;
   index: nat_lbytes 2;
@@ -665,7 +659,7 @@ noeq type group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
   joiner_secret: mls_bytes bytes;
   [@@@ with_parser #bytes (ps_option ps_path_secret_nt)]
   path_secret: option (path_secret_nt bytes);
-  psks: pre_shared_keys_nt bytes;
+  psks: mls_seq bytes (ps_pre_shared_key_nt);
 }
 
 %splice [ps_group_secrets_nt] (gen_parser (`group_secrets_nt))

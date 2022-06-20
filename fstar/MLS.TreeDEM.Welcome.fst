@@ -27,7 +27,7 @@ noeq type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
 noeq type group_secrets (bytes:Type0) {|bytes_like bytes|} = {
   joiner_secret: bytes;
   path_secret: option bytes;
-  psks: pre_shared_keys_nt bytes;
+  psks: list (pre_shared_key_nt bytes);
 }
 
 //TODO: move in Crypto? (copy-pasted from TreeKEM)
@@ -110,7 +110,7 @@ let network_to_group_secrets #bytes #bl gs =
       | None -> None
       | Some p -> Some p.path_secret
     );
-    psks = gs.psks;
+    psks = Seq.seq_to_list gs.psks;
   })
 
 val group_secrets_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> group_secrets bytes -> result (group_secrets_nt bytes)
@@ -127,12 +127,16 @@ let group_secrets_to_network #bytes #bl gs =
   );
   if not (length gs.joiner_secret < pow2 30) then
     internal_failure "group_secrets_to_network: joiner_secret too long"
-  else
+  else if not (bytes_length ps_pre_shared_key_nt gs.psks < pow2 30) then
+    internal_failure "group_secrets_to_network: psks too long"
+  else (
+    Seq.lemma_list_seq_bij gs.psks;
     return ({
       joiner_secret = gs.joiner_secret;
       path_secret = path_secret;
-      psks = gs.psks;
+      psks = Seq.seq_of_list gs.psks;
     } <: group_secrets_nt bytes)
+  )
 
 val network_to_hpke_ciphertext: #bytes:Type0 -> {|bytes_like bytes|} -> hpke_ciphertext_nt bytes -> hpke_ciphertext bytes
 let network_to_hpke_ciphertext x =
@@ -277,7 +281,7 @@ let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
 #pop-options
 
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
-val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> key_packages:list (key_package_nt bytes & option bytes) -> pre_shared_keys_nt bytes -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (list (encrypted_group_secrets bytes))
+val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> key_packages:list (key_package_nt bytes & option bytes) -> list (pre_shared_key_nt bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (list (encrypted_group_secrets bytes))
 let rec encrypt_group_secrets #bytes #cb joiner_secret key_packages psks rand =
   match key_packages with
   | [] -> return []
@@ -306,7 +310,7 @@ let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
     aead_encrypt welcome_key welcome_nonce empty group_info_bytes
   );
   bytes_length_nil #bytes ps_pre_shared_key_id_nt;
-  group_secrets <-- encrypt_group_secrets joiner_secret key_packages ({psks = Seq.empty (*TODO psks*)}) rand;
+  group_secrets <-- encrypt_group_secrets joiner_secret key_packages [] (*TODO psks*) rand;
   return ({
     secrets = group_secrets;
     encrypted_group_info = encrypted_group_info;
