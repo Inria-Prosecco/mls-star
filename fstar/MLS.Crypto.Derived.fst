@@ -102,13 +102,30 @@ let expand_with_label #bytes #cb secret label context len =
 let derive_secret #bytes #cb secret label =
   expand_with_label secret label (empty #bytes) (kdf_length #bytes)
 
+noeq type ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
+  label: mls_bytes bytes;
+  value: mls_bytes bytes;
+}
+
+%splice [ps_ref_hash_input_nt] (gen_parser (`ref_hash_input_nt))
+
+instance parseable_serializeable_ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (ref_hash_input_nt bytes) = mk_parseable_serializeable ps_ref_hash_input_nt
+
+val ref_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> bytes -> result (lbytes bytes (hash_length #bytes))
+let ref_hash #bytes #cb label value =
+  if not (length label < pow2 30) then
+    internal_failure "ref_hash: label too long"
+  else if not (length value < pow2 30) then
+    internal_failure "ref_hash: value too long"
+  else (
+    hash_hash (serialize (ref_hash_input_nt bytes) ({label; value;}))
+  )
+
 let make_keypackage_ref #bytes #cb buf =
-  tmp <-- kdf_extract (empty #bytes) buf;
-  kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 KeyPackage Reference") 16
+  ref_hash (string_to_bytes #bytes "MLS 1.0 KeyPackage Reference") buf
 
 let make_proposal_ref #bytes #cb buf =
-  tmp <-- kdf_extract (empty #bytes) buf;
-  kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 Proposal Reference") 16
+  ref_hash (string_to_bytes #bytes "MLS 1.0 Proposal Reference") buf
 
 #push-options "--fuel 1 --ifuel 1"
 let rec split_randomness #bytes #bl #l1 #l2 r =

@@ -24,13 +24,13 @@ type signature_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes byte
 val ps_signature_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (signature_public_key_nt bytes)
 let ps_signature_public_key_nt #bytes #bl = ps_mls_bytes
 
-type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
+type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
-let ps_key_package_ref_nt #bytes #bl = ps_lbytes 16
+let ps_key_package_ref_nt #bytes #bl = ps_mls_bytes
 
-type proposal_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
+type proposal_ref_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_proposal_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (proposal_ref_nt bytes)
-let ps_proposal_ref_nt #bytes #bl = ps_lbytes 16
+let ps_proposal_ref_nt #bytes #bl = ps_mls_bytes
 
 
 noeq type hpke_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
