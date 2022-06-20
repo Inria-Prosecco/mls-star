@@ -9,7 +9,7 @@ open MLS.Result
 module NT = MLS.NetworkTypes
 
 type sender (bytes:Type0) {|bytes_like bytes|} =
-  | S_member: member:key_package_ref_nt bytes -> sender bytes
+  | S_member: leaf_index:nat -> sender bytes
   | S_external: sender_index:nat -> sender bytes
   | S_new_member: sender bytes
 
@@ -39,7 +39,12 @@ let network_to_sender #bytes #bl s =
 val sender_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> sender bytes -> result (sender_nt bytes)
 let sender_to_network #bytes #bl s =
   match s with
-  | S_member kp_ref -> return (NT.S_member kp_ref)
+  | S_member leaf_index -> (
+    if not (leaf_index < pow2 32) then
+      internal_failure "sender_to_network: leaf_index too big"
+    else
+      return (NT.S_member leaf_index)
+  )
   | S_external sender_index -> (
     if not (sender_index < pow2 32) then (
       internal_failure "sender_to_network: sender_index too big"

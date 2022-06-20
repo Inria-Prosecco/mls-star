@@ -70,22 +70,6 @@ let compute_group_context #l #n group_id epoch tree confirmed_transcript_hash =
   )
 #pop-options
 
-
-val compute_kp_ref_of: state -> nat -> result (leaf_node_ref_nt bytes)
-let compute_kp_ref_of st index =
-  if not (index < st.tree_state.treesize) then
-    internal_failure "compute_kp_ref_of: my leaf_index is too big"
-  else (
-    let olp = get_leaf st.tree_state.tree index in
-    match olp with
-    | None -> internal_failure "compute_kp_ref_of: my own key package is missing"
-    | Some lp -> compute_leaf_node_ref lp
-  )
-
-val compute_my_kp_ref: state -> result (leaf_node_ref_nt bytes)
-let compute_my_kp_ref st =
-  compute_kp_ref_of st st.leaf_index
-
 val state_to_group_context: state -> result (group_context_nt bytes)
 let state_to_group_context st =
   compute_group_context st.tree_state.group_id st.tree_state.version st.tree_state.tree st.confirmed_transcript_hash
@@ -136,13 +120,11 @@ let process_proposal sender_id st p =
       let tree_state = MLS.TreeSync.update st.tree_state leaf_package sender_id in
       return ({ st with tree_state })
     )
-  | Remove kp_ref ->
-    opt_leaf_ind <-- leaf_node_ref_to_index st.tree_state.tree kp_ref;
-    if not (Some? opt_leaf_ind) then
-      error "process_proposal: cannot find kp_ref"
+  | Remove leaf_index ->
+    if not (leaf_index < st.tree_state.treesize) then
+      error "process_proposal: leaf_index too big"
     else (
-      let leaf_ind = Some?.v opt_leaf_ind in
-      let tree_state = MLS.TreeSync.remove st.tree_state leaf_ind in
+      let tree_state = MLS.TreeSync.remove st.tree_state leaf_index in
       return ({ st with tree_state })
     )
   | _ -> error "process_proposal: not implemented"
@@ -173,10 +155,7 @@ let process_commit state message message_auth =
     if not (S_member? message.sender) then
       error "process_commit: sender is not a member"
     else (
-      opt_sender_id <-- leaf_node_ref_to_index state.tree_state.tree (S_member?.member message.sender);
-      match opt_sender_id with
-      | None -> error "process_commit: couldn't find sender"
-      | Some sender_id -> return sender_id
+      return (S_member?.leaf_index message.sender)
     )
   );
   // 0. Process proposals
@@ -194,7 +173,7 @@ let process_commit state message message_auth =
         error "process_commit: sender_id is greater than treesize"
       else (
         tree_kem <-- treesync_to_treekem state.tree_state.tree;
-        update_pathkem <-- update_path_to_treekem #_ #_ #_ #state.tree_state.treesize sender_id tree_kem group_context_bytes path;
+        update_pathkem <-- update_path_to_treekem #_ #_ #_ #state.tree_state.treesize (sender_id <: nat) tree_kem group_context_bytes path;
         update_leaf_package <-- network_to_leaf_package path.leaf_node;
         ext_update_pathsync <-- treekem_to_treesync update_leaf_package update_pathkem;
         update_pathsync <-- external_pathsync_to_pathsync None state.tree_state.tree ext_update_pathsync state.tree_state.group_id;
@@ -461,7 +440,6 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
     else
       internal_failure "generate_welcome_message: ratchet_tree too big"
   );
-  my_kp_ref <-- compute_my_kp_ref future_state;
   let group_info: welcome_group_info bytes = {
     group_id = future_state.tree_state.group_id;
     epoch = future_state.tree_state.version;
@@ -470,7 +448,7 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
     group_context_extensions = empty; //TODO handle group context extensions
     other_extensions = ratchet_tree_bytes;
     confirmation_tag = confirmation_tag;
-    signer = my_kp_ref;
+    signer = future_state.leaf_index;
     signature = empty; //Signed afterward
   } in
   group_info <-- (
@@ -537,12 +515,11 @@ let generate_commit state e proposals =
   tmp <-- generate_update_path state e proposals;
   let (update_path, pending, e) = tmp in
   let state = { state with pending_updatepath = pending::state.pending_updatepath} in
-  my_kp_ref <-- compute_my_kp_ref state;
   let msg: message_content bytes = {
     wire_format = WF_mls_ciphertext ();
     group_id = state.tree_state.group_id;
     epoch = state.tree_state.version;
-    sender = S_member my_kp_ref;
+    sender = S_member (state.leaf_index);
     authenticated_data = Seq.empty; //TODO?
     content_type = CT_commit ();
     content = { c_proposals = (List.Tot.map Proposal proposals); c_path = Some update_path };
@@ -572,8 +549,7 @@ let remove state p e =
   match find_first #(option (leaf_package_t bytes)) (fun olp -> match olp with | Some lp -> lp.credential.identity = p | None -> false) (get_leaf_list state.tree_state.tree) with
   | None -> error "remove: can't find the leaf to remove"
   | Some i -> (
-    kp_ref <-- compute_kp_ref_of state i;
-    let proposals = [Remove kp_ref] in
+    let proposals = [Remove i] in
     tmp <-- generate_commit state e proposals;
     let (msg, state, e) = tmp in
     tmp <-- chop_entropy e 4;
@@ -594,12 +570,11 @@ let update state e =
   return (state, g)
 
 let send state e data =
-  my_kp_ref <-- compute_my_kp_ref state;
   let msg: message_content bytes = {
     wire_format = WF_mls_ciphertext ();
     group_id = state.tree_state.group_id;
     epoch = state.tree_state.version;
-    sender = S_member my_kp_ref;
+    sender = S_member state.leaf_index;
     authenticated_data = Seq.empty; //TODO?
     content_type = CT_application ();
     content = data;
@@ -640,11 +615,10 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (|l, n|) = ln in
   tree <-- ratchet_tree_to_treesync l n ratchet_tree;
   _ <-- ( //Check signature
-    group_info_ok <-- verify_welcome_group_info (fun kp_ref ->
-      opt_leaf_ind <-- leaf_node_ref_to_index tree kp_ref;
-      match opt_leaf_ind with
-      | None -> error "process_welcome_message: signer don't exist"
-      | Some leaf_ind -> (
+    group_info_ok <-- verify_welcome_group_info (fun leaf_ind ->
+      if not (leaf_ind < n) then
+        error "process_welcome_message: leaf_ind too big"
+      else (
         sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (1)" (get_leaf tree leaf_ind);
         let result = sender_leaf_package.credential.signature_key in
         if not (length result = sign_public_key_length #bytes) then
@@ -660,11 +634,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     match secrets.path_secret with
     | None -> return tree
     | Some path_secret ->
-      opt_signer_index <-- leaf_node_ref_to_index tree group_info.signer;
-      if not (Some? opt_signer_index) then
-        error "process_welcome_message: can't find the signer index"
-      else
-      let signer_index = Some?.v opt_signer_index in
+      let signer_index = group_info.signer in
       if not (signer_index <> leaf_index) then
         error "process_welcome_message: signer index is equal to our leaf index"
       else if not (signer_index < n) then
@@ -733,7 +703,6 @@ let process_group_message state msg =
         sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret;
         MLS.TreeDEM.Message.Framing.message_ciphertext_to_message 
           state.tree_state.levels state.tree_state.treesize encryption_secret sender_data_secret
-          (leaf_node_ref_to_index state.tree_state.tree)
           msg
     | _ ->
         internal_failure "unknown message type"

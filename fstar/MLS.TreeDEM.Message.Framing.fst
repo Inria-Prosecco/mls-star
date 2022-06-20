@@ -34,7 +34,7 @@ noeq type message_ciphertext_content (bytes:Type0) {|bytes_like bytes|} (content
 }
 
 noeq type encrypted_sender_data_content (bytes:Type0) {|bytes_like bytes|} = {
-  sender: key_package_ref_nt bytes;
+  leaf_index: nat;
   generation: nat;
   reuse_guard: lbytes bytes 4;
 }
@@ -98,18 +98,20 @@ let ciphertext_content_to_network #bytes #bl #content_type ciphertext_content =
 val network_to_encrypted_sender_data: #bytes:Type0 -> {|bytes_like bytes|} -> mls_sender_data_nt bytes -> encrypted_sender_data_content bytes
 let network_to_encrypted_sender_data #bytes #bl sd =
   ({
-    sender = sd.sender;
+    leaf_index = sd.leaf_index;
     generation = sd.generation;
     reuse_guard = sd.reuse_guard;
   })
 
 val encrypted_sender_data_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> encrypted_sender_data_content bytes -> result (mls_sender_data_nt bytes)
 let encrypted_sender_data_to_network #bytes #bl sd =
-  if not (sd.generation < pow2 32) then
+  if not (sd.leaf_index < pow2 32) then
+    internal_failure "encrypted_sender_data_to_network: leaf_index too big"
+  else if not (sd.generation < pow2 32) then
     internal_failure "encrypted_sender_data_to_network: generation too big"
   else
     return ({
-      sender = sd.sender;
+      leaf_index = sd.leaf_index;
       generation = sd.generation;
       reuse_guard = sd.reuse_guard;
     } <: mls_sender_data_nt bytes)
@@ -338,8 +340,8 @@ let apply_reuse_guard #bytes #cb reuse_guard nonce =
   let new_nonce_head = xor nonce_head reuse_guard in
   concat #bytes new_nonce_head nonce_tail
 
-val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> (key_package_ref_nt bytes -> result (option (MLS.Tree.leaf_index n))) -> message_ciphertext bytes -> result (message_content bytes & message_auth bytes)
-let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_secret kp_ref_to_leaf_index ct =
+val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> n:MLS.Tree.tree_size l -> encryption_secret:bytes -> sender_data_secret:bytes -> message_ciphertext bytes -> result (message_content bytes & message_auth bytes)
+let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_secret ct =
   sender_data <-- (
     sender_data_ad <-- message_ciphertext_to_sender_data_aad ct;
     sender_data <-- decrypt_sender_data sender_data_ad (get_ciphertext_sample ct.ciphertext) sender_data_secret ct.encrypted_sender_data;
@@ -347,8 +349,10 @@ let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_s
   );
   rs_output <-- (
     sender_index <-- (
-      opt_sender_index <-- kp_ref_to_leaf_index sender_data.sender;
-      from_option "message_ciphertext_to_message: can't find sender's KeyPackageRef" opt_sender_index
+      if not (sender_data.leaf_index < n) then
+        error "message_ciphertext_to_message: leaf_index too big"
+      else
+        return sender_data.leaf_index
     );
     leaf_tree_secret <-- leaf_kdf n encryption_secret sender_index;
     init_ratchet <-- (
@@ -370,7 +374,7 @@ let message_ciphertext_to_message #bytes #cb l n encryption_secret sender_data_s
     wire_format = WF_mls_ciphertext ();
     group_id = ct.group_id;
     epoch = ct.epoch;
-    sender = S_member sender_data.sender;
+    sender = S_member sender_data.leaf_index;
     authenticated_data = ct.authenticated_data;
     content_type = ct.content_type;
     content = ciphertext_content.content;
@@ -400,7 +404,7 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
     else (
       sender_data_ad <-- message_to_sender_data_aad msg;
       let sender_data = ({
-        sender = S_member?.member msg.sender;
+        leaf_index = S_member?.leaf_index msg.sender;
         generation = ratchet.generation;
         reuse_guard = reuse_guard;
       }) in

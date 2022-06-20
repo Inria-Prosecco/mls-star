@@ -20,7 +20,7 @@ noeq type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
   group_context_extensions: bytes;
   other_extensions: bytes;
   confirmation_tag: bytes;
-  signer: key_package_ref_nt bytes;
+  signer: nat;
   signature: bytes;
 }
 
@@ -80,6 +80,8 @@ let welcome_group_info_to_network #bytes #bl gi =
     internal_failure "welcome_group_info_to_network: other_extensions too long"
   else if not (length gi.confirmation_tag < pow2 30) then
     internal_failure "welcome_group_info_to_network: confirmation_tag too long"
+  else if not (gi.signer < pow2 32) then
+    internal_failure "welcome_group_info_to_network: signer is too big"
   else if not (length gi.signature < pow2 30) then
     internal_failure "welcome_group_info_to_network: signature_id too long"
   else
@@ -320,7 +322,7 @@ let sign_welcome_group_info #bytes #cb sign_sk gi rand =
   signature <-- sign_with_label sign_sk (string_to_bytes #bytes "GroupInfoTBS") tbs_bytes rand;
   return ({gi with signature = signature})
 
-val verify_welcome_group_info: #bytes:Type0 -> {|crypto_bytes bytes|} -> (key_package_ref_nt bytes -> result (sign_public_key bytes)) -> welcome_group_info bytes -> result bool
+val verify_welcome_group_info: #bytes:Type0 -> {|crypto_bytes bytes|} -> (nat -> result (sign_public_key bytes)) -> welcome_group_info bytes -> result bool
 let verify_welcome_group_info #bytes #cb get_sign_pk gi =
   if not (length gi.signature = sign_signature_length #bytes) then
     error "verify_welcome_group_info: bad signature size"

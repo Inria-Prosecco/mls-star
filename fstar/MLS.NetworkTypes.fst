@@ -28,10 +28,6 @@ type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
 let ps_key_package_ref_nt #bytes #bl = ps_lbytes 16
 
-type leaf_node_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
-val ps_leaf_node_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (leaf_node_ref_nt bytes)
-let ps_leaf_node_ref_nt #bytes #bl = ps_lbytes 16
-
 type proposal_ref_nt (bytes:Type0) {|bytes_like bytes|} = lbytes bytes 16
 val ps_proposal_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (proposal_ref_nt bytes)
 let ps_proposal_ref_nt #bytes #bl = ps_lbytes 16
@@ -335,7 +331,7 @@ noeq type update_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_update_nt] (gen_parser (`update_nt))
 
 noeq type remove_nt (bytes:Type0) {|bytes_like bytes|} = {
-  removed: leaf_node_ref_nt bytes;
+  removed: nat_lbytes 4;
 }
 
 %splice [ps_remove_nt] (gen_parser (`remove_nt))
@@ -362,7 +358,7 @@ noeq type external_init_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_external_init_nt] (gen_parser (`external_init_nt))
 
 noeq type message_range_nt (bytes:Type0) {|bytes_like bytes|} = {
-  sender: leaf_node_ref_nt bytes;
+  sender: nat_lbytes 4;
   first_generation: nat_lbytes 4;
   last_generation: nat_lbytes 4;
 }
@@ -417,7 +413,7 @@ type sender_type_nt =
 %splice [ps_sender_type_nt] (gen_parser (`sender_type_nt))
 
 noeq type sender_nt (bytes:Type0) {|bytes_like bytes|} =
-  | S_member: [@@@ with_tag (ST_member ())] member:leaf_node_ref_nt bytes -> sender_nt bytes
+  | S_member: [@@@ with_tag (ST_member ())] leaf_index:nat_lbytes 4 -> sender_nt bytes
   | S_external: [@@@ with_tag (ST_external ())] sender_index:nat_lbytes 4 -> sender_nt bytes
   | S_new_member: [@@@ with_tag (ST_new_member ())] unit -> sender_nt bytes
 
@@ -605,7 +601,7 @@ noeq type mls_ciphertext_content_aad_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_mls_ciphertext_content_aad_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_ciphertext_content_aad_nt bytes) = mk_parseable_serializeable ps_mls_ciphertext_content_aad_nt
 
 noeq type mls_sender_data_nt (bytes:Type0) {|bytes_like bytes|} = {
-  sender: leaf_node_ref_nt bytes;
+  leaf_index: nat_lbytes 4;
   generation: nat_lbytes 4;
   reuse_guard: lbytes bytes 4;
 }
@@ -653,7 +649,7 @@ noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_context_extensions: mls_bytes bytes;
   other_extensions: mls_bytes bytes;
   confirmation_tag: mac_nt bytes;
-  signer: leaf_node_ref_nt bytes;
+  signer: nat_lbytes 4;
 }
 
 %splice [ps_group_info_tbs_nt] (gen_parser (`group_info_tbs_nt))

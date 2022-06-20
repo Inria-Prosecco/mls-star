@@ -37,7 +37,7 @@ let test_leaf_generation #cb l n i encryption_secret sender_data_secret r_state 
   let message_plaintext = extract_result (network_to_message_plaintext message_plaintext_network) in
   let message_ciphertext = extract_result (network_to_message_ciphertext message_ciphertext_network) in
   let message_1 = message_plaintext_to_message message_plaintext in
-  let message_2 = extract_result (message_ciphertext_to_message l n encryption_secret sender_data_secret (fun _ -> return (Some i)) message_ciphertext) in
+  let message_2 = extract_result (message_ciphertext_to_message l n encryption_secret sender_data_secret message_ciphertext) in
   let message_2 = (({ (fst message_2) with wire_format = WF_mls_plaintext ()} <: message_content bytes), snd message_2) in
   let plaintext_eq_ciphertext_ok = test_equality message_1 message_2 in
   let sender_ok = MLS.TreeDEM.Message.Types.S_member? (fst message_1).sender in

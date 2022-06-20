@@ -10,7 +10,7 @@ module NT = MLS.NetworkTypes
 noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
   | Add: key_package_nt bytes -> proposal bytes
   | Update: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
-  | Remove: key_package_ref_nt bytes -> proposal bytes
+  | Remove: nat -> proposal bytes
   | PreSharedKey: pre_shared_key_id_nt bytes -> proposal bytes
   | ReInit: reinit_nt bytes -> proposal bytes
   | ExternalInit: external_init_nt bytes -> proposal bytes
@@ -108,6 +108,9 @@ let proposal_to_network #bytes #bl p =
     kp <-- leaf_package_to_network lp;
     return (P_update ({leaf_node = kp}))
   | Remove id ->
+    if not (id < pow2 32) then
+      internal_failure "proposal_to_network: invalid id"
+    else
       return (P_remove ({removed = id}))
   | PreSharedKey x -> return (P_psk ({psk = x}))
   | ReInit x -> return (P_reinit x)

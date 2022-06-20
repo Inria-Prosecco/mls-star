@@ -106,10 +106,6 @@ let make_keypackage_ref #bytes #cb buf =
   tmp <-- kdf_extract (empty #bytes) buf;
   kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 KeyPackage Reference") 16
 
-let make_leafnode_ref #bytes #cb buf =
-  tmp <-- kdf_extract (empty #bytes) buf;
-  kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 Leaf Node Reference") 16
-
 let make_proposal_ref #bytes #cb buf =
   tmp <-- kdf_extract (empty #bytes) buf;
   kdf_expand (tmp <: bytes) (string_to_bytes #bytes "MLS 1.0 Proposal Reference") 16
