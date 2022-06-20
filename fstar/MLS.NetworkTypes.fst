@@ -81,7 +81,7 @@ noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
 
 type extension_type_nt: eqtype =
-  | ET_external_key_id: [@@@ with_num_tag 2 0x0001] unit -> extension_type_nt
+  | ET_application_id: [@@@ with_num_tag 2 0x0001] unit -> extension_type_nt
   | ET_ratchet_tree: [@@@ with_num_tag 2 0x0002] unit -> extension_type_nt
   | ET_required_capabilities: [@@@ with_num_tag 2 0x0003] unit -> extension_type_nt
   | ET_external_pub: [@@@ with_num_tag 2 0x0004] unit -> extension_type_nt

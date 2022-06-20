@@ -9,11 +9,11 @@ open MLS.Result
 
 (*** Extensions parser ***)
 
-type key_package_identifier_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  key_id: mls_bytes bytes;
+type application_id_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
+  application_id: mls_bytes bytes;
 }
 
-%splice [ps_key_package_identifier_ext_nt] (gen_parser (`key_package_identifier_ext_nt))
+%splice [ps_application_id_ext_nt] (gen_parser (`application_id_ext_nt))
 
 (*** Utility functions ***)
 
@@ -83,7 +83,7 @@ let get_extension_list #bytes #bl extensions_buf =
   extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse ps_extensions).parse_exact extensions_buf);
   return (List.Tot.map (fun x -> x.extension_type) (Seq.seq_to_list extensions))
 
-val get_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (key_package_identifier_ext_nt bytes)
-let get_key_package_identifier_extension #bytes #bl = mk_get_extension (ET_external_key_id ()) ps_key_package_identifier_ext_nt
-val set_key_package_identifier_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> key_package_identifier_ext_nt bytes -> result bytes
-let set_key_package_identifier_extension #bytes #bl = mk_set_extension (ET_external_key_id ()) ps_key_package_identifier_ext_nt
+val get_application_id_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (application_id_ext_nt bytes)
+let get_application_id_extension #bytes #bl = mk_get_extension (ET_application_id ()) ps_application_id_ext_nt
+val set_application_id_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> application_id_ext_nt bytes -> result bytes
+let set_application_id_extension #bytes #bl = mk_set_extension (ET_application_id ()) ps_application_id_ext_nt
