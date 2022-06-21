@@ -61,6 +61,8 @@ let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
   else (
     bytes_length_nil #bytes ps_extension_nt;
     return ({
+      version = PV_mls10 ();
+      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
       group_id = group_id;
       epoch = epoch;
       tree_hash = tree_hash;
@@ -442,6 +444,8 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   );
   let group_info: welcome_group_info bytes = {
     group_context = {
+      version = PV_mls10 ();
+      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
       group_id = future_state.tree_state.group_id;
       epoch = future_state.tree_state.version;
       tree_hash = tree_hash;

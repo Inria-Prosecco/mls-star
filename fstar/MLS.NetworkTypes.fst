@@ -228,6 +228,8 @@ noeq type update_path_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_update_path_nt] (gen_parser (`update_path_nt))
 
 noeq type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
+  version: protocol_version_nt;
+  cipher_suite: cipher_suite_nt;
   group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
   tree_hash: mls_bytes bytes;
@@ -633,7 +635,6 @@ noeq type interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = 
 instance parseable_serializeable_interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (interim_transcript_hash_input_nt bytes) = mk_parseable_serializeable ps_interim_transcript_hash_input_nt
 
 noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
-  cipher_suite: cipher_suite_nt;
   group_context: group_context_nt bytes;
   extensions: mls_bytes bytes;
   confirmation_tag: mac_nt bytes;

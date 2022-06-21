@@ -13,6 +13,8 @@ open MLS.Result
 #set-options "--fuel 0 --ifuel 0"
 
 noeq type group_context (bytes:Type0) {|bytes_like bytes|} = {
+  version: protocol_version_nt;
+  cipher_suite: cipher_suite_nt;
   group_id: bytes;
   epoch: nat;
   tree_hash: bytes;
@@ -57,6 +59,8 @@ noeq type welcome (bytes:Type0) {|bytes_like bytes|} = {
 val network_to_group_context: #bytes:Type0 -> {|bytes_like bytes|} -> group_context_nt bytes -> group_context bytes
 let network_to_group_context #bytes #bl gc =
   {
+    version = gc.version;
+    cipher_suite = gc.cipher_suite;
     group_id = gc.group_id;
     epoch = gc.epoch;
     tree_hash = gc.tree_hash;
@@ -88,6 +92,8 @@ let group_context_to_network #bytes #bl gc =
     internal_failure "group_context_to_network: extensions too long"
   else
     return ({
+      version = gc.version;
+      cipher_suite = gc.cipher_suite;
       group_id = gc.group_id;
       epoch = gc.epoch;
       tree_hash = gc.tree_hash;
@@ -110,7 +116,6 @@ let welcome_group_info_to_network #bytes #bl gi =
     group_context <-- group_context_to_network gi.group_context;
     return ({
       tbs = {
-        cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);
         group_context;
         extensions = gi.extensions;
         confirmation_tag = gi.confirmation_tag;
