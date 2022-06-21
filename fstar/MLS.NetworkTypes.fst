@@ -645,7 +645,6 @@ noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_info_tbs_nt bytes) = mk_parseable_serializeable ps_group_info_tbs_nt
 
 noeq type group_info_nt (bytes:Type0) {|bytes_like bytes|} = {
-  version: protocol_version_nt;
   tbs: group_info_tbs_nt bytes;
   signature: mls_bytes bytes;
 }

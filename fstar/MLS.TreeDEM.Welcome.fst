@@ -109,7 +109,6 @@ let welcome_group_info_to_network #bytes #bl gi =
   else (
     group_context <-- group_context_to_network gi.group_context;
     return ({
-      version = PV_mls10 ();
       tbs = {
         cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);
         group_context;
