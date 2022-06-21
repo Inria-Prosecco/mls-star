@@ -85,6 +85,7 @@ type extension_type_nt: eqtype =
   | ET_ratchet_tree: [@@@ with_num_tag 2 0x0002] unit -> extension_type_nt
   | ET_required_capabilities: [@@@ with_num_tag 2 0x0003] unit -> extension_type_nt
   | ET_external_pub: [@@@ with_num_tag 2 0x0004] unit -> extension_type_nt
+  | ET_external_senders: [@@@ with_num_tag 2 0x0005] unit -> extension_type_nt
 
 %splice [ps_extension_type_nt] (gen_parser (`extension_type_nt))
 
