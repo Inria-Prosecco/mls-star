@@ -12,13 +12,17 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-noeq type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
+noeq type group_context (bytes:Type0) {|bytes_like bytes|} = {
   group_id: bytes;
   epoch: nat;
   tree_hash: bytes;
   confirmed_transcript_hash: bytes;
-  group_context_extensions: bytes;
-  other_extensions: bytes;
+  extensions: Seq.seq (extension_nt bytes);
+}
+
+noeq type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
+  group_context: group_context bytes;
+  extensions: bytes;
   confirmation_tag: bytes;
   signer: nat;
   signature: bytes;
@@ -50,33 +54,51 @@ noeq type welcome (bytes:Type0) {|bytes_like bytes|} = {
 
 (*** From / to network ***)
 
+val network_to_group_context: #bytes:Type0 -> {|bytes_like bytes|} -> group_context_nt bytes -> group_context bytes
+let network_to_group_context #bytes #bl gc =
+  {
+    group_id = gc.group_id;
+    epoch = gc.epoch;
+    tree_hash = gc.tree_hash;
+    confirmed_transcript_hash = gc.confirmed_transcript_hash;
+    extensions = gc.extensions;
+  }
+
 val network_to_welcome_group_info: #bytes:Type0 -> {|bytes_like bytes|} -> group_info_nt bytes -> welcome_group_info bytes
 let network_to_welcome_group_info #bytes #bl gi =
   {
-    group_id = gi.tbs.group_id;
-    epoch = gi.tbs.epoch;
-    tree_hash = gi.tbs.tree_hash;
-    confirmed_transcript_hash = gi.tbs.confirmed_transcript_hash;
-    group_context_extensions = gi.tbs.group_context_extensions;
-    other_extensions = gi.tbs.other_extensions;
+    group_context = network_to_group_context gi.tbs.group_context;
+    extensions = gi.tbs.extensions;
     confirmation_tag = gi.tbs.confirmation_tag;
     signer = gi.tbs.signer;
     signature = gi.signature;
   }
 
+val group_context_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> group_context bytes -> result (group_context_nt bytes)
+let group_context_to_network #bytes #bl gc =
+  if not (length gc.group_id < pow2 30) then
+    internal_failure "group_context_to_network: group_id too long"
+  else if not (gc.epoch < pow2 64) then
+    internal_failure "group_context_to_network: epoch too big"
+  else if not (length gc.tree_hash < pow2 30) then
+    internal_failure "group_context_to_network: tree_hash too long"
+  else if not (length gc.confirmed_transcript_hash < pow2 30) then
+    internal_failure "group_context_to_network: confirmed_transcript_hash too long"
+  else if not (bytes_length ps_extension_nt (Seq.seq_to_list gc.extensions) < pow2 30) then
+    internal_failure "group_context_to_network: extensions too long"
+  else
+    return ({
+      group_id = gc.group_id;
+      epoch = gc.epoch;
+      tree_hash = gc.tree_hash;
+      confirmed_transcript_hash = gc.confirmed_transcript_hash;
+      extensions = gc.extensions;
+    } <: group_context_nt bytes)
+
+
 val welcome_group_info_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome_group_info bytes -> result (group_info_nt bytes)
 let welcome_group_info_to_network #bytes #bl gi =
-  if not (length gi.group_id < pow2 30) then
-    internal_failure "welcome_group_info_to_network: group_id too long"
-  else if not (gi.epoch < pow2 64) then
-    internal_failure "welcome_group_info_to_network: epoch too big"
-  else if not (length gi.tree_hash < pow2 30) then
-    internal_failure "welcome_group_info_to_network: tree_hash too long"
-  else if not (length gi.confirmed_transcript_hash < pow2 30) then
-    internal_failure "welcome_group_info_to_network: confirmed_transcript_hash too long"
-  else if not (length gi.group_context_extensions < pow2 30) then
-    internal_failure "welcome_group_info_to_network: group_context_extensions too long"
-  else if not (length gi.other_extensions < pow2 30) then
+  if not (length gi.extensions < pow2 30) then
     internal_failure "welcome_group_info_to_network: other_extensions too long"
   else if not (length gi.confirmation_tag < pow2 30) then
     internal_failure "welcome_group_info_to_network: confirmation_tag too long"
@@ -84,22 +106,20 @@ let welcome_group_info_to_network #bytes #bl gi =
     internal_failure "welcome_group_info_to_network: signer is too big"
   else if not (length gi.signature < pow2 30) then
     internal_failure "welcome_group_info_to_network: signature_id too long"
-  else
+  else (
+    group_context <-- group_context_to_network gi.group_context;
     return ({
       version = PV_mls10 ();
       tbs = {
         cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);
-        group_id = gi.group_id;
-        epoch = gi.epoch;
-        tree_hash = gi.tree_hash;
-        confirmed_transcript_hash = gi.confirmed_transcript_hash;
-        group_context_extensions = gi.group_context_extensions;
-        other_extensions = gi.other_extensions;
+        group_context;
+        extensions = gi.extensions;
         confirmation_tag = gi.confirmation_tag;
         signer = gi.signer;
       };
       signature = gi.signature;
     } <: group_info_nt bytes)
+  )
 
 val network_to_group_secrets: #bytes:Type0 -> {|bytes_like bytes|} -> group_secrets_nt bytes -> result (group_secrets bytes)
 let network_to_group_secrets #bytes #bl gs =

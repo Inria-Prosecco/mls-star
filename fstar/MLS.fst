@@ -441,12 +441,14 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
       internal_failure "generate_welcome_message: ratchet_tree too big"
   );
   let group_info: welcome_group_info bytes = {
-    group_id = future_state.tree_state.group_id;
-    epoch = future_state.tree_state.version;
-    tree_hash = tree_hash;
-    confirmed_transcript_hash = future_state.confirmed_transcript_hash;
-    group_context_extensions = empty; //TODO handle group context extensions
-    other_extensions = ratchet_tree_bytes;
+    group_context = {
+      group_id = future_state.tree_state.group_id;
+      epoch = future_state.tree_state.version;
+      tree_hash = tree_hash;
+      confirmed_transcript_hash = future_state.confirmed_transcript_hash;
+      extensions = Seq.empty; //TODO handle group context extensions
+    };
+    extensions = ratchet_tree_bytes;
     confirmation_tag = confirmation_tag;
     signer = future_state.leaf_index;
     signature = empty; //Signed afterward
@@ -610,7 +612,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     | None -> None
   ) None;
   let (group_info, secrets) = tmp in
-  ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes ps_ratchet_tree_nt).parse_exact group_info.other_extensions);
+  ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes ps_ratchet_tree_nt).parse_exact group_info.extensions);
   l <-- ratchet_tree_l ratchet_tree;
   tree <-- ratchet_tree_to_treesync l ratchet_tree;
   _ <-- ( //Check signature
@@ -643,12 +645,12 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
         update_path_kem <-- mk_init_path tree_kem leaf_index signer_index path_secret (empty #bytes);
         sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (2)" (get_leaf tree signer_index);
         external_update_path <-- treekem_to_treesync sender_leaf_package update_path_kem;
-        update_path <-- external_pathsync_to_pathsync signer_index None tree external_update_path group_info.group_id;
+        update_path <-- external_pathsync_to_pathsync signer_index None tree external_update_path group_info.group_context.group_id;
         return (MLS.TreeSync.apply_path tree update_path signer_index)
       )
   );
-  interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.confirmed_transcript_hash;
-  group_context <-- compute_group_context group_info.group_id group_info.epoch tree group_info.confirmed_transcript_hash;
+  interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.group_context.confirmed_transcript_hash;
+  group_context <-- compute_group_context group_info.group_context.group_id group_info.group_context.epoch tree group_info.group_context.confirmed_transcript_hash;
   epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_to_pse ps_group_context_nt).serialize_exact group_context);
   leaf_secret <-- (
     let opt_my_leaf_package = get_leaf tree leaf_index in
@@ -667,10 +669,10 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   } in
   let st: state = {
     tree_state = {
-      group_id = group_info.group_id;
+      group_id = group_info.group_context.group_id;
       levels = l;
       tree;
-      version = group_info.epoch;
+      version = group_info.group_context.epoch;
       transcript = Seq.empty;
     };
     leaf_index;
@@ -679,12 +681,12 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     handshake_state = dumb_ratchet_state;
     application_state = dumb_ratchet_state;
     epoch_secret;
-    confirmed_transcript_hash = group_info.confirmed_transcript_hash;
+    confirmed_transcript_hash = group_info.group_context.confirmed_transcript_hash;
     interim_transcript_hash;
     pending_updatepath = [];
   } in
   st <-- reset_ratchet_states st;
-  return(group_info.group_id, st)
+  return(group_info.group_context.group_id, st)
 #pop-options
 
 let process_group_message state msg =

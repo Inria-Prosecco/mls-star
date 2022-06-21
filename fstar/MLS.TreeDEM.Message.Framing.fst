@@ -155,7 +155,7 @@ val compute_message_confirmation_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> 
 let compute_message_confirmation_tag #bytes #cb confirmation_key confirmed_transcript_hash =
   hmac_hmac confirmation_key confirmed_transcript_hash
 
-val compute_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbs_nt bytes)
+val compute_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> option (group_context_nt bytes) -> result (mls_content_tbs_nt bytes)
 let compute_tbs #bytes #bl msg group_context =
   content <-- message_content_to_network msg;
   if not ((NT.S_member? content.sender || NT.S_new_member_commit? content.sender) = Some? group_context) then
@@ -165,34 +165,34 @@ let compute_tbs #bytes #bl msg group_context =
       wire_format = msg.wire_format;
       content;
       group_context = (match group_context with | Some gc -> gc | None -> ());
-    } <: mls_message_content_tbs_nt bytes)
+    } <: mls_content_tbs_nt bytes)
   )
 
-val compute_tbm: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> message_auth bytes -> option (group_context_nt bytes) -> result (mls_message_content_tbm_nt bytes)
+val compute_tbm: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> message_auth bytes -> option (group_context_nt bytes) -> result (mls_content_tbm_nt bytes)
 let compute_tbm #bytes #bl msg auth group_context =
   tbs <-- compute_tbs msg group_context;
   auth <-- message_auth_to_network auth;
   return ({
     content_tbs = tbs;
     auth;
-  } <: mls_message_content_tbm_nt bytes)
+  } <: mls_content_tbm_nt bytes)
 
 val compute_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> sign_nonce bytes -> message_content bytes -> option (group_context_nt bytes) -> result (sign_signature bytes)
 let compute_message_signature #bytes #cb sk rand msg group_context =
   tbs <-- compute_tbs msg group_context;
-  let serialized_tbs = serialize (mls_message_content_tbs_nt bytes) tbs in
+  let serialized_tbs = serialize (mls_content_tbs_nt bytes) tbs in
   sign_with_label sk (string_to_bytes #bytes "MLSPlaintextTBS") serialized_tbs rand
 
 val check_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_public_key bytes -> sign_signature bytes -> message_content bytes -> option (group_context_nt bytes) -> result bool
 let check_message_signature #bytes #cb pk signature msg group_context =
   tbs <-- compute_tbs msg group_context;
-  let serialized_tbs = serialize (mls_message_content_tbs_nt bytes) tbs in
+  let serialized_tbs = serialize (mls_content_tbs_nt bytes) tbs in
   verify_with_label pk (string_to_bytes #bytes "MLSPlaintextTBS") serialized_tbs signature
 
 val compute_message_membership_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> message_content bytes -> message_auth bytes -> option (group_context_nt bytes) -> result (lbytes bytes (hmac_length #bytes))
 let compute_message_membership_tag #bytes #cb membership_key msg auth group_context =
   tbm <-- compute_tbm msg auth group_context;
-  let serialized_tbm = serialize (mls_message_content_tbm_nt bytes) tbm in
+  let serialized_tbm = serialize (mls_content_tbm_nt bytes) tbm in
   hmac_hmac membership_key serialized_tbm
 
 val message_compute_auth: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes -> result (message_auth bytes)

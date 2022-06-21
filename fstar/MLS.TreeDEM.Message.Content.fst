@@ -82,7 +82,7 @@ let network_to_message_bare_content #bytes #bl #content_type content =
 
 let message_content_pair (bytes:Type0) {|bytes_like bytes|}: Type0 = content_type:content_type_nt & message_bare_content bytes content_type
 
-val network_to_message_content_pair: #bytes:Type0 -> {|bytes_like bytes|} -> mls_content_nt bytes -> result (message_content_pair bytes)
+val network_to_message_content_pair: #bytes:Type0 -> {|bytes_like bytes|} -> mls_tagged_content_nt bytes -> result (message_content_pair bytes)
 let network_to_message_content_pair #bytes #bl content =
   let make_message_content_pair #bytes #bl (#content_type:content_type_nt) (msg:message_bare_content bytes content_type): message_content_pair bytes =
     (|content_type, msg|)
@@ -152,10 +152,10 @@ let message_bare_content_to_network #bytes #bl #content_type content =
   | CT_commit () ->
     commit_to_network (content <: commit bytes)
 
-val message_content_pair_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_content_nt bytes)
+val message_content_pair_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_tagged_content_nt bytes)
 let message_content_pair_to_network #bytes #cb #content_type msg =
   network_content <-- message_bare_content_to_network msg;
   match content_type with
-  | CT_application () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_content_nt bytes)
-  | CT_proposal () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_content_nt bytes)
-  | CT_commit () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_content_nt bytes)
+  | CT_application () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_tagged_content_nt bytes)
+  | CT_proposal () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_tagged_content_nt bytes)
+  | CT_commit () -> return ({NT.content_type = content_type; NT.content = network_content;} <: mls_tagged_content_nt bytes)

@@ -58,7 +58,7 @@ let sender_to_network #bytes #bl s =
   | S_new_member_commit -> return (NT.S_new_member_commit ())
 
 
-val message_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_message_content_nt bytes)
+val message_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_content_nt bytes)
 let message_content_to_network #bytes #bl msg =
   if not (length msg.group_id < pow2 30) then
     internal_failure "compute_confirmed_transcript_hash: group_id too long"
@@ -75,10 +75,10 @@ let message_content_to_network #bytes #bl msg =
       sender = sender;
       authenticated_data = msg.authenticated_data;
       content = content;
-    } <: mls_message_content_nt bytes)
+    } <: mls_content_nt bytes)
   )
 
-val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> wire_format_nt -> mls_message_content_nt bytes -> result (message_content bytes)
+val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> wire_format_nt -> mls_content_nt bytes -> result (message_content bytes)
 let network_to_message_content #bytes #bl wire_format msg =
   sender <-- network_to_sender msg.sender;
   content_pair <-- network_to_message_content_pair msg.content;
@@ -93,7 +93,7 @@ let network_to_message_content #bytes #bl wire_format msg =
     content = content;
   } <: message_content bytes)
 
-val message_auth_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_auth bytes -> result (mls_message_auth_nt bytes content_type)
+val message_auth_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_auth bytes -> result (mls_content_auth_data_nt bytes content_type)
 let message_auth_to_network #bytes #bl #content_type msg_auth =
   if not (length msg_auth.signature < pow2 30) then
     internal_failure "message_auth_to_network: signature too long"
@@ -105,10 +105,10 @@ let message_auth_to_network #bytes #bl #content_type msg_auth =
     return ({
       signature = msg_auth.signature;
       confirmation_tag = if content_type = CT_commit () then (Some?.v msg_auth.confirmation_tag) else ();
-    } <: mls_message_auth_nt bytes content_type)
+    } <: mls_content_auth_data_nt bytes content_type)
   )
 
-val network_to_message_auth: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> mls_message_auth_nt bytes content_type -> result (message_auth bytes)
+val network_to_message_auth: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> mls_content_auth_data_nt bytes content_type -> result (message_auth bytes)
 let network_to_message_auth #bytes #bl #content_type msg_auth =
   let confirmation_tag: option bytes =
     if content_type = CT_commit() then (

@@ -447,47 +447,47 @@ let ps_mls_untagged_content_nt #bytes #bl content_type =
   | CT_proposal () -> ps_proposal_nt
   | CT_commit () -> ps_commit_nt
 
-noeq type mls_content_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type mls_tagged_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   content_type: content_type_nt;
   content: mls_untagged_content_nt bytes content_type;
 }
 
-%splice [ps_mls_content_nt] (gen_parser (`mls_content_nt))
+%splice [ps_mls_tagged_content_nt] (gen_parser (`mls_tagged_content_nt))
 
-noeq type mls_message_content_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type mls_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_id: mls_bytes bytes;
   epoch: nat_lbytes 8;
   sender: sender_nt bytes;
   authenticated_data: mls_bytes bytes;
-  content: mls_content_nt bytes;
+  content: mls_tagged_content_nt bytes;
 }
 
-%splice [ps_mls_message_content_nt] (gen_parser (`mls_message_content_nt))
+%splice [ps_mls_content_nt] (gen_parser (`mls_content_nt))
 
-let mls_message_content_tbs_group_context_nt (bytes:Type0) {|bytes_like bytes|} (s:sender_nt bytes) =
+let mls_content_tbs_group_context_nt (bytes:Type0) {|bytes_like bytes|} (s:sender_nt bytes) =
   match s with
   | S_member _
   | S_new_member_commit _ -> group_context_nt bytes
   | S_external _
   | S_new_member_proposal _ -> unit
 
-val ps_mls_message_content_tbs_group_context_nt: #bytes:Type0 -> {|bytes_like bytes|} -> s:sender_nt bytes -> parser_serializer_unit bytes (mls_message_content_tbs_group_context_nt bytes s)
-let ps_mls_message_content_tbs_group_context_nt #bytes #bl s =
+val ps_mls_content_tbs_group_context_nt: #bytes:Type0 -> {|bytes_like bytes|} -> s:sender_nt bytes -> parser_serializer_unit bytes (mls_content_tbs_group_context_nt bytes s)
+let ps_mls_content_tbs_group_context_nt #bytes #bl s =
   match s with
   | S_member _
   | S_new_member_commit _ -> ps_group_context_nt
   | S_external _
   | S_new_member_proposal _ -> ps_unit
 
-noeq type mls_message_content_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type mls_content_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
-  content: mls_message_content_nt bytes;
-  group_context: mls_message_content_tbs_group_context_nt bytes (content.sender);
+  content: mls_content_nt bytes;
+  group_context: mls_content_tbs_group_context_nt bytes (content.sender);
 }
 
-%splice [ps_mls_message_content_tbs_nt] (gen_parser (`mls_message_content_tbs_nt))
+%splice [ps_mls_content_tbs_nt] (gen_parser (`mls_content_tbs_nt))
 
-instance parseable_serializeable_mls_message_content_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_message_content_tbs_nt bytes) = mk_parseable_serializeable ps_mls_message_content_tbs_nt
+instance parseable_serializeable_mls_content_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_content_tbs_nt bytes) = mk_parseable_serializeable ps_mls_content_tbs_nt
 
 val confirmation_tag_nt: bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
 let confirmation_tag_nt bytes #bl content =
@@ -501,29 +501,29 @@ let ps_confirmation_tag_nt #bytes #bl content_type =
   | CT_commit () -> ps_mac_nt
   | _ -> ps_unit
 
-noeq type mls_message_auth_nt (bytes:Type0) {|bl:bytes_like bytes|} (content_type:content_type_nt) = {
+noeq type mls_content_auth_data_nt (bytes:Type0) {|bl:bytes_like bytes|} (content_type:content_type_nt) = {
   signature: mls_bytes bytes;
   confirmation_tag: confirmation_tag_nt bytes #bl content_type;
 }
 
-%splice [ps_mls_message_auth_nt] (gen_parser (`mls_message_auth_nt))
+%splice [ps_mls_content_auth_data_nt] (gen_parser (`mls_content_auth_data_nt))
 
-noeq type mls_message_content_auth_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type mls_authenticated_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
-  content: mls_message_content_nt bytes;
-  auth: mls_message_auth_nt bytes content.content.content_type;
+  content: mls_content_nt bytes;
+  auth: mls_content_auth_data_nt bytes content.content.content_type;
 }
 
-%splice [ps_mls_message_content_auth_nt] (gen_parser (`mls_message_content_auth_nt))
+%splice [ps_mls_authenticated_content_nt] (gen_parser (`mls_authenticated_content_nt))
 
-noeq type mls_message_content_tbm_nt (bytes:Type0) {|bytes_like bytes|} = {
-  content_tbs: mls_message_content_tbs_nt bytes;
-  auth: mls_message_auth_nt bytes content_tbs.content.content.content_type;
+noeq type mls_content_tbm_nt (bytes:Type0) {|bytes_like bytes|} = {
+  content_tbs: mls_content_tbs_nt bytes;
+  auth: mls_content_auth_data_nt bytes content_tbs.content.content.content_type;
 }
 
-%splice [ps_mls_message_content_tbm_nt] (gen_parser (`mls_message_content_tbm_nt))
+%splice [ps_mls_content_tbm_nt] (gen_parser (`mls_content_tbm_nt))
 
-instance parseable_serializeable_mls_message_content_tbm_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_message_content_tbm_nt bytes) = mk_parseable_serializeable ps_mls_message_content_tbm_nt
+instance parseable_serializeable_mls_content_tbm_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_content_tbm_nt bytes) = mk_parseable_serializeable ps_mls_content_tbm_nt
 
 let membership_tag_nt (bytes:Type0) {|bytes_like bytes|} (s:sender_nt bytes) =
   match s with
@@ -537,8 +537,8 @@ let ps_membership_tag_nt #bytes #bl s =
   | _ -> ps_unit
 
 noeq type mls_plaintext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  content: mls_message_content_nt bytes;
-  auth: mls_message_auth_nt bytes content.content.content_type;
+  content: mls_content_nt bytes;
+  auth: mls_content_auth_data_nt bytes content.content.content_type;
   membership_tag: membership_tag_nt bytes content.sender;
 }
 
@@ -557,7 +557,7 @@ noeq type mls_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 noeq type mls_ciphertext_content_data_nt (bytes:Type0) {|bytes_like bytes|} (content_type: content_type_nt) = {
   content: mls_untagged_content_nt bytes content_type;
-  auth: mls_message_auth_nt bytes content_type;
+  auth: mls_content_auth_data_nt bytes content_type;
 }
 
 %splice [ps_mls_ciphertext_content_data_nt] (gen_parser (`mls_ciphertext_content_data_nt))
@@ -616,7 +616,7 @@ instance parseable_serializeable_mls_sender_data_aad_nt (bytes:Type0) {|bytes_li
 
 noeq type confirmed_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
-  content: mls_message_content_nt bytes;
+  content: mls_content_nt bytes;
   signature: mls_bytes bytes;
 }
 
@@ -634,12 +634,8 @@ instance parseable_serializeable_interim_transcript_hash_input_nt (bytes:Type0) 
 
 noeq type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   cipher_suite: cipher_suite_nt;
-  group_id: mls_bytes bytes;
-  epoch: nat_lbytes 8;
-  tree_hash: mls_bytes bytes;
-  confirmed_transcript_hash: mls_bytes bytes;
-  group_context_extensions: mls_bytes bytes;
-  other_extensions: mls_bytes bytes;
+  group_context: group_context_nt bytes;
+  extensions: mls_bytes bytes;
   confirmation_tag: mac_nt bytes;
   signer: nat_lbytes 4;
 }
