@@ -353,7 +353,7 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
       else
         return sender_data.leaf_index
     );
-    leaf_tree_secret <-- leaf_kdf encryption_secret (sender_index <: MLS.Tree.leaf_index l);
+    leaf_tree_secret <-- leaf_kdf encryption_secret (sender_index <: MLS.Tree.leaf_index l 0);
     init_ratchet <-- (
       match ct.content_type with
       | CT_application () -> init_application_ratchet leaf_tree_secret

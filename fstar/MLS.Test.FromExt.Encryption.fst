@@ -24,7 +24,7 @@ let normalize_text s =
     else
       failwith "normalize_text: don't start with 02"
 
-val test_leaf_generation: {|crypto_bytes bytes|} -> l:nat -> i:leaf_index l -> bytes -> bytes -> ratchet_state bytes -> encryption_leaf_generation_test -> ML (bool & ratchet_state bytes)
+val test_leaf_generation: {|crypto_bytes bytes|} -> l:nat -> i:leaf_index l 0 -> bytes -> bytes -> ratchet_state bytes -> encryption_leaf_generation_test -> ML (bool & ratchet_state bytes)
 let test_leaf_generation #cb l i encryption_secret sender_data_secret r_state test =
   let r_output = extract_result (ratchet_get_key r_state) in
   let r_next_state = extract_result (ratchet_next_state r_state) in
@@ -43,7 +43,7 @@ let test_leaf_generation #cb l i encryption_secret sender_data_secret r_state te
   let sender_ok = MLS.TreeDEM.Message.Types.S_member? (fst message_1).sender in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)
 
-val test_leaf_generations: {|crypto_bytes bytes|} -> l:nat -> i:leaf_index l -> bytes -> bytes -> ratchet_state bytes -> list encryption_leaf_generation_test -> ML bool
+val test_leaf_generations: {|crypto_bytes bytes|} -> l:nat -> i:leaf_index l 0 -> bytes -> bytes -> ratchet_state bytes -> list encryption_leaf_generation_test -> ML bool
 let rec test_leaf_generations #cb l i encryption_secret sender_data_secret r_state tests =
   match tests with
   | [] -> true
@@ -52,7 +52,7 @@ let rec test_leaf_generations #cb l i encryption_secret sender_data_secret r_sta
     let tail_ok = test_leaf_generations l i encryption_secret sender_data_secret r_next_state t in
     head_ok && tail_ok
 
-val test_leaf: {|crypto_bytes bytes|} -> l:nat -> i:leaf_index l -> bytes -> bytes -> encryption_leaf_test -> ML bool
+val test_leaf: {|crypto_bytes bytes|} -> l:nat -> i:leaf_index l 0 -> bytes -> bytes -> encryption_leaf_test -> ML bool
 let test_leaf #cb l i encryption_secret sender_data_secret test =
   let leaf_encryption_secret = extract_result (leaf_kdf encryption_secret i) in
   let handshake_ratchet = extract_result (init_handshake_ratchet leaf_encryption_secret) in

@@ -24,7 +24,7 @@ type node_integrity_error =
 
 type integrity_error =
   | IE_LeafError: leaf_integrity_error -> leaf_index:nat -> integrity_error
-  | IE_NodeError: node_integrity_error -> nb_left_leaves:nat -> level:nat -> integrity_error
+  | IE_NodeError: node_integrity_error -> level:nat -> ind:tree_index level -> integrity_error
 
 type integrity_either =
   | IE_Good: integrity_either
@@ -104,7 +104,7 @@ let check_leaf #bytes #cb leaf_index olp group_id =
   )
 
 #push-options "--ifuel 1"
-val has_child_with_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> t:treesync bytes l -> bytes -> bool
+val has_child_with_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> t:treesync bytes l i -> bytes -> bool
 let rec has_child_with_parent_hash #bytes #cb #l t parent_hash =
   match t with
   | TLeaf None -> false
@@ -120,40 +120,36 @@ let rec has_child_with_parent_hash #bytes #cb #l t parent_hash =
 #pop-options
 
 #push-options "--ifuel 1"
-val check_internal_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> nat -> t:treesync bytes l{TNode? t} -> result integrity_either
-let check_internal_node #bytes #cb #l nb_left_leaves t =
+val check_internal_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> t:treesync bytes l i{TNode? t} -> result integrity_either
+let check_internal_node #bytes #cb #l #i t =
   let (TNode onp left right) = t in
   match onp with
   | None -> return IE_Good
   | Some np -> (
     parent_hash_from_left_ok <-- (
-      computed_parent_hash <-- compute_parent_hash_from_dir nb_left_leaves t Left;
+      computed_parent_hash <-- compute_parent_hash np right;
       return (has_child_with_parent_hash left computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
-      computed_parent_hash <-- compute_parent_hash_from_dir nb_left_leaves t Right;
+      computed_parent_hash <-- compute_parent_hash np left;
       return (has_child_with_parent_hash right computed_parent_hash)
     );
     if (parent_hash_from_left_ok || parent_hash_from_right_ok) then
       return IE_Good
     else
-      return (IE_Errors [IE_NodeError NIE_BadParentHash nb_left_leaves l])
+      return (IE_Errors [IE_NodeError NIE_BadParentHash l i])
   )
 #pop-options
 
 #push-options "--ifuel 1"
-val check_treesync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> nat -> treesync bytes l -> bytes -> result integrity_either
-let rec check_treesync_aux #bytes #cb #l nb_left_leaves t group_id =
+val check_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> treesync bytes l i -> bytes -> result integrity_either
+let rec check_treesync #bytes #cb #l #i t group_id =
   match t with
   | TNode onp left right ->
-    left_ok <-- check_treesync_aux nb_left_leaves left group_id;
-    right_ok <-- check_treesync_aux (nb_left_leaves + pow2 (l-1)) right group_id;
-    cur_ok <-- check_internal_node nb_left_leaves t;
+    left_ok <-- check_treesync left group_id;
+    right_ok <-- check_treesync right group_id;
+    cur_ok <-- check_internal_node t;
     return (left_ok &&& cur_ok &&& right_ok)
   | TLeaf olp ->
-    check_leaf nb_left_leaves olp group_id
+    check_leaf i olp group_id
 #pop-options
-
-val check_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treesync bytes l -> bytes -> result integrity_either
-let check_treesync #bytes #cb #l t group_id =
-  check_treesync_aux 0 t group_id

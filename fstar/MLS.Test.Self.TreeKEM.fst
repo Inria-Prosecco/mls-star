@@ -182,7 +182,7 @@ let update_leaf #bytes #cb rng st leaf_index =
   let (rng, rand) = gen_rand_randomness rng rand_length in
   let (path_tk, _) = extract_result (update_path tree_tk leaf_index new_leaf_secret ad rand) in
   let leaf_package =
-    match get_leaf tree_ts leaf_index with
+    match leaf_at tree_ts leaf_index with
     | Some lp -> lp
     | _ -> failwith ""
   in
@@ -195,8 +195,8 @@ let update_leaf #bytes #cb rng st leaf_index =
   let ext_path_ts = extract_result (treekem_to_treesync new_leaf_package path_tk) in
   let (rng, sign_nonce_bytes) = gen_rand_bytes rng (sign_nonce_length #bytes) in
   let sign_nonce = sign_nonce_bytes in
-  let path_ts = extract_result (external_pathsync_to_pathsync leaf_index (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts empty) in
-  let new_tree_ts = apply_path tree_ts path_ts leaf_index in
+  let path_ts = extract_result (external_pathsync_to_pathsync (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts empty) in
+  let new_tree_ts = apply_path tree_ts path_ts in
   (rng, {
     public = {
       st.public with

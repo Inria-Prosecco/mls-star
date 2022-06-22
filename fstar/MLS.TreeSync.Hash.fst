@@ -36,8 +36,8 @@ noeq type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} =
 instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (tree_hash_input_nt bytes) =
   mk_parseable_serializeable ps_tree_hash_input_nt
 
-val tree_hash_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> nat -> treesync bytes l -> result (lbytes bytes (hash_length #bytes))
-let rec tree_hash_aux #bytes #cb #l nb_left_leaves t =
+val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> treesync bytes l i -> result (lbytes bytes (hash_length #bytes))
+let rec tree_hash #bytes #cb #l #i t =
   match t with
   | TLeaf olp ->
     leaf_node <-- (
@@ -47,11 +47,11 @@ let rec tree_hash_aux #bytes #cb #l nb_left_leaves t =
         res <-- leaf_package_to_network lp;
         return (Some res)
     );
-    if not (nb_left_leaves < pow2 32) then
+    if not (i < pow2 32) then
       internal_failure "tree_hash: leaf_index too big"
     else
       hash_hash (serialize (tree_hash_input_nt bytes) (LeafTreeHashInput ({
-        leaf_index = nb_left_leaves;
+        leaf_index = i;
         leaf_node = leaf_node;
       })))
   | TNode onp left right ->
@@ -62,14 +62,10 @@ let rec tree_hash_aux #bytes #cb #l nb_left_leaves t =
         res <-- node_package_to_network np;
         return (Some res)
     );
-    left_hash <-- tree_hash_aux nb_left_leaves left;
-    right_hash <-- tree_hash_aux (nb_left_leaves + (pow2 (l-1))) right;
+    left_hash <-- tree_hash left;
+    right_hash <-- tree_hash right;
     hash_hash (serialize (tree_hash_input_nt bytes) (ParentTreeHashInput ({
       parent_node = parent_node;
       left_hash = left_hash;
       right_hash = right_hash;
     })))
-
-val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treesync bytes l -> result (lbytes bytes (hash_length #bytes))
-let tree_hash #bytes #cb #l t =
-  tree_hash_aux 0 t

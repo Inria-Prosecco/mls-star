@@ -251,7 +251,7 @@ let rec find_my_encrypted_group_secret #bytes #cb kp_ref_to_hpke_sk l =
   )
 #pop-options
 
-val decrypt_welcome: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome bytes -> (bytes -> option (hpke_private_key bytes)) -> option (l:nat & treesync bytes l) -> result (welcome_group_info bytes & group_secrets bytes)
+val decrypt_welcome: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome bytes -> (bytes -> option (hpke_private_key bytes)) -> option (l:nat & treesync bytes l 0) -> result (welcome_group_info bytes & group_secrets bytes)
 let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
   group_secrets <-- (
     tmp <-- from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_ref_to_hpke_sk w.secrets);

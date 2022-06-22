@@ -24,14 +24,15 @@ let derive_tree_secret #bytes #cb secret label generation len =
     }) in
     expand_with_label secret label tree_context len
 
-val leaf_kdf: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> bytes -> leaf_index l -> result bytes
-let rec leaf_kdf #bytes #cb #l encryption_secret leaf_index =
+val leaf_kdf: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> bytes -> leaf_index l i -> result bytes
+let rec leaf_kdf #bytes #cb #l #i encryption_secret leaf_index =
   if l = 0 then (
     return encryption_secret
   ) else (
-    let (dir, new_leaf_index) = child_index l leaf_index in
-    new_encryption_secret <-- expand_with_label encryption_secret (string_to_bytes #bytes "tree") (string_to_bytes #bytes (if dir = Left then "left" else "right")) (kdf_length #bytes);
-    leaf_kdf #bytes new_encryption_secret new_leaf_index
+    let dir_string = if is_left_leaf leaf_index then "left" else "right" in
+    let new_i = if is_left_leaf leaf_index then left_index i else right_index i in
+    new_encryption_secret <-- expand_with_label encryption_secret (string_to_bytes #bytes "tree") (string_to_bytes #bytes dir_string) (kdf_length #bytes);
+    leaf_kdf #bytes #cb #_ #new_i new_encryption_secret leaf_index
   )
 
 val opt_secret_to_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> option bytes -> bytes

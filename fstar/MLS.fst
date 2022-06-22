@@ -47,7 +47,7 @@ type state = {
 }
 
 #push-options "--fuel 1"
-val compute_group_context: #l:nat -> bytes -> nat -> treesync bytes #cb.base l -> bytes -> result (group_context_nt bytes)
+val compute_group_context: #l:nat -> bytes -> nat -> treesync bytes #cb.base l 0 -> bytes -> result (group_context_nt bytes)
 let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
   tree_hash <-- MLS.TreeSync.Hash.tree_hash #bytes #cb tree;
   if not (length group_id < pow2 30) then
@@ -90,7 +90,7 @@ let reset_ratchet_states st =
      internal_failure "reset_ratchet_states: leaf_index too big"
   else (
     encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption st.epoch_secret;
-    leaf_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #st.tree_state.levels encryption_secret st.leaf_index;
+    leaf_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #st.tree_state.levels #0 encryption_secret st.leaf_index;
     handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet leaf_secret;
     application_state <-- MLS.TreeDEM.Keys.init_application_ratchet leaf_secret;
     return ({st with handshake_state; application_state})
@@ -103,7 +103,7 @@ let process_proposal sender_id st p =
     if not (sender_id < pow2 st.tree_state.levels) then
       error "process_proposal: sender_id is greater than treesize"
     else (
-      let opt_sender_leaf_package = get_leaf st.tree_state.tree sender_id in
+      let opt_sender_leaf_package = leaf_at st.tree_state.tree sender_id in
       if not (Some? opt_sender_leaf_package) then
         error "process_proposal: sender_id points to a blank leaf"
       else
@@ -175,13 +175,13 @@ let process_commit state message message_auth =
         error "process_commit: sender_id is greater than treesize"
       else (
         tree_kem <-- treesync_to_treekem state.tree_state.tree;
-        update_pathkem <-- update_path_to_treekem #_ #_ #_ (sender_id <: nat) tree_kem group_context_bytes path;
+        update_pathkem <-- update_path_to_treekem #_ #_ #_ tree_kem (sender_id <: nat) group_context_bytes path;
         update_leaf_package <-- network_to_leaf_package path.leaf_node;
         ext_update_pathsync <-- treekem_to_treesync update_leaf_package update_pathkem;
-        update_pathsync <-- external_pathsync_to_pathsync (sender_id <: nat) None state.tree_state.tree ext_update_pathsync state.tree_state.group_id;
+        update_pathsync <-- external_pathsync_to_pathsync None state.tree_state.tree ext_update_pathsync state.tree_state.group_id;
         return ({ state with
           tree_state = { state.tree_state with
-            tree = MLS.TreeSync.apply_path state.tree_state.tree update_pathsync (sender_id <: nat);
+            tree = MLS.TreeSync.apply_path state.tree_state.tree update_pathsync;
           }
         })
       )
@@ -352,7 +352,7 @@ let create e cred private_sign_key group_id =
   tmp <-- chop_entropy e 32;
   let epoch_secret, e = tmp in
   encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption #bytes epoch_secret;
-  leaf_dem_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 encryption_secret 0;
+  leaf_dem_secret <-- MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 #0 encryption_secret 0;
   handshake_state <-- MLS.TreeDEM.Keys.init_handshake_ratchet leaf_dem_secret;
   application_state <-- MLS.TreeDEM.Keys.init_application_ratchet leaf_dem_secret;
   return ({
@@ -498,7 +498,7 @@ let generate_update_path st e proposals =
     assume(length new_leaf_secret == Seq.length new_leaf_secret);
     tmp <-- update_path tree_kem st.leaf_index new_leaf_secret group_context_bytes update_path_rand;
     let (update_path_kem, _) = tmp in
-    let opt_my_leaf_package =  get_leaf st.tree_state.tree st.leaf_index in
+    let opt_my_leaf_package =  leaf_at st.tree_state.tree st.leaf_index in
     my_leaf_package <-- (from_option "generate_update_path: my leaf is blanked" opt_my_leaf_package);
     let my_new_leaf_package = ({
       my_leaf_package with
@@ -507,7 +507,7 @@ let generate_update_path st e proposals =
       parent_hash = empty #bytes;
     }) in
     update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package update_path_kem;
-    update_path_sync <-- external_pathsync_to_pathsync st.leaf_index (Some (st.sign_private_key, sign_nonce)) st.tree_state.tree update_path_ext_sync st.tree_state.group_id;
+    update_path_sync <-- external_pathsync_to_pathsync (Some (st.sign_private_key, sign_nonce)) st.tree_state.tree update_path_ext_sync st.tree_state.group_id;
     update_path_network <-- treesync_to_update_path update_path_sync;
     let new_key_package_bytes = (ps_to_pse ps_leaf_node_nt).serialize_exact update_path_network.leaf_node in
     return (update_path_network, (new_key_package_bytes, new_leaf_secret), e)
@@ -590,7 +590,7 @@ let send state e data =
   return (new_state, g)
 
 
-val find_my_index: #l:nat -> treesync bytes l -> bytes -> result (res:nat{res<pow2 l})
+val find_my_index: #l:nat -> treesync bytes l 0 -> bytes -> result (res:nat{res<pow2 l})
 let find_my_index #l t sign_pk =
   let test (x: option (leaf_package_t bytes)) =
     let olp = x in
@@ -618,13 +618,13 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (group_info, secrets) = tmp in
   ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes ps_ratchet_tree_nt).parse_exact group_info.extensions);
   l <-- ratchet_tree_l ratchet_tree;
-  tree <-- ratchet_tree_to_treesync l ratchet_tree;
+  tree <-- ratchet_tree_to_treesync l 0 ratchet_tree;
   _ <-- ( //Check signature
     group_info_ok <-- verify_welcome_group_info (fun leaf_ind ->
       if not (leaf_ind < pow2 l) then
         error "process_welcome_message: leaf_ind too big"
       else (
-        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (1)" (get_leaf tree leaf_ind);
+        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (1)" (leaf_at tree leaf_ind);
         let result = sender_leaf_package.credential.signature_key in
         if not (length result = sign_public_key_length #bytes) then
           error "process_welcome_message: bad public key length"
@@ -647,17 +647,17 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       else (
         tree_kem <-- treesync_to_treekem tree;
         update_path_kem <-- mk_init_path tree_kem leaf_index signer_index path_secret (empty #bytes);
-        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (2)" (get_leaf tree signer_index);
+        sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (2)" (leaf_at tree signer_index);
         external_update_path <-- treekem_to_treesync sender_leaf_package update_path_kem;
-        update_path <-- external_pathsync_to_pathsync signer_index None tree external_update_path group_info.group_context.group_id;
-        return (MLS.TreeSync.apply_path tree update_path signer_index)
+        update_path <-- external_pathsync_to_pathsync None tree external_update_path group_info.group_context.group_id;
+        return (MLS.TreeSync.apply_path tree update_path)
       )
   );
   interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.group_context.confirmed_transcript_hash;
   group_context <-- compute_group_context group_info.group_context.group_id group_info.group_context.epoch tree group_info.group_context.confirmed_transcript_hash;
   epoch_secret <-- MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_to_pse ps_group_context_nt).serialize_exact group_context);
   leaf_secret <-- (
-    let opt_my_leaf_package = get_leaf tree leaf_index in
+    let opt_my_leaf_package = leaf_at tree leaf_index in
     match opt_my_leaf_package with
     | None -> internal_failure "process_welcome_message: leaf index points to a blank leaf"
     | Some my_leaf_package -> (

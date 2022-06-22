@@ -8,6 +8,8 @@ open MLS.Tree
 module TS = MLS.TreeSync.Types
 module TK = MLS.TreeKEM.Types
 
+#set-options "--fuel 1 --ifuel 1"
+
 noeq type treekem_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   encryption_key: hpke_public_key_nt bytes;
 }
@@ -17,16 +19,16 @@ noeq type treekem_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_treekem_content_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (treekem_content_nt bytes) =
   mk_parseable_serializeable ps_treekem_content_nt
 
-[@@ is_parser; is_parser_for (`%direction)]
-val ps_direction: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes direction
+[@@ is_parser; is_parser_for (`%TK.direction)]
+val ps_direction: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes TK.direction
 let ps_direction #bytes #bl =
   let pred (x:nat_lbytes 1) = x < 2 in
-  mk_isomorphism direction (refine (ps_nat_lbytes 1) pred)
-    (fun x -> match x with | 0 -> Left | 1 -> Right)
-    (fun x -> match x with | Left -> 0 | Right -> 1)
+  mk_isomorphism TK.direction (refine (ps_nat_lbytes 1) pred)
+    (fun x -> match x with | 0 -> TK.Left | 1 -> TK.Right)
+    (fun x -> match x with | TK.Left -> 0 | TK.Right -> 1)
 
 noeq type treekem_impl_data_nt (bytes:Type0) {|bytes_like bytes|} = {
-  content_dir: direction;
+  content_dir: TK.direction;
   encrypted_path_secret: mls_seq bytes ps_hpke_ciphertext_nt;
   last_group_context: mls_bytes bytes;
 }
@@ -117,7 +119,7 @@ let network_to_node_package #bytes #bl pn =
             encryption_key = pn.encryption_key;
           });
           TS.impl_data = serialize (treekem_impl_data_nt bytes) ({
-            content_dir = Left; //We don't care
+            content_dir = TK.Left; //We don't care
             encrypted_path_secret = Seq.empty;
             last_group_context = empty #bytes;
           });
@@ -136,7 +138,7 @@ let leaf_node_to_treekem #bytes #cb ln =
       TK.version = 0;
     } <: TK.member_info bytes)
 
-val update_path_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> direction -> update_path_node_nt bytes -> result (TK.key_package bytes)
+val update_path_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> TK.direction -> update_path_node_nt bytes -> result (TK.key_package bytes)
 let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
   if not (length (update_path_node.encryption_key <: bytes) = hpke_public_key_length #bytes) then
     error "update_path_node_to_treekem: public key has wrong length"
@@ -161,8 +163,8 @@ let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
   )
 
 // I could use TreeKEM.tree_resolution t = [], but then I get weird errors when loading TreeSyncTreeKEMBinder...
-val tree_resolution_empty: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> TK.treekem bytes l -> bool
-let rec tree_resolution_empty #bytes #cb #l t =
+val tree_resolution_empty: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> TK.treekem bytes l i -> bool
+let rec tree_resolution_empty #bytes #cb #l #i t =
   match t with
   | TLeaf None -> true
   | TLeaf (Some _) -> false
@@ -171,8 +173,8 @@ let rec tree_resolution_empty #bytes #cb #l t =
   | TNode (Some _) _ _ -> false
 
 #push-options "--z3rlimit 30"
-val update_path_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> i:leaf_index l -> TK.treekem bytes l -> bytes -> update_path:update_path_nt bytes -> result (TK.pathkem bytes l)
-let rec update_path_to_treekem #bytes #cb #l i t group_context update_path =
+val update_path_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> TK.treekem bytes l i -> li:leaf_index l i -> bytes -> update_path:update_path_nt bytes -> result (TK.pathkem bytes l i li)
+let rec update_path_to_treekem #bytes #cb #l #i t li group_context update_path =
   match t with
   | TLeaf _ -> (
     if not (Seq.length update_path.nodes = 0) then
@@ -186,19 +188,19 @@ let rec update_path_to_treekem #bytes #cb #l i t group_context update_path =
     if not (Seq.length update_path.nodes > 0) then
       internal_failure "update_path_to_treekem: update_path.nodes is too short"
     else (
-      let (dir, next_i) = child_index l i in
-      let (child, sibling) = order_subtrees dir (left, right) in
+      let (child, sibling) = get_child_sibling t li in
       if tree_resolution_empty sibling then (
-        path_next <-- update_path_to_treekem next_i child group_context update_path;
+        path_next <-- update_path_to_treekem child li group_context update_path;
         return (PNode None path_next)
       ) else (
+        let dir = if is_left_leaf li then TK.Left else TK.Right in
         let update_path_length = (Seq.length update_path.nodes) in
         let head_update_path_nodes = Seq.index update_path.nodes (update_path_length-1) in
         let tail_update_path_nodes = Seq.slice update_path.nodes 0 (update_path_length-1) in
         //TODO this is an easy lemma
         assume (bytes_length ps_update_path_node_nt (Seq.seq_to_list tail_update_path_nodes) <= bytes_length ps_update_path_node_nt (Seq.seq_to_list update_path.nodes));
         let next_update_path = { update_path with nodes = tail_update_path_nodes } in
-        path_next <-- update_path_to_treekem next_i child group_context next_update_path;
+        path_next <-- update_path_to_treekem child li group_context next_update_path;
         path_data <-- update_path_node_to_treekem group_context dir head_update_path_nodes;
         return (PNode (Some path_data) path_next)
       )
@@ -217,8 +219,8 @@ let treesync_to_update_path_node #bytes #bl np =
   } <: update_path_node_nt bytes)
 
 //TODO same
-val treesync_to_update_path_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> TS.pathsync bytes l -> result (leaf_node_nt bytes & list (update_path_node_nt bytes))
-let rec treesync_to_update_path_aux #bytes #bl #l p =
+val treesync_to_update_path_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.pathsync bytes l i li  -> result (leaf_node_nt bytes & list (update_path_node_nt bytes))
+let rec treesync_to_update_path_aux #bytes #bl #l #i #li p =
   match p with
   | PLeaf (Some lp) ->
     kp <-- leaf_package_to_network lp;
@@ -234,8 +236,8 @@ let rec treesync_to_update_path_aux #bytes #bl #l p =
     internal_failure "treesync_to_update_path: the path must not contain any blank node"
 
 //TODO same
-val treesync_to_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> TS.pathsync bytes l -> result (update_path_nt bytes)
-let treesync_to_update_path #bytes #bl #l p =
+val treesync_to_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.pathsync bytes l i li -> result (update_path_nt bytes)
+let treesync_to_update_path #bytes #bl #l #i #li p =
   tmp <-- treesync_to_update_path_aux p;
   let (kp, upns) = tmp in
   let upns = List.rev upns in
@@ -263,8 +265,8 @@ let ratchet_tree_l #bytes #bl nodes =
     else
       return l
 
-val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> nodes:Seq.seq (option (node_nt bytes)){Seq.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes l)
-let rec ratchet_tree_to_treesync #bytes #bl l nodes =
+val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> i:tree_index l -> nodes:Seq.seq (option (node_nt bytes)){Seq.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes l i)
+let rec ratchet_tree_to_treesync #bytes #bl l i nodes =
   if l = 0 then (
     assert (Seq.length nodes == 1);
     match (Seq.index nodes 0) with
@@ -278,8 +280,8 @@ let rec ratchet_tree_to_treesync #bytes #bl l nodes =
     let left_nodes = Seq.slice nodes 0 ((pow2 l) - 1) in
     let my_node = Seq.index nodes ((pow2 l) - 1) in
     let right_nodes = Seq.slice nodes (pow2 l) ((pow2 (l+1))-1) in
-    left_res <-- ratchet_tree_to_treesync (l-1)  left_nodes;
-    right_res <-- ratchet_tree_to_treesync (l-1) right_nodes;
+    left_res <-- ratchet_tree_to_treesync (l-1) _ left_nodes;
+    right_res <-- ratchet_tree_to_treesync (l-1) _ right_nodes;
     match my_node with
     | Some (N_parent pn) ->
       np <-- network_to_node_package pn;
@@ -289,8 +291,8 @@ let rec ratchet_tree_to_treesync #bytes #bl l nodes =
       return (TNode None left_res right_res)
   )
 
-val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> TS.treesync bytes l -> result (Seq.seq (option (node_nt bytes)))
-let rec treesync_to_ratchet_tree #bytes #bl #l t =
+val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> TS.treesync bytes l i -> result (Seq.seq (option (node_nt bytes)))
+let rec treesync_to_ratchet_tree #bytes #bl #l #i t =
   match t with
   | TLeaf None ->
     return (Seq.create 1 None)

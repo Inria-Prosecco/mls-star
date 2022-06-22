@@ -37,8 +37,8 @@ let sign_leaf #bytes #cb sign_key entropy lp parent_parent_hash group_id =
     )
   )
 
-val external_pathsync_to_pathsync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> leaf_index l -> option (sign_private_key bytes & sign_nonce bytes) -> bytes -> nat -> treesync bytes l -> external_pathsync bytes l -> bytes -> result (pathsync bytes l)
-let rec external_pathsync_to_pathsync_aux #bytes #cb #l i opt_sign_key parent_parent_hash nb_left_leaves t p group_id =
+val external_pathsync_to_pathsync_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> option (sign_private_key bytes & sign_nonce bytes) -> bytes -> treesync bytes l i -> external_pathsync bytes l i li -> bytes -> result (pathsync bytes l i li)
+let rec external_pathsync_to_pathsync_aux #bytes #cb #l #i #li opt_sign_key parent_parent_hash t p group_id =
   match t, p with
   | _, PLeaf lp ->
     lp <-- (
@@ -48,7 +48,7 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l i opt_sign_key parent_pa
         sign_leaf sign_key entropy lp parent_parent_hash group_id
       )
     );
-    leaf_errors <-- check_leaf 0 (Some lp) group_id; //TODO hack: we know that the leaf index is only used for the errors, so we can set it to 0
+    leaf_errors <-- check_leaf i (Some lp) group_id;
     if not (IE_Good? leaf_errors) then
       error "external_pathsync_to_pathsync_aux: invalid leaf"
     else if not (lp.source = LNS_commit ()) then
@@ -58,10 +58,8 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l i opt_sign_key parent_pa
     else
       return (PLeaf (Some lp))
   | TNode _ left right, PNode onp p_next ->
-    let p_next: external_pathsync bytes (l-1) = p_next in //Why F*, why???
-    let (dir, next_i) = child_index l i in
-    let (child, sibling) = order_subtrees dir (left, right) in
-    let child_nb_left_leaves: nat = if dir = Left then nb_left_leaves else nb_left_leaves + (pow2 (l-1)) in
+    let p_next: external_pathsync bytes (l-1) _ li = p_next in //Why F*, why???
+    let (child, sibling) = get_child_sibling t li in
     let new_onp =
       match onp with
       | Some np -> (Some ({
@@ -73,16 +71,17 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l i opt_sign_key parent_pa
       | None -> None
     in
     parent_hash <-- (
-      match onp with
-      | Some np -> (
-        res <-- compute_parent_hash_from_dir nb_left_leaves (TNode new_onp left right) dir;
+      match new_onp with
+      | Some new_np -> (
+        res <-- compute_parent_hash new_np sibling;
         return (res <: bytes)
       )
       | None -> return parent_parent_hash
     );
-    result_p_next <-- external_pathsync_to_pathsync_aux next_i opt_sign_key parent_hash child_nb_left_leaves child p_next  group_id;
+    result_p_next <-- external_pathsync_to_pathsync_aux opt_sign_key parent_hash child p_next group_id;
     return (PNode new_onp result_p_next)
 
-val external_pathsync_to_pathsync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> i:leaf_index l -> option (sign_private_key bytes & sign_nonce bytes) -> treesync bytes l -> external_pathsync bytes l -> bytes -> result (pathsync bytes l)
-let external_pathsync_to_pathsync #bytes #cb #l i opt_sign_key t p group_id =
-  external_pathsync_to_pathsync_aux i opt_sign_key empty 0 t p group_id
+val external_pathsync_to_pathsync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> option (sign_private_key bytes & sign_nonce bytes) -> treesync bytes l i -> external_pathsync bytes l i li -> bytes -> result (pathsync bytes l i li)
+let external_pathsync_to_pathsync #bytes #cb #l #i #li opt_sign_key t p group_id =
+  external_pathsync_to_pathsync_aux opt_sign_key empty t p group_id
+
