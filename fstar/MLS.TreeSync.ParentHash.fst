@@ -50,16 +50,16 @@ let rec un_add #bytes #bl #l #i t leaves =
     let new_right = un_add right leaves in
     TNode new_onp new_left new_right
 
-val compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> node_package_t bytes -> treesync bytes l i -> result (lbytes bytes (hash_length #bytes))
-let compute_parent_hash #bytes #cb #l #i root_np sibling =
-  encryption_key <-- get_encryption_key_from_content root_np.content.content;
-  original_sibling_tree_hash <-- tree_hash (un_add sibling root_np.unmerged_leaves);
-  if not (length root_np.parent_hash < pow2 30) then
+val compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> bytes -> bytes -> treesync bytes l i -> result (lbytes bytes (hash_length #bytes))
+let compute_parent_hash #bytes #cb #l #i kem_content parent_hash sibling =
+  encryption_key <-- get_encryption_key_from_content kem_content;
+  original_sibling_tree_hash <-- tree_hash sibling;
+  if not (length parent_hash < pow2 30) then
     internal_failure "compute_parent_hash_from_sibling: parent_hash too long"
   else (
     hash_hash (serialize (parent_hash_input_nt bytes) ({
       encryption_key;
-      parent_hash = root_np.parent_hash;
+      parent_hash = parent_hash;
       original_sibling_tree_hash;
     }))
   )

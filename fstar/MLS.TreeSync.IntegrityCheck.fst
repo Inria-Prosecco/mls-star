@@ -127,11 +127,11 @@ let check_internal_node #bytes #cb #l #i t =
   | None -> return IE_Good
   | Some np -> (
     parent_hash_from_left_ok <-- (
-      computed_parent_hash <-- compute_parent_hash np right;
+      computed_parent_hash <-- compute_parent_hash np.content.content np.parent_hash (un_add right np.unmerged_leaves);
       return (has_child_with_parent_hash left computed_parent_hash)
     );
     parent_hash_from_right_ok <-- (
-      computed_parent_hash <-- compute_parent_hash np left;
+      computed_parent_hash <-- compute_parent_hash np.content.content np.parent_hash (un_add left np.unmerged_leaves);
       return (has_child_with_parent_hash right computed_parent_hash)
     );
     if (parent_hash_from_left_ok || parent_hash_from_right_ok) then

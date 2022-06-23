@@ -60,6 +60,14 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #i #li opt_sign_key pare
   | TNode _ left right, PNode onp p_next ->
     let p_next: external_pathsync bytes (l-1) _ li = p_next in //Why F*, why???
     let (child, sibling) = get_child_sibling t li in
+    parent_hash <-- (
+      match onp with
+      | Some np -> (
+        res <-- compute_parent_hash np.content parent_parent_hash sibling;
+        return (res <: bytes)
+      )
+      | None -> return parent_parent_hash
+    );
     let new_onp =
       match onp with
       | Some np -> (Some ({
@@ -70,14 +78,6 @@ let rec external_pathsync_to_pathsync_aux #bytes #cb #l #i #li opt_sign_key pare
       } <: node_package_t bytes))
       | None -> None
     in
-    parent_hash <-- (
-      match new_onp with
-      | Some new_np -> (
-        res <-- compute_parent_hash new_np sibling;
-        return (res <: bytes)
-      )
-      | None -> return parent_parent_hash
-    );
     result_p_next <-- external_pathsync_to_pathsync_aux opt_sign_key parent_hash child p_next group_id;
     return (PNode new_onp result_p_next)
 
