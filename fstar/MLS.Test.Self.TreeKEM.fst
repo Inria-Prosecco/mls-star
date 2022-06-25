@@ -8,7 +8,6 @@ open MLS.NetworkBinder
 open MLS.Tree
 open MLS.TreeSync.Types
 open MLS.TreeSync.Extensions
-open MLS.TreeSync.ExternalPath
 open MLS.TreeSync
 open MLS.TreeSync.Hash
 open MLS.TreeKEM
@@ -195,8 +194,8 @@ let update_leaf #bytes #cb rng st leaf_index =
   let ext_path_ts = extract_result (treekem_to_treesync new_leaf_package path_tk) in
   let (rng, sign_nonce_bytes) = gen_rand_bytes rng (sign_nonce_length #bytes) in
   let sign_nonce = sign_nonce_bytes in
-  let path_ts = extract_result (external_pathsync_to_pathsync (Some (leaf_secrets.sign_sk, sign_nonce)) tree_ts ext_path_ts empty) in
-  let new_tree_ts = apply_path tree_ts path_ts in
+  let signed_ext_path_ts = extract_result (external_path_to_valid_external_path tree_ts ext_path_ts empty leaf_secrets.sign_sk sign_nonce) in
+  let new_tree_ts = extract_result (apply_external_path tree_ts signed_ext_path_ts) in
   (rng, {
     public = {
       st.public with

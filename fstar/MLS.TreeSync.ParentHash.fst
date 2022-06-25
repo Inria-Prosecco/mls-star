@@ -50,17 +50,17 @@ let rec un_add #bytes #bl #l #i t leaves =
     let new_right = un_add right leaves in
     TNode new_onp new_left new_right
 
-val compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> bytes -> bytes -> treesync bytes l i -> result (lbytes bytes (hash_length #bytes))
+//Note: We could remove the `result` (i.e. prove that the hash input doesn't exceed pow2 61 + add precondition).
+val compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> bytes -> mls_bytes bytes -> treesync bytes l i -> result (mls_bytes bytes)
 let compute_parent_hash #bytes #cb #l #i kem_content parent_hash sibling =
   encryption_key <-- get_encryption_key_from_content kem_content;
   original_sibling_tree_hash <-- tree_hash sibling;
-  if not (length parent_hash < pow2 30) then
-    internal_failure "compute_parent_hash_from_sibling: parent_hash too long"
-  else (
-    hash_hash (serialize (parent_hash_input_nt bytes) ({
-      encryption_key;
-      parent_hash = parent_hash;
-      original_sibling_tree_hash;
-    }))
-  )
+  res <-- hash_hash #bytes (serialize (parent_hash_input_nt bytes) ({
+    encryption_key;
+    parent_hash = parent_hash;
+    original_sibling_tree_hash;
+  }));
+  return (res <: mls_bytes bytes)
 
+val root_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> mls_bytes bytes
+let root_parent_hash #bytes #bl = empty #bytes

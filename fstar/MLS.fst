@@ -8,7 +8,6 @@ open MLS.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeSyncTreeKEMBinder
 open MLS.TreeSync.Extensions
-open MLS.TreeSync.ExternalPath
 open MLS.TreeSync.KeyPackageRef
 open MLS.TreeKEM
 open MLS.TreeDEM.Message.Types
@@ -178,10 +177,17 @@ let process_commit state message message_auth =
         update_pathkem <-- update_path_to_treekem #_ #_ #_ tree_kem (sender_id <: nat) group_context_bytes path;
         update_leaf_package <-- network_to_leaf_package path.leaf_node;
         ext_update_pathsync <-- treekem_to_treesync update_leaf_package update_pathkem;
-        update_pathsync <-- external_pathsync_to_pathsync None state.tree_state.tree ext_update_pathsync state.tree_state.group_id;
+        valid_update_path <-- (
+          b <-- MLS.TreeSync.external_path_is_valid state.tree_state.tree ext_update_pathsync state.tree_state.group_id;
+          if not b then
+            error "process_commit: invalid update path"
+          else
+            return ext_update_pathsync
+        );
+        new_tree <-- MLS.TreeSync.apply_external_path state.tree_state.tree valid_update_path;
         return ({ state with
           tree_state = { state.tree_state with
-            tree = MLS.TreeSync.apply_path state.tree_state.tree update_pathsync;
+            tree = new_tree;
           }
         })
       )
@@ -507,8 +513,8 @@ let generate_update_path st e proposals =
       parent_hash = empty #bytes;
     }) in
     update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package update_path_kem;
-    update_path_sync <-- external_pathsync_to_pathsync (Some (st.sign_private_key, sign_nonce)) st.tree_state.tree update_path_ext_sync st.tree_state.group_id;
-    update_path_network <-- treesync_to_update_path update_path_sync;
+    update_path_sync <-- MLS.TreeSync.external_path_to_valid_external_path st.tree_state.tree update_path_ext_sync st.tree_state.group_id st.sign_private_key sign_nonce;
+    update_path_network <-- treekem_to_update_path update_path_sync;
     let new_key_package_bytes = (ps_to_pse ps_leaf_node_nt).serialize_exact update_path_network.leaf_node in
     return (update_path_network, (new_key_package_bytes, new_leaf_secret), e)
   )
@@ -649,8 +655,14 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
         update_path_kem <-- mk_init_path tree_kem leaf_index signer_index path_secret (empty #bytes);
         sender_leaf_package <-- from_option "process_welcome_message: signer leaf is blanked (2)" (leaf_at tree signer_index);
         external_update_path <-- treekem_to_treesync sender_leaf_package update_path_kem;
-        update_path <-- external_pathsync_to_pathsync None tree external_update_path group_info.group_context.group_id;
-        return (MLS.TreeSync.apply_path tree update_path)
+        update_path <-- (
+          b <-- MLS.TreeSync.external_path_is_valid tree external_update_path group_info.group_context.group_id;
+          if not b then
+            internal_failure "process_welcome_message: invalid init path?"
+          else
+            return external_update_path
+        );
+        MLS.TreeSync.apply_external_path tree update_path
       )
   );
   interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.group_context.confirmed_transcript_hash;

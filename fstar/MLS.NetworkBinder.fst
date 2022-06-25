@@ -93,9 +93,7 @@ let leaf_package_to_network #bytes #bl lp =
 val node_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (parent_node_nt bytes)
 let node_package_to_network #bytes #bl np =
   unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (x <: nat_lbytes 4) else internal_failure "") np.TS.unmerged_leaves;
-  if not (length np.TS.parent_hash < pow2 30) then
-    internal_failure "node_package_to_network: parent_hash too long"
-  else if not ((bytes_length #bytes (ps_nat_lbytes 4) unmerged_leaves) < pow2 30) then
+  if not ((bytes_length #bytes (ps_nat_lbytes 4) unmerged_leaves) < pow2 30) then
     internal_failure "node_package_to_network: unmerged_leaves too long"
   else (
     Seq.lemma_list_seq_bij unmerged_leaves;
@@ -208,37 +206,35 @@ let rec update_path_to_treekem #bytes #cb #l #i t li group_context update_path =
   )
 #pop-options
 
-//TODO this function has really bad encapsulation and should not exist in a reasonable implementation
-val treesync_to_update_path_node: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (update_path_node_nt bytes)
-let treesync_to_update_path_node #bytes #bl np =
-  content <-- from_option "treesync_to_update_path_node: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
-  impl_data <-- from_option "treesync_to_update_path_node: can't parse impl data" (parse (treekem_impl_data_nt bytes) np.TS.content.impl_data);
+val treekem_to_update_path_node: #bytes:Type0 -> {|bytes_like bytes|} -> TS.external_content bytes -> result (update_path_node_nt bytes)
+let treekem_to_update_path_node #bytes #bl np_content =
+  content <-- from_option "treesync_to_update_path_node: can't parse content" (parse (treekem_content_nt bytes) (np_content <: TS.external_content bytes).TS.content);
+  impl_data <-- from_option "treesync_to_update_path_node: can't parse impl data" (parse (treekem_impl_data_nt bytes) np_content.TS.impl_data);
   return ({
     encryption_key = content.encryption_key;
     encrypted_path_secret = impl_data.encrypted_path_secret;
   } <: update_path_node_nt bytes)
 
 //TODO same
-val treesync_to_update_path_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.pathsync bytes l i li  -> result (leaf_node_nt bytes & list (update_path_node_nt bytes))
-let rec treesync_to_update_path_aux #bytes #bl #l #i #li p =
+val treekem_to_update_path_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.external_pathsync bytes l i li  -> result (leaf_node_nt bytes & list (update_path_node_nt bytes))
+let rec treekem_to_update_path_aux #bytes #bl #l #i #li p =
   match p with
-  | PLeaf (Some lp) ->
+  | PLeaf lp ->
     kp <-- leaf_package_to_network lp;
     return (kp, [])
-  | PLeaf None ->
-    internal_failure "treesync_to_update_path: the path must not contain any blank node"
-  | PNode (Some np) p_next ->
-    upn <-- treesync_to_update_path_node np;
-    tmp <-- treesync_to_update_path_aux p_next;
+  | PNode (Some np_content) p_next ->
+    upn <-- treekem_to_update_path_node np_content;
+    tmp <-- treekem_to_update_path_aux p_next;
     let (kp, upns) = tmp in
     return (kp, upn::upns)
   | PNode None p_next ->
-    internal_failure "treesync_to_update_path: the path must not contain any blank node"
+    tmp <-- treekem_to_update_path_aux p_next;
+    let (kp, upns) = tmp in
+    return (kp, upns)
 
-//TODO same
-val treesync_to_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.pathsync bytes l i li -> result (update_path_nt bytes)
-let treesync_to_update_path #bytes #bl #l #i #li p =
-  tmp <-- treesync_to_update_path_aux p;
+val treekem_to_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.external_pathsync bytes l i li -> result (update_path_nt bytes)
+let treekem_to_update_path #bytes #bl #l #i #li p =
+  tmp <-- treekem_to_update_path_aux p;
   let (kp, upns) = tmp in
   let upns = List.rev upns in
   Seq.lemma_list_seq_bij upns;

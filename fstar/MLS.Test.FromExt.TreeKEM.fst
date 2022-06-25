@@ -8,7 +8,6 @@ open MLS.Test.Utils
 open MLS.Tree
 open MLS.TreeSync.Types
 open MLS.TreeSync.ParentHash
-open MLS.TreeSync.ExternalPath
 open MLS.TreeSync
 open MLS.TreeSync.Hash
 open MLS.TreeKEM
@@ -84,16 +83,18 @@ let gen_treekem_output #cb t =
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret empty) in
     let old_leaf_package = extract_option "leaf package for add sender is empty" (leaf_at ts0 add_sender) in
     let ext_ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
-    let ups0 = extract_result (external_pathsync_to_pathsync None ts0 ext_ups0 group_id) in
-    let ts1 = apply_path ts0 ups0 in
+    let ext_ups0_is_valid = extract_result (external_path_is_valid ts0 ext_ups0 group_id) in
+    let _ = extract_result (if ext_ups0_is_valid then return () else error "invalid ups0") in
+    let ts1 = extract_result (apply_external_path ts0 ext_ups0) in
     let tk1 = extract_result (treesync_to_treekem ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let upk1 = extract_result (update_path_to_treekem tk1 update_sender update_group_context update_path) in
 
     let update_leaf_package = extract_result (network_to_leaf_package update_path.leaf_node) in
     let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
-    let ups1 = extract_result (external_pathsync_to_pathsync None ts1 ext_ups1 group_id) in
-    let ts2 = apply_path ts1 ups1 in
+    let ext_ups1_is_valid = extract_result (external_path_is_valid ts1 ext_ups1 group_id) in
+    let _ = extract_result (if ext_ups1_is_valid then return () else error "invalid ups1") in
+    let ts2 = extract_result (apply_external_path ts1 ext_ups1) in
     let tk2 = extract_result (treesync_to_treekem ts2) in
 
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in

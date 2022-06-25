@@ -40,13 +40,12 @@ type leaf_package_t (bytes:Type0) {|bytes_like bytes|} = {
 type node_package_t (bytes:Type0) {|bytes_like bytes|} = {
   version: nat; //For security proofs, should be erasable
   unmerged_leaves: list nat;
-  parent_hash: bytes;
+  parent_hash: mls_bytes bytes;
   content: external_content bytes;
 }
 
 (** Tree and Paths definitions *)
 type treesync (bytes:Type0) {|bytes_like bytes|} (l:nat) (i:tree_index l) = tree l i (option (leaf_package_t bytes)) (option (node_package_t bytes))
-type pathsync (bytes:Type0) {|bytes_like bytes|} (l:nat) (i:tree_index l) (li:leaf_index l i) = path l i li (option (leaf_package_t bytes)) (option (node_package_t bytes))
 
 type external_pathsync (bytes:Type0) {|bytes_like bytes|} (l:nat) (i:tree_index l) (li:leaf_index l i) = path l i li (leaf_package_t bytes) (option (external_content bytes))
 
