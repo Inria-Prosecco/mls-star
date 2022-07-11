@@ -32,15 +32,13 @@ let test_leaf_generation #cb l i encryption_secret sender_data_secret r_state te
   let nonce_ok = check_equal "nonce" bytes_to_hex_string (hex_string_to_bytes test.nonce) r_output.nonce in
   let plaintext_string = normalize_text test.plaintext in
   let ciphertext_string = normalize_text test.ciphertext in
-  let message_plaintext_network = extract_option "bad plaintext" ((ps_to_pse ps_mls_plaintext_nt).parse_exact (hex_string_to_bytes plaintext_string)) in
-  let message_ciphertext_network = extract_option "bad ciphertext" ((ps_to_pse ps_mls_ciphertext_nt).parse_exact (hex_string_to_bytes ciphertext_string)) in
-  let message_plaintext = extract_result (network_to_message_plaintext message_plaintext_network) in
-  let message_ciphertext = extract_result (network_to_message_ciphertext message_ciphertext_network) in
+  let message_plaintext = extract_option "bad plaintext" ((ps_to_pse ps_mls_plaintext_nt).parse_exact (hex_string_to_bytes plaintext_string)) in
+  let message_ciphertext = extract_option "bad ciphertext" ((ps_to_pse ps_mls_ciphertext_nt).parse_exact (hex_string_to_bytes ciphertext_string)) in
   let message_1 = message_plaintext_to_message message_plaintext in
   let message_2 = extract_result (message_ciphertext_to_message l encryption_secret sender_data_secret message_ciphertext) in
-  let message_2 = (({ (fst message_2) with wire_format = WF_mls_plaintext ()} <: message_content bytes), snd message_2) in
+  let message_2 = ({ message_2 with wire_format = WF_mls_plaintext ()}) in
   let plaintext_eq_ciphertext_ok = test_equality message_1 message_2 in
-  let sender_ok = MLS.TreeDEM.Message.Types.S_member? (fst message_1).sender in
+  let sender_ok = S_member? message_1.content.sender in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)
 
 val test_leaf_generations: {|crypto_bytes bytes|} -> l:nat -> i:leaf_index l 0 -> bytes -> bytes -> ratchet_state bytes -> list encryption_leaf_generation_test -> ML bool

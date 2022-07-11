@@ -255,6 +255,7 @@ let mk_concrete_crypto_bytes acs =
   );
 
   hmac_length = Hash.hash_length cs.kdf_hash;
+  hmac_length_bound = ();
   hmac_hmac = (fun key data ->
     if not (let l = Seq.length key in l < Hash.max_input_length cs.kdf_hash && l + Hash.block_length cs.kdf_hash < pow2 32) then (
       internal_failure "hmac_hmac: wrong key size"

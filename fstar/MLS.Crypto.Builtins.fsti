@@ -54,6 +54,7 @@ class crypto_bytes (bytes:Type0) = {
   aead_decrypt: lbytes bytes aead_key_length -> lbytes bytes aead_nonce_length -> ad:bytes -> ciphertext:bytes -> result bytes;
 
   hmac_length: nat;
+  hmac_length_bound: squash (hmac_length < 256);
   hmac_hmac: key:bytes -> data:bytes -> result (lbytes bytes hmac_length);
 
   string_to_bytes: s:string{b2t (normalize_term (string_is_ascii s))} -> lbytes bytes (String.strlen s);

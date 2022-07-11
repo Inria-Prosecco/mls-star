@@ -24,6 +24,8 @@ noeq type message_content (bytes:Type0) {|bytes_like bytes|} = {
   content: message_bare_content bytes content_type;
 }
 
+// TODO: should we remove this high-level structure?
+// It is currently used for transcript hash, probably this should be refactored to use low-level structures?
 noeq type message_auth (bytes:Type0) {|bytes_like bytes|} = {
   signature: bytes;
   confirmation_tag: option bytes;

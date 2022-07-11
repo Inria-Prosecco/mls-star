@@ -387,11 +387,17 @@ let send_helper st msg e =
   confirmation_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_confirmation st.epoch_secret;
   sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data st.epoch_secret;
   auth <-- message_compute_auth msg st.sign_private_key rand_nonce (Some group_context) confirmation_secret st.interim_transcript_hash;
+  msg_network <-- message_content_to_network msg;
+  auth_network <-- message_auth_to_network auth;
+  let auth_msg: mls_authenticated_content_nt bytes = {
+    wire_format = WF_mls_ciphertext();
+    content = msg_network;
+    auth = auth_network;
+  } in
   let ratchet = if msg.content_type = CT_application () then st.application_state else st.handshake_state in
-  ct_new_ratchet_state <-- message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret (msg, auth);
+  ct_new_ratchet_state <-- message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret auth_msg;
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
-  ct_network <-- message_ciphertext_to_network ct;
-  let msg_bytes = (ps_to_pse ps_mls_message_nt).serialize_exact (M_mls10 (M_ciphertext ct_network)) in
+  let msg_bytes = (ps_to_pse ps_mls_message_nt).serialize_exact (M_mls10 (M_ciphertext ct)) in
   let new_st = if msg.content_type = CT_application () then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
   let g:group_message = (st.tree_state.group_id, msg_bytes) in
   return (new_st, auth, g)
@@ -711,15 +717,17 @@ let process_group_message state msg =
   tmp <-- (
     match msg with
     | M_mls10 (M_plaintext msg) ->
-        msg <-- MLS.TreeDEM.Message.Framing.network_to_message_plaintext #bytes msg;
-        return (MLS.TreeDEM.Message.Framing.message_plaintext_to_message msg)
+        let auth_msg = message_plaintext_to_message msg in
+        content <-- network_to_message_content auth_msg.wire_format auth_msg.content;
+        auth <-- network_to_message_auth auth_msg.auth;
+        return (content, auth)
     | M_mls10  (M_ciphertext msg) ->
-        msg <-- MLS.TreeDEM.Message.Framing.network_to_message_ciphertext msg;
         encryption_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_encryption state.epoch_secret;
         sender_data_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret;
-        MLS.TreeDEM.Message.Framing.message_ciphertext_to_message 
-          state.tree_state.levels encryption_secret sender_data_secret
-          msg
+        auth_msg <-- message_ciphertext_to_message state.tree_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) msg;
+        content <-- network_to_message_content auth_msg.wire_format auth_msg.content;
+        auth <-- network_to_message_auth auth_msg.auth;
+        return (content, auth)
     | _ ->
         internal_failure "unknown message type"
   );

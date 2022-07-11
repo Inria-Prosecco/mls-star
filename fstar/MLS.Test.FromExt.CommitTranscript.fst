@@ -25,7 +25,9 @@ val is_signature_ok: {|cb:crypto_bytes bytes|} -> signature_public_key_nt bytes 
 let is_signature_ok #cb signature_key commit_message commit_auth group_context =
   let signature_key = to_lbytes (sign_public_key_length #bytes) signature_key in
   let signature_signature = to_lbytes (sign_signature_length #bytes) commit_auth.signature in
-  extract_result (check_message_signature signature_key signature_signature commit_message (Some group_context))
+  let commit_message_network = extract_result (message_content_to_network commit_message) in
+  if not (S_member? commit_message_network.sender) then failwith "is_signature_ok: bad sender type" else
+  extract_result (check_message_signature signature_key signature_signature (WF_mls_plaintext ()) commit_message_network (Some group_context))
 
 #push-options "--ifuel 2 --z3rlimit 50"
 val test_commit_transcript_one: commit_transcript_test -> ML bool
@@ -49,27 +51,28 @@ let test_commit_transcript_one t =
       | M_mls10 (M_plaintext p) -> p
       | _ -> failwith "commit is not in a plaintext"
     in
-    let commit_plaintext = extract_result (network_to_message_plaintext commit_plaintext_network) in
-    let (commit_message, commit_auth) = message_plaintext_to_message commit_plaintext in
+    let commit_auth_msg = message_plaintext_to_message commit_plaintext_network in
+    let commit_message = extract_result (network_to_message_content commit_auth_msg.wire_format commit_auth_msg.content) in
+    let commit_auth = extract_result (network_to_message_auth commit_auth_msg.auth) in
     let confirmation_tag = extract_option "no confirmation tag" commit_auth.confirmation_tag in
     let computed_confirmed_transcript_hash = extract_result (compute_confirmed_transcript_hash commit_message commit_auth.signature (hex_string_to_bytes t.interim_transcript_hash_before)) in
     let computed_interim_transcript_hash = extract_result (compute_interim_transcript_hash confirmation_tag computed_confirmed_transcript_hash) in
     let computed_confirmation_tag = extract_result (compute_message_confirmation_tag (hex_string_to_bytes t.confirmation_key) computed_confirmed_transcript_hash) in
-    let computed_membership_tag = extract_result (compute_message_membership_tag (hex_string_to_bytes t.membership_key) commit_message commit_auth (Some group_context)) in
+    let computed_membership_tag = extract_result (compute_message_membership_tag (hex_string_to_bytes t.membership_key) commit_auth_msg.content commit_auth_msg.auth (if knows_group_context commit_auth_msg.content.sender then Some group_context else None)) in
     let confirmed_transcript_hash_ok = check_equal "confirmed_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.confirmed_transcript_hash_after) computed_confirmed_transcript_hash in
     let interim_transcript_hash_ok = check_equal "interim_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.interim_transcript_hash_after) computed_interim_transcript_hash in
     let confirmation_tag_ok =
-      match commit_plaintext.auth.confirmation_tag with
-      | Some expected_confirmation_tag ->
-        check_equal "confirmation_tag" bytes_to_hex_string expected_confirmation_tag computed_confirmation_tag
+      match commit_auth_msg.content.content.content_type with
+      | CT_commit () ->
+        check_equal "confirmation_tag" bytes_to_hex_string commit_auth_msg.auth.confirmation_tag computed_confirmation_tag
       | _ ->
         IO.print_string "Missing confirmation tag\n";
         false
     in
     let membership_tag_ok =
-      match commit_plaintext.membership_tag with
-      | Some expected_membership_tag ->
-        check_equal "membership_tag" bytes_to_hex_string expected_membership_tag computed_membership_tag
+      match commit_auth_msg.content.sender with
+      | S_member _ ->
+        check_equal "membership_tag" bytes_to_hex_string commit_plaintext_network.membership_tag computed_membership_tag
       | _ ->
         IO.print_string "Missing membership tag\n";
         false
