@@ -25,7 +25,7 @@ FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+P
 all: copy_lib
 
 clean:
-	rm -rf hints cache obj
+	rm -rf hints cache obj ml/lib/src ml/tests/src
 	dune clean
 
 # Dependency analysis
