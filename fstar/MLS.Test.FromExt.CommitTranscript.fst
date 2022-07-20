@@ -10,7 +10,8 @@ open MLS.NetworkTypes
 open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Framing
 open MLS.TreeDEM.Message.Transcript
-open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
+open MLS.TreeDEM.NetworkTypes
 open MLS.StringUtils
 open MLS.Result
 

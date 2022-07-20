@@ -1,15 +1,5 @@
 module MLS.Crypto.Derived
 
-friend MLS.Crypto.Builtins
-
-open MLS.NetworkTypes
-open MLS.Crypto.Builtins
-open MLS.Result
-
-module DH = Spec.Agile.DH
-module AEAD = Spec.Agile.AEAD
-module Hash = Spec.Agile.Hash
-
 #set-options "--fuel 0 --ifuel 0"
 
 #push-options "--ifuel 1"

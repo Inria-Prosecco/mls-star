@@ -4,6 +4,7 @@ open FStar.All
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
 open MLS.NetworkBinder
 open MLS.Tree
 open MLS.TreeSync.Types

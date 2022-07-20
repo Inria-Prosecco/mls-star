@@ -2,6 +2,8 @@ module MLS.NetworkBinder
 
 open Comparse
 open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
+open MLS.TreeDEM.NetworkTypes //for hpke_ciphertext_nt
 open MLS.Crypto
 open MLS.Result
 open MLS.Tree

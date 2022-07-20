@@ -5,10 +5,12 @@ open MLS.Tree
 open MLS.TreeSync.Types
 open MLS.Crypto
 open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
+open MLS.TreeDEM.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeSyncTreeKEMBinder
 open MLS.TreeSync.Extensions
-open MLS.TreeSync.KeyPackageRef
+open MLS.TreeDEM.KeyPackageRef
 open MLS.TreeKEM
 open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Content
@@ -713,7 +715,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
 
 let process_group_message state msg =
   msg <-- from_option "process_group_message: can't parse group message"
-    ((ps_to_pse MLS.NetworkTypes.ps_mls_message_nt).parse_exact msg);
+    ((ps_to_pse ps_mls_message_nt).parse_exact msg);
   tmp <-- (
     match msg with
     | M_mls10 (M_plaintext msg) ->

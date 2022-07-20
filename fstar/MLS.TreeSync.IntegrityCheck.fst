@@ -4,13 +4,11 @@ open Comparse
 open MLS.Crypto
 open MLS.Tree
 open MLS.TreeSync
+open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
 open MLS.NetworkBinder
-open MLS.NetworkTypes
 open MLS.TreeSync.Extensions
 open MLS.TreeSync.ParentHash
-open MLS.TreeKEM.Types
-open MLS.TreeSyncTreeKEMBinder
 open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"

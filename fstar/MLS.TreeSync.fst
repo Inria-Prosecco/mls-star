@@ -3,6 +3,7 @@ module MLS.TreeSync
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
 open MLS.NetworkBinder
 open MLS.Utils
 open MLS.Tree
@@ -241,7 +242,7 @@ let get_leaf_package_from_key_package #bytes #cb kp =
     network_to_leaf_package kp.tbs.leaf_node
   )
 
-val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> state_t bytes -> NetworkTypes.key_package_nt bytes -> result (state_t bytes & nat)
+val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> state_t bytes -> key_package_nt bytes -> result (state_t bytes & nat)
 let add #bytes #bl st kp =
   lp <-- get_leaf_package_from_key_package kp;
   match find_empty_leaf st.tree with

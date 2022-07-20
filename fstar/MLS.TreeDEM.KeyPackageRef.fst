@@ -1,11 +1,9 @@
-module MLS.TreeSync.KeyPackageRef
+module MLS.TreeDEM.KeyPackageRef
 
 open Comparse
-open MLS.Utils
-open MLS.Tree
-open MLS.TreeSync.Types
 open MLS.NetworkTypes
-open MLS.NetworkBinder
+open MLS.TreeSync.NetworkTypes
+open MLS.TreeDEM.NetworkTypes
 open MLS.Crypto
 open MLS.Result
 

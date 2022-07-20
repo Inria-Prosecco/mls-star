@@ -1,7 +1,7 @@
 module MLS.TreeDEM.Message.Transcript
 
 open Comparse
-open MLS.NetworkTypes
+open MLS.TreeDEM.NetworkTypes
 open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Content
 open MLS.Result

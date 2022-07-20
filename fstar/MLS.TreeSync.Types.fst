@@ -2,6 +2,7 @@ module MLS.TreeSync.Types
 
 open Comparse.Bytes
 open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
 open MLS.Tree
 
 #set-options "--fuel 1 --ifuel 1"

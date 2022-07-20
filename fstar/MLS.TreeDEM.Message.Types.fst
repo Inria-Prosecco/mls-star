@@ -2,11 +2,12 @@ module MLS.TreeDEM.Message.Types
 
 open Comparse.Bytes
 open MLS.NetworkTypes
+open MLS.TreeDEM.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeDEM.Message.Content
 open MLS.Result
 
-module NT = MLS.NetworkTypes
+module NT = MLS.TreeDEM.NetworkTypes
 
 type sender (bytes:Type0) {|bytes_like bytes|} =
   | S_member: leaf_index:nat -> sender bytes

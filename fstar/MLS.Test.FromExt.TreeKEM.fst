@@ -14,6 +14,8 @@ open MLS.TreeKEM
 open MLS.TreeSyncTreeKEMBinder
 open MLS.NetworkBinder
 open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
+open MLS.TreeDEM.NetworkTypes
 open MLS.Result
 open MLS.StringUtils
 open MLS.Utils

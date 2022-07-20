@@ -11,7 +11,7 @@ open MLS.TreeDEM.Keys
 open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Framing
 open MLS.Crypto
-open MLS.NetworkTypes
+open MLS.TreeDEM.NetworkTypes
 open MLS.Result
 open MLS.Tree
 
