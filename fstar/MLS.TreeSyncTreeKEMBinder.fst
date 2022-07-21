@@ -29,7 +29,7 @@ let treesync_to_treekem_node_package #bytes #cb np =
     (parse (treekem_content_nt bytes) np.content.content);
   impl_data <-- from_option "treesync_to_treekem_node_package: Couldn't parse node impl data"
     (parse (treekem_impl_data_nt bytes) np.content.impl_data);
-  path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk #bytes) (Seq.seq_to_list impl_data.encrypted_path_secret);
+  path_secret_ciphertext <-- mapM (encrypted_path_secret_nt_to_tk #bytes) impl_data.encrypted_path_secret;
   if not (length (content.encryption_key <: bytes) = hpke_public_key_length #bytes) then
     error "treesync_to_treekem_node_package: public key has wrong length"
   else (
@@ -86,14 +86,13 @@ let treekem_to_treesync_node_package #bytes #cb kp =
   else if not (length kp.last_group_context < pow2 30) then
     internal_failure "treekem_to_treesync: last group context too long (internal error)"
   else begin
-    Seq.lemma_list_seq_bij ciphertexts;
     return ({
       content = serialize (treekem_content_nt bytes) ({
         encryption_key = kp.public_key;
       });
       impl_data = serialize (treekem_impl_data_nt bytes) ({
         content_dir = kp.path_secret_from;
-        encrypted_path_secret = Seq.seq_of_list ciphertexts;
+        encrypted_path_secret = ciphertexts;
         last_group_context = kp.last_group_context;
       });
     } <: external_content bytes)

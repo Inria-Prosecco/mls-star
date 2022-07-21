@@ -65,7 +65,7 @@ let network_to_proposal_or_ref #bytes #bl por =
 
 val network_to_commit: #bytes:Type0 -> {|bytes_like bytes|} -> commit_nt bytes -> result (commit bytes)
 let network_to_commit #bytes #bl c =
-  proposals <-- mapM network_to_proposal_or_ref (Seq.seq_to_list c.proposals);
+  proposals <-- mapM network_to_proposal_or_ref c.proposals;
   return ({
     c_proposals = proposals;
     c_path = c.path;
@@ -130,12 +130,11 @@ let proposal_or_ref_to_network #bytes #bl por =
 val commit_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> commit bytes -> result (commit_nt bytes)
 let commit_to_network #bytes #bl c =
   proposals <-- mapM (proposal_or_ref_to_network) c.c_proposals;
-  Seq.lemma_list_seq_bij proposals;
   if not (Comparse.bytes_length ps_proposal_or_ref_nt proposals < pow2 30) then
     internal_failure "commit_to_network: proposals too long"
   else (
     return ({
-      proposals = Seq.seq_of_list proposals;
+      proposals = proposals;
       path = c.c_path;
     })
   )

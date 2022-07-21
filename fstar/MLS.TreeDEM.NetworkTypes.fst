@@ -66,7 +66,7 @@ noeq type reinit_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_id: mls_bytes bytes;
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
-  extensions: mls_seq bytes ps_extension_nt
+  extensions: mls_list bytes ps_extension_nt
 }
 
 %splice [ps_reinit_nt] (gen_parser (`reinit_nt))
@@ -78,7 +78,7 @@ noeq type external_init_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_external_init_nt] (gen_parser (`external_init_nt))
 
 noeq type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
-  extensions: mls_seq bytes ps_extension_nt;
+  extensions: mls_list bytes ps_extension_nt;
 }
 
 %splice [ps_group_context_extensions_nt] (gen_parser (`group_context_extensions_nt))
@@ -113,7 +113,7 @@ noeq type proposal_or_ref_nt (bytes:Type0) {|bytes_like bytes|} =
 %splice [ps_proposal_or_ref_nt] (gen_parser (`proposal_or_ref_nt))
 
 noeq type commit_nt (bytes:Type0) {|bytes_like bytes|} = {
-  proposals: mls_seq bytes ps_proposal_or_ref_nt;
+  proposals: mls_list bytes ps_proposal_or_ref_nt;
   [@@@ with_parser #bytes (ps_option ps_update_path_nt)]
   path: option (update_path_nt bytes);
 }
@@ -386,7 +386,7 @@ noeq type group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
   joiner_secret: mls_bytes bytes;
   [@@@ with_parser #bytes (ps_option ps_path_secret_nt)]
   path_secret: option (path_secret_nt bytes);
-  psks: mls_seq bytes (ps_pre_shared_key_nt);
+  psks: mls_list bytes (ps_pre_shared_key_nt);
 }
 
 %splice [ps_group_secrets_nt] (gen_parser (`group_secrets_nt))
@@ -402,7 +402,7 @@ noeq type encrypted_group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 noeq type welcome_nt (bytes:Type0) {|bytes_like bytes|} = {
   cipher_suite: cipher_suite_nt;
-  secrets: mls_seq bytes ps_encrypted_group_secrets_nt;
+  secrets: mls_list bytes ps_encrypted_group_secrets_nt;
   encrypted_group_info: mls_bytes bytes;
 }
 

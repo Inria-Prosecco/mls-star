@@ -31,7 +31,7 @@ let ps_direction #bytes #bl =
 
 noeq type treekem_impl_data_nt (bytes:Type0) {|bytes_like bytes|} = {
   content_dir: TK.direction;
-  encrypted_path_secret: mls_seq bytes ps_hpke_ciphertext_nt;
+  encrypted_path_secret: mls_list bytes ps_hpke_ciphertext_nt;
   last_group_context: mls_bytes bytes;
 }
 
@@ -61,7 +61,7 @@ let network_to_leaf_package #bytes #bl ln =
       TS.source = ln.data.source;
       TS.lifetime = ln.data.lifetime;
       TS.parent_hash = ln.data.parent_hash;
-      TS.extensions = (ps_to_pse (ps_mls_seq ps_extension_nt)).serialize_exact (ln.data.extensions);
+      TS.extensions = (ps_to_pse (ps_mls_list ps_extension_nt)).serialize_exact (ln.data.extensions);
       TS.signature = ln.signature;
     } <: TS.leaf_package_t bytes)
   | _ -> error "network_to_leaf_package: credential type not supported"
@@ -76,7 +76,7 @@ let leaf_package_to_network #bytes #bl lp =
     error "leaf_package_to_network: signature too long"
   else (
     content <-- from_option "leaf_package_to_network: can't parse leaf content" (parse (treekem_content_nt bytes) lp.TS.content.content);
-    extensions <-- from_option "leaf_package_to_network: can't parse extensions" ((ps_to_pse (ps_mls_seq ps_extension_nt)).parse_exact lp.TS.extensions);
+    extensions <-- from_option "leaf_package_to_network: can't parse extensions" ((ps_to_pse (ps_mls_list ps_extension_nt)).parse_exact lp.TS.extensions);
     return ({
       data = {
         content = content.encryption_key;
@@ -98,12 +98,11 @@ let node_package_to_network #bytes #bl np =
   if not ((bytes_length #bytes (ps_nat_lbytes 4) unmerged_leaves) < pow2 30) then
     internal_failure "node_package_to_network: unmerged_leaves too long"
   else (
-    Seq.lemma_list_seq_bij unmerged_leaves;
     node_content <-- from_option "node_package_to_network: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
     return ({
       content = node_content.encryption_key;
       parent_hash = np.TS.parent_hash;
-      unmerged_leaves = Seq.seq_of_list unmerged_leaves;
+      unmerged_leaves = unmerged_leaves;
     } <: parent_node_nt bytes tkt)
   )
 
@@ -112,7 +111,7 @@ let network_to_node_package #bytes #bl pn =
   bytes_length_nil #bytes ps_hpke_ciphertext_nt;
   return ({
         TS.version = 0;
-        TS.unmerged_leaves = List.Tot.map (fun (x:nat_lbytes 4) -> x <: nat) (Seq.seq_to_list pn.unmerged_leaves);
+        TS.unmerged_leaves = List.Tot.map (fun (x:nat_lbytes 4) -> x <: nat) pn.unmerged_leaves;
         TS.parent_hash = pn.parent_hash;
         TS.content = {
           TS.content = serialize (treekem_content_nt bytes) ({
@@ -120,7 +119,7 @@ let network_to_node_package #bytes #bl pn =
           });
           TS.impl_data = serialize (treekem_impl_data_nt bytes) ({
             content_dir = TK.Left; //We don't care
-            encrypted_path_secret = Seq.empty;
+            encrypted_path_secret = [];
             last_group_context = empty #bytes;
           });
         }
@@ -151,7 +150,7 @@ let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
           TK.kem_output = hpke_ciphertext.kem_output;
           TK.ciphertext = hpke_ciphertext.ciphertext;
         } <: TK.path_secret_ciphertext bytes)
-    ) (Seq.seq_to_list update_path_node.encrypted_path_secret);
+    ) update_path_node.encrypted_path_secret;
     return ({
       TK.public_key = update_path_node.encryption_key;
       TK.version = 0;
@@ -177,7 +176,7 @@ val update_path_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> 
 let rec update_path_to_treekem #bytes #cb #l #i t li group_context update_path =
   match t with
   | TLeaf _ -> (
-    if not (Seq.length update_path.nodes = 0) then
+    if not (List.length update_path.nodes = 0) then
       internal_failure "update_path_to_treekem: update_path.nodes is too long"
     else (
       leaf_package <-- leaf_node_to_treekem update_path.leaf_node;
@@ -185,7 +184,7 @@ let rec update_path_to_treekem #bytes #cb #l #i t li group_context update_path =
     )
   )
   | TNode _ left right -> (
-    if not (Seq.length update_path.nodes > 0) then
+    if not (List.length update_path.nodes > 0) then
       internal_failure "update_path_to_treekem: update_path.nodes is too short"
     else (
       let (child, sibling) = get_child_sibling t li in
@@ -194,11 +193,10 @@ let rec update_path_to_treekem #bytes #cb #l #i t li group_context update_path =
         return (PNode None path_next)
       ) else (
         let dir = if is_left_leaf li then TK.Left else TK.Right in
-        let update_path_length = (Seq.length update_path.nodes) in
-        let head_update_path_nodes = Seq.index update_path.nodes (update_path_length-1) in
-        let tail_update_path_nodes = Seq.slice update_path.nodes 0 (update_path_length-1) in
+        let update_path_length = (List.length update_path.nodes) in
+        let (tail_update_path_nodes, head_update_path_nodes) = List.unsnoc update_path.nodes in
         //TODO this is an easy lemma
-        assume (bytes_length ps_update_path_node_nt (Seq.seq_to_list tail_update_path_nodes) <= bytes_length ps_update_path_node_nt (Seq.seq_to_list update_path.nodes));
+        assume (bytes_length ps_update_path_node_nt tail_update_path_nodes <= bytes_length ps_update_path_node_nt update_path.nodes);
         let next_update_path = { update_path with nodes = tail_update_path_nodes } in
         path_next <-- update_path_to_treekem child li group_context next_update_path;
         path_data <-- update_path_node_to_treekem group_context dir head_update_path_nodes;
@@ -239,20 +237,19 @@ let treekem_to_update_path #bytes #bl #l #i #li p =
   tmp <-- treekem_to_update_path_aux p;
   let (kp, upns) = tmp in
   let upns = List.rev upns in
-  Seq.lemma_list_seq_bij upns;
   if not (bytes_length ps_update_path_node_nt upns < pow2 30) then
     error "treesync_to_update_path: nodes too long"
   else
     return ({
       leaf_node = kp;
-      nodes = Seq.seq_of_list upns;
+      nodes = upns;
     } <: update_path_nt bytes)
 
 (*** ratchet_tree extension (11.3) ***)
 
-val ratchet_tree_l: #bytes:Type0 -> {|bytes_like bytes|} -> nodes:ratchet_tree_nt bytes tkt -> result (l:nat{Seq.length nodes == (pow2 (l+1))-1})
+val ratchet_tree_l: #bytes:Type0 -> {|bytes_like bytes|} -> nodes:ratchet_tree_nt bytes tkt -> result (l:nat{List.length nodes == (pow2 (l+1))-1})
 let ratchet_tree_l #bytes #bl nodes =
-  let n_nodes = Seq.length nodes in
+  let n_nodes = List.length nodes in
   if n_nodes%2 = 0 then
     error "ratchet_tree_l: length must be odd"
   else
@@ -263,21 +260,21 @@ let ratchet_tree_l #bytes #bl nodes =
     else
       return l
 
-val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> i:tree_index l -> nodes:Seq.seq (option (node_nt bytes tkt)){Seq.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes l i)
+#push-options "--ifuel 1 --fuel 2"
+val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> i:tree_index l -> nodes:list (option (node_nt bytes tkt)){List.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes l i)
 let rec ratchet_tree_to_treesync #bytes #bl l i nodes =
   if l = 0 then (
-    assert (Seq.length nodes == 1);
-    match (Seq.index nodes 0) with
-    | Some (N_leaf kp) ->
+    assert(List.length nodes = 1);
+    match nodes with
+    | [Some (N_leaf kp)] ->
       kp <-- network_to_leaf_package kp;
       return (TLeaf (Some kp))
-    | Some _ -> error "ratchet_tree_to_treesync_aux: node must be a leaf!"
-    | None ->
+    | [Some _] -> error "ratchet_tree_to_treesync_aux: node must be a leaf!"
+    | [None] ->
       return (TLeaf None)
   ) else (
-    let left_nodes = Seq.slice nodes 0 ((pow2 l) - 1) in
-    let my_node = Seq.index nodes ((pow2 l) - 1) in
-    let right_nodes = Seq.slice nodes (pow2 l) ((pow2 (l+1))-1) in
+    let (left_nodes, my_node, right_nodes) = List.Tot.split3 nodes ((pow2 l) - 1) in
+    List.Pure.lemma_split3_length nodes ((pow2 l) - 1);
     left_res <-- ratchet_tree_to_treesync (l-1) _ left_nodes;
     right_res <-- ratchet_tree_to_treesync (l-1) _ right_nodes;
     match my_node with
@@ -288,15 +285,16 @@ let rec ratchet_tree_to_treesync #bytes #bl l i nodes =
     | None ->
       return (TNode None left_res right_res)
   )
+#pop-options
 
-val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> TS.treesync bytes l i -> result (Seq.seq (option (node_nt bytes tkt)))
+val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> TS.treesync bytes l i -> result (list (option (node_nt bytes tkt)))
 let rec treesync_to_ratchet_tree #bytes #bl #l #i t =
   match t with
   | TLeaf None ->
-    return (Seq.create 1 None)
+    return [None]
   | TLeaf (Some lp) ->
     key_package <-- leaf_package_to_network lp;
-    return (Seq.create 1 (Some (N_leaf (key_package))))
+    return [Some (N_leaf (key_package))]
   | TNode onp left right ->
     parent_node <-- (
       match onp with
@@ -307,4 +305,4 @@ let rec treesync_to_ratchet_tree #bytes #bl #l #i t =
     );
     left_ratchet <-- treesync_to_ratchet_tree left;
     right_ratchet <-- treesync_to_ratchet_tree right;
-    return (Seq.append left_ratchet (Seq.append (Seq.create 1 parent_node) right_ratchet))
+    return (left_ratchet @ [parent_node] @ right_ratchet)

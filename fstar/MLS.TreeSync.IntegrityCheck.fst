@@ -71,7 +71,7 @@ let check_capabilities #bytes #bl lp =
   let capabilities = lp.capabilities in
   let extension_inclusion = (
     List.Tot.for_all (fun ext_type ->
-      List.Tot.mem ext_type (Seq.seq_to_list capabilities.extensions)
+      List.Tot.mem ext_type capabilities.extensions
     ) extensions_list
   ) in
   if extension_inclusion then return None

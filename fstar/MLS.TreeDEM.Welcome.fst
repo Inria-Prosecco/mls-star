@@ -22,7 +22,7 @@ noeq type group_context (bytes:Type0) {|bytes_like bytes|} = {
   epoch: nat;
   tree_hash: bytes;
   confirmed_transcript_hash: bytes;
-  extensions: Seq.seq (extension_nt bytes);
+  extensions: list (extension_nt bytes);
 }
 
 noeq type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
@@ -91,7 +91,7 @@ let group_context_to_network #bytes #bl gc =
     internal_failure "group_context_to_network: tree_hash too long"
   else if not (length gc.confirmed_transcript_hash < pow2 30) then
     internal_failure "group_context_to_network: confirmed_transcript_hash too long"
-  else if not (bytes_length ps_extension_nt (Seq.seq_to_list gc.extensions) < pow2 30) then
+  else if not (bytes_length ps_extension_nt gc.extensions < pow2 30) then
     internal_failure "group_context_to_network: extensions too long"
   else
     return ({
@@ -137,7 +137,7 @@ let network_to_group_secrets #bytes #bl gs =
       | None -> None
       | Some p -> Some p.path_secret
     );
-    psks = Seq.seq_to_list gs.psks;
+    psks = gs.psks;
   })
 
 val group_secrets_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> group_secrets bytes -> result (group_secrets_nt bytes)
@@ -157,11 +157,10 @@ let group_secrets_to_network #bytes #bl gs =
   else if not (bytes_length ps_pre_shared_key_nt gs.psks < pow2 30) then
     internal_failure "group_secrets_to_network: psks too long"
   else (
-    Seq.lemma_list_seq_bij gs.psks;
     return ({
       joiner_secret = gs.joiner_secret;
       path_secret = path_secret;
-      psks = Seq.seq_of_list gs.psks;
+      psks = gs.psks;
     } <: group_secrets_nt bytes)
   )
 
@@ -202,7 +201,7 @@ let encrypted_group_secrets_to_network #bytes #bl egs =
 val network_to_welcome: #bytes:Type0 -> {|bytes_like bytes|} -> welcome_nt bytes -> welcome bytes
 let network_to_welcome w =
   {
-    secrets = List.Tot.map network_to_encrypted_group_secrets (Seq.seq_to_list w.secrets);
+    secrets = List.Tot.map network_to_encrypted_group_secrets w.secrets;
     encrypted_group_info = w.encrypted_group_info;
   }
 
@@ -210,7 +209,6 @@ val welcome_to_network: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome bytes 
 let welcome_to_network #bytes #cb w =
   secrets <-- mapM encrypted_group_secrets_to_network w.secrets;
   let cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes) in
-  Seq.lemma_list_seq_bij secrets;
   if not (length w.encrypted_group_info < pow2 30) then
     internal_failure "welcome_to_network: encrypted_group_info too long"
   else if not (bytes_length ps_encrypted_group_secrets_nt secrets < pow2 30) then
@@ -218,7 +216,7 @@ let welcome_to_network #bytes #cb w =
   else (
     return ({
       cipher_suite = cipher_suite;
-      secrets = Seq.seq_of_list secrets;
+      secrets = secrets;
       encrypted_group_info = w.encrypted_group_info;
     } <: welcome_nt bytes)
   )

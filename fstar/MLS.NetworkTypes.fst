@@ -11,10 +11,10 @@ let ps_mls_nat #bytes #bl =
   mk_trivial_isomorphism (refine ps_quic_nat mls_nat_pred)
 
 type mls_bytes (bytes:Type0) {|bytes_like bytes|} = pre_length_bytes bytes mls_nat_pred
-type mls_seq (bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a) = pre_length_seq ps_a mls_nat_pred
+type mls_list (bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a) = pre_length_list ps_a mls_nat_pred
 
 let ps_mls_bytes (#bytes:Type0) {|bytes_like bytes|}: parser_serializer bytes (mls_bytes bytes) = ps_pre_length_bytes mls_nat_pred ps_mls_nat
-let ps_mls_seq (#bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a): parser_serializer bytes (mls_seq bytes ps_a) = ps_pre_length_seq #bytes mls_nat_pred ps_mls_nat ps_a
+let ps_mls_list (#bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a): parser_serializer bytes (mls_list bytes ps_a) = ps_pre_length_list #bytes mls_nat_pred ps_mls_nat ps_a
 
 type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_hpke_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (hpke_public_key_nt bytes)
@@ -84,7 +84,7 @@ noeq type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
   epoch: nat_lbytes 8;
   tree_hash: mls_bytes bytes;
   confirmed_transcript_hash: mls_bytes bytes;
-  extensions: mls_seq bytes ps_extension_nt;
+  extensions: mls_list bytes ps_extension_nt;
 }
 
 %splice [ps_group_context_nt] (gen_parser (`group_context_nt))

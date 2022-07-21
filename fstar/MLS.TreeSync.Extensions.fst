@@ -17,17 +17,23 @@ type application_id_ext_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 (*** Utility functions ***)
 
-val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_seq bytes ps_extension_nt)
-let ps_extensions #bytes #bl = ps_mls_seq ps_extension_nt
+val ps_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mls_list bytes ps_extension_nt)
+let ps_extensions #bytes #bl = ps_mls_list ps_extension_nt
 
-val find_extension_index: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> extensions:Seq.seq (extension_nt bytes) -> option (i:nat{i < Seq.length extensions})
-let find_extension_index t extensions =
-  repeati (Seq.length extensions) (fun i acc ->
-    if (Seq.index extensions i).extension_type = t then
-      Some i
-    else
-      acc
-  ) None
+#push-options "--ifuel 1 --fuel 1"
+val find_extension_index: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> extensions:list (extension_nt bytes) -> option (i:nat{i < List.length extensions})
+let rec find_extension_index t extensions =
+  match extensions with
+  | [] -> None
+  | extension_head::extension_tail ->
+    if extension_head.extension_type = t then (
+      Some 0
+    ) else (
+      match find_extension_index t extension_tail with
+      | Some res -> Some (res+1)
+      | None -> None
+    )
+#pop-options
 
 val get_extension: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> bytes -> option bytes
 let get_extension #bytes #bl t extensions_buf =
@@ -36,7 +42,7 @@ let get_extension #bytes #bl t extensions_buf =
   | Some extensions ->
     match find_extension_index t extensions with
     | None -> None
-    | Some i -> Some ((Seq.index extensions i).extension_data)
+    | Some i -> Some ((List.Tot.index extensions i).extension_data)
 
 val set_extension: #bytes:Type0 -> {|bytes_like bytes|} -> extension_type_nt -> bytes -> bytes -> result bytes
 let set_extension #bytes #bl t extensions_buf data =
@@ -45,12 +51,15 @@ let set_extension #bytes #bl t extensions_buf data =
     error "set_extension: data is too long"
   else (
     let ext = ({extension_type = t; extension_data = data;}) in
-    let new_extensions: Seq.seq (extension_nt bytes) =
+    let new_extensions: list (extension_nt bytes) =
       match find_extension_index t extensions with
-      | None -> Seq.append extensions (Seq.create 1 ext)
-      | Some i -> (Seq.upd extensions i ext)
+      | None -> extensions @ [ext]
+      | Some i -> (
+        let (ext_before, _, ext_after) = List.Tot.split3 extensions i in
+        ext_before @ [ext] @ ext_after
+      )
     in
-    let ext_byte_length = bytes_length ps_extension_nt (Seq.seq_to_list new_extensions) in
+    let ext_byte_length = bytes_length ps_extension_nt new_extensions in
     if not (ext_byte_length < pow2 30) then
       error "set_extension: new extension buffer is too long"
     else (
@@ -75,13 +84,13 @@ let mk_set_extension #a ext_type ps_a buf ext_content =
 val empty_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> bytes
 let empty_extensions #bytes #bl =
   bytes_length_nil #bytes ps_extension_nt;
-  (ps_to_pse ps_extensions).serialize_exact Seq.empty
+  (ps_to_pse ps_extensions).serialize_exact []
 #pop-options
 
 val get_extension_list: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> result (list (extension_type_nt))
 let get_extension_list #bytes #bl extensions_buf =
   extensions <-- from_option "set_extension: invalid extensions buffer" ((ps_to_pse ps_extensions).parse_exact extensions_buf);
-  return (List.Tot.map (fun x -> x.extension_type) (Seq.seq_to_list extensions))
+  return (List.Tot.map (fun x -> x.extension_type) extensions)
 
 val get_application_id_extension: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> option (application_id_ext_nt bytes)
 let get_application_id_extension #bytes #bl = mk_get_extension (ET_application_id ()) ps_application_id_ext_nt

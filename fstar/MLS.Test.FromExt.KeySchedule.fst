@@ -27,7 +27,7 @@ let gen_group_context #cb group_id epoch inp =
       epoch = epoch;
       tree_hash = tree_hash;
       confirmed_transcript_hash = confirmed_transcript_hash;
-      extensions = Seq.empty;
+      extensions = [];
     })
   ) else (
     failwith ""

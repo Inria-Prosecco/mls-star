@@ -27,7 +27,7 @@ type credential_type_nt =
 
 noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
   | C_basic: [@@@ with_tag (CT_basic ())] identity: mls_bytes bytes -> credential_nt bytes
-  | C_x509: [@@@ with_tag (CT_x509 ())] chain: mls_seq bytes ps_certificate_nt -> credential_nt bytes
+  | C_x509: [@@@ with_tag (CT_x509 ())] chain: mls_list bytes ps_certificate_nt -> credential_nt bytes
 
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
 
@@ -39,11 +39,11 @@ type leaf_node_source_nt =
 %splice [ps_leaf_node_source_nt] (gen_parser (`leaf_node_source_nt))
 
 type capabilities_nt (bytes:Type0) {|bytes_like bytes|} = {
-  versions: mls_seq bytes ps_protocol_version_nt;
-  ciphersuites: mls_seq bytes ps_cipher_suite_nt;
-  extensions: mls_seq bytes ps_extension_type_nt;
-  proposals: mls_seq bytes ps_proposal_type_nt;
-  credentials: mls_seq bytes ps_credential_type_nt;
+  versions: mls_list bytes ps_protocol_version_nt;
+  ciphersuites: mls_list bytes ps_cipher_suite_nt;
+  extensions: mls_list bytes ps_extension_type_nt;
+  proposals: mls_list bytes ps_proposal_type_nt;
+  credentials: mls_list bytes ps_credential_type_nt;
 }
 
 %splice [ps_capabilities_nt] (gen_parser (`capabilities_nt))
@@ -88,7 +88,7 @@ noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_type
   source: leaf_node_source_nt;
   lifetime: leaf_node_lifetime_nt source;
   parent_hash: leaf_node_parent_hash_nt bytes source;
-  extensions: mls_seq bytes ps_extension_nt;
+  extensions: mls_list bytes ps_extension_nt;
 }
 
 %splice [ps_leaf_node_data_nt] (gen_parser (`leaf_node_data_nt))
@@ -130,7 +130,7 @@ noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_typ
   cipher_suite: cipher_suite_nt;
   init_key: hpke_public_key_nt bytes;
   leaf_node: leaf_node_nt bytes tkt;
-  extensions: mls_seq bytes ps_extension_nt;
+  extensions: mls_list bytes ps_extension_nt;
 }
 
 %splice [ps_key_package_tbs_nt] (gen_parser (`key_package_tbs_nt))
@@ -150,7 +150,7 @@ noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types b
   [@@@ with_parser tkt.ps_node_content]
   content: tkt.node_content; //encryption_key
   parent_hash: mls_bytes bytes;
-  unmerged_leaves: mls_seq bytes (ps_nat_lbytes #bytes 4);
+  unmerged_leaves: mls_list bytes (ps_nat_lbytes #bytes 4);
 }
 
 %splice [ps_parent_node_nt] (gen_parser (`parent_node_nt))
@@ -167,7 +167,7 @@ noeq type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
 
 %splice [ps_node_nt] (gen_parser (`node_nt))
 
-type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = mls_seq bytes (ps_option (ps_node_nt tkt))
+type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = mls_list bytes (ps_option (ps_node_nt tkt))
 
 val ps_ratchet_tree_nt: #bytes:Type0 -> {|bytes_like bytes|} -> tkt:treekem_types bytes -> parser_serializer bytes (ratchet_tree_nt bytes tkt)
-let ps_ratchet_tree_nt #bytes #bl tkt = ps_mls_seq (ps_option (ps_node_nt tkt))
+let ps_ratchet_tree_nt #bytes #bl tkt = ps_mls_list (ps_option (ps_node_nt tkt))

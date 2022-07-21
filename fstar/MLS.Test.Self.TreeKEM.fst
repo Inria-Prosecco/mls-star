@@ -73,20 +73,20 @@ let rec remove_secret #a l x =
 
 val default_capabilities: #bytes:Type0 -> {|bytes_like bytes|} -> result (capabilities_nt bytes)
 let default_capabilities #bytes #bl =
-  let versions = Seq.seq_of_list [PV_mls10 ()] in
-  let ciphersuites = Seq.seq_of_list [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
-  let extensions = Seq.seq_of_list [] in
-  let proposals = Seq.seq_of_list [] in
-  let credentials = Seq.seq_of_list [CT_basic ()] in
-  if not (bytes_length #bytes ps_protocol_version_nt (Seq.seq_to_list versions) < pow2 30) then
+  let versions = [PV_mls10 ()] in
+  let ciphersuites = [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
+  let extensions = [] in
+  let proposals = [] in
+  let credentials = [CT_basic ()] in
+  if not (bytes_length #bytes ps_protocol_version_nt versions < pow2 30) then
     internal_failure "fresh_key_package: initial protocol versions too long"
-  else if not (bytes_length #bytes ps_extension_type_nt (Seq.seq_to_list extensions) < pow2 30) then
+  else if not (bytes_length #bytes ps_extension_type_nt extensions < pow2 30) then
     internal_failure "fresh_key_package: initial extension types too long"
-  else if not (bytes_length #bytes ps_cipher_suite_nt (Seq.seq_to_list ciphersuites) < pow2 30) then
+  else if not (bytes_length #bytes ps_cipher_suite_nt ciphersuites < pow2 30) then
     internal_failure "fresh_key_package: initial cipher suites too long"
-  else if not (bytes_length #bytes ps_proposal_type_nt (Seq.seq_to_list proposals) < pow2 30) then
+  else if not (bytes_length #bytes ps_proposal_type_nt proposals < pow2 30) then
     internal_failure "fresh_key_package: initial proposals too long"
-  else if not (bytes_length #bytes ps_credential_type_nt (Seq.seq_to_list credentials) < pow2 30) then
+  else if not (bytes_length #bytes ps_credential_type_nt credentials < pow2 30) then
     internal_failure "fresh_key_package: initial credentials too long"
   else (
     return ({versions; ciphersuites; extensions; proposals; credentials;} <: capabilities_nt bytes)
@@ -157,7 +157,7 @@ let add_rand #bytes #cb rng st =
       cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
       init_key = leaf_node_network.data.content;
       leaf_node = leaf_node_network;
-      extensions = Seq.empty;
+      extensions = [];
     };
     signature = empty #bytes; (*TODO currently not checked by treesync*)
   })) in
