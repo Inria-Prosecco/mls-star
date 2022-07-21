@@ -4,7 +4,7 @@ open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeDEM.NetworkTypes //for hpke_ciphertext_nt
+open MLS.TreeKEM.NetworkTypes
 open MLS.Tree
 open MLS.NetworkBinder
 open MLS.TreeSync.Types

@@ -3,6 +3,7 @@ module MLS.TreeDEM.NetworkTypes
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
+open MLS.TreeKEM.NetworkTypes
 
 (*** PSKs ***)
 
@@ -38,13 +39,13 @@ instance parseable_serializeable_psk_label_nt (bytes:Type0) {|bytes_like bytes|}
 (*** Proposals ***)
 
 noeq type add_nt (bytes:Type0) {|bytes_like bytes|} = {
-  key_package: key_package_nt bytes;
+  key_package: key_package_nt bytes tkt;
 }
 
 %splice [ps_add_nt] (gen_parser (`add_nt))
 
 noeq type update_nt (bytes:Type0) {|bytes_like bytes|} = {
-  leaf_node: leaf_node_nt bytes;
+  leaf_node: leaf_node_nt bytes tkt;
 }
 
 %splice [ps_update_nt] (gen_parser (`update_nt))
@@ -81,28 +82,6 @@ noeq type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_group_context_extensions_nt] (gen_parser (`group_context_extensions_nt))
-
-//TODO: move part of these in treekem
-noeq type hpke_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
-  kem_output: mls_bytes bytes;
-  ciphertext: mls_bytes bytes;
-}
-
-%splice [ps_hpke_ciphertext_nt] (gen_parser (`hpke_ciphertext_nt))
-
-noeq type update_path_node_nt (bytes:Type0) {|bytes_like bytes|} = {
-  encryption_key: hpke_public_key_nt bytes;
-  encrypted_path_secret: mls_seq bytes ps_hpke_ciphertext_nt;
-}
-
-%splice [ps_update_path_node_nt] (gen_parser (`update_path_node_nt))
-
-noeq type update_path_nt (bytes:Type0) {|bytes_like bytes|} = {
-  leaf_node: leaf_node_nt bytes;
-  nodes: mls_seq bytes ps_update_path_node_nt;
-}
-
-%splice [ps_update_path_nt] (gen_parser (`update_path_nt))
 
 (*** Refs ***)
 
@@ -434,7 +413,7 @@ noeq type mls_10_message_nt (bytes:Type0) {|bytes_like bytes|} =
   | M_ciphertext: [@@@ with_tag (WF_mls_ciphertext ())] mls_ciphertext_nt bytes -> mls_10_message_nt bytes
   | M_welcome: [@@@ with_tag (WF_mls_welcome ())] welcome_nt bytes -> mls_10_message_nt bytes
   | M_group_info: [@@@ with_tag (WF_mls_group_info ())] group_info_nt bytes -> mls_10_message_nt bytes
-  | M_key_package: [@@@ with_tag (WF_mls_key_package ())] key_package_nt bytes -> mls_10_message_nt bytes
+  | M_key_package: [@@@ with_tag (WF_mls_key_package ())] key_package_nt bytes tkt -> mls_10_message_nt bytes
 
 %splice [ps_mls_10_message_nt] (gen_parser (`mls_10_message_nt))
 

@@ -3,6 +3,7 @@ module MLS.TreeDEM.Welcome
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
+open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
 open MLS.NetworkBinder
 open MLS.Crypto
@@ -276,7 +277,7 @@ let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
 
 (*** Encrypting a welcome ***)
 
-val encrypt_one_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes -> group_secrets bytes -> lbytes bytes (hpke_private_key_length #bytes) -> result (encrypted_group_secrets bytes)
+val encrypt_one_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes tkt -> group_secrets bytes -> lbytes bytes (hpke_private_key_length #bytes) -> result (encrypted_group_secrets bytes)
 let encrypt_one_group_secrets #bytes #cb kp gs rand =
   kp_ref <-- compute_key_package_ref kp;
   gs_network <-- group_secrets_to_network gs;
@@ -299,7 +300,7 @@ let encrypt_one_group_secrets #bytes #cb kp gs rand =
   })
 
 #push-options "--fuel 1 --ifuel 1"
-val encrypt_welcome_entropy_length: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (key_package_nt bytes & option bytes) -> list nat
+val encrypt_welcome_entropy_length: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (key_package_nt bytes tkt & option bytes) -> list nat
 let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
   match leaf_packages with
   | [] -> []
@@ -307,7 +308,7 @@ let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
 #pop-options
 
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
-val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> key_packages:list (key_package_nt bytes & option bytes) -> list (pre_shared_key_nt bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (list (encrypted_group_secrets bytes))
+val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> list (pre_shared_key_nt bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (list (encrypted_group_secrets bytes))
 let rec encrypt_group_secrets #bytes #cb joiner_secret key_packages psks rand =
   match key_packages with
   | [] -> return []
@@ -325,7 +326,7 @@ let rec encrypt_group_secrets #bytes #cb joiner_secret key_packages psks rand =
 #pop-options
 
 #push-options "--fuel 1"
-val encrypt_welcome: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome_group_info bytes -> bytes -> key_packages:list (key_package_nt bytes & option bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (welcome bytes)
+val encrypt_welcome: #bytes:Type0 -> {|crypto_bytes bytes|} -> welcome_group_info bytes -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (welcome bytes)
 let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
   encrypted_group_info <-- (
     welcome_secret <-- secret_joiner_to_welcome joiner_secret None (*TODO psk*);

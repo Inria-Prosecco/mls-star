@@ -6,6 +6,7 @@ open MLS.TreeSync.Types
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
+open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeSyncTreeKEMBinder
@@ -80,7 +81,7 @@ let state_to_group_context st =
 val hash_leaf_package: leaf_package_t bytes -> result bytes
 let hash_leaf_package leaf_package =
   key_package <-- leaf_package_to_network leaf_package;
-  let key_package = (ps_to_pse ps_leaf_node_nt).serialize_exact key_package in
+  let key_package = (ps_to_pse (ps_leaf_node_nt _)).serialize_exact key_package in
   hash <-- hash_hash key_package;
   return (hash <: bytes)
 
@@ -211,7 +212,7 @@ let process_commit state message message_auth =
   init_secret <-- MLS.TreeDEM.Keys.secret_epoch_to_init state.epoch_secret;
   leaf_secret <-- (
     if state.leaf_index = sender_id && (Some? message_content.c_path) then (
-      match List.Tot.assoc ((ps_to_pse ps_leaf_node_nt).serialize_exact (Some?.v message_content.c_path).leaf_node) state.pending_updatepath with
+      match List.Tot.assoc ((ps_to_pse (ps_leaf_node_nt _)).serialize_exact (Some?.v message_content.c_path).leaf_node) state.pending_updatepath with
       | Some leaf_secret -> return leaf_secret
       | None -> internal_failure "Can't retrieve my own leaf secret"
     ) else (
@@ -273,7 +274,7 @@ let default_capabilities =
     return ({versions; ciphersuites; extensions; proposals; credentials;} <: capabilities_nt bytes)
   )
 
-val fresh_key_package_internal: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key bytes -> result (key_package_nt bytes & bytes)
+val fresh_key_package_internal: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key bytes -> result (key_package_nt bytes tkt & bytes)
 let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   tmp <-- chop_entropy e (kdf_length #bytes);
   let fresh, e = tmp in
@@ -306,7 +307,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     if not (unsigned_key_package.data.source = LNS_key_package ()) then
       internal_failure "fresh_key_package_internal: source changed??"
     else (
-      let tbs = (ps_to_pse ps_leaf_node_tbs_nt).serialize_exact ({
+      let tbs = (ps_to_pse (ps_leaf_node_tbs_nt _)).serialize_exact ({
         data = unsigned_key_package.data;
         group_id = ()
       }) in
@@ -324,22 +325,22 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     init_key = encryption_key;
     leaf_node;
     extensions = Seq.empty;
-  } <: key_package_tbs_nt bytes) in
+  } <: key_package_tbs_nt bytes tkt) in
   nonce <-- universal_sign_nonce;
-  signature <-- sign_with_label private_sign_key (string_to_bytes #bytes "KeyPackageTBS") ((ps_to_pse ps_key_package_tbs_nt).serialize_exact kp_tbs) nonce;
+  signature <-- sign_with_label private_sign_key (string_to_bytes #bytes "KeyPackageTBS") ((ps_to_pse (ps_key_package_tbs_nt _)).serialize_exact kp_tbs) nonce;
   if not (length (signature <: bytes) < pow2 30) then
     internal_failure "fresh_key_package_internal: signature too long"
   else (
     return (({
       tbs = kp_tbs;
       signature;
-    } <: key_package_nt bytes), (leaf_secret <: bytes))
+    } <: key_package_nt bytes tkt), (leaf_secret <: bytes))
   )
 
 let fresh_key_package e cred private_sign_key =
   tmp <-- fresh_key_package_internal e cred private_sign_key;
   let key_package, leaf_secret = tmp in
-  let key_package_bytes = (ps_to_pse ps_key_package_nt).serialize_exact key_package in
+  let key_package_bytes = (ps_to_pse (ps_key_package_nt _)).serialize_exact key_package in
   leaf_package <-- network_to_leaf_package key_package.tbs.leaf_node;
   hash <-- hash_leaf_package leaf_package;
   return (key_package_bytes, hash, leaf_secret)
@@ -419,7 +420,7 @@ let rec unsafe_mk_randomness #l e =
 // Have to factor out this function otherwise F* typecheck goes mad in `generate_welcome_message`
 // (Error 54) bytes_like bytes is not a subtype of the expected type bytes
 // Yeah thanks, but I don't see where it's relevant?
-val generate_key_package_and_path_secret: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> key_package_nt bytes -> result (key_package_nt bytes & option bytes)
+val generate_key_package_and_path_secret: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> key_package_nt bytes tkt -> result (key_package_nt bytes tkt & option bytes)
 let generate_key_package_and_path_secret future_state msg new_key_package =
   let x: option (update_path_nt bytes) = msg.content.c_path in
   new_leaf_package <-- network_to_leaf_package new_key_package.tbs.leaf_node;
@@ -442,7 +443,7 @@ let generate_key_package_and_path_secret future_state msg new_key_package =
     return (new_key_package, None)
   )
 
-val generate_welcome_message: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> message_auth bytes -> bool -> new_key_packages:list (key_package_nt bytes) -> bytes -> result (welcome bytes)
+val generate_welcome_message: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> message_auth bytes -> bool -> new_key_packages:list (key_package_nt bytes tkt) -> bytes -> result (welcome bytes)
 let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packages e =
   tmp <-- process_commit st msg msg_auth;
   let (future_state, joiner_secret) = tmp in
@@ -450,9 +451,9 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   tree_hash <-- MLS.TreeSync.Hash.tree_hash future_state.tree_state.tree;
   ratchet_tree <-- treesync_to_ratchet_tree future_state.tree_state.tree;
   ratchet_tree_bytes <-- (
-    let l = bytes_length (ps_option ps_node_nt) (Seq.seq_to_list ratchet_tree) in
+    let l = bytes_length (ps_option (ps_node_nt tkt)) (Seq.seq_to_list ratchet_tree) in
     if l < pow2 30 then
-      return #bytes ((ps_to_pse ps_ratchet_tree_nt).serialize_exact ratchet_tree)
+      return #bytes ((ps_to_pse (ps_ratchet_tree_nt tkt)).serialize_exact ratchet_tree)
     else
       internal_failure "generate_welcome_message: ratchet_tree too big"
   );
@@ -523,7 +524,7 @@ let generate_update_path st e proposals =
     update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package update_path_kem;
     update_path_sync <-- MLS.TreeSync.external_path_to_valid_external_path st.tree_state.tree update_path_ext_sync st.tree_state.group_id st.sign_private_key sign_nonce;
     update_path_network <-- treekem_to_update_path update_path_sync;
-    let new_key_package_bytes = (ps_to_pse ps_leaf_node_nt).serialize_exact update_path_network.leaf_node in
+    let new_key_package_bytes = (ps_to_pse (ps_leaf_node_nt tkt)).serialize_exact update_path_network.leaf_node in
     return (update_path_network, (new_key_package_bytes, new_leaf_secret), e)
   )
 #pop-options
@@ -547,7 +548,7 @@ let generate_commit state e proposals =
   return ((msg <: message_commit), state, e)
 
 let add state key_package e =
-  kp <-- from_option "error message if it is malformed" ((ps_to_pse ps_key_package_nt).parse_exact key_package);
+  kp <-- from_option "error message if it is malformed" ((ps_to_pse (ps_key_package_nt tkt)).parse_exact key_package);
   let proposals = [ (Add kp) ] in
   tmp <-- generate_commit state e proposals;
   let (msg, state, e) = tmp in
@@ -630,7 +631,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     | None -> None
   ) None;
   let (group_info, secrets) = tmp in
-  ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes ps_ratchet_tree_nt).parse_exact group_info.extensions);
+  ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes (ps_ratchet_tree_nt tkt)).parse_exact group_info.extensions);
   l <-- ratchet_tree_l ratchet_tree;
   tree <-- ratchet_tree_to_treesync l 0 ratchet_tree;
   _ <-- ( //Check signature

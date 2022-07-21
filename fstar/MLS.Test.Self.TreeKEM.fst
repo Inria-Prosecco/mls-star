@@ -125,7 +125,7 @@ let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
     if not (unsigned_key_package.data.source = LNS_key_package ()) then
       internal_failure "fresh_key_package_internal: source changed??"
     else (
-      let tbs = (ps_to_pse ps_leaf_node_tbs_nt).serialize_exact ({
+      let tbs = (ps_to_pse (ps_leaf_node_tbs_nt _)).serialize_exact ({
         data = unsigned_key_package.data;
         group_id = ()
       }) in
@@ -155,7 +155,7 @@ let add_rand #bytes #cb rng st =
     tbs = {
       version = PV_mls10 ();
       cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
-      init_key = leaf_node_network.data.encryption_key;
+      init_key = leaf_node_network.data.content;
       leaf_node = leaf_node_network;
       extensions = Seq.empty;
     };

@@ -112,8 +112,8 @@ let get_leaf_package_tbs #bytes #bl lp group_id =
       let ln_tbs = ({
         data = ln.data;
         group_id = (match ln.data.source with |LNS_update () |LNS_commit() -> group_id |_ -> ());
-      } <: leaf_node_tbs_nt bytes) in
-      return (serialize (leaf_node_tbs_nt bytes) ln_tbs)
+      } <: leaf_node_tbs_nt bytes MLS.TreeKEM.NetworkTypes.tkt) in
+      return (serialize (leaf_node_tbs_nt bytes _) ln_tbs)
     )
 
 val external_path_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes l i -> external_pathsync bytes l i li -> bytes -> result bool
@@ -233,7 +233,7 @@ let state_update_tree #bytes #bl #l st new_tree =
     //transcript = Seq.snoc st.transcript op //TODO
   })
 
-val get_leaf_package_from_key_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes -> result (leaf_package_t bytes)
+val get_leaf_package_from_key_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes MLS.TreeKEM.NetworkTypes.tkt -> result (leaf_package_t bytes)
 let get_leaf_package_from_key_package #bytes #cb kp =
   //TODO check signature
   if not (kp.tbs.leaf_node.data.source = LNS_key_package ()) then
@@ -242,7 +242,7 @@ let get_leaf_package_from_key_package #bytes #cb kp =
     network_to_leaf_package kp.tbs.leaf_node
   )
 
-val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> state_t bytes -> key_package_nt bytes -> result (state_t bytes & nat)
+val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> state_t bytes -> key_package_nt bytes MLS.TreeKEM.NetworkTypes.tkt -> result (state_t bytes & nat)
 let add #bytes #bl st kp =
   lp <-- get_leaf_package_from_key_package kp;
   match find_empty_leaf st.tree with

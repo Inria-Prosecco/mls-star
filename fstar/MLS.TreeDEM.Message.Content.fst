@@ -3,12 +3,13 @@ module MLS.TreeDEM.Message.Content
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
+open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
 open MLS.NetworkBinder
 open MLS.Result
 
 noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
-  | Add: key_package_nt bytes -> proposal bytes
+  | Add: key_package_nt bytes tkt -> proposal bytes
   | Update: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
   | Remove: nat -> proposal bytes
   | PreSharedKey: pre_shared_key_id_nt bytes -> proposal bytes

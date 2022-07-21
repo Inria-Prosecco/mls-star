@@ -3,7 +3,7 @@ module MLS.NetworkBinder
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeDEM.NetworkTypes //for hpke_ciphertext_nt
+open MLS.TreeKEM.NetworkTypes
 open MLS.Crypto
 open MLS.Result
 open MLS.Tree
@@ -42,14 +42,14 @@ instance parseable_serializeable_treekem_impl_data_nt (bytes:Type0) {|bytes_like
 
 (*** NetworkTreeSyncBinder ***)
 
-val network_to_leaf_package: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_nt bytes -> result (TS.leaf_package_t bytes)
+val network_to_leaf_package: #bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_nt bytes tkt -> result (TS.leaf_package_t bytes)
 let network_to_leaf_package #bytes #bl ln =
   match ln.data.credential with
   | C_basic identity ->
     return ({
       TS.version = 0;
       TS.content = {
-        TS.content = serialize (treekem_content_nt bytes) ({encryption_key = ln.data.encryption_key});
+        TS.content = serialize (treekem_content_nt bytes) ({encryption_key = ln.data.content});
         TS.impl_data = empty;
       };
       TS.credential = {
@@ -66,7 +66,7 @@ let network_to_leaf_package #bytes #bl ln =
     } <: TS.leaf_package_t bytes)
   | _ -> error "network_to_leaf_package: credential type not supported"
 
-val leaf_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.leaf_package_t bytes -> result (leaf_node_nt bytes)
+val leaf_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.leaf_package_t bytes -> result (leaf_node_nt bytes tkt)
 let leaf_package_to_network #bytes #bl lp =
   if not (length lp.TS.credential.TS.identity < pow2 30) then
     error "leaf_package_to_network: identity too long"
@@ -79,7 +79,7 @@ let leaf_package_to_network #bytes #bl lp =
     extensions <-- from_option "leaf_package_to_network: can't parse extensions" ((ps_to_pse (ps_mls_seq ps_extension_nt)).parse_exact lp.TS.extensions);
     return ({
       data = {
-        encryption_key = content.encryption_key;
+        content = content.encryption_key;
         signature_key = lp.TS.credential.TS.signature_key;
         credential = C_basic lp.TS.credential.TS.identity;
         capabilities = lp.TS.capabilities;
@@ -89,10 +89,10 @@ let leaf_package_to_network #bytes #bl lp =
         extensions = extensions;
       };
       signature = lp.TS.signature;
-    } <: leaf_node_nt bytes)
+    } <: leaf_node_nt bytes tkt)
   )
 
-val node_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (parent_node_nt bytes)
+val node_package_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> TS.node_package_t bytes -> result (parent_node_nt bytes tkt)
 let node_package_to_network #bytes #bl np =
   unmerged_leaves <-- mapM (fun (x:nat) -> if x < pow2 32 then return (x <: nat_lbytes 4) else internal_failure "") np.TS.unmerged_leaves;
   if not ((bytes_length #bytes (ps_nat_lbytes 4) unmerged_leaves) < pow2 30) then
@@ -101,13 +101,13 @@ let node_package_to_network #bytes #bl np =
     Seq.lemma_list_seq_bij unmerged_leaves;
     node_content <-- from_option "node_package_to_network: can't parse content" (parse (treekem_content_nt bytes) np.TS.content.content);
     return ({
-      encryption_key = node_content.encryption_key;
+      content = node_content.encryption_key;
       parent_hash = np.TS.parent_hash;
       unmerged_leaves = Seq.seq_of_list unmerged_leaves;
-    } <: parent_node_nt bytes)
+    } <: parent_node_nt bytes tkt)
   )
 
-val network_to_node_package: #bytes:Type0 -> {|bytes_like bytes|} -> parent_node_nt bytes -> result (TS.node_package_t bytes)
+val network_to_node_package: #bytes:Type0 -> {|bytes_like bytes|} -> parent_node_nt bytes tkt -> result (TS.node_package_t bytes)
 let network_to_node_package #bytes #bl pn =
   bytes_length_nil #bytes ps_hpke_ciphertext_nt;
   return ({
@@ -116,7 +116,7 @@ let network_to_node_package #bytes #bl pn =
         TS.parent_hash = pn.parent_hash;
         TS.content = {
           TS.content = serialize (treekem_content_nt bytes) ({
-            encryption_key = pn.encryption_key;
+            encryption_key = pn.content;
           });
           TS.impl_data = serialize (treekem_impl_data_nt bytes) ({
             content_dir = TK.Left; //We don't care
@@ -128,13 +128,13 @@ let network_to_node_package #bytes #bl pn =
 
 //TODO: this function should be equivalent to key_package_to_treesync followed by leaf_package_sync_to_kem (non-existant at this time)
 //Refactor?
-val leaf_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_node_nt bytes -> result (TK.member_info bytes)
+val leaf_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_node_nt bytes tkt -> result (TK.member_info bytes)
 let leaf_node_to_treekem #bytes #cb ln =
-  if not (length (ln.data.encryption_key <: bytes) = hpke_public_key_length #bytes) then
+  if not (length (ln.data.content <: bytes) = hpke_public_key_length #bytes) then
     error "leaf_node_to_treekem: public key has wrong length"
   else
     return ({
-      TK.public_key = ln.data.encryption_key;
+      TK.public_key = ln.data.content;
       TK.version = 0;
     } <: TK.member_info bytes)
 
@@ -218,7 +218,7 @@ let treekem_to_update_path_node #bytes #bl np_content =
   } <: update_path_node_nt bytes)
 
 //TODO same
-val treekem_to_update_path_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.external_pathsync bytes l i li  -> result (leaf_node_nt bytes & list (update_path_node_nt bytes))
+val treekem_to_update_path_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.external_pathsync bytes l i li  -> result (leaf_node_nt bytes tkt & list (update_path_node_nt bytes))
 let rec treekem_to_update_path_aux #bytes #bl #l #i #li p =
   match p with
   | PLeaf lp ->
@@ -250,7 +250,7 @@ let treekem_to_update_path #bytes #bl #l #i #li p =
 
 (*** ratchet_tree extension (11.3) ***)
 
-val ratchet_tree_l: #bytes:Type0 -> {|bytes_like bytes|} -> nodes:ratchet_tree_nt bytes -> result (l:nat{Seq.length nodes == (pow2 (l+1))-1})
+val ratchet_tree_l: #bytes:Type0 -> {|bytes_like bytes|} -> nodes:ratchet_tree_nt bytes tkt -> result (l:nat{Seq.length nodes == (pow2 (l+1))-1})
 let ratchet_tree_l #bytes #bl nodes =
   let n_nodes = Seq.length nodes in
   if n_nodes%2 = 0 then
@@ -263,7 +263,7 @@ let ratchet_tree_l #bytes #bl nodes =
     else
       return l
 
-val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> i:tree_index l -> nodes:Seq.seq (option (node_nt bytes)){Seq.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes l i)
+val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> l:nat -> i:tree_index l -> nodes:Seq.seq (option (node_nt bytes tkt)){Seq.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes l i)
 let rec ratchet_tree_to_treesync #bytes #bl l i nodes =
   if l = 0 then (
     assert (Seq.length nodes == 1);
@@ -289,7 +289,7 @@ let rec ratchet_tree_to_treesync #bytes #bl l i nodes =
       return (TNode None left_res right_res)
   )
 
-val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> TS.treesync bytes l i -> result (Seq.seq (option (node_nt bytes)))
+val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> TS.treesync bytes l i -> result (Seq.seq (option (node_nt bytes tkt)))
 let rec treesync_to_ratchet_tree #bytes #bl #l #i t =
   match t with
   | TLeaf None ->

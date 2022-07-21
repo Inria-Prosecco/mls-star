@@ -3,6 +3,13 @@ module MLS.TreeSync.NetworkTypes
 open Comparse
 open MLS.NetworkTypes
 
+noeq type treekem_types (bytes:Type0) {|bytes_like bytes|} = {
+  leaf_content: leaf_content:Type0{hasEq bytes ==> hasEq leaf_content};
+  node_content: node_content:Type0{hasEq bytes ==> hasEq node_content};
+  ps_leaf_content: parser_serializer bytes leaf_content;
+  ps_node_content: parser_serializer bytes node_content;
+}
+
 type signature_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_signature_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (signature_public_key_nt bytes)
 let ps_signature_public_key_nt #bytes #bl = ps_mls_bytes
@@ -72,8 +79,9 @@ let ps_leaf_node_parent_hash_nt #bytes #bl source =
   | LNS_commit () -> ps_mls_bytes
   | _ -> ps_unit
 
-noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} = {
-  encryption_key: hpke_public_key_nt bytes;
+noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+  [@@@ with_parser tkt.ps_leaf_content]
+  content: tkt.leaf_content; //encryption key
   signature_key: signature_public_key_nt bytes;
   credential: credential_nt bytes;
   capabilities: capabilities_nt bytes;
@@ -85,14 +93,14 @@ noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_leaf_node_data_nt] (gen_parser (`leaf_node_data_nt))
 
-noeq type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} = {
-  data: leaf_node_data_nt bytes;
+noeq type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+  data: leaf_node_data_nt bytes tkt;
   signature: mls_bytes bytes;
 }
 
 %splice [ps_leaf_node_nt] (gen_parser (`leaf_node_nt))
 
-instance parseable_serializeable_leaf_node_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (leaf_node_nt bytes) = mk_parseable_serializeable ps_leaf_node_nt
+instance parseable_serializeable_leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (leaf_node_nt bytes tkt) = mk_parseable_serializeable (ps_leaf_node_nt tkt)
 
 val leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
 let leaf_node_tbs_group_id_nt bytes #bl source =
@@ -108,38 +116,39 @@ let ps_leaf_node_tbs_group_id_nt bytes #bl source =
   | LNS_commit () -> ps_mls_bytes
   | _ -> ps_unit
 
-noeq type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
-  data: leaf_node_data_nt bytes;
+noeq type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+  data: leaf_node_data_nt bytes tkt;
   group_id: leaf_node_tbs_group_id_nt bytes data.source;
 }
 
 %splice [ps_leaf_node_tbs_nt] (gen_parser (`leaf_node_tbs_nt))
 
-instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (leaf_node_tbs_nt bytes) = mk_parseable_serializeable ps_leaf_node_tbs_nt
+instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (leaf_node_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_leaf_node_tbs_nt tkt)
 
-noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
+noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
   init_key: hpke_public_key_nt bytes;
-  leaf_node: leaf_node_nt bytes;
+  leaf_node: leaf_node_nt bytes tkt;
   extensions: mls_seq bytes ps_extension_nt;
 }
 
 %splice [ps_key_package_tbs_nt] (gen_parser (`key_package_tbs_nt))
 
-instance parseable_serializeable_key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (key_package_tbs_nt bytes) = mk_parseable_serializeable ps_key_package_tbs_nt
+instance parseable_serializeable_key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_tbs_nt tkt)
 
-noeq type key_package_nt (bytes:Type0) {|bytes_like bytes|} = {
-  tbs: key_package_tbs_nt bytes;
+noeq type key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+  tbs: key_package_tbs_nt bytes tkt;
   signature: mls_bytes bytes;
 }
 
 %splice [ps_key_package_nt] (gen_parser (`key_package_nt))
 
-instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (key_package_nt bytes) = mk_parseable_serializeable ps_key_package_nt
+instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_nt tkt)
 
-noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} = {
-  encryption_key: hpke_public_key_nt bytes;
+noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+  [@@@ with_parser tkt.ps_node_content]
+  content: tkt.node_content; //encryption_key
   parent_hash: mls_bytes bytes;
   unmerged_leaves: mls_seq bytes (ps_nat_lbytes #bytes 4);
 }
@@ -152,13 +161,13 @@ type node_type_nt =
 
 %splice [ps_node_type_nt] (gen_parser (`node_type_nt))
 
-noeq type node_nt (bytes:Type0) {|bytes_like bytes|} =
-  | N_leaf: [@@@ with_tag (NT_leaf ())] leaf_node_nt bytes -> node_nt bytes
-  | N_parent: [@@@ with_tag (NT_parent ())] parent_node_nt bytes -> node_nt bytes
+noeq type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
+  | N_leaf: [@@@ with_tag (NT_leaf ())] leaf_node_nt bytes tkt -> node_nt bytes tkt
+  | N_parent: [@@@ with_tag (NT_parent ())] parent_node_nt bytes tkt -> node_nt bytes tkt
 
 %splice [ps_node_nt] (gen_parser (`node_nt))
 
-type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} = mls_seq bytes (ps_option ps_node_nt)
+type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = mls_seq bytes (ps_option (ps_node_nt tkt))
 
-val ps_ratchet_tree_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (ratchet_tree_nt bytes)
-let ps_ratchet_tree_nt #bytes #bl = ps_mls_seq (ps_option ps_node_nt)
+val ps_ratchet_tree_nt: #bytes:Type0 -> {|bytes_like bytes|} -> tkt:treekem_types bytes -> parser_serializer bytes (ratchet_tree_nt bytes tkt)
+let ps_ratchet_tree_nt #bytes #bl tkt = ps_mls_seq (ps_option (ps_node_nt tkt))
