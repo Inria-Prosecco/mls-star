@@ -11,7 +11,7 @@ open MLS.Result
 
 #set-options "--ifuel 1 --fuel 1"
 
-noeq type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_node_content]
   content: tkt.node_content; //encryption_key
   parent_hash: mls_bytes bytes;

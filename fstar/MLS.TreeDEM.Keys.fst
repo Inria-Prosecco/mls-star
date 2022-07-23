@@ -5,7 +5,7 @@ open MLS.Crypto
 open MLS.Tree
 open MLS.Result
 
-noeq type tree_context_nt = {
+type tree_context_nt = {
   generation: nat_lbytes 4;
 }
 
@@ -96,14 +96,14 @@ val secret_external_to_keypair: #bytes:Type0 -> {|crypto_bytes bytes|} -> lbytes
 let secret_external_to_keypair #bytes #cb external_secret =
   hpke_gen_keypair external_secret
 
-noeq type ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = {
+type ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = {
   secret: lbytes bytes (kdf_length #bytes);
   generation: nat;
 }
 
 let init_ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = st:ratchet_state bytes{st.generation = 0}
 
-noeq type ratchet_output (bytes:Type0) {|crypto_bytes bytes|} = {
+type ratchet_output (bytes:Type0) {|crypto_bytes bytes|} = {
   nonce: lbytes bytes (aead_nonce_length #bytes);
   key: lbytes bytes (aead_key_length #bytes);
 }

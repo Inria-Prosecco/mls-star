@@ -15,7 +15,7 @@ let external_pathsync (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byte
   path (leaf_node_nt bytes tkt) (option tkt.node_content)
 
 (** TreeSync state and accessors *)
-noeq type state_t (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type state_t (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   group_id: bytes;
   levels: nat;
   tree: treesync bytes tkt levels 0;

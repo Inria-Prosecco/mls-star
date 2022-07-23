@@ -33,7 +33,7 @@ private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
 ) = ()
 #pop-options
 
-noeq type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
+type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   label: mls_bytes bytes;
   content: mls_bytes bytes;
 }
@@ -63,7 +63,7 @@ let verify_with_label #bytes #cb verification_key label content signature =
   sign_content <-- get_sign_content label content;
   return (sign_verify verification_key sign_content signature)
 
-noeq type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
+type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
   label: mls_bytes bytes;
   context: mls_bytes bytes;
@@ -92,7 +92,7 @@ let expand_with_label #bytes #cb secret label context len =
 let derive_secret #bytes #cb secret label =
   expand_with_label secret label (empty #bytes) (kdf_length #bytes)
 
-noeq type ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
+type ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   label: mls_bytes bytes;
   value: mls_bytes bytes;
 }

@@ -17,7 +17,7 @@ module HMAC = Spec.Agile.HMAC
 
 (*** Concrete instance ***)
 
-noeq type concrete_ciphersuite_ = {
+type concrete_ciphersuite_ = {
   kem_dh:  DH.algorithm;
   kem_hash: Hash.algorithm;
   aead: AEAD.alg;

@@ -20,13 +20,11 @@ let entropy = bytes
 let group_message = group_id & bytes
 let welcome_message = identity & bytes
 
-noeq
 type private_info = {
   private_key: bytes;
 }
 
 // Always Ed25519 for the time being.
-noeq
 type credential = {
   signature_key: MLS.NetworkTypes.mls_bytes bytes;
   identity: identity;

@@ -10,7 +10,7 @@ open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
-noeq type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   leaf_index: nat_lbytes 4;
   [@@@ with_parser #bytes (ps_option (ps_leaf_node_nt tkt))]
   leaf_node: option (leaf_node_nt bytes tkt);
@@ -18,7 +18,7 @@ noeq type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:t
 
 %splice [ps_leaf_node_tree_hash_input_nt] (gen_parser (`leaf_node_tree_hash_input_nt))
 
-noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser #bytes (ps_option (ps_parent_node_nt tkt))]
   parent_node: option (parent_node_nt bytes tkt);
   left_hash: mls_bytes bytes;
@@ -27,7 +27,7 @@ noeq type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt
 
 %splice [ps_parent_node_tree_hash_input_nt] (gen_parser (`parent_node_tree_hash_input_nt))
 
-noeq type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
+type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
   | LeafTreeHashInput: [@@@ with_tag (NT_leaf ())] leaf_node: leaf_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
   | ParentTreeHashInput: [@@@ with_tag (NT_parent ())] parent_node: parent_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
 

@@ -7,7 +7,7 @@ open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
 open MLS.Result
 
-noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
+type proposal (bytes:Type0) {|bytes_like bytes|} =
   | Add: key_package_nt bytes tkt -> proposal bytes
   | Update: leaf_node_nt bytes tkt -> proposal bytes
   | Remove: nat -> proposal bytes
@@ -16,11 +16,11 @@ noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
   | ExternalInit: external_init_nt bytes -> proposal bytes
   | GroupContextExtensions: group_context_extensions_nt bytes -> proposal bytes
 
-noeq type proposal_or_ref (bytes:Type0) {|bytes_like bytes|} =
+type proposal_or_ref (bytes:Type0) {|bytes_like bytes|} =
   | Proposal: proposal bytes -> proposal_or_ref bytes
   | Reference: proposal_ref_nt bytes -> proposal_or_ref bytes
 
-noeq type commit (bytes:Type0) {|bytes_like bytes|} = {
+type commit (bytes:Type0) {|bytes_like bytes|} = {
   c_proposals: list (proposal_or_ref bytes);
   c_path: option (update_path_nt bytes);
 }

@@ -12,21 +12,21 @@ let tkt #bytes #bl = {
   ps_node_content = ps_hpke_public_key_nt;
 }
 
-noeq type hpke_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
+type hpke_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
   kem_output: mls_bytes bytes;
   ciphertext: mls_bytes bytes;
 }
 
 %splice [ps_hpke_ciphertext_nt] (gen_parser (`hpke_ciphertext_nt))
 
-noeq type update_path_node_nt (bytes:Type0) {|bytes_like bytes|} = {
+type update_path_node_nt (bytes:Type0) {|bytes_like bytes|} = {
   encryption_key: hpke_public_key_nt bytes;
   encrypted_path_secret: mls_list bytes ps_hpke_ciphertext_nt;
 }
 
 %splice [ps_update_path_node_nt] (gen_parser (`update_path_node_nt))
 
-noeq type update_path_nt (bytes:Type0) {|bytes_like bytes|} = {
+type update_path_nt (bytes:Type0) {|bytes_like bytes|} = {
   leaf_node: leaf_node_nt bytes tkt;
   nodes: mls_list bytes ps_update_path_node_nt;
 }

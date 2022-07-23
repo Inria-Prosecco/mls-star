@@ -14,7 +14,7 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-noeq type group_context (bytes:Type0) {|bytes_like bytes|} = {
+type group_context (bytes:Type0) {|bytes_like bytes|} = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
   group_id: bytes;
@@ -24,7 +24,7 @@ noeq type group_context (bytes:Type0) {|bytes_like bytes|} = {
   extensions: list (extension_nt bytes);
 }
 
-noeq type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
+type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
   group_context: group_context bytes;
   extensions: bytes;
   confirmation_tag: bytes;
@@ -32,24 +32,24 @@ noeq type welcome_group_info (bytes:Type0) {|bytes_like bytes|} = {
   signature: bytes;
 }
 
-noeq type group_secrets (bytes:Type0) {|bytes_like bytes|} = {
+type group_secrets (bytes:Type0) {|bytes_like bytes|} = {
   joiner_secret: bytes;
   path_secret: option bytes;
   psks: list (pre_shared_key_nt bytes);
 }
 
 //TODO: move in Crypto? (copy-pasted from TreeKEM)
-noeq type hpke_ciphertext (bytes:Type0) {|bytes_like bytes|} = {
+type hpke_ciphertext (bytes:Type0) {|bytes_like bytes|} = {
   kem_output: bytes;
   ciphertext: bytes;
 }
 
-noeq type encrypted_group_secrets (bytes:Type0) {|bytes_like bytes|} = {
+type encrypted_group_secrets (bytes:Type0) {|bytes_like bytes|} = {
   new_member: key_package_ref_nt bytes;
   enc_group_secrets: hpke_ciphertext bytes
 }
 
-noeq type welcome (bytes:Type0) {|bytes_like bytes|} = {
+type welcome (bytes:Type0) {|bytes_like bytes|} = {
   //version ?
   //cipher_suite ?
   secrets: list (encrypted_group_secrets bytes);

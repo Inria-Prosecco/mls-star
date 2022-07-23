@@ -14,7 +14,7 @@ type sender (bytes:Type0) {|bytes_like bytes|} =
   | S_new_member_proposal: sender bytes
   | S_new_member_commit: sender bytes
 
-noeq type message_content (bytes:Type0) {|bytes_like bytes|} = {
+type message_content (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
   group_id: bytes;
   epoch: nat;
@@ -26,7 +26,7 @@ noeq type message_content (bytes:Type0) {|bytes_like bytes|} = {
 
 // TODO: should we remove this high-level structure?
 // It is currently used for transcript hash, probably this should be refactored to use low-level structures?
-noeq type message_auth (bytes:Type0) {|bytes_like bytes|} = {
+type message_auth (bytes:Type0) {|bytes_like bytes|} = {
   signature: bytes;
   confirmation_tag: option bytes;
 }
