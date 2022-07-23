@@ -3,7 +3,6 @@ module MLS.TreeDEM.Message.Types
 open Comparse.Bytes
 open MLS.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
-open MLS.NetworkBinder
 open MLS.TreeDEM.Message.Content
 open MLS.Result
 

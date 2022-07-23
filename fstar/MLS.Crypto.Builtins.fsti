@@ -43,6 +43,7 @@ class crypto_bytes (bytes:Type0) = {
   sign_private_key_length: nat;
   sign_nonce_length: nat;
   sign_signature_length: nat;
+  sign_signature_length_bound: squash (sign_signature_length < 256);
   sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> result (lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length);
   sign_sign: lbytes bytes sign_private_key_length -> bytes -> entropy:lbytes bytes sign_nonce_length -> result (lbytes bytes sign_signature_length);
   sign_verify: lbytes bytes sign_public_key_length -> bytes -> lbytes bytes sign_signature_length -> bool;

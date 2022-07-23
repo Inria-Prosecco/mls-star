@@ -25,7 +25,7 @@ type credential_type_nt =
 
 %splice [ps_credential_type_nt] (gen_parser (`credential_type_nt))
 
-noeq type credential_nt (bytes:Type0) {|bytes_like bytes|} =
+type credential_nt (bytes:Type0) {|bytes_like bytes|} =
   | C_basic: [@@@ with_tag (CT_basic ())] identity: mls_bytes bytes -> credential_nt bytes
   | C_x509: [@@@ with_tag (CT_x509 ())] chain: mls_list bytes ps_certificate_nt -> credential_nt bytes
 
@@ -79,7 +79,7 @@ let ps_leaf_node_parent_hash_nt #bytes #bl source =
   | LNS_commit () -> ps_mls_bytes
   | _ -> ps_unit
 
-noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_leaf_content]
   content: tkt.leaf_content; //encryption key
   signature_key: signature_public_key_nt bytes;
@@ -93,7 +93,7 @@ noeq type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_type
 
 %splice [ps_leaf_node_data_nt] (gen_parser (`leaf_node_data_nt))
 
-noeq type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   data: leaf_node_data_nt bytes tkt;
   signature: mls_bytes bytes;
 }
@@ -116,7 +116,7 @@ let ps_leaf_node_tbs_group_id_nt bytes #bl source =
   | LNS_commit () -> ps_mls_bytes
   | _ -> ps_unit
 
-noeq type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   data: leaf_node_data_nt bytes tkt;
   group_id: leaf_node_tbs_group_id_nt bytes data.source;
 }
@@ -125,7 +125,7 @@ noeq type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types
 
 instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (leaf_node_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_leaf_node_tbs_nt tkt)
 
-noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
   init_key: hpke_public_key_nt bytes;
@@ -137,7 +137,7 @@ noeq type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_typ
 
 instance parseable_serializeable_key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_tbs_nt tkt)
 
-noeq type key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   tbs: key_package_tbs_nt bytes tkt;
   signature: mls_bytes bytes;
 }
@@ -146,7 +146,7 @@ noeq type key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types b
 
 instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_nt tkt)
 
-noeq type parent_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
+type parent_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_node_content]
   content: tkt.node_content; //encryption_key
   parent_hash: mls_bytes bytes;
@@ -161,7 +161,7 @@ type node_type_nt =
 
 %splice [ps_node_type_nt] (gen_parser (`node_type_nt))
 
-noeq type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
+type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
   | N_leaf: [@@@ with_tag (NT_leaf ())] leaf_node_nt bytes tkt -> node_nt bytes tkt
   | N_parent: [@@@ with_tag (NT_parent ())] parent_node_nt bytes tkt -> node_nt bytes tkt
 

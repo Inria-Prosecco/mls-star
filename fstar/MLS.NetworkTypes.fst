@@ -46,7 +46,7 @@ type extension_type_nt: eqtype =
 
 %splice [ps_extension_type_nt] (gen_parser (`extension_type_nt))
 
-noeq type extension_nt (bytes:Type0) {|bytes_like bytes|} = {
+type extension_nt (bytes:Type0) {|bytes_like bytes|} = {
   extension_type: extension_type_nt;
   extension_data: mls_bytes bytes;
 }
@@ -77,7 +77,7 @@ let ps_option #bytes #bl #a ps_a =
     | Some x -> (|1, x|)
   )
 
-noeq type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
+type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
   group_id: mls_bytes bytes;

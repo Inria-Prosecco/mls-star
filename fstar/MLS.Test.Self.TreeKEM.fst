@@ -4,15 +4,9 @@ open FStar.All
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
-open MLS.TreeSync.NetworkTypes
-open MLS.NetworkBinder
 open MLS.Tree
-open MLS.TreeSync.Types
-open MLS.TreeSync.Extensions
-open MLS.TreeSync
-open MLS.TreeSync.Hash
+open MLS.TreeKEM.Types
 open MLS.TreeKEM
-open MLS.TreeSyncTreeKEMBinder
 open MLS.Test.Utils
 open MLS.StringUtils
 open MLS.Result
@@ -20,12 +14,12 @@ open MLS.Result
 #set-options "--fuel 0 --ifuel 0"
 
 type participant_secrets (bytes:Type0) {|crypto_bytes bytes|} = {
-  sign_sk: sign_private_key bytes;
   leaf_secret: lbytes bytes (hpke_private_key_length #bytes);
 }
 
 type mls_state (bytes:Type0) {|crypto_bytes bytes|} = {
-  public: state_t bytes;
+  public: treekem_state bytes;
+  epoch: nat;
   secrets: list (nat & participant_secrets bytes);
 }
 
@@ -71,98 +65,22 @@ let rec remove_secret #a l x =
       (hx,hs)::(remove_secret t x)
 #pop-options
 
-val default_capabilities: #bytes:Type0 -> {|bytes_like bytes|} -> result (capabilities_nt bytes)
-let default_capabilities #bytes #bl =
-  let versions = [PV_mls10 ()] in
-  let ciphersuites = [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
-  let extensions = [] in
-  let proposals = [] in
-  let credentials = [CT_basic ()] in
-  if not (bytes_length #bytes ps_protocol_version_nt versions < pow2 30) then
-    internal_failure "fresh_key_package: initial protocol versions too long"
-  else if not (bytes_length #bytes ps_extension_type_nt extensions < pow2 30) then
-    internal_failure "fresh_key_package: initial extension types too long"
-  else if not (bytes_length #bytes ps_cipher_suite_nt ciphersuites < pow2 30) then
-    internal_failure "fresh_key_package: initial cipher suites too long"
-  else if not (bytes_length #bytes ps_proposal_type_nt proposals < pow2 30) then
-    internal_failure "fresh_key_package: initial proposals too long"
-  else if not (bytes_length #bytes ps_credential_type_nt credentials < pow2 30) then
-    internal_failure "fresh_key_package: initial credentials too long"
-  else (
-    return ({versions; ciphersuites; extensions; proposals; credentials;} <: capabilities_nt bytes)
-  )
-
-#push-options "--ifuel 1"
-//TODO: copy-pasted from MLS.fst
-val gen_leaf_package: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> participant_secrets bytes -> sign_public_key bytes -> hpke_public_key bytes -> ML (rand_state & leaf_package_t bytes)
-let gen_leaf_package #bytes #cb rng secrets sign_pk hpke_pk =
-  let (rng, identity) = gen_rand_bytes #bytes rng 8 in
-  let identity: bytes = (identity <: bytes) in
-  let capabilities = extract_result default_capabilities in
-  let extensions: bytes = empty_extensions #bytes #cb.base in
-  cb.hpke_public_key_length_bound;
-  let unsigned_leaf_package: leaf_package_t bytes = {
-    version = 0;
-    content = {
-      content = (ps_to_pse ps_treekem_content_nt).serialize_exact ({encryption_key = hpke_pk} <: treekem_content_nt bytes);
-      impl_data = empty;
-    };
-    credential = {
-      version = 0;
-      identity;
-      signature_key = sign_pk;
-    };
-    capabilities;
-    source = LNS_key_package ();
-    lifetime = {not_before = 0; not_after = 0;};
-    parent_hash = ();
-    extensions;
-    signature = empty;
-  } in
-  let (rng, sign_nonce) = gen_rand_bytes rng (sign_nonce_length #bytes) in
-  let signature = extract_result (
-    unsigned_key_package <-- leaf_package_to_network unsigned_leaf_package;
-    if not (unsigned_key_package.data.source = LNS_key_package ()) then
-      internal_failure "fresh_key_package_internal: source changed??"
-    else (
-      let tbs = (ps_to_pse (ps_leaf_node_tbs_nt _)).serialize_exact ({
-        data = unsigned_key_package.data;
-        group_id = ()
-      }) in
-      sign_with_label secrets.sign_sk (string_to_bytes #bytes "LeafNodeTBS") tbs sign_nonce
-    )
-  ) in
-  (rng, { unsigned_leaf_package with signature })
-#pop-options
-
-val create_participant: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> ML (rand_state & leaf_package_t bytes & participant_secrets bytes)
+val create_participant: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> ML (rand_state & member_info bytes & participant_secrets bytes)
 let create_participant #bytes #cb rng =
-  let (rng, sign_seed) = gen_rand_bytes rng (sign_private_key_length #bytes) in
   let (rng, leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
-  let (sign_pk, sign_sk) = extract_result (sign_gen_keypair sign_seed) in
   let (hpke_sk, hpke_pk) = extract_result (derive_keypair_from_path_secret leaf_secret) in
-  let my_secrets = {sign_sk; leaf_secret} in
-  let (rng, leaf_package) = gen_leaf_package rng my_secrets sign_pk hpke_pk in
+  let my_secrets = {leaf_secret} in
+  let leaf_package: member_info bytes = {version = 0; public_key = hpke_pk} in
   (rng, leaf_package, my_secrets)
 
 #push-options "--fuel 1 --ifuel 1"
 val add_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> ML (rand_state & mls_state bytes)
 let add_rand #bytes #cb rng st =
   let (rng, leaf_package, my_secrets) = create_participant #bytes #cb rng in
-  let leaf_node_network = extract_result (leaf_package_to_network leaf_package) in
-  bytes_length_nil #bytes ps_extension_nt;
-  let (new_public_state, leaf_index) = extract_result (MLS.TreeSync.add st.public ({
-    tbs = {
-      version = PV_mls10 ();
-      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
-      init_key = leaf_node_network.data.content;
-      leaf_node = leaf_node_network;
-      extensions = [];
-    };
-    signature = empty #bytes; (*TODO currently not checked by treesync*)
-  })) in
+  let (new_public_state, leaf_index) = MLS.TreeKEM.add st.public leaf_package in
   (rng, {
     public = new_public_state;
+    epoch = st.epoch+1;
     secrets = (leaf_index, my_secrets) :: st.secrets;
   })
 #pop-options
@@ -173,36 +91,15 @@ val update_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_sta
 let update_leaf #bytes #cb rng st leaf_index =
   let leaf_secrets = get_secret st.secrets leaf_index in
   if not (leaf_index < pow2 st.public.levels) then failwith "" else
-  let tree_ts = st.public.tree in
-  let tree_tk = extract_result (treesync_to_treekem tree_ts) in
   let (rng, new_leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
-  let ad = extract_result (tree_hash tree_ts) in
-  let rand_length = (update_path_entropy_lengths tree_tk leaf_index) in
-  //if not (rand_length < Lib.IntTypes.max_size_t) then failwith "" else
+  let ad = (ps_to_pse ps_nat).serialize_exact st.epoch in
+  let rand_length = (update_path_entropy_lengths st.public.tree leaf_index) in
   let (rng, rand) = gen_rand_randomness rng rand_length in
-  let (path_tk, _) = extract_result (update_path tree_tk leaf_index new_leaf_secret ad rand) in
-  let leaf_package =
-    match leaf_at tree_ts leaf_index with
-    | Some lp -> lp
-    | _ -> failwith ""
-  in
-  let new_leaf_package = {
-    leaf_package with
-    source = LNS_commit ();
-    lifetime = ();
-    parent_hash = empty #bytes;
-  } in
-  let ext_path_ts = extract_result (treekem_to_treesync new_leaf_package path_tk) in
-  let (rng, sign_nonce_bytes) = gen_rand_bytes rng (sign_nonce_length #bytes) in
-  let sign_nonce = sign_nonce_bytes in
-  let signed_ext_path_ts = extract_result (external_path_to_valid_external_path tree_ts ext_path_ts empty leaf_secrets.sign_sk sign_nonce) in
-  let new_tree_ts = extract_result (apply_external_path tree_ts signed_ext_path_ts) in
+  let (path_tk, _) = extract_result (update_path st.public.tree leaf_index new_leaf_secret ad rand) in
+  let new_public = commit st.public path_tk in
   (rng, {
-    public = {
-      st.public with
-      tree = new_tree_ts;
-      version = st.public.version + 1;
-    };
+    public = new_public;
+    epoch = st.epoch+1;
     secrets = update_secret st.secrets (leaf_index, {leaf_secrets with leaf_secret = new_leaf_secret});
   })
 #pop-options
@@ -218,6 +115,7 @@ let remove_leaf #bytes #cb rng st leaf_index =
   if not (leaf_index < pow2 st.public.levels) then failwith "" else
   (rng, {
     public = remove st.public leaf_index;
+    epoch = st.epoch+1;
     secrets = List.Tot.filter (fun (x, _) -> x <> leaf_index) st.secrets;
   })
 
@@ -270,7 +168,6 @@ val check_root_secret: {|crypto_bytes bytes|} -> mls_state bytes -> ML unit
 let check_root_secret #cb st =
   let open MLS.TreeKEM.Types in
   let (first_index, first_secret) = List.hd st.secrets in
-  let tree_tk = extract_result (treesync_to_treekem st.public.tree) in
   //IO.print_string (
   //  print_tree
   //    (fun leaf -> match leaf with
@@ -283,10 +180,10 @@ let check_root_secret #cb st =
   //);
   //IO.print_string "\n";
   if not (first_index < pow2 st.public.levels) then failwith "" else
-  let first_root_secret = extract_result (root_secret tree_tk first_index first_secret.leaf_secret) in
+  let first_root_secret = extract_result (root_secret st.public.tree first_index first_secret.leaf_secret) in
   List.iter #(nat & participant_secrets bytes) (fun (index, secret) ->
     if not (index < pow2 st.public.levels) then failwith "" else
-    let cur_root_secret = extract_result (root_secret tree_tk index secret.leaf_secret) in
+    let cur_root_secret = extract_result (root_secret st.public.tree index secret.leaf_secret) in
     if not (first_root_secret = cur_root_secret) then
       failwith ("check_root_secret: " ^ nat_to_string first_index ^ " has " ^ bytes_to_hex_string first_root_secret ^ ", " ^ nat_to_string index ^ " has " ^ bytes_to_hex_string cur_root_secret)
     else
@@ -304,6 +201,7 @@ let rec foldn nb f x =
   )
 #pop-options
 
+#push-options "--fuel 0 --ifuel 1"
 val create_init_state: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> ML (rand_state & mls_state bytes)
 let create_init_state #bytes #cb seed =
   let rng = init_rand_state seed in
@@ -311,9 +209,14 @@ let create_init_state #bytes #cb seed =
   let (rng, group_id) = gen_rand_bytes #bytes rng 16 in
   let (rng, first_leaf_package, first_secrets) = create_participant rng in
   (rng, ({
-    public = create group_id first_leaf_package;
+    public = {
+      levels = 0;
+      tree = TLeaf (Some first_leaf_package);
+    };
+    epoch = 0;
     secrets = [(0, first_secrets)];
   }))
+#pop-options
 
 #push-options "--fuel 0 --ifuel 1"
 val run_one_self_treekem_test: {|crypto_bytes bytes|} -> nat -> nat -> nat -> nat -> ML unit

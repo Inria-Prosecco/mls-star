@@ -43,6 +43,7 @@ noeq type signature_functions (bytes:Type0) {|bytes_like bytes|} = {
   sign_private_key_length: nat;
   sign_nonce_length: nat;
   sign_signature_length: nat;
+  sign_signature_length_bound: squash (sign_signature_length < 256);
   sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> result (lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length);
   sign_sign: lbytes bytes sign_private_key_length -> bytes -> entropy:lbytes bytes sign_nonce_length -> result (lbytes bytes sign_signature_length);
   sign_verify: lbytes bytes sign_public_key_length -> bytes -> lbytes bytes sign_signature_length -> bool;
@@ -56,6 +57,7 @@ let ed25519_signature_functions = {
   sign_private_key_length = 32;
   sign_nonce_length = 0;
   sign_signature_length = 64;
+  sign_signature_length_bound = ();
   sign_gen_keypair = (fun rand ->
     return (Ed25519.secret_to_public rand, rand)
   );
@@ -80,6 +82,7 @@ let p256_signature_functions = {
   sign_private_key_length = 0;
   sign_nonce_length = 0;
   sign_signature_length = 0;
+  sign_signature_length_bound = ();
   sign_gen_keypair = (fun rand ->
     internal_failure "sign_gen_keypair: P_256 not implemented"
   );
@@ -226,6 +229,7 @@ let mk_concrete_crypto_bytes acs =
   sign_private_key_length = sign.sign_private_key_length;
   sign_nonce_length = sign.sign_nonce_length;
   sign_signature_length = sign.sign_signature_length;
+  sign_signature_length_bound = sign.sign_signature_length_bound;
   sign_gen_keypair = sign.sign_gen_keypair;
   sign_sign = sign.sign_sign;
   sign_verify = sign.sign_verify;

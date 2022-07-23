@@ -5,12 +5,11 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
-open MLS.NetworkBinder
 open MLS.Result
 
 noeq type proposal (bytes:Type0) {|bytes_like bytes|} =
   | Add: key_package_nt bytes tkt -> proposal bytes
-  | Update: MLS.TreeSync.Types.leaf_package_t bytes -> proposal bytes
+  | Update: leaf_node_nt bytes tkt -> proposal bytes
   | Remove: nat -> proposal bytes
   | PreSharedKey: pre_shared_key_id_nt bytes -> proposal bytes
   | ReInit: reinit_nt bytes -> proposal bytes
@@ -39,8 +38,7 @@ let network_to_proposal #bytes #bl p =
   | P_add add ->
     return (Add add.key_package)
   | P_update update ->
-    kp <-- network_to_leaf_package update.leaf_node;
-    return (Update kp)
+    return (Update update.leaf_node)
   | P_remove remove ->
     return (Remove remove.removed)
   | P_psk psk ->
@@ -103,8 +101,7 @@ let proposal_to_network #bytes #bl p =
   | Add kp ->
     return (P_add ({key_package = kp}))
   | Update lp ->
-    kp <-- leaf_package_to_network lp;
-    return (P_update ({leaf_node = kp}))
+    return (P_update ({leaf_node = lp}))
   | Remove id ->
     if not (id < pow2 32) then
       internal_failure "proposal_to_network: invalid id"

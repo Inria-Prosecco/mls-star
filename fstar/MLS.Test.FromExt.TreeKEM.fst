@@ -42,13 +42,13 @@ let integrity_error_to_string ie =
   | IE_NodeError err left lev ->
     node_integrity_error_to_string err ^ " " ^ nat_to_string left ^ " " ^ nat_to_string lev
 
-val find_my_index: {|bytes_like bytes|} -> #l:nat -> treesync bytes l 0 -> key_package_nt bytes tkt -> ML (res:nat{res<pow2 l})
+val find_my_index: {|bytes_like bytes|} -> #l:nat -> treesync bytes tkt l 0 -> key_package_nt bytes tkt -> ML (res:nat{res<pow2 l})
 let find_my_index #bl #l t kp =
   let my_signature_key = kp.tbs.leaf_node.data.signature_key in
-  let test (olp: option (leaf_package_t bytes)) =
+  let test (olp: option (leaf_node_nt bytes tkt)) =
     match olp with
     | None -> false
-    | Some lp -> lp.credential.signature_key = my_signature_key
+    | Some lp -> lp.data.signature_key = my_signature_key
   in
   let res = extract_option "couldn't find my_index" (find_first test (get_leaf_list t)) in
   res
@@ -73,8 +73,8 @@ let gen_treekem_output #cb t =
     | IE_Good -> ()
     | IE_Errors lerr -> IO.print_string ("ratchet_tree_before is not valid: " ^ list_to_string integrity_error_to_string lerr ^ "\n")
   );
-  let tk0 = extract_result (treesync_to_treekem ts0) in
   let my_index = find_my_index ts0 my_key_package in
+  let tk0 = extract_result (treesync_to_treekem ts0) in
   if not (my_index <> add_sender) then
     failwith ("new leaf cannot be equal to add_sender: my_index=" ^ nat_to_string my_index ^ " add_sender=" ^ nat_to_string add_sender ^ "\n")
   else if not (add_sender < pow2 l) then
@@ -82,23 +82,18 @@ let gen_treekem_output #cb t =
   else if not (update_sender < pow2 l) then
     failwith "update_sender is too big"
   else (
-    let tree_hash_before = extract_result (tree_hash ts0) in
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret empty) in
-    let old_leaf_package = extract_option "leaf package for add sender is empty" (leaf_at ts0 add_sender) in
-    let ext_ups0 = extract_result (treekem_to_treesync old_leaf_package upk0) in
-    let ext_ups0_is_valid = extract_result (external_path_is_valid ts0 ext_ups0 group_id) in
-    let _ = extract_result (if ext_ups0_is_valid then return () else error "invalid ups0") in
-    let ts1 = extract_result (apply_external_path ts0 ext_ups0) in
-    let tk1 = extract_result (treesync_to_treekem ts1) in
+    let tk1 = tree_apply_path tk0 upk0 in
+    let ts1 = ts0 in
+    let tree_hash_before = extract_result (tree_hash ts1) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
-    let upk1 = extract_result (update_path_to_treekem tk1 update_sender update_group_context update_path) in
-
-    let update_leaf_package = extract_result (network_to_leaf_package update_path.leaf_node) in
-    let ext_ups1 = extract_result (treekem_to_treesync update_leaf_package upk1) in
-    let ext_ups1_is_valid = extract_result (external_path_is_valid ts1 ext_ups1 group_id) in
-    let _ = extract_result (if ext_ups1_is_valid then return () else error "invalid ups1") in
-    let ts2 = extract_result (apply_external_path ts1 ext_ups1) in
-    let tk2 = extract_result (treesync_to_treekem ts2) in
+    let uncompressed_update_path = extract_result (uncompress_update_path update_sender ts1 update_path) in
+    let ups1 = update_path_to_treesync uncompressed_update_path in
+    let upk1 = extract_result (update_path_to_treekem update_group_context uncompressed_update_path) in
+    let ups1_is_valid = extract_result (external_path_is_valid ts1 ups1 group_id) in
+    let _ = extract_result (if ups1_is_valid then return () else error "invalid ups1") in
+    let ts2 = extract_result (apply_external_path ts1 ups1) in
+    let tk2 = tree_apply_path tk1 upk1 in
 
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in
 

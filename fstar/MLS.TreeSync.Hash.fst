@@ -6,10 +6,9 @@ open MLS.TreeSync.Types
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
-open MLS.NetworkBinder
 open MLS.Result
 
-#set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
+#set-options "--fuel 1 --ifuel 1"
 
 noeq type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   leaf_index: nat_lbytes 4;
@@ -37,36 +36,22 @@ noeq type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_typ
 instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (tree_hash_input_nt bytes tkt) =
   mk_parseable_serializeable (ps_tree_hash_input_nt tkt)
 
-val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> treesync bytes l i -> result (lbytes bytes (hash_length #bytes))
-let rec tree_hash #bytes #cb #l #i t =
+val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> result (lbytes bytes (hash_length #bytes))
+let rec tree_hash #bytes #cb #tkt #l #i t =
   match t with
   | TLeaf olp ->
-    leaf_node <-- (
-      match olp with
-      | None -> return None
-      | Some lp ->
-        res <-- leaf_package_to_network lp;
-        return (Some res)
-    );
     if not (i < pow2 32) then
       internal_failure "tree_hash: leaf_index too big"
     else
-      hash_hash (serialize (tree_hash_input_nt bytes MLS.TreeKEM.NetworkTypes.tkt) (LeafTreeHashInput ({
+      hash_hash (serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({
         leaf_index = i;
-        leaf_node = leaf_node;
+        leaf_node = olp;
       })))
   | TNode onp left right ->
-    parent_node <-- (
-      match onp with
-      | None -> return None
-      | Some np ->
-        res <-- node_package_to_network np;
-        return (Some res)
-    );
     left_hash <-- tree_hash left;
     right_hash <-- tree_hash right;
-    hash_hash (serialize (tree_hash_input_nt bytes MLS.TreeKEM.NetworkTypes.tkt) (ParentTreeHashInput ({
-      parent_node = parent_node;
+    hash_hash (serialize (tree_hash_input_nt bytes tkt) (ParentTreeHashInput ({
+      parent_node = onp;
       left_hash = left_hash;
       right_hash = right_hash;
     })))

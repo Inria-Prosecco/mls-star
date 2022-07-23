@@ -34,31 +34,31 @@ let right_index #l n =
   // End of math proof
   n + pow2 (l-1)
 
-type tree (l:nat) (i:tree_index l) (leaf_t:Type) (node_t:Type) =
+type tree (leaf_t:Type) (node_t:Type) (l:nat) (i:tree_index l) =
   | TLeaf:
     data: leaf_t{l == 0} ->
-    tree l i leaf_t node_t
+    tree leaf_t node_t l i
   | TNode:
     data: node_t{l > 0} ->
-    left: tree (l-1) (left_index i) leaf_t node_t ->
-    right: tree (l-1) (right_index i) leaf_t node_t ->
-    tree l i leaf_t node_t
+    left: tree leaf_t node_t (l-1) (left_index i) ->
+    right: tree leaf_t node_t (l-1) (right_index i) ->
+    tree leaf_t node_t l i
 
 let leaf_index_inside (l:nat) (i:tree_index l) (li:nat) = i <= li && li < i+(pow2 l)
 type leaf_index (l:nat) (i:tree_index l) = li:nat{leaf_index_inside l i li}
 
 let is_left_leaf (#l:pos) (#i:tree_index l) (li:leaf_index l i) = li < i+(pow2 (l-1))
 
-type path (l:nat) (i:tree_index l) (li:leaf_index l i) (leaf_t:Type) (node_t:Type) =
+type path (leaf_t:Type) (node_t:Type) (l:nat) (i:tree_index l) (li:leaf_index l i) =
   | PLeaf:
     data:leaf_t{l == 0} ->
-    path l i li leaf_t node_t
+    path leaf_t node_t l i li
   | PNode:
     data:node_t{l > 0} ->
-    next:path (l-1) (if is_left_leaf li then left_index i else right_index i) li leaf_t node_t ->
-    path l i li leaf_t node_t
+    next:path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li ->
+    path leaf_t node_t l i li
 
-val get_child_sibling: #l:pos -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree l i leaf_t node_t -> li:leaf_index l i -> Pure (tree (l-1) (if is_left_leaf li then left_index i else right_index i) leaf_t node_t & tree (l-1) (if is_left_leaf li then right_index i else left_index i) leaf_t node_t) (requires True) (ensures fun _ -> leaf_index_inside (l-1) (if is_left_leaf li then left_index i else right_index i) li)
+val get_child_sibling: #l:pos -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree leaf_t node_t l i -> li:leaf_index l i -> Pure (tree leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) & tree leaf_t node_t (l-1) (if is_left_leaf li then right_index i else left_index i)) (requires True) (ensures fun _ -> leaf_index_inside (l-1) (if is_left_leaf li then left_index i else right_index i) li)
 let get_child_sibling #l #i t li =
   match t with
   | TNode content left right ->
@@ -69,7 +69,7 @@ let get_child_sibling #l #i t li =
 
 
 #push-options "--fuel 2"
-val get_leaf_list: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree l i leaf_t node_t -> Pure (list leaf_t) (requires True) (fun res -> List.Tot.length res == pow2 l)
+val get_leaf_list: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree leaf_t node_t l i -> Pure (list leaf_t) (requires True) (fun res -> List.Tot.length res == pow2 l)
 let rec get_leaf_list #l #i #leaf_t #node_t t =
   let open FStar.List.Tot in
   match t with
@@ -78,7 +78,7 @@ let rec get_leaf_list #l #i #leaf_t #node_t t =
     (get_leaf_list left) @ (get_leaf_list right)
 #pop-options
 
-val leaf_at: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree l i leaf_t node_t -> li:leaf_index l i -> leaf_t
+val leaf_at: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree leaf_t node_t l i -> li:leaf_index l i -> leaf_t
 let rec leaf_at #l #i t li =
   match t with
   | TLeaf content -> content
@@ -88,7 +88,7 @@ let rec leaf_at #l #i t li =
     else
       leaf_at right li
 
-val print_tree: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> (leaf_t -> string) -> (node_t -> string) -> tree l i leaf_t node_t -> string
+val print_tree: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> (leaf_t -> string) -> (node_t -> string) -> tree leaf_t node_t l i -> string
 let rec print_tree #l #i #leaf_t #node_t print_leaf print_node t =
   match t with
   | TLeaf data -> print_leaf data

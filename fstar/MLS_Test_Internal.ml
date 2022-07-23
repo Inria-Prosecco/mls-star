@@ -117,7 +117,7 @@ let test () =
       failwith "could not parse back add message"; ;
   print_endline "... a's epoch secret:";
   debug_buffer s.MLS.epoch_secret;
-  Printf.printf "... a's epoch: %d\n" (Z.to_int s.MLS.tree_state.MLS_TreeSync_Types.version3);
+  Printf.printf "... a's epoch: %d\n" (Z.to_int s.MLS.treesync_state.MLS_TreeSync_Types.version);
 
   print_endline "\n\n*** We create b's state from the welcome message (process_welcome_message)";
   let group_id, s_b = extract (MLS.process_welcome_message welcome_msg (sign_pub_b, sign_priv_b)
@@ -129,7 +129,7 @@ let test () =
   print_endline "... b processed welcome message";
   print_endline "... b's epoch secret:";
   debug_buffer s_b.MLS.epoch_secret;
-  Printf.printf "... b's epoch: %d\n" (Z.to_int s.MLS.tree_state.MLS_TreeSync_Types.version3);
+  Printf.printf "... b's epoch: %d\n" (Z.to_int s.MLS.treesync_state.MLS_TreeSync_Types.version);
   print_endline "... b's group id:";
   debug_ascii group_id;
 

@@ -8,7 +8,6 @@ open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
 open MLS.TreeDEM.Message.Types
-open MLS.NetworkBinder
 open MLS.Result
 
 module NT = MLS.TreeDEM.NetworkTypes

@@ -19,18 +19,6 @@ let rec find_index #a skips x l =
       | None -> None
     )
 
-val insert_sorted: nat -> list nat -> list nat
-let rec insert_sorted x l =
-  match l with
-  | [] -> [x]
-  | h::t ->
-    if x < h then
-      x::l
-    else if x = h then
-      l
-    else
-      h::(insert_sorted x t)
-
 #push-options "--fuel 1 --ifuel 1"
 val find_first: #a:Type -> (a -> bool) -> l:list a -> option (n:nat{n < List.Tot.length l})
 let rec find_first #a p l =
