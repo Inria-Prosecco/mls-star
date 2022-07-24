@@ -7,7 +7,7 @@ open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
 open MLS.Crypto
 open MLS.Tree
-open MLS.TreeSync.Types
+open MLS.TreeSync.Level0.Types
 open MLS.TreeDEM.KeyPackageRef
 open MLS.TreeDEM.Keys
 open MLS.Result

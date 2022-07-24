@@ -2,7 +2,7 @@ module MLS.TreeSync.ParentHash
 
 open Comparse
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Types
+open MLS.TreeSync.Level0.Types
 open MLS.TreeSync.Hash
 open MLS.Crypto
 open MLS.Tree

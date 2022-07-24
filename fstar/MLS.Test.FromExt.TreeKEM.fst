@@ -6,9 +6,9 @@ open Comparse
 open MLS.Test.Types
 open MLS.Test.Utils
 open MLS.Tree
-open MLS.TreeSync.Types
+open MLS.TreeSync.Level0.Types
 open MLS.TreeSync.ParentHash
-open MLS.TreeSync
+open MLS.TreeSync.Level0
 open MLS.TreeSync.Hash
 open MLS.TreeKEM
 open MLS.TreeSyncTreeKEMBinder

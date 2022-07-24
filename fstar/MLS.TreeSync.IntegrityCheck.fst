@@ -5,7 +5,7 @@ open MLS.Crypto
 open MLS.Tree
 open MLS.TreeSync
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Types
+open MLS.TreeSync.Level0.Types
 open MLS.TreeSync.Extensions
 open MLS.TreeSync.ParentHash
 open MLS.Result

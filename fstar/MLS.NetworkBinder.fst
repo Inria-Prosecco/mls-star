@@ -7,7 +7,7 @@ open MLS.TreeKEM.NetworkTypes
 open MLS.Crypto
 open MLS.Result
 open MLS.Tree
-module TS = MLS.TreeSync.Types
+module TS = MLS.TreeSync.Level0.Types
 module TK = MLS.TreeKEM.Types
 
 #set-options "--fuel 1 --ifuel 1"

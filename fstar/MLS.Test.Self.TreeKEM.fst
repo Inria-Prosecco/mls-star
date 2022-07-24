@@ -5,6 +5,8 @@ open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.Tree
+open MLS.TreeKEM.API.Types
+open MLS.TreeKEM.API
 open MLS.TreeKEM.Types
 open MLS.TreeKEM
 open MLS.Test.Utils
@@ -77,7 +79,7 @@ let create_participant #bytes #cb rng =
 val add_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> ML (rand_state & mls_state bytes)
 let add_rand #bytes #cb rng st =
   let (rng, leaf_package, my_secrets) = create_participant #bytes #cb rng in
-  let (new_public_state, leaf_index) = MLS.TreeKEM.add st.public leaf_package in
+  let (new_public_state, leaf_index) = MLS.TreeKEM.API.add st.public leaf_package in
   (rng, {
     public = new_public_state;
     epoch = st.epoch+1;
