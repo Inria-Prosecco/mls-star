@@ -36,7 +36,7 @@ let universal_sign_nonce =
 let group_id = bytes
 
 type state = {
-  treesync_state: MLS.TreeSync.API.Types.state_t bytes tkt;
+  treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt;
   treekem_state: treekem_state bytes;
   leaf_index: nat;
   leaf_secret: bytes;

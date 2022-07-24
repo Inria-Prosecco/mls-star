@@ -10,7 +10,7 @@ open MLS.TreeSync.Level0
 open MLS.TreeSync.API.Types
 open MLS.Result
 
-val create: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> gid:bytes -> leaf_node_nt bytes tkt -> state_t bytes tkt
+val create: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> gid:bytes -> leaf_node_nt bytes tkt -> treesync_state bytes tkt
 let create #bytes #bl gid lp =
   {
     group_id = gid;
@@ -19,7 +19,7 @@ let create #bytes #bl gid lp =
     version = 0;
   }
 
-val state_update_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> state_t bytes tkt -> treesync bytes tkt l 0 -> state_t bytes tkt
+val state_update_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> treesync_state bytes tkt -> treesync bytes tkt l 0 -> treesync_state bytes tkt
 let state_update_tree #bytes #bl #tkt #l st new_tree =
   ({ st with
     levels = l;
@@ -36,7 +36,7 @@ let get_leaf_package_from_key_package #bytes #cb kp =
     return kp.tbs.leaf_node
   )
 
-val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> state_t bytes tkt -> key_package_nt bytes tkt -> result (state_t bytes tkt & nat)
+val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> treesync_state bytes tkt -> key_package_nt bytes tkt -> result (treesync_state bytes tkt & nat)
 let add #bytes #bl #tkt st kp =
   lp <-- get_leaf_package_from_key_package kp;
   match find_empty_leaf st.tree with
@@ -49,17 +49,17 @@ let add #bytes #bl #tkt st kp =
     new_tree <-- tree_add augmented_tree i lp;
     return (state_update_tree st new_tree, (i <: nat))
 
-val update: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> st:state_t bytes tkt -> leaf_node_nt bytes tkt -> index_t st -> state_t bytes tkt
+val update: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> leaf_node_nt bytes tkt -> treesync_index st -> treesync_state bytes tkt
 let update #bytes #bl #tkt st lp i =
   state_update_tree st (tree_update st.tree i lp)
 
-val remove: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> st:state_t bytes tkt -> i:index_t st -> state_t bytes tkt
+val remove: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> i:treesync_index st -> treesync_state bytes tkt
 let remove #bytes #bl #tkt st i =
   let blanked_tree = (tree_remove st.tree i) in
   let (|_, reduced_tree|) = canonicalize_tree blanked_tree in
   state_update_tree st reduced_tree
 
-val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:state_t bytes tkt -> #li:index_t st -> external_pathsync bytes tkt st.levels 0 li -> result (state_t bytes tkt)
+val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> #li:treesync_index st -> external_pathsync bytes tkt st.levels 0 li -> result (treesync_state bytes tkt)
 let commit #bytes #cb #tkt st #li p =
   new_tree <-- apply_external_path st.tree p;
   return (state_update_tree st new_tree)
