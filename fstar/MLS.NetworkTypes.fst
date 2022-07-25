@@ -16,14 +16,24 @@ type mls_list (bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializ
 let ps_mls_bytes (#bytes:Type0) {|bytes_like bytes|}: parser_serializer bytes (mls_bytes bytes) = ps_pre_length_bytes mls_nat_pred ps_mls_nat
 let ps_mls_list (#bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a): parser_serializer bytes (mls_list bytes ps_a) = ps_pre_length_list #bytes mls_nat_pred ps_mls_nat ps_a
 
+/// opaque HPKEPublicKey<V>;
+
 type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 val ps_hpke_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (hpke_public_key_nt bytes)
 let ps_hpke_public_key_nt #bytes #bl = ps_mls_bytes
+
+/// enum {
+///     reserved(0),
+///     mls10(1),
+///     (255)
+/// } ProtocolVersion;
 
 type protocol_version_nt =
   | PV_mls10: [@@@ with_num_tag 1 1] unit -> protocol_version_nt
 
 %splice [ps_protocol_version_nt] (gen_parser (`protocol_version_nt))
+
+/// uint16 CipherSuite;
 
 type cipher_suite_nt =
   | CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519: [@@@ with_num_tag 2 1] unit -> cipher_suite_nt
@@ -36,6 +46,9 @@ type cipher_suite_nt =
 
 %splice [ps_cipher_suite_nt] (gen_parser (`cipher_suite_nt))
 
+/// // See IANA registry for registered values
+/// uint16 ExtensionType;
+
 //TODO extension belong here??
 type extension_type_nt: eqtype =
   | ET_application_id: [@@@ with_num_tag 2 0x0001] unit -> extension_type_nt
@@ -46,12 +59,25 @@ type extension_type_nt: eqtype =
 
 %splice [ps_extension_type_nt] (gen_parser (`extension_type_nt))
 
+/// struct {
+///     ExtensionType extension_type;
+///     opaque extension_data<V>;
+/// } Extension;
+
 type extension_nt (bytes:Type0) {|bytes_like bytes|} = {
   extension_type: extension_type_nt;
   extension_data: mls_bytes bytes;
 }
 
 %splice [ps_extension_nt] (gen_parser (`extension_nt))
+
+/// struct {
+///     uint8 present;
+///     select (present) {
+///         case 0: struct{};
+///         case 1: T value;
+///     }
+/// } optional<T>;
 
 val ps_option: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> parser_serializer bytes a -> parser_serializer bytes (option a)
 let ps_option #bytes #bl #a ps_a =
@@ -77,6 +103,16 @@ let ps_option #bytes #bl #a ps_a =
     | Some x -> (|1, x|)
   )
 
+/// struct {
+///     ProtocolVersion version = mls10;
+///     CipherSuite cipher_suite;
+///     opaque group_id<V>;
+///     uint64 epoch;
+///     opaque tree_hash<V>;
+///     opaque confirmed_transcript_hash<V>;
+///     Extension extensions<V>;
+/// } GroupContext;
+
 type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
@@ -92,6 +128,8 @@ type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 
 (*** Proposals ***)
+
+/// uint16 ProposalType;
 
 // Defined here because needed in TreeSync's proposal list in leaf node capabilities
 // Actual sum type defined in TreeDEM.NetworkTypes
