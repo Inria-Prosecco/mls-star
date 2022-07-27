@@ -56,11 +56,13 @@ let check_signature #bytes #cb #tkt lp group_id =
       group_id = (match lp.data.source with | LNS_commit () | LNS_update () -> group_id | _ -> ());
     } <: leaf_node_tbs_nt bytes tkt) in
     let leaf_package_bytes: bytes = serialize (leaf_node_tbs_nt bytes _) tbs in
-    signature_ok <-- verify_with_label lp.data.signature_key (string_to_bytes #bytes "LeafNodeTBS") leaf_package_bytes lp.signature;
-    if signature_ok then
-      return None
-    else
-      return (Some LIE_BadSignature)
+    if not (length leaf_package_bytes < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" leaf_package_bytes) then error "check_signature: tbs too long"
+    else (
+      if verify_with_label #bytes lp.data.signature_key "LeafNodeTBS" leaf_package_bytes lp.signature then
+        return None
+      else
+        return (Some LIE_BadSignature)
+    )
   )
 
 val check_capabilities: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> leaf_node_nt bytes tkt -> result (option leaf_integrity_error)

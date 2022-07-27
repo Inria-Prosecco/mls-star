@@ -24,7 +24,8 @@ class crypto_bytes (bytes:Type0) = {
 
   hash_length: nat;
   hash_length_bound: squash (hash_length < 256);
-  hash_hash: bytes -> result (lbytes bytes hash_length);
+  hash_max_input_length: nat;
+  hash_hash: buf:bytes{length buf < hash_max_input_length} -> lbytes bytes hash_length;
 
   kdf_length: nat;
   kdf_extract: key:bytes -> data:bytes -> result (lbytes bytes kdf_length);
@@ -44,9 +45,10 @@ class crypto_bytes (bytes:Type0) = {
   sign_nonce_length: nat;
   sign_signature_length: nat;
   sign_signature_length_bound: squash (sign_signature_length < 256);
-  sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> result (lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length);
-  sign_sign: lbytes bytes sign_private_key_length -> bytes -> entropy:lbytes bytes sign_nonce_length -> result (lbytes bytes sign_signature_length);
-  sign_verify: lbytes bytes sign_public_key_length -> bytes -> lbytes bytes sign_signature_length -> bool;
+  sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length;
+  sign_max_input_length: nat;
+  sign_sign: lbytes bytes sign_private_key_length -> buf:bytes{length buf < sign_max_input_length} -> entropy:lbytes bytes sign_nonce_length -> lbytes bytes sign_signature_length;
+  sign_verify: lbytes bytes sign_public_key_length -> buf:bytes{length buf < sign_max_input_length} -> lbytes bytes sign_signature_length -> bool;
 
   aead_nonce_length: nat;
   aead_nonce_length_bound: squash (4 <= aead_nonce_length);

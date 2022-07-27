@@ -88,3 +88,52 @@ let rec unmerged_leaves_sorted_insert_sorted x l =
 (*** External path ***)
 
 // TODO: unmerged_leaves_ok_apply_path
+
+  (*
+
+val leaf_at_add_: #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i{leaf_at t li == None} -> content:leaf_content -> li':leaf_index l i -> Lemma
+  (leaf_at (add_ t li content) li' = (if li = li' then Some content else leaf_at t li'))
+let rec leaf_at_add_ #l #i t li content li' =
+  match t with
+  | TLeaf _ -> ()
+  | TNode _ left right ->
+    if is_left_leaf li && is_left_leaf li' then
+      leaf_at_add_ left li content li'
+    else if not (is_left_leaf li) && not (is_left_leaf li') then
+      leaf_at_add_ right li content li'
+    else ()
+
+val unmerged_leaves_ok_add_: #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i{leaf_at t li == None} -> content:leaf_content -> Lemma
+  (requires unmerged_leaves_ok t)
+  (ensures unmerged_leaves_ok (add_ t li content))
+let rec unmerged_leaves_ok_add_ #l #i t li content =
+  match t with
+  | TLeaf _ -> ()
+  | TNode opt_content left right -> (
+    (if is_left_leaf li then unmerged_leaves_ok_add_ left li content else unmerged_leaves_ok_add_ right li content);
+    match opt_content with
+    | None -> ()
+    | Some cont -> (
+      list_for_all_eq (unmerged_leaf_exists t) cont.unmerged_leaves;
+      list_for_all_eq (unmerged_leaf_exists (add_ t li content)) (li::cont.unmerged_leaves);
+      introduce forall x. List.Tot.mem x (li::cont.unmerged_leaves) ==> Some? (leaf_at (add_ t li content) x)
+      with (
+        leaf_at_add_ t li content x
+      )
+    )
+  )
+
+val unmerged_leaves_ok_apply_valid_external_path_aux_: #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> p:valid_external_path t li -> parent_parent_hash:bytes -> Lemma
+  (requires unmerged_leaves_ok t)
+  (ensures unmerged_leaves_ok (apply_valid_external_path_aux_ t li p parent_parent_hash))
+let rec unmerged_leaves_ok_apply_valid_external_path_aux_ #l #i t li p parent_parent_hash =
+  match t, p with
+  | TLeaf _, PLeaf ext_content -> ()
+  | TNode _ left right, PNode opt_ext_content p_next ->
+    let (child, sibling) = get_child_sibling t li in
+    let (new_opt_content, new_parent_parent_hash) = apply_valid_external_path_aux_aux opt_ext_content sibling parent_parent_hash in
+    if is_left_leaf li then
+      unmerged_leaves_ok_apply_valid_external_path_aux_ left li p_next new_parent_parent_hash
+    else
+      unmerged_leaves_ok_apply_valid_external_path_aux_ right li p_next new_parent_parent_hash
+*)

@@ -39,29 +39,34 @@ type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_sign_content_nt] (gen_parser (`sign_content_nt))
+%splice [ps_sign_content_nt_length] (gen_length_lemma (`sign_content_nt))
 
-val get_sign_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> label:bytes -> content:bytes -> result bytes
+let sign_with_label_pre #bytes #cb label content =
+  8 + (8 + String.strlen label) + length #bytes content < sign_max_input_length #bytes
+
+val get_sign_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> label:valid_label -> content:mls_bytes bytes -> Pure bytes
+  (requires sign_with_label_pre label content)
+  (ensures fun res -> length #bytes res < sign_max_input_length #bytes)
 let get_sign_content #bytes #cb label content =
+  //TODO: remove next line when we have FStarLang/FStar#2609
+  introduce forall (label:mls_bytes bytes) (content:mls_bytes bytes). prefixes_length (ps_sign_content_nt.serialize ({label; content;})) <= 8 + length #bytes label + length #bytes content with ps_sign_content_nt_length ({label; content;});
+  normalize_term_spec (String.strlen label);
+  normalize_term_spec ((pow2 30) - 8);
   assert_norm (String.strlen "MLS 1.0 " == 8);
-  if not (length label < (pow2 30)-8) then
-    internal_failure "get_sign_content: label too long"
-  else if not (length content < pow2 30) then
-    internal_failure "get_sign_content: context too long"
-  else (
-    concat_length (string_to_bytes #bytes "MLS 1.0 ") label;
-    return ((ps_to_pse ps_sign_content_nt).serialize_exact ({
-      label = concat #bytes (string_to_bytes #bytes "MLS 1.0 ") label;
-      content = content;
-    }))
-  )
+  let label = string_to_bytes #bytes label in
+  concat_length #bytes (string_to_bytes #bytes "MLS 1.0 ") label;
+  ((ps_to_pse ps_sign_content_nt).serialize_exact ({
+    label = concat #bytes (string_to_bytes #bytes "MLS 1.0 ") label;
+    content = content;
+  }))
 
 let sign_with_label #bytes #cb signature_key label content entropy =
-  sign_content <-- get_sign_content label content;
+  let sign_content = get_sign_content label content in
   sign_sign signature_key sign_content entropy
 
 let verify_with_label #bytes #cb verification_key label content signature =
-  sign_content <-- get_sign_content label content;
-  return (sign_verify verification_key sign_content signature)
+  let sign_content = get_sign_content label content in
+  sign_verify verification_key sign_content signature
 
 type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
@@ -107,8 +112,10 @@ let ref_hash #bytes #cb label value =
     internal_failure "ref_hash: label too long"
   else if not (length value < pow2 30) then
     internal_failure "ref_hash: value too long"
+  else if not (length #bytes (serialize (ref_hash_input_nt bytes) ({label; value;})) < hash_max_input_length #bytes) then
+    internal_failure "ref_hash: hash_pre failed"
   else (
-    hash_hash (serialize (ref_hash_input_nt bytes) ({label; value;}))
+    return (hash_hash (serialize #bytes (ref_hash_input_nt bytes) ({label; value;})))
   )
 
 let make_keypackage_ref #bytes #cb buf =

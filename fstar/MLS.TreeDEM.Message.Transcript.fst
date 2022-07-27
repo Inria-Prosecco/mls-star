@@ -20,7 +20,9 @@ let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcrip
       content = msg_network;
       signature = signature;
     }) in
-    hash_hash (concat interim_transcript_hash serialized_msg)
+    let hash_input = concat #bytes interim_transcript_hash serialized_msg in
+    if not (length hash_input < hash_max_input_length #bytes) then error ""
+    else return (hash_hash hash_input)
   )
 
 val compute_interim_transcript_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> bytes -> result (lbytes bytes (hash_length #bytes))
@@ -31,5 +33,7 @@ let compute_interim_transcript_hash #bytes #cb confirmation_tag confirmed_transc
     let serialized_auth = serialize (interim_transcript_hash_input_nt bytes) ({
       confirmation_tag;
     }) in
-    hash_hash (concat confirmed_transcript_hash serialized_auth)
+    let hash_input = concat #bytes confirmed_transcript_hash serialized_auth in
+    if not (length hash_input < hash_max_input_length #bytes) then error ""
+    else return (hash_hash hash_input)
   )

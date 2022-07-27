@@ -43,15 +43,19 @@ let rec tree_hash #bytes #cb #tkt #l #i t =
     if not (i < pow2 32) then
       internal_failure "tree_hash: leaf_index too big"
     else
-      hash_hash (serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({
+      let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({
         leaf_index = i;
         leaf_node = olp;
-      })))
+      })) in
+      if not (length hash_input < hash_max_input_length #bytes) then error ""
+      else return (hash_hash hash_input)
   | TNode onp left right ->
     left_hash <-- tree_hash left;
     right_hash <-- tree_hash right;
-    hash_hash (serialize (tree_hash_input_nt bytes tkt) (ParentTreeHashInput ({
+    let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (ParentTreeHashInput ({
       parent_node = onp;
       left_hash = left_hash;
       right_hash = right_hash;
-    })))
+    })) in
+    if not (length hash_input < hash_max_input_length #bytes) then error ""
+    else return (hash_hash hash_input)

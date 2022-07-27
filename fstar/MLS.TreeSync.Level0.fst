@@ -46,7 +46,7 @@ let compute_new_np_and_ph #bytes #cb #tkt #l #i opt_ext_content sibling parent_p
     | Some ext_content -> Some ({
       content = ext_content;
       parent_hash = parent_parent_hash;
-      unmerged_leaves = (bytes_length_nil #bytes (ps_nat_lbytes 4); []);
+      unmerged_leaves = [];
     } <: parent_node_nt bytes tkt)
     | None -> None
   in
@@ -116,9 +116,12 @@ let external_path_is_valid #bytes #cb #tkt #l #i #li t p group_id =
     else
       return (new_lp.signature <: sign_signature bytes)
   );
-  signature_ok <-- verify_with_label verification_key (string_to_bytes #bytes "LeafNodeTBS") tbs signature;
-  let parent_hash_ok = (new_lp.data.source = LNS_commit () && (new_lp.data.parent_hash <: bytes) = computed_parent_hash) in
-  return (signature_ok && parent_hash_ok)
+  if not (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" tbs) then error "external_path_is_valid: tbs too long"
+  else (
+    let signature_ok = verify_with_label verification_key "LeafNodeTBS" tbs signature in
+    let parent_hash_ok = (new_lp.data.source = LNS_commit () && (new_lp.data.parent_hash <: bytes) = computed_parent_hash) in
+    return (signature_ok && parent_hash_ok)
+  )
 
 val external_path_to_valid_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> bytes -> sign_private_key bytes -> sign_nonce bytes -> result (external_pathsync bytes tkt l i li)
 let external_path_to_valid_external_path #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
@@ -129,8 +132,11 @@ let external_path_to_valid_external_path #bytes #cb #tkt #l #i #li t p group_id 
   else (
     let new_lp_data = { lp.data with parent_hash = computed_parent_hash; } in
     new_lp_tbs <-- get_leaf_package_tbs new_lp_data group_id;
-    new_signature <-- sign_with_label sign_key (string_to_bytes #bytes "LeafNodeTBS") new_lp_tbs nonce;
-    return (set_external_path_leaf p ({ data = new_lp_data; signature = new_signature }))
+    if not (length new_lp_tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" new_lp_tbs) then error "external_path_to_valid_external_path: tbs too long"
+    else (
+      let new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
+      return (set_external_path_leaf p ({ data = new_lp_data; signature = new_signature }))
+    )
   )
 
 val apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> mls_bytes bytes -> result (treesync bytes tkt l i)

@@ -70,10 +70,11 @@ let mk_set_extension #a ext_type ps_a extensions ext_content =
 
 (*** Exposed functions ***)
 
+#push-options "--fuel 1"
 val empty_extensions: #bytes:Type0 -> {|bytes_like bytes|} -> mls_list bytes ps_extension_nt
 let empty_extensions #bytes #bl =
-  bytes_length_nil #bytes ps_extension_nt;
   []
+#pop-options
 
 val get_extension_list: #bytes:Type0 -> {|bytes_like bytes|} -> list (extension_nt bytes) -> list (extension_type_nt)
 let get_extension_list #bytes #bl extensions =

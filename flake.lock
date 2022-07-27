@@ -9,11 +9,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1658417026,
-        "narHash": "sha256-AKMN8VvaumoiHLBnRQR3ETYmPLg5lkOEKMyu6Vevazk=",
+        "lastModified": 1658927455,
+        "narHash": "sha256-2QxjnMS6Pxk+WTztjFolurKRNI7LUbmdQaIABgNk7po=",
         "ref": "refs/heads/main",
-        "rev": "bbe0b9d39bd5549ab4add98b3b921c9ed00cf263",
-        "revCount": 66,
+        "rev": "e4e49cf8d95229b166cf566090abe189ab78d3de",
+        "revCount": 67,
         "type": "git",
         "url": "ssh://git@github.com/TWal/comparse.git"
       },

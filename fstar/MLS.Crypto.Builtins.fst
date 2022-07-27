@@ -44,9 +44,10 @@ noeq type signature_functions (bytes:Type0) {|bytes_like bytes|} = {
   sign_nonce_length: nat;
   sign_signature_length: nat;
   sign_signature_length_bound: squash (sign_signature_length < 256);
-  sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> result (lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length);
-  sign_sign: lbytes bytes sign_private_key_length -> bytes -> entropy:lbytes bytes sign_nonce_length -> result (lbytes bytes sign_signature_length);
-  sign_verify: lbytes bytes sign_public_key_length -> bytes -> lbytes bytes sign_signature_length -> bool;
+  sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length;
+  sign_max_input_length: nat;
+  sign_sign: lbytes bytes sign_private_key_length -> buf:bytes{length buf < sign_max_input_length} -> entropy:lbytes bytes sign_nonce_length -> lbytes bytes sign_signature_length;
+  sign_verify: lbytes bytes sign_public_key_length -> buf:bytes{length buf < sign_max_input_length} -> lbytes bytes sign_signature_length -> bool;
 }
 
 let bytes_like_hacl_star_bytes = seq_u8_bytes_like
@@ -59,19 +60,14 @@ let ed25519_signature_functions = {
   sign_signature_length = 64;
   sign_signature_length_bound = ();
   sign_gen_keypair = (fun rand ->
-    return (Ed25519.secret_to_public rand, rand)
+    (Ed25519.secret_to_public rand, rand)
   );
+  sign_max_input_length = max_size_t + 1 - 64;
   sign_sign = (fun sk msg rand ->
-    if not (64 + Seq.length msg <= max_size_t) then
-      internal_failure "sign_sign: msg too long"
-    else
-      return (Ed25519.sign sk (msg <: hacl_star_bytes))
+    Ed25519.sign sk (msg <: hacl_star_bytes)
   );
   sign_verify = (fun pk msg signature ->
-    if not (64 + Seq.length msg <= max_size_t) then
-      false
-    else
-      Ed25519.verify pk msg signature
+    Ed25519.verify pk msg signature
   );
 }
 
@@ -83,11 +79,12 @@ let p256_signature_functions = {
   sign_nonce_length = 0;
   sign_signature_length = 0;
   sign_signature_length_bound = ();
+  sign_max_input_length = 0;
   sign_gen_keypair = (fun rand ->
-    internal_failure "sign_gen_keypair: P_256 not implemented"
+    magic()
   );
   sign_sign = (fun sk msg rand ->
-    internal_failure "sign_sign: P_256 not implemented"
+    magic()
   );
   sign_verify = (fun pk msg signature ->
     false
@@ -147,12 +144,9 @@ let mk_concrete_crypto_bytes acs =
 
   hash_length = Hash.hash_length cs.kdf_hash;
   hash_length_bound = ();
+  hash_max_input_length =  Hash.max_input_length (cs.kdf_hash) + 1;
   hash_hash = (fun buf ->
-    if not (Seq.length buf <= Hash.max_input_length (cs.kdf_hash)) then
-      internal_failure "hash_hash: buf too long"
-    else (
-      return (Hash.hash cs.kdf_hash buf)
-    )
+    Hash.hash cs.kdf_hash buf
   );
 
   kdf_length = Hash.hash_length cs.kdf_hash;
@@ -231,6 +225,7 @@ let mk_concrete_crypto_bytes acs =
   sign_signature_length = sign.sign_signature_length;
   sign_signature_length_bound = sign.sign_signature_length_bound;
   sign_gen_keypair = sign.sign_gen_keypair;
+  sign_max_input_length = sign.sign_max_input_length;
   sign_sign = sign.sign_sign;
   sign_verify = sign.sign_verify;
 

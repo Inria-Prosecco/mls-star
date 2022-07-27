@@ -62,7 +62,6 @@ let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
   else if not (length confirmed_transcript_hash < pow2 30) then
     internal_failure "state_to_group_context: confirmed_transcript_hash too long"
   else (
-    bytes_length_nil #bytes ps_extension_nt;
     return ({
       version = PV_mls10 ();
       cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
@@ -82,8 +81,8 @@ let state_to_group_context st =
 val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
   let leaf_package = (ps_to_pse (ps_leaf_node_nt _)).serialize_exact leaf_package in
-  hash <-- hash_hash leaf_package;
-  return (hash <: bytes)
+  if not (length leaf_package < hash_max_input_length #bytes) then error "hash_leaf_package: leaf_package too long"
+  else return (hash_hash leaf_package)
 
 #push-options "--z3rlimit 50 --fuel 1"
 val reset_ratchet_states: state -> result state
@@ -233,7 +232,7 @@ let fresh_key_pair e =
   if not (length #bytes e = sign_private_key_length #bytes) then
     internal_failure "fresh_key_pair: entropy length is wrong"
   else
-    sign_gen_keypair e
+    return (sign_gen_keypair e)
 
 // TODO: switch to randomness rather than this
 let chop_entropy (e: bytes) (l: nat): (result ((fresh:bytes{Seq.length fresh == l}) * bytes))
@@ -290,8 +289,11 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
       data = leaf_data;
       group_id = ()
     }) in
-    nonce <-- universal_sign_nonce;
-    sign_with_label private_sign_key (string_to_bytes #bytes "LeafNodeTBS") tbs nonce
+    if not (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" tbs) then error "fresh_key_package: tbs too long"
+    else (
+      nonce <-- universal_sign_nonce;
+      return (sign_with_label private_sign_key "LeafNodeTBS" tbs nonce)
+    )
   );
   sign_signature_length_bound #bytes;
   let leaf_node: leaf_node_nt bytes tkt = {
@@ -306,11 +308,15 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     extensions = [];
   } <: key_package_tbs_nt bytes tkt) in
   nonce <-- universal_sign_nonce;
-  signature <-- sign_with_label private_sign_key (string_to_bytes #bytes "KeyPackageTBS") ((ps_to_pse (ps_key_package_tbs_nt _)).serialize_exact kp_tbs) nonce;
-  return (({
-    tbs = kp_tbs;
-    signature;
-  } <: key_package_nt bytes tkt), (leaf_secret <: bytes))
+  let tbs: bytes = (ps_to_pse (ps_key_package_tbs_nt _)).serialize_exact kp_tbs in
+  if not (length tbs < pow2 30 && sign_with_label_pre #bytes "KeyPackageTBS" tbs) then error "fresh_key_package: tbs too long"
+  else (
+    let signature: bytes = sign_with_label private_sign_key "KeyPackageTBS" tbs nonce in
+    return (({
+      tbs = kp_tbs;
+      signature;
+    } <: key_package_nt bytes tkt), (leaf_secret <: bytes))
+  )
 
 let fresh_key_package e cred private_sign_key =
   tmp <-- fresh_key_package_internal e cred private_sign_key;

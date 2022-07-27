@@ -130,7 +130,6 @@ val compress_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:t
 let rec compress_update_path #bytes #bl #l #i #li update_path =
   match update_path with
   | PLeaf ln ->
-    bytes_length_nil #bytes ps_update_path_node_nt;
     return ({leaf_node = ln; nodes = []})
   | PNode p_opt_data p_next ->
     compressed_p_next <-- compress_update_path p_next;

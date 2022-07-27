@@ -40,14 +40,20 @@ let compute_tbm #bytes #bl content auth group_context =
 val compute_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> sign_nonce bytes -> wire_format_nt -> content:mls_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> result (sign_signature bytes)
 let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
-  let serialized_tbs = serialize (mls_content_tbs_nt bytes) tbs in
-  sign_with_label sk (string_to_bytes #bytes "MLSContentTBS") serialized_tbs rand
+  let serialized_tbs: bytes = serialize (mls_content_tbs_nt bytes) tbs in
+  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "MLSContentTBS" serialized_tbs) then error "compute_message_signature: tbs too long"
+  else (
+    return (sign_with_label sk "MLSContentTBS" serialized_tbs rand)
+  )
 
 val check_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_public_key bytes -> sign_signature bytes -> wire_format_nt -> content:mls_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> result bool
 let check_message_signature #bytes #cb pk signature wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
-  let serialized_tbs = serialize (mls_content_tbs_nt bytes) tbs in
-  verify_with_label pk (string_to_bytes #bytes "MLSContentTBS") serialized_tbs signature
+  let serialized_tbs: bytes = serialize (mls_content_tbs_nt bytes) tbs in
+  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "MLSContentTBS" serialized_tbs) then error "check_message_signature: tbs too long"
+  else (
+    return (verify_with_label pk "MLSContentTBS" serialized_tbs signature)
+  )
 
 val compute_message_membership_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> content:mls_content_nt bytes -> mls_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> result (lbytes bytes (hmac_length #bytes))
 let compute_message_membership_tag #bytes #cb membership_key msg auth group_context =

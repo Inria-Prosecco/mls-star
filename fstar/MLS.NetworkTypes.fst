@@ -5,10 +5,19 @@ open Comparse
 let mls_nat_pred (n:nat) = n < normalize_term (pow2 30)
 let mls_nat_pred_eq (n:nat): Lemma(pow2 30 == normalize_term (pow2 30)) [SMTPat (mls_nat_pred n)] =
   assert_norm(pow2 30 == normalize_term (pow2 30))
-type mls_nat = refined nat quic_nat_pred
+type mls_nat = refined nat mls_nat_pred
 val ps_mls_nat: #bytes:Type0 -> {| bytes_like bytes |} -> nat_parser_serializer bytes mls_nat_pred
 let ps_mls_nat #bytes #bl =
   mk_trivial_isomorphism (refine ps_quic_nat mls_nat_pred)
+
+val ps_mls_nat_length: #bytes:Type0 -> {| bytes_like bytes |} -> x:mls_nat -> Lemma
+  (prefixes_length #bytes (ps_mls_nat.serialize x) == (
+    if x < pow2 6 then 1
+    else if x < pow2 14 then 2
+    else 4
+  ))
+  [SMTPat (prefixes_length #bytes (ps_mls_nat.serialize x))]
+let ps_mls_nat_length #bytes #bl x = ()
 
 type mls_bytes (bytes:Type0) {|bytes_like bytes|} = pre_length_bytes bytes mls_nat_pred
 type mls_list (bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a) = pre_length_list ps_a mls_nat_pred

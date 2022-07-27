@@ -19,7 +19,6 @@ let gen_group_context #cb group_id epoch inp =
   let tree_hash = hex_string_to_bytes inp.tree_hash in
   let confirmed_transcript_hash = hex_string_to_bytes inp.confirmed_transcript_hash in
   if length group_id < pow2 30 && epoch < (pow2 64) && length tree_hash < pow2 30 && length confirmed_transcript_hash < pow2 30 then (
-    bytes_length_nil #bytes ps_extension_nt;
     (ps_to_pse ps_group_context_nt).serialize_exact ({
       version = PV_mls10 ();
       cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);

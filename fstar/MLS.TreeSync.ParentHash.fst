@@ -51,12 +51,13 @@ let rec un_add #bytes #bl #tkt #l #i t leaves =
 val compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> tkt.node_content -> mls_bytes bytes -> treesync bytes tkt l i -> result (mls_bytes bytes)
 let compute_parent_hash #bytes #cb #tkt #l #i kem_content parent_hash sibling =
   original_sibling_tree_hash <-- tree_hash sibling;
-  res <-- hash_hash #bytes (serialize (parent_hash_input_nt bytes tkt) ({
+  let hash_input = serialize #bytes (parent_hash_input_nt bytes tkt) ({
     content = kem_content;
     parent_hash = parent_hash;
     original_sibling_tree_hash;
-  }));
-  return (res <: mls_bytes bytes)
+  }) in
+  if not (length hash_input < hash_max_input_length #bytes) then error ""
+  else return (hash_hash #bytes hash_input <: mls_bytes bytes)
 
 val root_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> mls_bytes bytes
 let root_parent_hash #bytes #bl = empty #bytes
