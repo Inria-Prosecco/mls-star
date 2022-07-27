@@ -41,7 +41,7 @@ val compute_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_pr
 let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
   let serialized_tbs: bytes = serialize (mls_content_tbs_nt bytes) tbs in
-  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "MLSContentTBS" serialized_tbs) then error "compute_message_signature: tbs too long"
+  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "MLSContentTBS" (length #bytes serialized_tbs)) then error "compute_message_signature: tbs too long"
   else (
     return (sign_with_label sk "MLSContentTBS" serialized_tbs rand)
   )
@@ -50,7 +50,7 @@ val check_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_publ
 let check_message_signature #bytes #cb pk signature wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
   let serialized_tbs: bytes = serialize (mls_content_tbs_nt bytes) tbs in
-  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "MLSContentTBS" serialized_tbs) then error "check_message_signature: tbs too long"
+  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "MLSContentTBS" (length #bytes serialized_tbs)) then error "check_message_signature: tbs too long"
   else (
     return (verify_with_label pk "MLSContentTBS" serialized_tbs signature)
   )

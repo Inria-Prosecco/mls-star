@@ -85,14 +85,14 @@ let gen_treekem_output #cb t =
     let upk0 = extract_result (mk_init_path tk0 my_index add_sender my_path_secret empty) in
     let tk1 = tree_apply_path tk0 upk0 in
     let ts1 = ts0 in
-    let tree_hash_before = extract_result (tree_hash ts1) in
+    let tree_hash_before: bytes = extract_result (if not (tree_hash_pre ts1) then error "invalid TH pre" else  return (tree_hash ts1)) in
     let root_secret_after_add = extract_result (root_secret tk1 my_index my_leaf_secret) in
     let uncompressed_update_path = extract_result (uncompress_update_path update_sender ts1 update_path) in
     let ups1 = update_path_to_treesync uncompressed_update_path in
     let upk1 = extract_result (update_path_to_treekem update_group_context uncompressed_update_path) in
-    let ups1_is_valid = extract_result (external_path_is_valid ts1 ups1 group_id) in
-    let _ = extract_result (if ups1_is_valid then return () else error "invalid ups1") in
-    let ts2 = extract_result (apply_external_path ts1 ups1) in
+    let ups1_is_valid = external_path_is_valid ts1 ups1 group_id in
+    let _: unit = extract_result (if ups1_is_valid then return () else error "invalid ups1") in
+    let ts2: treesync bytes tkt l 0 = extract_result (if not (apply_external_path_pre ts1 ups1) then error "invalid pre" else return (apply_external_path ts1 ups1)) in
     let tk2 = tree_apply_path tk1 upk1 in
 
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in
@@ -100,7 +100,7 @@ let gen_treekem_output #cb t =
     let ratchet_tree2 = extract_result (treesync_to_ratchet_tree ts2) in
     let byte_length_ratchet_tree2 = bytes_length (ps_option (ps_node_nt _)) ratchet_tree2 in
     let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 30 then (ps_to_pse (ps_ratchet_tree_nt _)).serialize_exact ratchet_tree2 else empty in
-    let tree_hash_after = extract_result (tree_hash ts2) in
+    let tree_hash_after = extract_result (if not (tree_hash_pre ts2) then error "invalid TH pre 2" else return (tree_hash ts2)) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;
       root_secret_after_add = bytes_to_hex_string root_secret_after_add;

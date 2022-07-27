@@ -52,7 +52,12 @@ type state = {
 #push-options "--fuel 1"
 val compute_group_context: #l:nat -> bytes -> nat -> treesync bytes #cb.base tkt l 0 -> bytes -> result (group_context_nt bytes)
 let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
-  tree_hash <-- MLS.TreeSync.Hash.tree_hash #bytes #cb tree;
+  tree_hash <-- (
+    if not (MLS.TreeSync.Hash.tree_hash_pre tree) then
+      internal_failure "state_to_group_context: tree_hash precondition false"
+    else
+      return #bytes (MLS.TreeSync.Hash.tree_hash #bytes #cb tree)
+  );
   if not (length group_id < pow2 30) then
     internal_failure "state_to_group_context: group_id too long"
   else if not (epoch < pow2 64) then
@@ -175,7 +180,7 @@ let process_commit state message message_auth =
         uncompressed_path <-- uncompress_update_path sender_id state.treesync_state.tree path;
         let treesync_path = update_path_to_treesync uncompressed_path in
         treekem_path <-- update_path_to_treekem group_context_bytes uncompressed_path;
-        treesync_path_valid <-- MLS.TreeSync.Level0.external_path_is_valid state.treesync_state.tree treesync_path state.treesync_state.group_id;
+        let treesync_path_valid = MLS.TreeSync.Level0.external_path_is_valid state.treesync_state.tree treesync_path state.treesync_state.group_id in
         if not treesync_path_valid then
           error "process_commit: invalid update path"
         else (
@@ -289,7 +294,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
       data = leaf_data;
       group_id = ()
     }) in
-    if not (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" tbs) then error "fresh_key_package: tbs too long"
+    if not (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" (length #bytes tbs)) then error "fresh_key_package: tbs too long"
     else (
       nonce <-- universal_sign_nonce;
       return (sign_with_label private_sign_key "LeafNodeTBS" tbs nonce)
@@ -309,7 +314,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   } <: key_package_tbs_nt bytes tkt) in
   nonce <-- universal_sign_nonce;
   let tbs: bytes = (ps_to_pse (ps_key_package_tbs_nt _)).serialize_exact kp_tbs in
-  if not (length tbs < pow2 30 && sign_with_label_pre #bytes "KeyPackageTBS" tbs) then error "fresh_key_package: tbs too long"
+  if not (length tbs < pow2 30 && sign_with_label_pre #bytes "KeyPackageTBS" (length #bytes tbs)) then error "fresh_key_package: tbs too long"
   else (
     let signature: bytes = sign_with_label private_sign_key "KeyPackageTBS" tbs nonce in
     return (({
@@ -333,9 +338,12 @@ let create e cred private_sign_key group_id =
   let fresh, e = tmp in
   tmp <-- fresh_key_package_internal fresh cred private_sign_key;
   let key_package, leaf_secret = tmp in
-  let treesync_state = MLS.TreeSync.API.create group_id key_package.tbs.leaf_node in
+  treesync_state <-- (
+    if not (length #bytes group_id < pow2 30) then error "create: group_id too long"
+    else return #(MLS.TreeSync.API.Types.treesync_state bytes tkt) (MLS.TreeSync.API.create group_id key_package.tbs.leaf_node)
+  );
   treekem <-- treesync_to_treekem treesync_state.tree;
-  let treekem_state: treekem_state bytes = { levels = 0; tree = treekem } in
+  let treekem_state: treekem_state bytes = { levels = treesync_state.levels; tree = treekem } in
   // 10. In principle, the above process could be streamlined by having the
   // creator directly create a tree and choose a random value for first epoch's
   // epoch secret.
@@ -431,7 +439,12 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   tmp <-- process_commit st msg msg_auth;
   let (future_state, joiner_secret) = tmp in
   confirmation_tag <-- from_option "generate_welcome_message: confirmation tag is missing" msg_auth.confirmation_tag;
-  tree_hash <-- MLS.TreeSync.Hash.tree_hash future_state.treesync_state.tree;
+  tree_hash <-- (
+    if not (MLS.TreeSync.Hash.tree_hash_pre future_state.treesync_state.tree) then
+      error "generate_welcome_message: bad tree hash pre"
+    else
+      return #bytes (MLS.TreeSync.Hash.tree_hash future_state.treesync_state.tree)
+  );
   ratchet_tree <-- treesync_to_ratchet_tree future_state.treesync_state.tree;
   ratchet_tree_bytes <-- (
     let l = bytes_length (ps_option (ps_node_nt tkt)) ratchet_tree in
@@ -498,13 +511,18 @@ let generate_update_path st e proposals =
     let my_new_leaf_package = ({
       my_leaf_package with
       data = { my_leaf_package.data with
-        source = LNS_commit ();
+        source = LNS_update ();
         lifetime = ();
-        parent_hash = empty #bytes;
+        parent_hash = ();
       };
     }) in
     update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package update_path_kem;
-    update_path_sync <-- MLS.TreeSync.Level0.external_path_to_valid_external_path st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id st.sign_private_key sign_nonce;
+    update_path_sync <-- (
+      if not (MLS.TreeSync.Level0.external_path_to_valid_external_path_pre st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id) then
+        error "generate_update_path: bad precondition"
+      else
+        return (MLS.TreeSync.Level0.external_path_to_valid_external_path st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id st.sign_private_key sign_nonce)
+    );
     uncompressed_update_path <-- mls_star_paths_to_update_path update_path_sync update_path_kem;
     update_path <-- compress_update_path uncompressed_update_path;
     let new_key_package_bytes = (ps_to_pse (ps_leaf_node_nt tkt)).serialize_exact update_path.leaf_node in
@@ -666,6 +684,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     secret = mk_zero_vector (kdf_length #bytes);
     generation = 0;
   } in
+  assume(length group_info.group_context.group_id < pow2 30); //This is true before the convertion mls_bytes bytes -> bytes...
   let st: state = {
     treesync_state = {
       group_id = group_info.group_context.group_id;

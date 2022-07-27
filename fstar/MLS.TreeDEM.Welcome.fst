@@ -346,7 +346,7 @@ val sign_welcome_group_info: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_priv
 let sign_welcome_group_info #bytes #cb sign_sk gi rand =
   gi_network <-- welcome_group_info_to_network gi;
   let tbs_bytes: bytes = serialize (group_info_tbs_nt bytes) gi_network.tbs in
-  if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" tbs_bytes) then error "sign_welcome_group_info: tbs too long"
+  if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" (length #bytes tbs_bytes)) then error "sign_welcome_group_info: tbs too long"
   else (
     let signature = sign_with_label sign_sk "GroupInfoTBS" tbs_bytes rand in
     return ({gi with signature = signature})
@@ -360,6 +360,6 @@ let verify_welcome_group_info #bytes #cb get_sign_pk gi =
     gi_network <-- welcome_group_info_to_network gi;
     sign_pk <-- get_sign_pk gi.signer;
     let tbs_bytes: bytes = serialize (group_info_tbs_nt bytes) gi_network.tbs in
-    if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" tbs_bytes) then error "sign_welcome_group_info: tbs too long"
+    if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" (length #bytes tbs_bytes)) then error "sign_welcome_group_info: tbs too long"
     else return (verify_with_label sign_pk "GroupInfoTBS" tbs_bytes gi.signature)
   )

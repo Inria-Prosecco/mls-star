@@ -41,11 +41,8 @@ type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_sign_content_nt] (gen_parser (`sign_content_nt))
 %splice [ps_sign_content_nt_length] (gen_length_lemma (`sign_content_nt))
 
-let sign_with_label_pre #bytes #cb label content =
-  8 + (8 + String.strlen label) + length #bytes content < sign_max_input_length #bytes
-
 val get_sign_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> label:valid_label -> content:mls_bytes bytes -> Pure bytes
-  (requires sign_with_label_pre label content)
+  (requires sign_with_label_pre #bytes label (length #bytes content))
   (ensures fun res -> length #bytes res < sign_max_input_length #bytes)
 let get_sign_content #bytes #cb label content =
   //TODO: remove next line when we have FStarLang/FStar#2609

@@ -10,9 +10,11 @@ val available_ciphersuite_to_network: available_ciphersuite -> cipher_suite_nt
 
 let valid_label = s:string{b2t (normalize_term (string_is_ascii s)) /\ normalize_term (String.length s) < normalize_term ((pow2 30) - 8)}
 
-val sign_with_label_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> valid_label -> mls_bytes bytes -> bool
-val sign_with_label: #bytes:Type0 -> {|crypto_bytes bytes|} -> signature_key:sign_private_key bytes -> label:valid_label -> content:mls_bytes bytes{sign_with_label_pre #bytes label content} -> entropy:sign_nonce bytes -> sign_signature bytes
-val verify_with_label: #bytes:Type0 -> {|crypto_bytes bytes|} -> verification_key:sign_public_key bytes -> label:valid_label -> content:mls_bytes bytes{sign_with_label_pre #bytes label content} -> signature:sign_signature bytes -> bool
+let sign_with_label_pre (#bytes:Type0) {|crypto_bytes bytes|} (label:valid_label) (length_content:mls_nat): bool =
+  8 + (8 + String.strlen label) + length_content < sign_max_input_length #bytes
+
+val sign_with_label: #bytes:Type0 -> {|crypto_bytes bytes|} -> signature_key:sign_private_key bytes -> label:valid_label -> content:mls_bytes bytes{sign_with_label_pre #bytes label (length #bytes content)} -> entropy:sign_nonce bytes -> sign_signature bytes
+val verify_with_label: #bytes:Type0 -> {|crypto_bytes bytes|} -> verification_key:sign_public_key bytes -> label:valid_label -> content:mls_bytes bytes{sign_with_label_pre #bytes label (length #bytes content)} -> signature:sign_signature bytes -> bool
 
 val expand_with_label: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> context:bytes -> len:nat -> result (lbytes bytes len)
 val derive_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> label:bytes -> result (lbytes bytes (kdf_length #bytes))

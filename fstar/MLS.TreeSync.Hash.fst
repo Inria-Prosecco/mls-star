@@ -17,6 +17,7 @@ type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treeke
 }
 
 %splice [ps_leaf_node_tree_hash_input_nt] (gen_parser (`leaf_node_tree_hash_input_nt))
+%splice [ps_leaf_node_tree_hash_input_nt_length] (gen_length_lemma (`leaf_node_tree_hash_input_nt))
 
 type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser #bytes (ps_option (ps_parent_node_nt tkt))]
@@ -26,36 +27,53 @@ type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:tree
 }
 
 %splice [ps_parent_node_tree_hash_input_nt] (gen_parser (`parent_node_tree_hash_input_nt))
+%splice [ps_parent_node_tree_hash_input_nt_length] (gen_length_lemma (`parent_node_tree_hash_input_nt))
 
 type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
   | LeafTreeHashInput: [@@@ with_tag (NT_leaf ())] leaf_node: leaf_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
   | ParentTreeHashInput: [@@@ with_tag (NT_parent ())] parent_node: parent_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
 
 %splice [ps_tree_hash_input_nt] (gen_parser (`tree_hash_input_nt))
+%splice [ps_tree_hash_input_nt_length] (gen_length_lemma (`tree_hash_input_nt))
 
 instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (tree_hash_input_nt bytes tkt) =
   mk_parseable_serializeable (ps_tree_hash_input_nt tkt)
 
-val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> result (lbytes bytes (hash_length #bytes))
+val tree_hash_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> bool
+let rec tree_hash_pre #bytes #cb #tkt #l #i t =
+  match t with
+  | TLeaf olp ->
+    i < pow2 32 && (1 + 4 + (prefixes_length ((ps_option (ps_leaf_node_nt tkt)).serialize olp)) < hash_max_input_length #bytes)
+  | TNode onp left right ->
+    tree_hash_pre left &&
+    tree_hash_pre right &&
+    (1 + prefixes_length ((ps_option (ps_parent_node_nt tkt)).serialize onp)) + 2 + hash_length #bytes + 2 + hash_length #bytes < hash_max_input_length #bytes
+
+#push-options "--z3rlimit 50"
+val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> lbytes bytes (hash_length #bytes)
 let rec tree_hash #bytes #cb #tkt #l #i t =
   match t with
   | TLeaf olp ->
-    if not (i < pow2 32) then
-      internal_failure "tree_hash: leaf_index too big"
-    else
-      let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({
-        leaf_index = i;
-        leaf_node = olp;
-      })) in
-      if not (length hash_input < hash_max_input_length #bytes) then error ""
-      else return (hash_hash hash_input)
+    let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({
+      leaf_index = i;
+      leaf_node = olp;
+    })) in
+    //TODO: remove next three lines when we have FStarLang/FStar#2609
+    ps_node_type_nt_length #bytes (NT_leaf ());
+    ps_leaf_node_tree_hash_input_nt_length tkt ({leaf_index = i; leaf_node = olp;});
+    ps_tree_hash_input_nt_length tkt (LeafTreeHashInput ({leaf_index = i; leaf_node = olp;}));
+    hash_hash hash_input
   | TNode onp left right ->
-    left_hash <-- tree_hash left;
-    right_hash <-- tree_hash right;
+    let left_hash = tree_hash left in
+    let right_hash = tree_hash right in
     let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (ParentTreeHashInput ({
       parent_node = onp;
       left_hash = left_hash;
       right_hash = right_hash;
     })) in
-    if not (length hash_input < hash_max_input_length #bytes) then error ""
-    else return (hash_hash hash_input)
+    //TODO: remove next three lines when we have FStarLang/FStar#2609
+    ps_node_type_nt_length #bytes (NT_parent ());
+    ps_parent_node_tree_hash_input_nt_length tkt ({parent_node = onp; left_hash; right_hash;});
+    ps_tree_hash_input_nt_length tkt (ParentTreeHashInput ({parent_node = onp; left_hash; right_hash;}));
+    hash_hash hash_input
+#pop-options
