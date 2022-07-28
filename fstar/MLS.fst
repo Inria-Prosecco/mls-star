@@ -634,7 +634,13 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (group_info, secrets) = tmp in
   ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes (ps_ratchet_tree_nt tkt)).parse_exact group_info.extensions);
   l <-- ratchet_tree_l ratchet_tree;
-  treesync <-- ratchet_tree_to_treesync l 0 ratchet_tree;
+  treesync <-- (
+    treesync <-- ratchet_tree_to_treesync l 0 ratchet_tree;
+    if not (MLS.TreeSync.Level0.Invariants.unmerged_leaves_ok treesync) then
+      error "process_welcome_message: malformed unmerged leaves"
+    else
+      return #(MLS.TreeSync.Level1.Types.treesync bytes tkt l 0) treesync
+  );
   _ <-- ( //Check signature
     group_info_ok <-- verify_welcome_group_info (fun leaf_ind ->
       if not (leaf_ind < pow2 l) then

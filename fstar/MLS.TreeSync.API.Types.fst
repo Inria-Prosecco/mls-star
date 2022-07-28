@@ -3,7 +3,7 @@ module MLS.TreeSync.API.Types
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Level0.Types
+open MLS.TreeSync.Level1.Types
 
 (** TreeSync state and accessors *)
 type treesync_state (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
