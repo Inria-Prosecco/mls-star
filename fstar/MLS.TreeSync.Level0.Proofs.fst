@@ -99,7 +99,7 @@ let rec mem_insert_sorted x l elem =
     else mem_insert_sorted x (z::t) elem
 #pop-options
 
-val leaf_at_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i{leaf_at t li == None} -> content:leaf_node_nt bytes tkt -> li':leaf_index l i -> Lemma
+val leaf_at_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> li':leaf_index l i -> Lemma
   (requires tree_add_pre t li)
   (ensures leaf_at (tree_add t li content) li' == (if li = li' then Some content else leaf_at t li'))
 let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li content li' =
@@ -112,7 +112,7 @@ let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li content li' =
       leaf_at_tree_add right li content li'
     else ()
 
-val unmerged_leaves_ok_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i{leaf_at t li == None} -> content:leaf_node_nt bytes tkt -> Lemma
+val unmerged_leaves_ok_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> Lemma
   (requires tree_add_pre t li /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_add t li content))
 let rec unmerged_leaves_ok_tree_add #bytes #bl #tkt #l #i t li content =
