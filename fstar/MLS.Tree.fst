@@ -45,6 +45,10 @@ type tree (leaf_t:Type) (node_t:Type) (l:nat) (i:tree_index l) =
     tree leaf_t node_t l i
 
 let leaf_index_inside (l:nat) (i:tree_index l) (li:nat) = i <= li && li < i+(pow2 l)
+
+val leaf_index_inside_tree: #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> tree leaf_t node_t l i -> nat -> bool
+let leaf_index_inside_tree #leaf_t #node_t #l #i t li = leaf_index_inside l i li
+
 type leaf_index (l:nat) (i:tree_index l) = li:nat{leaf_index_inside l i li}
 
 let is_left_leaf (#l:pos) (#i:tree_index l) (li:leaf_index l i) = li < i+(pow2 (l-1))

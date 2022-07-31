@@ -120,25 +120,48 @@ let get_leaf_package_tbs #bytes #bl #tkt lp_data group_id =
   } <: leaf_node_tbs_nt bytes tkt) in
   (serialize (leaf_node_tbs_nt bytes _) ln_tbs)
 
-val external_path_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> mls_bytes bytes -> bool
-let external_path_is_valid #bytes #cb #tkt #l #i #li t p group_id =
+val external_path_is_signature_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> external_pathsync bytes tkt l 0 li -> mls_bytes bytes -> bool
+let external_path_is_signature_valid #bytes #cb #tkt #l #li p group_id =
+  let new_lp = get_external_path_leaf p in
+  //TODO: something stating that new_lp is related to old_lp
+  let tbs = get_leaf_package_tbs new_lp.data group_id in
+  (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" (length #bytes tbs)) &&
+  (length #bytes new_lp.data.signature_key = sign_public_key_length #bytes) &&
+  (length #bytes new_lp.signature = sign_signature_length #bytes) &&
+  verify_with_label #bytes new_lp.data.signature_key "LeafNodeTBS" tbs new_lp.signature
+
+val external_path_is_parent_hash_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> bool
+let external_path_is_parent_hash_valid #bytes #cb #tkt #l #li t p =
+  let new_lp = get_external_path_leaf p in
+  compute_leaf_parent_hash_from_external_path_pre t p (length #bytes (root_parent_hash #bytes)) && (
+  let computed_parent_hash = compute_leaf_parent_hash_from_external_path t p root_parent_hash in
+  (new_lp.data.source = LNS_commit () && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
+  )
+
+val external_path_is_filter_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> bool
+let rec external_path_is_filter_valid #bytes #cb #tkt #l #i #li t p =
+  match t, p with
+  | TLeaf _, PLeaf _ -> true
+  | TNode _ _ _, PNode new_opn p_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    let sibling_ok =
+      match new_opn with
+      | Some _ -> true
+      | None -> is_tree_empty sibling
+    in
+    sibling_ok && external_path_is_filter_valid child p_next
+  )
+
+val external_path_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> mls_bytes bytes -> bool
+let external_path_is_valid #bytes #cb #tkt #l #li t p group_id =
   let old_lp = leaf_at t li in
   let new_lp = get_external_path_leaf p in
   //TODO: something stating that new_lp is related to old_lp
-  let signature_ok =
-    let tbs = get_leaf_package_tbs new_lp.data group_id in
-    (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" (length #bytes tbs)) &&
-    (length #bytes new_lp.data.signature_key = sign_public_key_length #bytes) &&
-    (length #bytes new_lp.signature = sign_signature_length #bytes) &&
-    verify_with_label #bytes new_lp.data.signature_key "LeafNodeTBS" tbs new_lp.signature
-  in
-  let parent_hash_ok =
-    compute_leaf_parent_hash_from_external_path_pre t p (length #bytes (root_parent_hash #bytes)) && (
-    let computed_parent_hash = compute_leaf_parent_hash_from_external_path t p root_parent_hash in
-    (new_lp.data.source = LNS_commit () && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
-    )
-  in
-  (signature_ok && parent_hash_ok)
+  let signature_ok = external_path_is_signature_valid p group_id in
+  let parent_hash_ok = external_path_is_parent_hash_valid t p in
+  //The next one could be proved in MLS.NetworkTypes
+  let filter_ok = external_path_is_filter_valid t p in
+  (signature_ok && parent_hash_ok && filter_ok)
 
 val external_path_to_valid_external_path_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> mls_bytes bytes -> bool
 let external_path_to_valid_external_path_pre #bytes #cb #tkt #l #i #li t p group_id =
@@ -205,12 +228,37 @@ let rec apply_external_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash
       TNode new_opt_content left (apply_external_path_aux right p_next new_parent_parent_hash)
     )
 
-val apply_external_path_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> bool
-let apply_external_path_pre #bytes #cb #tkt #l #i #li t p =
+val apply_external_path_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> bool
+let apply_external_path_pre #bytes #cb #tkt #l #li t p =
   apply_external_path_aux_pre t p (length #bytes (root_parent_hash #bytes))
 
-val apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> Pure (treesync bytes tkt l i)
+val apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> Pure (treesync bytes tkt l 0)
   (requires apply_external_path_pre t p)
   (ensures fun _ -> True)
-let apply_external_path #bytes #cb #tkt #l #i #li t p =
+let apply_external_path #bytes #cb #tkt #l #li t p =
   apply_external_path_aux t p root_parent_hash
+
+//TODO move
+val bytes_length_filter: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_unit bytes a -> pred:(a -> bool) -> l:list a -> Lemma
+  (bytes_length #bytes ps_a (List.Tot.filter pred l) <= bytes_length #bytes ps_a l)
+let rec bytes_length_filter #bytes #bl #a ps_a pred l =
+  match l with
+  | [] -> ()
+  | h::t -> bytes_length_filter ps_a pred t
+
+val un_addP: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> (nat -> bool) -> treesync bytes tkt  l i
+let rec un_addP #bytes #bl #tkt #l #i t pred =
+  match t with
+  | TLeaf _ ->
+    if pred i then
+      t
+    else
+      TLeaf None
+  | TNode None left right ->
+    TNode None (un_addP left pred) (un_addP right pred)
+  | TNode (Some content) left right ->
+    bytes_length_filter #bytes (ps_nat_lbytes 4) pred content.unmerged_leaves;
+    let new_content = { content with
+      unmerged_leaves = List.Tot.filter pred content.unmerged_leaves;
+    } in
+    TNode (Some new_content) (un_addP left pred) (un_addP right pred)

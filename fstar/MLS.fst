@@ -638,8 +638,10 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     treesync <-- ratchet_tree_to_treesync l 0 ratchet_tree;
     if not (MLS.TreeSync.Level0.Invariants.unmerged_leaves_ok treesync) then
       error "process_welcome_message: malformed unmerged leaves"
+    else if not (MLS.TreeSync.Level1.Invariants.parent_hash_invariant treesync) then
+      error "process_welcome_message: bad parent hash"
     else
-      return #(MLS.TreeSync.Level1.Types.treesync bytes tkt l 0) treesync
+      return #(MLS.TreeSync.Level2.Types.treesync bytes tkt l 0) treesync
   );
   _ <-- ( //Check signature
     group_info_ok <-- verify_welcome_group_info (fun leaf_ind ->

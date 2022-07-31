@@ -6,13 +6,14 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.Tree
 open MLS.TreeCommon
-open MLS.TreeSync.Level1.Types
-open MLS.TreeSync.Level1
+open MLS.TreeSync.Level0
+open MLS.TreeSync.Level2.Types
+open MLS.TreeSync.Level2
 open MLS.TreeSync.API.Types
 open MLS.Result
 
-val create: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> gid:mls_bytes bytes -> leaf_node_nt bytes tkt -> treesync_state bytes tkt
-let create #bytes #bl gid lp =
+val create: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> gid:mls_bytes bytes -> leaf_node_nt bytes tkt -> treesync_state bytes tkt
+let create #bytes #cb gid lp =
   {
     group_id = gid;
     levels = 0;
@@ -20,8 +21,8 @@ let create #bytes #bl gid lp =
     version = 0;
   }
 
-val state_update_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> treesync_state bytes tkt -> treesync bytes tkt l 0 -> treesync_state bytes tkt
-let state_update_tree #bytes #bl #tkt #l st new_tree =
+val state_update_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> treesync_state bytes tkt -> treesync bytes tkt l 0 -> treesync_state bytes tkt
+let state_update_tree #bytes #cb #tkt #l st new_tree =
   ({ st with
     levels = l;
     version = st.version + 1;
@@ -38,7 +39,7 @@ let get_leaf_package_from_key_package #bytes #cb kp =
   )
 
 val add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> treesync_state bytes tkt -> key_package_nt bytes tkt -> result (treesync_state bytes tkt & nat)
-let add #bytes #bl #tkt st kp =
+let add #bytes #cb #tkt st kp =
   lp <-- get_leaf_package_from_key_package kp;
   match find_empty_leaf st.tree with
   | Some i ->
@@ -54,12 +55,12 @@ let add #bytes #bl #tkt st kp =
     else
       return (state_update_tree st (tree_add augmented_tree i lp), (i <: nat))
 
-val update: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> leaf_node_nt bytes tkt -> treesync_index st -> treesync_state bytes tkt
-let update #bytes #bl #tkt st lp i =
+val update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> leaf_node_nt bytes tkt -> treesync_index st -> treesync_state bytes tkt
+let update #bytes #cb #tkt st lp i =
   state_update_tree st (tree_update st.tree i lp)
 
-val remove: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> i:treesync_index st -> treesync_state bytes tkt
-let remove #bytes #bl #tkt st i =
+val remove: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> i:treesync_index st -> treesync_state bytes tkt
+let remove #bytes #cb #tkt st i =
   let blanked_tree = (tree_remove st.tree i) in
   let (|_, reduced_tree|) = canonicalize_tree blanked_tree in
   state_update_tree st reduced_tree
@@ -68,5 +69,9 @@ val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -
 let commit #bytes #cb #tkt st #li p =
   if not (apply_external_path_pre st.tree p) then
     error "commit: bad precondition"
+  else if not (external_path_is_parent_hash_valid st.tree p) then
+    error "commit: bad parent hash"
+  else if not (external_path_is_filter_valid st.tree p) then
+    internal_failure "commit: bad filtering"
   else
     return (state_update_tree st (apply_external_path st.tree p))

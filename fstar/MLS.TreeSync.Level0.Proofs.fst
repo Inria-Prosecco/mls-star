@@ -10,16 +10,10 @@ open MLS.TreeSync.Level0
 open MLS.TreeSync.Level0.Invariants
 open MLS.TreeSync.ParentHash
 open MLS.TreeCommon
+open MLS.TreeCommon.Lemmas
+open MLS.MiscLemmas
 
 #set-options "--fuel 1 --ifuel 1"
-
-//TODO move
-val list_for_all_eq: #a:eqtype -> p:(a -> bool) -> l:list a -> Lemma
-  (List.Tot.for_all p l <==> (forall x. List.Tot.mem x l ==> p x))
-let rec list_for_all_eq #a p l =
-  match l with
-  | [] -> ()
-  | h::t -> list_for_all_eq p t
 
 (*** Update/Remove ***)
 
@@ -86,19 +80,6 @@ let rec unmerged_leaves_sorted_insert_sorted x l =
     else unmerged_leaves_sorted_insert_sorted x (z::t)
 #pop-options
 
-#push-options "--ifuel 2 --fuel 2"
-val mem_insert_sorted: x:nat_lbytes 4 -> l:list (nat_lbytes 4) -> elem:nat_lbytes 4 -> Lemma
-  (List.Tot.mem elem (insert_sorted x l) <==> elem == x \/ List.Tot.mem elem l)
-let rec mem_insert_sorted x l elem =
-  match l with
-  | [] -> ()
-  | [y] -> ()
-  | y::z::t ->
-    if x < y then ()
-    else if x = y then ()
-    else mem_insert_sorted x (z::t) elem
-#pop-options
-
 val leaf_at_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> li':leaf_index l i -> Lemma
   (requires tree_add_pre t li)
   (ensures leaf_at (tree_add t li content) li' == (if li = li' then Some content else leaf_at t li'))
@@ -150,8 +131,79 @@ let rec unmerged_leaves_ok_apply_external_path_aux #bytes #cb #tkt #l #i #li t p
     else
       unmerged_leaves_ok_apply_external_path_aux right p_next new_parent_parent_hash
 
-val unmerged_leaves_ok_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> Lemma
+val unmerged_leaves_ok_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> Lemma
   (requires apply_external_path_pre #bytes t p /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (apply_external_path t p))
-let unmerged_leaves_ok_apply_external_path #bytes #cb #tkt #l #i #li t p =
+let unmerged_leaves_ok_apply_external_path #bytes #cb #tkt #l #li t p =
   unmerged_leaves_ok_apply_external_path_aux t p (root_parent_hash #bytes)
+
+(*** Un-add ***)
+
+val leaf_at_un_addP: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> pred:(nat -> bool) -> li:leaf_index l i -> Lemma
+  (leaf_at (un_addP t pred) li == (if pred li then leaf_at t li else None))
+let rec leaf_at_un_addP #l #i t leaves li =
+  match t with
+  | TLeaf _ -> ()
+  | TNode _ left right ->
+    if is_left_leaf li then
+      leaf_at_un_addP left leaves li
+    else
+      leaf_at_un_addP right leaves li
+
+// Such an ugly auxillary lemma for such an easy theorem...
+val unmerged_leaves_sorted_filter_aux: pred:(nat -> bool) -> l:list (nat_lbytes 4) -> x:nat_lbytes 4 -> Lemma
+  (requires
+    unmerged_leaves_sorted l /\ (
+    match l with
+    | [] -> True
+    | y::t -> x < y
+  ))
+  (ensures (
+    match List.Tot.filter pred l with
+    | [] -> True
+    | fy::ft -> x < fy
+  ))
+let rec unmerged_leaves_sorted_filter_aux pred l x =
+  match l with
+  | [] -> ()
+  | y::t ->
+    if pred y then ()
+    else unmerged_leaves_sorted_filter_aux pred t y
+
+#push-options "--fuel 2 --ifuel 2"
+val unmerged_leaves_sorted_filter: pred:(nat -> bool) -> l:list (nat_lbytes 4) -> Lemma
+  (requires unmerged_leaves_sorted l)
+  (ensures unmerged_leaves_sorted (List.Tot.filter pred l))
+let rec unmerged_leaves_sorted_filter pred l =
+  match l, List.Tot.filter pred l with
+  | x::y::t, fx::fy::ft -> (
+    unmerged_leaves_sorted_filter pred (y::t);
+    unmerged_leaves_sorted_filter_aux pred (y::t) x
+  )
+  | _ -> ()
+#pop-options
+
+val unmerged_leaves_ok_un_addP: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> pred:(nat -> bool) -> Lemma
+  (requires unmerged_leaves_ok t)
+  (ensures unmerged_leaves_ok (un_addP t pred))
+let rec unmerged_leaves_ok_un_addP #bytes #bl #tkt #l #i t pred =
+  match t with
+  | TLeaf _ -> ()
+  | TNode opt_content left right -> (
+    unmerged_leaves_ok_un_addP left pred;
+    unmerged_leaves_ok_un_addP right pred;
+    match opt_content with
+    | None -> ()
+    | Some cont -> (
+      list_for_all_eq (unmerged_leaf_exists t) cont.unmerged_leaves;
+      list_for_all_eq (unmerged_leaf_exists (un_addP t pred)) (List.Tot.filter pred cont.unmerged_leaves);
+      introduce forall x. List.Tot.mem x (List.Tot.filter pred cont.unmerged_leaves) ==> (unmerged_leaf_exists (un_addP t pred) x)
+      with (
+        if List.Tot.mem x (List.Tot.filter pred cont.unmerged_leaves) then (
+          mem_filter pred cont.unmerged_leaves x;
+          leaf_at_un_addP t pred x
+        ) else ()
+      );
+      unmerged_leaves_sorted_filter pred cont.unmerged_leaves
+    )
+  )
