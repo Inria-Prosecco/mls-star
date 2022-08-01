@@ -2,6 +2,7 @@ module MLS.TreeKEM.API
 
 open Comparse
 open MLS.Crypto
+open MLS.Tree
 open MLS.TreeCommon
 open MLS.TreeKEM.Types
 open MLS.TreeKEM
@@ -20,9 +21,9 @@ let add #bytes #cb st kp =
   | Some i ->
     (state_update_tree st (tree_add st.tree i kp), (i <: nat))
   | None ->
-    let augmented_tree = add_one_level st.tree in
-    let i = Some?.v (find_empty_leaf augmented_tree) in
-    (state_update_tree st (tree_add augmented_tree i kp), (i <: nat))
+    let extended_tree = tree_extend st.tree in
+    let i = Some?.v (find_empty_leaf extended_tree) in
+    (state_update_tree st (tree_add extended_tree i kp), (i <: nat))
 
 val update: #bytes:Type0 -> {|crypto_bytes bytes|} -> st:treekem_state bytes -> member_info bytes -> treekem_index st -> treekem_state bytes
 let update #bytes #cb st lp i =
@@ -31,8 +32,10 @@ let update #bytes #cb st lp i =
 val remove: #bytes:Type0 -> {|crypto_bytes bytes|} -> st:treekem_state bytes -> i:treekem_index st -> treekem_state bytes
 let remove #bytes #cb st i =
   let blanked_tree = (tree_remove st.tree i) in
-  let (|_, reduced_tree|) = canonicalize_tree blanked_tree in
-  state_update_tree st reduced_tree
+  if TNode? blanked_tree && is_tree_empty (TNode?.right blanked_tree) then
+    state_update_tree st (tree_truncate blanked_tree)
+  else
+    state_update_tree st blanked_tree
 
 val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> st:treekem_state bytes -> #li:treekem_index st -> pathkem bytes st.levels 0 li -> treekem_state bytes
 let commit #bytes #cb st #li p =

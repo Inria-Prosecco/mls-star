@@ -41,13 +41,10 @@ let rec is_tree_empty #leaf_t #node_t #l #i t =
   | TLeaf (Some _) -> false
   | TLeaf None -> true
 
-val canonicalize_tree: #leaf_t:Type -> #node_t:Type -> #l:nat -> tree (option leaf_t) (option node_t) l 0 -> (l_res:nat{l_res <= l} & tree (option leaf_t) (option node_t) l_res 0)
-let canonicalize_tree #leaf_t #node_t #l t0 =
-  match t0 with
-  | TLeaf _ -> (|_, t0|)
-  | TNode _ left right ->
-    if is_tree_empty right then (|_, left|)
-    else (|_, t0|)
+val tree_truncate: #leaf_t:Type -> #node_t:Type -> #l:pos -> t:tree (option leaf_t) (option node_t) l 0{is_tree_empty (TNode?.right t)} -> tree (option leaf_t) (option node_t) (l-1) 0
+let tree_truncate #leaf_t #node_t #l t =
+  match t with
+  | TNode _ left _ -> left
 
 // Helper functions to add leaf / extend the tree
 
@@ -68,8 +65,8 @@ let rec mk_blank_tree #leaf_t #node_t l i =
   if l = 0 then TLeaf None
   else TNode None (mk_blank_tree (l-1) _) (mk_blank_tree (l-1) _)
 
-val add_one_level: #leaf_t:Type -> #node_t:Type -> #l:nat -> tree (option leaf_t) (option node_t) l 0 -> Pure (tree (option leaf_t) (option node_t) (l+1) 0) (requires True) (fun res -> Some? (find_empty_leaf res))
-let add_one_level #leaf_t #node_t #l t =
+val tree_extend: #leaf_t:Type -> #node_t:Type -> #l:nat -> tree (option leaf_t) (option node_t) l 0 -> Pure (tree (option leaf_t) (option node_t) (l+1) 0) (requires True) (fun res -> Some? (find_empty_leaf res))
+let tree_extend #leaf_t #node_t #l t =
   TNode None t (mk_blank_tree l _)
 
 (*** Add helper ***)

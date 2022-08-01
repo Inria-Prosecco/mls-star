@@ -12,6 +12,8 @@ open MLS.TreeSync.Level2
 open MLS.TreeSync.API.Types
 open MLS.Result
 
+#set-options "--fuel 1 --ifuel 1"
+
 val create: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> gid:mls_bytes bytes -> leaf_node_nt bytes tkt -> treesync_state bytes tkt
 let create #bytes #cb gid lp =
   {
@@ -48,12 +50,12 @@ let add #bytes #cb #tkt st kp =
     else
       return (state_update_tree st (tree_add st.tree i lp), (i <: nat))
   | None ->
-    let augmented_tree = add_one_level st.tree in
-    let i = Some?.v (find_empty_leaf augmented_tree) in
-    if not (tree_add_pre augmented_tree i) then
+    let extended_tree = tree_extend st.tree in
+    let i = Some?.v (find_empty_leaf extended_tree) in
+    if not (tree_add_pre extended_tree i) then
       error "add: tree_add_pre is false (after extension)"
     else
-      return (state_update_tree st (tree_add augmented_tree i lp), (i <: nat))
+      return (state_update_tree st (tree_add extended_tree i lp), (i <: nat))
 
 val update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> leaf_node_nt bytes tkt -> treesync_index st -> treesync_state bytes tkt
 let update #bytes #cb #tkt st lp i =
@@ -62,8 +64,10 @@ let update #bytes #cb #tkt st lp i =
 val remove: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> i:treesync_index st -> treesync_state bytes tkt
 let remove #bytes #cb #tkt st i =
   let blanked_tree = (tree_remove st.tree i) in
-  let (|_, reduced_tree|) = canonicalize_tree blanked_tree in
-  state_update_tree st reduced_tree
+  if TNode? blanked_tree && is_tree_empty (TNode?.right blanked_tree) then
+    state_update_tree st (tree_truncate blanked_tree)
+  else
+    state_update_tree st blanked_tree
 
 val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> #li:treesync_index st -> external_pathsync bytes tkt st.levels 0 li -> result (treesync_state bytes tkt)
 let commit #bytes #cb #tkt st #li p =

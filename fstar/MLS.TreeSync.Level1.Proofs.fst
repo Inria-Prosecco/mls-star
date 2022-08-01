@@ -350,16 +350,16 @@ let rec parent_hash_invariant_mk_blank_tree #bytes #cb #tkt l i =
     parent_hash_invariant_mk_blank_tree #bytes #cb #tkt (l-1) (right_index i)
   )
 
-val parent_hash_invariant_add_one_level: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> Lemma
+val parent_hash_invariant_tree_extend: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> Lemma
   (requires parent_hash_invariant t)
-  (ensures parent_hash_invariant (add_one_level t))
+  (ensures parent_hash_invariant (tree_extend t))
 let extend_parent_hash_invariant #bytes #cb #tkt #l t =
   parent_hash_invariant_mk_blank_tree #bytes #cb #tkt l (right_index #(l+1) 0)
 
-val parent_hash_invariant_canonicalize_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> Lemma
+val parent_hash_invariant_tree_truncate: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> t:treesync bytes tkt l 0{is_tree_empty (TNode?.right t)} -> Lemma
   (requires parent_hash_invariant t)
-  (ensures (let (|_, res_t|) = canonicalize_tree t in parent_hash_invariant res_t))
-let parent_hash_invariant_canonicalize_tree #l t = ()
+  (ensures parent_hash_invariant (tree_truncate t))
+let parent_hash_invariant_tree_truncate #l t = ()
 
 val parent_hash_invariant_tree_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
   (requires parent_hash_invariant t)

@@ -5,6 +5,7 @@ open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.Tree
+open MLS.TreeCommon
 open MLS.TreeSync.Level0
 open MLS.TreeSync.Level1
 open MLS.TreeSync.Level1.Proofs
@@ -46,13 +47,12 @@ let mk_blank_tree #bytes #cb #tkt l i =
   parent_hash_invariant_mk_blank_tree #bytes #cb #tkt l i;
   mk_blank_tree l i
 
-val add_one_level: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> treesync bytes tkt (l+1) 0
-let add_one_level #bytes #cb #tkt #l t =
-  parent_hash_invariant_add_one_level t;
-  add_one_level t
+val tree_extend: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> treesync bytes tkt (l+1) 0
+let tree_extend #bytes #cb #tkt #l t =
+  parent_hash_invariant_tree_extend t;
+  tree_extend t
 
-val canonicalize_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> (l_res:nat{l_res <= l} & treesync bytes tkt l_res 0)
-let canonicalize_tree #bytes #cb #tkt #l t =
-  parent_hash_invariant_canonicalize_tree t;
-  let (|l_res, t_res|) = canonicalize_tree t in
-  (|l_res, t_res|)
+val tree_truncate: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> t:treesync bytes tkt l 0{is_tree_empty (TNode?.right t)} -> treesync bytes tkt (l-1) 0
+let tree_truncate #bytes #cb #tkt #l t =
+  parent_hash_invariant_tree_truncate t;
+  tree_truncate t
