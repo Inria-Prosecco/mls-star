@@ -7,8 +7,8 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Level0.Types
 open MLS.TreeSync.ParentHash
-open MLS.TreeSync.Hash
-open MLS.TreeSync.Hash.Proofs
+open MLS.TreeSync.TreeHash
+open MLS.TreeSync.TreeHash.Proofs
 
 #set-options "--fuel 1 --ifuel 1"
 

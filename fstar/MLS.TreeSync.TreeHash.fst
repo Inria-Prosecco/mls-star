@@ -1,4 +1,4 @@
-module MLS.TreeSync.Hash
+module MLS.TreeSync.TreeHash
 
 open Comparse
 open MLS.Tree

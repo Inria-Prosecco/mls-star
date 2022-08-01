@@ -53,10 +53,10 @@ type state = {
 val compute_group_context: #l:nat -> bytes -> nat -> treesync bytes #cb.base tkt l 0 -> bytes -> result (group_context_nt bytes)
 let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
   tree_hash <-- (
-    if not (MLS.TreeSync.Hash.tree_hash_pre tree) then
+    if not (MLS.TreeSync.TreeHash.tree_hash_pre tree) then
       internal_failure "state_to_group_context: tree_hash precondition false"
     else
-      return #bytes (MLS.TreeSync.Hash.tree_hash #bytes #cb tree)
+      return #bytes (MLS.TreeSync.TreeHash.tree_hash #bytes #cb tree)
   );
   if not (length group_id < pow2 30) then
     internal_failure "state_to_group_context: group_id too long"
@@ -440,10 +440,10 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   let (future_state, joiner_secret) = tmp in
   confirmation_tag <-- from_option "generate_welcome_message: confirmation tag is missing" msg_auth.confirmation_tag;
   tree_hash <-- (
-    if not (MLS.TreeSync.Hash.tree_hash_pre future_state.treesync_state.tree) then
+    if not (MLS.TreeSync.TreeHash.tree_hash_pre future_state.treesync_state.tree) then
       error "generate_welcome_message: bad tree hash pre"
     else
-      return #bytes (MLS.TreeSync.Hash.tree_hash future_state.treesync_state.tree)
+      return #bytes (MLS.TreeSync.TreeHash.tree_hash future_state.treesync_state.tree)
   );
   ratchet_tree <-- treesync_to_ratchet_tree future_state.treesync_state.tree;
   ratchet_tree_bytes <-- (
