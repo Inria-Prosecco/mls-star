@@ -48,8 +48,9 @@ let length_get_tree_hash_input #bytes #cb #tkt #l #i t =
 
 #push-options "--z3rlimit 50"
 val tree_hash_inj: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l1:nat -> #i1:tree_index l1 -> #l2:nat -> #i2:tree_index l2 -> t1:treesync bytes tkt l1 i1{tree_hash_pre t1} -> t2:treesync bytes tkt l2 i2{tree_hash_pre t2} -> Pure (bytes & bytes)
-  (requires tree_hash t1 == tree_hash t2 /\ ~(l1 == l2 /\ i1 == i2 /\ t1 == t2))
+  (requires tree_hash t1 == tree_hash t2)
   (ensures fun (b1, b2) ->
+    l1 == l2 /\ i1 == i2 /\ t1 == t2 \/
     length b1 < hash_max_input_length #bytes /\
     length b2 < hash_max_input_length #bytes /\
     hash_hash b1 == hash_hash b2 /\ ~(b1 == b2))
@@ -62,7 +63,9 @@ let rec tree_hash_inj #bytes #sb #tkt #l1 #i1 #l2 #i2 t1 t2 =
   parse_serialize_inv_lemma #bytes (tree_hash_input_nt bytes tkt) hash_input2;
   length_get_tree_hash_input t1;
   length_get_tree_hash_input t2;
-  if not (hash_input1 = hash_input2) then (
+  if l1 = l2 && i1 = i2 && t1 = t2 then
+    (empty, empty)
+  else if not (hash_input1 = hash_input2) then (
     (serialized_hash_input1, serialized_hash_input2)
   ) else (
     match t1, t2 with

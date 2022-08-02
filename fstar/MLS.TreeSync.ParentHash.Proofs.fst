@@ -40,9 +40,9 @@ val compute_parent_hash_inj:
   content2:tkt.node_content -> parent_hash2:mls_bytes bytes -> original_sibling2:treesync bytes tkt l2 i2 -> Pure (bytes & bytes)
   (requires compute_parent_hash_pre content1 (length #bytes parent_hash1) original_sibling1 /\
             compute_parent_hash_pre content2 (length #bytes parent_hash2) original_sibling2 /\
-            compute_parent_hash content1 parent_hash1 original_sibling1 == compute_parent_hash content2 parent_hash2 original_sibling2 /\
-            ~ (l1 == l2 /\ i1 == i2 /\ content1 == content2 /\ parent_hash1 == parent_hash2 /\ original_sibling1 == original_sibling2))
+            compute_parent_hash content1 parent_hash1 original_sibling1 == compute_parent_hash content2 parent_hash2 original_sibling2)
   (ensures fun (b1, b2) ->
+    l1 == l2 /\ i1 == i2 /\ content1 == content2 /\ parent_hash1 == parent_hash2 /\ original_sibling1 == original_sibling2 \/
     length b1 < hash_max_input_length #bytes /\
     length b2 < hash_max_input_length #bytes /\
     hash_hash b1 == hash_hash b2 /\ ~(b1 == b2))
@@ -55,7 +55,9 @@ let compute_parent_hash_inj #bytes #cb #tkt #l1 #i1 #l2 #i2 content1 parent_hash
   parse_serialize_inv_lemma #bytes (parent_hash_input_nt bytes tkt) hash_input2;
   length_get_parent_hash_input content1 parent_hash1 original_sibling1;
   length_get_parent_hash_input content2 parent_hash2 original_sibling2;
-  if not (hash_input1 = hash_input2) then (
+  if l1 = l2 && i1 = i2 && content1 = content2 && parent_hash1 = parent_hash2 && original_sibling1 = original_sibling2 then
+    (empty, empty)
+  else if not (hash_input1 = hash_input2) then (
     (serialized_hash_input1, serialized_hash_input2)
   ) else (
     tree_hash_inj original_sibling1 original_sibling2
