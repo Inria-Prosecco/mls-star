@@ -125,18 +125,18 @@ let check_internal_node #bytes #cb #tkt #l #i t =
   | None -> return IE_Good
   | Some np -> (
     parent_hash_from_left_ok <-- (
-      if not (compute_parent_hash_pre np.content (length #bytes np.parent_hash) (un_add right np.unmerged_leaves)) then
+      if not (compute_parent_hash_pre np.content (length #bytes np.parent_hash) (MLS.TreeSync.Invariants.ParentHash.un_add right np.unmerged_leaves)) then
         error "check_internal_node: parent hash precondition not verified"
       else (
-        let computed_parent_hash = compute_parent_hash np.content np.parent_hash (un_add right np.unmerged_leaves) in
+        let computed_parent_hash = compute_parent_hash np.content np.parent_hash (MLS.TreeSync.Invariants.ParentHash.un_add right np.unmerged_leaves) in
         return (has_child_with_parent_hash left computed_parent_hash)
       )
     );
     parent_hash_from_right_ok <-- (
-      if not (compute_parent_hash_pre np.content (length #bytes np.parent_hash) (un_add left np.unmerged_leaves)) then
+      if not (compute_parent_hash_pre np.content (length #bytes np.parent_hash) (MLS.TreeSync.Invariants.ParentHash.un_add left np.unmerged_leaves)) then
         error "check_internal_node: parent hash precondition not verified"
       else (
-        let computed_parent_hash = compute_parent_hash np.content np.parent_hash (un_add left np.unmerged_leaves) in
+        let computed_parent_hash = compute_parent_hash np.content np.parent_hash (MLS.TreeSync.Invariants.ParentHash.un_add left np.unmerged_leaves) in
         return (has_child_with_parent_hash right computed_parent_hash)
       )
     );
