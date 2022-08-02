@@ -7,6 +7,7 @@ open MLS.TreeKEM.NetworkTypes
 open MLS.Crypto
 open MLS.Result
 open MLS.Tree
+open MLS.MiscLemmas
 module TS = MLS.TreeSync.Types
 module TK = MLS.TreeKEM.Types
 
@@ -46,8 +47,7 @@ let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path
       ) else (
         let update_path_length = (List.length update_path.nodes) in
         let (tail_update_path_nodes, head_update_path_nodes) = List.unsnoc update_path.nodes in
-        //TODO this is an easy lemma
-        assume (bytes_length ps_update_path_node_nt tail_update_path_nodes <= bytes_length ps_update_path_node_nt update_path.nodes);
+        bytes_length_unsnoc ps_update_path_node_nt update_path.nodes;
         let next_update_path = { update_path with nodes = tail_update_path_nodes } in
         path_next <-- uncompress_update_path _ child next_update_path;
         return (PNode (Some head_update_path_nodes) path_next)
