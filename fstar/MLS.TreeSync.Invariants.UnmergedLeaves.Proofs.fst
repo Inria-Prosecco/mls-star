@@ -139,6 +139,7 @@ let unmerged_leaves_ok_apply_external_path #bytes #cb #tkt #l #li t p =
 
 (*** Un-add ***)
 
+(*
 val leaf_at_un_addP: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> pred:(nat -> bool) -> li:leaf_index l i -> Lemma
   (leaf_at (un_addP t pred) li == (if pred li then leaf_at t li else None))
 let rec leaf_at_un_addP #l #i t leaves li =
@@ -207,3 +208,4 @@ let rec unmerged_leaves_ok_un_addP #bytes #bl #tkt #l #i t pred =
       unmerged_leaves_sorted_filter pred cont.unmerged_leaves
     )
   )
+*)
