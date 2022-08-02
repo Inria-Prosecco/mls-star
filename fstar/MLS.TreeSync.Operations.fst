@@ -88,7 +88,7 @@ let rec compute_leaf_parent_hash_from_external_path_pre #bytes #cb #tkt #l #i #l
 
 val compute_leaf_parent_hash_from_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (mls_bytes bytes)
   (requires compute_leaf_parent_hash_from_external_path_pre t p (length #bytes parent_parent_hash))
-  (ensures fun _ -> True)
+  (ensures fun res -> res == parent_parent_hash \/ length #bytes res == hash_length #bytes)
 let rec compute_leaf_parent_hash_from_external_path #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   match t, p with
   | TLeaf old_lp, PLeaf new_lp -> parent_parent_hash
@@ -168,7 +168,7 @@ let external_path_to_valid_external_path_pre #bytes #cb #tkt #l #i #li t p group
   let lp = get_external_path_leaf p in
   compute_leaf_parent_hash_from_external_path_pre t p (length #bytes (root_parent_hash #bytes)) &&
   lp.data.source = LNS_update () && (
-    let tbs_length = ((prefixes_length #bytes ((ps_leaf_node_tbs_nt tkt).serialize ({data = lp.data; group_id;}))) + 2 + (hash_length #bytes - 1)) in
+    let tbs_length = ((prefixes_length #bytes ((ps_leaf_node_tbs_nt tkt).serialize ({data = lp.data; group_id;}))) + 2 + (hash_length #bytes)) in
     tbs_length < pow2 30 &&
     sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
   )
@@ -179,7 +179,6 @@ val external_path_to_valid_external_path: #bytes:Type0 -> {|crypto_bytes bytes|}
   (ensures fun _ -> True)
 let external_path_to_valid_external_path #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
   let computed_parent_hash = compute_leaf_parent_hash_from_external_path t p root_parent_hash in
-  assume(length #bytes computed_parent_hash < hash_length #bytes);
   let lp = get_external_path_leaf p in
   let new_lp_data = { lp.data with source = LNS_commit (); parent_hash = computed_parent_hash; } in
   let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id;}) in
