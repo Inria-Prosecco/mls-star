@@ -182,7 +182,6 @@ let external_path_to_valid_external_path #bytes #cb #tkt #l #i #li t p group_id 
   assume(length #bytes computed_parent_hash < hash_length #bytes);
   let lp = get_external_path_leaf p in
   let new_lp_data = { lp.data with source = LNS_commit (); parent_hash = computed_parent_hash; } in
-  assert_norm(256 < pow2 14); //TODO do something about it
   let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id;}) in
   let new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
   set_external_path_leaf p ({ data = new_lp_data; signature = new_signature })

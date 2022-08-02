@@ -61,7 +61,6 @@ let compute_parent_hash #bytes #cb #tkt #l #i content parent_hash original_sibli
     parent_hash = parent_hash;
     original_sibling_tree_hash;
   }) in
-  assert_norm(256 < pow2 14); //TODO
   hash_hash #bytes hash_input
 
 val root_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> mls_bytes bytes

@@ -52,7 +52,6 @@ let rec tree_hash_pre #bytes #cb #tkt #l #i t =
 #push-options "--z3rlimit 50"
 val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> lbytes bytes (hash_length #bytes)
 let rec tree_hash #bytes #cb #tkt #l #i t =
-  assert_norm(256 < pow2 14); //TODO
   match t with
   | TLeaf olp ->
     let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({

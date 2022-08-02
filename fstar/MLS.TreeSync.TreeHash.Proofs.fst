@@ -30,8 +30,7 @@ let get_tree_hash_input #bytes #cb #tkt #l #i t =
 val length_get_tree_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> Lemma (
   length (serialize #bytes (tree_hash_input_nt bytes tkt) (get_tree_hash_input t)) < hash_max_input_length #bytes
 )
-let length_get_tree_hash_input #bytes #cb #tkt #l #i t =
-  assert_norm(256 < pow2 14) //TODO
+let length_get_tree_hash_input #bytes #cb #tkt #l #i t = ()
 #pop-options
 
 #push-options "--z3rlimit 50"

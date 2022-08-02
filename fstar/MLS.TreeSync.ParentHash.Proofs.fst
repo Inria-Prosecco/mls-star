@@ -24,8 +24,7 @@ let get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sib
 val length_get_parent_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} -> Lemma (
   length (serialize #bytes (parent_hash_input_nt bytes tkt) (get_parent_hash_input content parent_hash original_sibling)) < hash_max_input_length #bytes
 )
-let length_get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sibling =
-  assert_norm(256 < pow2 14) //TODO
+let length_get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sibling = ()
 
 val compute_parent_hash_inj:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->

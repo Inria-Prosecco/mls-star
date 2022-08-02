@@ -15,7 +15,10 @@ val ps_mls_nat_length: #bytes:Type0 -> {| bytes_like bytes |} -> x:mls_nat -> Le
     if x < pow2 6 then 1
     else if x < pow2 14 then 2
     else 4
-  ))
+  ) /\
+  pow2 6 == normalize_term (pow2 6) /\
+  pow2 14 == normalize_term (pow2 14)
+  )
   [SMTPat (prefixes_length #bytes (ps_mls_nat.serialize x))]
 let ps_mls_nat_length #bytes #bl x = ()
 
