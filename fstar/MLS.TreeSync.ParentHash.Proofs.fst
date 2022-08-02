@@ -21,16 +21,11 @@ let get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sib
     original_sibling_tree_hash;
   })
 
-//TODO: remove next lemma when we have FStarLang/FStar#2609
-#push-options "--z3rlimit 50"
 val length_get_parent_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} -> Lemma (
   length (serialize #bytes (parent_hash_input_nt bytes tkt) (get_parent_hash_input content parent_hash original_sibling)) < hash_max_input_length #bytes
 )
 let length_get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sibling =
-  assert_norm(256 < pow2 14); //TODO
-  let original_sibling_tree_hash = tree_hash original_sibling in
-  ps_parent_hash_input_nt_length tkt ({content; parent_hash; original_sibling_tree_hash;})
-#pop-options
+  assert_norm(256 < pow2 14) //TODO
 
 val compute_parent_hash_inj:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->

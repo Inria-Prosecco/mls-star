@@ -88,6 +88,7 @@ type extension_nt (bytes:Type0) {|bytes_like bytes|} = {
 ///     }
 /// } optional<T>;
 
+[@@"opaque_to_smt"]
 val ps_option: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> parser_serializer bytes a -> parser_serializer bytes (option a)
 let ps_option #bytes #bl #a ps_a =
   let n_pred = (fun n -> n <= 1) in
@@ -111,6 +112,16 @@ let ps_option #bytes #bl #a ps_a =
     | None -> (|0, ()|)
     | Some x -> (|1, x|)
   )
+
+val ps_option_length: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> ps_a:parser_serializer bytes a -> x:option a -> Lemma (
+  prefixes_length ((ps_option ps_a).serialize x) == (
+    match x with
+    | None -> 1
+    | Some y -> 1 + prefixes_length (ps_a.serialize y)
+  ))
+  [SMTPat (prefixes_length ((ps_option ps_a).serialize x))]
+let ps_option_length #bytes #bl #a ps_a x =
+  reveal_opaque (`%ps_option) (ps_option ps_a)
 
 /// struct {
 ///     ProtocolVersion version = mls10;

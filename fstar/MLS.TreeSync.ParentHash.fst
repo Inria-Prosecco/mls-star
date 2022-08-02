@@ -53,7 +53,6 @@ let compute_parent_hash_pre #bytes #cb #tkt #l #i content parent_hash_length ori
   tree_hash_pre original_sibling &&
   prefixes_length (tkt.ps_node_content.serialize content) + 4 + parent_hash_length + 2 + hash_length #bytes < hash_max_input_length #bytes
 
-#push-options "--z3rlimit 50"
 val compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} -> lbytes bytes (hash_length #bytes)
 let compute_parent_hash #bytes #cb #tkt #l #i content parent_hash original_sibling =
   let original_sibling_tree_hash = tree_hash original_sibling in
@@ -63,10 +62,7 @@ let compute_parent_hash #bytes #cb #tkt #l #i content parent_hash original_sibli
     original_sibling_tree_hash;
   }) in
   assert_norm(256 < pow2 14); //TODO
-  //TODO: remove next line when we have FStarLang/FStar#2609
-  ps_parent_hash_input_nt_length tkt ({content; parent_hash; original_sibling_tree_hash;});
   hash_hash #bytes hash_input
-#pop-options
 
 val root_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> mls_bytes bytes
 let root_parent_hash #bytes #bl = empty #bytes

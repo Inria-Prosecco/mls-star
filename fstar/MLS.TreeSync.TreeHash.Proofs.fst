@@ -26,25 +26,13 @@ let get_tree_hash_input #bytes #cb #tkt #l #i t =
       right_hash = right_hash;
     })
 
-//TODO: remove next lemma when we have FStarLang/FStar#2609
-#push-options "--z3rlimit 50 --fuel 2"
+#push-options "--z3rlimit 50"
 val length_get_tree_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> Lemma (
   length (serialize #bytes (tree_hash_input_nt bytes tkt) (get_tree_hash_input t)) < hash_max_input_length #bytes
 )
 let length_get_tree_hash_input #bytes #cb #tkt #l #i t =
-  match t with
-  | TLeaf olp ->
-    ps_node_type_nt_length #bytes (NT_leaf ());
-    ps_leaf_node_tree_hash_input_nt_length tkt ({leaf_index = i; leaf_node = olp;});
-    ps_tree_hash_input_nt_length tkt (LeafTreeHashInput ({leaf_index = i; leaf_node = olp;}))
-  | TNode onp left right ->
-    let left_hash = tree_hash left in
-    let right_hash = tree_hash right in
-    ps_node_type_nt_length #bytes (NT_parent ());
-    ps_parent_node_tree_hash_input_nt_length tkt ({parent_node = onp; left_hash; right_hash;});
-    ps_tree_hash_input_nt_length tkt (ParentTreeHashInput ({parent_node = onp; left_hash; right_hash;}))
+  assert_norm(256 < pow2 14) //TODO
 #pop-options
-
 
 #push-options "--z3rlimit 50"
 val tree_hash_inj: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l1:nat -> #i1:tree_index l1 -> #l2:nat -> #i2:tree_index l2 -> t1:treesync bytes tkt l1 i1{tree_hash_pre t1} -> t2:treesync bytes tkt l2 i2{tree_hash_pre t2} -> Pure (bytes & bytes)

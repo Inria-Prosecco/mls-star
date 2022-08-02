@@ -52,16 +52,13 @@ let rec tree_hash_pre #bytes #cb #tkt #l #i t =
 #push-options "--z3rlimit 50"
 val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> lbytes bytes (hash_length #bytes)
 let rec tree_hash #bytes #cb #tkt #l #i t =
+  assert_norm(256 < pow2 14); //TODO
   match t with
   | TLeaf olp ->
     let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({
       leaf_index = i;
       leaf_node = olp;
     })) in
-    //TODO: remove next three lines when we have FStarLang/FStar#2609
-    ps_node_type_nt_length #bytes (NT_leaf ());
-    ps_leaf_node_tree_hash_input_nt_length tkt ({leaf_index = i; leaf_node = olp;});
-    ps_tree_hash_input_nt_length tkt (LeafTreeHashInput ({leaf_index = i; leaf_node = olp;}));
     hash_hash hash_input
   | TNode onp left right ->
     let left_hash = tree_hash left in
@@ -71,9 +68,5 @@ let rec tree_hash #bytes #cb #tkt #l #i t =
       left_hash = left_hash;
       right_hash = right_hash;
     })) in
-    //TODO: remove next three lines when we have FStarLang/FStar#2609
-    ps_node_type_nt_length #bytes (NT_parent ());
-    ps_parent_node_tree_hash_input_nt_length tkt ({parent_node = onp; left_hash; right_hash;});
-    ps_tree_hash_input_nt_length tkt (ParentTreeHashInput ({parent_node = onp; left_hash; right_hash;}));
     hash_hash hash_input
 #pop-options

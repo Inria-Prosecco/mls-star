@@ -45,8 +45,6 @@ val get_sign_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> label:valid_labe
   (requires sign_with_label_pre #bytes label (length #bytes content))
   (ensures fun res -> length #bytes res < sign_max_input_length #bytes)
 let get_sign_content #bytes #cb label content =
-  //TODO: remove next line when we have FStarLang/FStar#2609
-  introduce forall (label:mls_bytes bytes) (content:mls_bytes bytes). prefixes_length (ps_sign_content_nt.serialize ({label; content;})) <= 8 + length #bytes label + length #bytes content with ps_sign_content_nt_length ({label; content;});
   normalize_term_spec (String.strlen label);
   normalize_term_spec ((pow2 30) - 8);
   assert_norm (String.strlen "MLS 1.0 " == 8);

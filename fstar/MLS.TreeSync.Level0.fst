@@ -182,15 +182,7 @@ let external_path_to_valid_external_path #bytes #cb #tkt #l #i #li t p group_id 
   assume(length #bytes computed_parent_hash < hash_length #bytes);
   let lp = get_external_path_leaf p in
   let new_lp_data = { lp.data with source = LNS_commit (); parent_hash = computed_parent_hash; } in
-  ps_leaf_node_tbs_nt_length tkt ({data = lp.data; group_id;});
-  ps_leaf_node_tbs_nt_length tkt ({data = new_lp_data; group_id;});
-  ps_leaf_node_data_nt_length tkt lp.data;
-  ps_leaf_node_data_nt_length tkt new_lp_data;
-  ps_leaf_node_source_nt_length #bytes (LNS_commit ());
-  ps_leaf_node_source_nt_length #bytes (LNS_update ());
   assert_norm(256 < pow2 14); //TODO do something about it
-  //This assert might be useful when the above lemma calls can be remove due to SMTPats (FStarLang/FStar#2609)
-  assert((prefixes_length #bytes ((ps_leaf_node_tbs_nt tkt).serialize ({data = new_lp_data; group_id;}))) <= ((prefixes_length #bytes ((ps_leaf_node_tbs_nt tkt).serialize ({data = lp.data; group_id;}))) + 2 + (hash_length #bytes - 1)));
   let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id;}) in
   let new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
   set_external_path_leaf p ({ data = new_lp_data; signature = new_signature })
