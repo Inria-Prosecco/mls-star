@@ -2,7 +2,7 @@ module MLS
 
 open Comparse
 open MLS.Tree
-open MLS.TreeSync.Level0.Types
+open MLS.TreeSync.Types
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
@@ -180,7 +180,7 @@ let process_commit state message message_auth =
         uncompressed_path <-- uncompress_update_path sender_id state.treesync_state.tree path;
         let treesync_path = update_path_to_treesync uncompressed_path in
         treekem_path <-- update_path_to_treekem group_context_bytes uncompressed_path;
-        let treesync_path_valid = MLS.TreeSync.Level0.external_path_is_valid state.treesync_state.tree treesync_path state.treesync_state.group_id in
+        let treesync_path_valid = MLS.TreeSync.Operations.external_path_is_valid state.treesync_state.tree treesync_path state.treesync_state.group_id in
         if not treesync_path_valid then
           error "process_commit: invalid update path"
         else (
@@ -518,10 +518,10 @@ let generate_update_path st e proposals =
     }) in
     update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package update_path_kem;
     update_path_sync <-- (
-      if not (MLS.TreeSync.Level0.external_path_to_valid_external_path_pre st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id) then
+      if not (MLS.TreeSync.Operations.external_path_to_valid_external_path_pre st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id) then
         error "generate_update_path: bad precondition"
       else
-        return (MLS.TreeSync.Level0.external_path_to_valid_external_path st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id st.sign_private_key sign_nonce)
+        return (MLS.TreeSync.Operations.external_path_to_valid_external_path st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id st.sign_private_key sign_nonce)
     );
     uncompressed_update_path <-- mls_star_paths_to_update_path update_path_sync update_path_kem;
     update_path <-- compress_update_path uncompressed_update_path;
@@ -636,12 +636,12 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   l <-- ratchet_tree_l ratchet_tree;
   treesync <-- (
     treesync <-- ratchet_tree_to_treesync l 0 ratchet_tree;
-    if not (MLS.TreeSync.Level0.Invariants.unmerged_leaves_ok treesync) then
+    if not (MLS.TreeSync.Invariants.UnmergedLeaves.unmerged_leaves_ok treesync) then
       error "process_welcome_message: malformed unmerged leaves"
-    else if not (MLS.TreeSync.Level1.Invariants.parent_hash_invariant treesync) then
+    else if not (MLS.TreeSync.Invariants.ParentHash.parent_hash_invariant treesync) then
       error "process_welcome_message: bad parent hash"
     else
-      return #(MLS.TreeSync.Level2.Types.treesync bytes tkt l 0) treesync
+      return #(MLS.TreeSync.Refined.Types.treesync bytes tkt l 0) treesync
   );
   _ <-- ( //Check signature
     group_info_ok <-- verify_welcome_group_info (fun leaf_ind ->

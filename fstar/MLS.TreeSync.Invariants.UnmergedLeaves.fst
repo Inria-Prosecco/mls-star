@@ -1,9 +1,9 @@
-module MLS.TreeSync.Level0.Invariants
+module MLS.TreeSync.Invariants.UnmergedLeaves
 
 open Comparse
 open MLS.Tree
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Level0.Types
+open MLS.TreeSync.Types
 
 #set-options "--fuel 1 --ifuel 1"
 

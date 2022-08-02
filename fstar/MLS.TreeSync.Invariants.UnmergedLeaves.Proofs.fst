@@ -1,13 +1,13 @@
-module MLS.TreeSync.Level0.Proofs
+module MLS.TreeSync.Invariants.UnmergedLeaves.Proofs
 
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.Tree
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Level0.Types
-open MLS.TreeSync.Level0
-open MLS.TreeSync.Level0.Invariants
+open MLS.TreeSync.Types
+open MLS.TreeSync.Operations
+open MLS.TreeSync.Invariants.UnmergedLeaves
 open MLS.TreeSync.ParentHash
 open MLS.TreeCommon
 open MLS.TreeCommon.Lemmas

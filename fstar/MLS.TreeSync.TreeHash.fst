@@ -5,7 +5,7 @@ open MLS.Tree
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Level0.Types
+open MLS.TreeSync.Types
 open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"

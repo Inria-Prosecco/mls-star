@@ -6,9 +6,9 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.Tree
 open MLS.TreeCommon
-open MLS.TreeSync.Level0
-open MLS.TreeSync.Level2.Types
-open MLS.TreeSync.Level2
+open MLS.TreeSync.Operations
+open MLS.TreeSync.Refined.Types
+open MLS.TreeSync.Refined.Operations
 open MLS.TreeSync.API.Types
 open MLS.Result
 

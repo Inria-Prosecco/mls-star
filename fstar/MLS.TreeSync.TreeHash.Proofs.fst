@@ -4,7 +4,7 @@ open Comparse
 open MLS.Crypto
 open MLS.Tree
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Level0.Types
+open MLS.TreeSync.Types
 open MLS.TreeSync.TreeHash
 
 #set-options "--fuel 1 --ifuel 1"

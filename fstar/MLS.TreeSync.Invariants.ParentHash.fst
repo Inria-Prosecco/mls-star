@@ -1,4 +1,4 @@
-module MLS.TreeSync.Level1.Invariants
+module MLS.TreeSync.Invariants.ParentHash
 
 open Comparse
 open MLS.Crypto
@@ -7,8 +7,8 @@ open MLS.TreeSync.NetworkTypes
 open MLS.Tree
 open MLS.Tree.Lemmas
 open MLS.TreeSync.ParentHash
-open MLS.TreeSync.Level1.Types
-open MLS.TreeSync.Level1
+open MLS.TreeSync.Types
+open MLS.TreeSync.Operations
 
 #set-options "--fuel 1 --ifuel 1"
 

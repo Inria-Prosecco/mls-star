@@ -1,4 +1,4 @@
-module MLS.TreeSync.Level0.Types
+module MLS.TreeSync.Types
 
 open Comparse
 open MLS.Tree

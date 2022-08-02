@@ -4,7 +4,7 @@ open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Level2.Types
+open MLS.TreeSync.Refined.Types
 
 (** TreeSync state and accessors *)
 type treesync_state (bytes:Type0) {|crypto_bytes bytes|} (tkt:treekem_types bytes) = {

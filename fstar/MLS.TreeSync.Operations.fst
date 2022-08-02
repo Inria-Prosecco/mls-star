@@ -1,9 +1,9 @@
-module MLS.TreeSync.Level0
+module MLS.TreeSync.Operations
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
-open MLS.TreeSync.Level0.Types
+open MLS.TreeSync.Types
 open MLS.Tree
 open MLS.TreeCommon
 open MLS.TreeSync.ParentHash
