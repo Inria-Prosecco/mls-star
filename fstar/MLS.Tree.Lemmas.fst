@@ -6,7 +6,7 @@ open FStar.Mul
 // Proofs aren't that flaky, but you never know what can happen when dealing with arithmetic proofs...
 #set-options "--fuel 1 --ifuel 0 --z3rlimit 100 --quake 1/10"
 
-let lemma_mult_lt_right_inv (a:nat) (b:nat) (c:nat): Lemma (requires a*c < b*c) (ensures a < b) = ()
+let lemma_mult_lt_right_inv (a:int) (b:int) (c:nat): Lemma (requires a*c < b*c) (ensures a < b) = ()
 
 val leaf_index_inside_right_index: lu:pos -> lp:nat{lu <= lp} -> iu:tree_index lu -> ip:tree_index lp -> Lemma
   (requires leaf_index_inside lp ip iu)
