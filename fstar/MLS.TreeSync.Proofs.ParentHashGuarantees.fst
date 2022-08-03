@@ -52,26 +52,6 @@ val get_parent_hash_of_canonicalize: #bytes:Type0 -> {|crypto_bytes bytes|} -> #
 let get_parent_hash_of_canonicalize #bytes #bl #tkt #l #i t li = ()
 #pop-options
 
-#push-options "--z3cliopt smt.arith.nl=false"
-val left_right_index_disj: #l1:pos -> #l2:pos -> i1:tree_index l1 -> i2:tree_index l2 -> Lemma
-  ((l1 <> l2) \/ (left_index i1 <> right_index i2))
-let left_right_index_disj #l1 #l2 i1 i2 =
-  eliminate exists k1 k2. i1 = k1 * (pow2 l1) /\ i2 = k2 * (pow2 l2)
-  returns (l1 <> l2) \/ (left_index i1 <> right_index i2)
-  with _ . (
-    if l1 = l2 && left_index i1 = right_index i2 then (
-      assert(k1 * (pow2 l1) == k2 * (pow2 l1) + pow2 (l1 - 1));
-      if k1 > k2 then (
-        FStar.Math.Lemmas.distributivity_sub_left k1 k2 (pow2 l1);
-        FStar.Math.Lemmas.pow2_lt_compat l1 (l1 - 1);
-        FStar.Math.Lemmas.lemma_mult_le_right (pow2 l1) 1 (k1-k2)
-      ) else (
-        FStar.Math.Lemmas.lemma_mult_le_right (pow2 l1) k1 k2
-      )
-    ) else ()
-  )
-#pop-options
-
 val filter_eq_lemma: #a:eqtype -> p1:(a -> bool) -> p2:(a -> bool) -> l:list a -> Lemma
   (requires forall x. List.Tot.mem x l ==> p1 x == p2 x)
   (ensures List.Tot.filter p1 l == List.Tot.filter p2 l)
@@ -297,24 +277,6 @@ let rec blank_sibling #bytes #bl #tkt #l #i t p_unmerged_leaves =
     blank_sibling left p_unmerged_leaves;
     blank_sibling right p_unmerged_leaves
   )
-
-#push-options "--z3cliopt smt.arith.nl=false"
-val leaf_index_inside_subtree:
-  lu:nat -> lc:nat{lu <= lc} -> iu:tree_index lu -> ic:tree_index lc -> li:leaf_index lu iu -> Lemma
-  (requires leaf_index_inside lc ic iu)
-  (ensures leaf_index_inside lc ic li)
-let leaf_index_inside_subtree lu lc iu ic li =
-  eliminate exists ku kc. (iu == ku*(pow2 lu)) /\ (ic == kc*(pow2 lc))
-  returns (li < ic + pow2 lc)
-  with _. (
-    FStar.Math.Lemmas.pow2_plus (lc-lu) lu;
-    FStar.Math.Lemmas.distributivity_add_left kc 1 (pow2 lc);
-    FStar.Math.Lemmas.paren_mul_right (kc+1) (pow2 (lc-lu)) (pow2 lu);
-    lemma_mult_lt_right_inv ku ((kc+1) * (pow2 (lc-lu))) (pow2 lu);
-    FStar.Math.Lemmas.lemma_mult_le_right (pow2 lu) (ku+1) ((kc+1) * (pow2 (lc-lu)));
-    FStar.Math.Lemmas.distributivity_add_left ku 1 (pow2 lu)
-  )
-#pop-options
 
 val is_subtree_with_blanks_between_u_p_aux:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
