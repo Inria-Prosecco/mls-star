@@ -10,7 +10,7 @@ open MLS.TreeSync.Refined.Types
 type treesync_state (bytes:Type0) {|crypto_bytes bytes|} (tkt:treekem_types bytes) = {
   group_id: mls_bytes bytes;
   levels: nat;
-  tree: treesync bytes tkt levels 0;
+  tree: treesync_valid bytes tkt levels 0 group_id;
   version: nat;
 }
 

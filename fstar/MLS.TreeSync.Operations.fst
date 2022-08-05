@@ -111,24 +111,26 @@ let rec set_external_path_leaf #bytes #cb #tkt #l #i #li p lp =
   match p with
   | PLeaf _ -> PLeaf lp
   | PNode p_content p_next -> PNode p_content (set_external_path_leaf p_next lp)
+// TODO: other checks described in
+// https://messaginglayersecurity.rocks/mls-protocol/draft-ietf-mls-protocol.html#name-leaf-node-validation
+// ?
 
-val get_leaf_package_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> leaf_node_data_nt bytes tkt -> mls_bytes bytes -> bytes
-let get_leaf_package_tbs #bytes #bl #tkt lp_data group_id =
-  let ln_tbs = ({
-    data = lp_data;
-    group_id = (match lp_data.source with |LNS_update () |LNS_commit() -> group_id |_ -> ());
-  } <: leaf_node_tbs_nt bytes tkt) in
-  (serialize (leaf_node_tbs_nt bytes _) ln_tbs)
+val leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> mls_bytes bytes -> leaf_node_nt bytes tkt -> bool
+let leaf_is_valid #bytes #cb #tkt group_id ln =
+  let tbs = {
+    data = ln.data;
+    group_id = if ln.data.source = LNS_key_package () then () else group_id;
+  } in
+  let tbs_bytes: bytes = serialize (leaf_node_tbs_nt bytes tkt) tbs in
+  length tbs_bytes < pow2 30 &&
+  sign_with_label_pre #bytes "LeafNodeTBS" (length tbs_bytes) &&
+  length #bytes ln.data.signature_key = sign_public_key_length #bytes &&
+  length #bytes ln.signature = sign_signature_length #bytes &&
+  verify_with_label #bytes ln.data.signature_key "LeafNodeTBS" tbs_bytes ln.signature
 
-val external_path_is_signature_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> external_pathsync bytes tkt l 0 li -> mls_bytes bytes -> bool
-let external_path_is_signature_valid #bytes #cb #tkt #l #li p group_id =
-  let new_lp = get_external_path_leaf p in
-  //TODO: something stating that new_lp is related to old_lp
-  let tbs = get_leaf_package_tbs new_lp.data group_id in
-  (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" (length #bytes tbs)) &&
-  (length #bytes new_lp.data.signature_key = sign_public_key_length #bytes) &&
-  (length #bytes new_lp.signature = sign_signature_length #bytes) &&
-  verify_with_label #bytes new_lp.data.signature_key "LeafNodeTBS" tbs new_lp.signature
+val external_path_leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> mls_bytes bytes -> external_pathsync bytes tkt l 0 li -> bool
+let external_path_leaf_is_valid #bytes #cb #tkt #l #li group_id p =
+  leaf_is_valid group_id (get_external_path_leaf p)
 
 val external_path_is_parent_hash_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> bool
 let external_path_is_parent_hash_valid #bytes #cb #tkt #l #li t p =
@@ -152,16 +154,17 @@ let rec external_path_is_filter_valid #bytes #cb #tkt #l #i #li t p =
     sibling_ok && external_path_is_filter_valid child p_next
   )
 
-val external_path_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> mls_bytes bytes -> bool
-let external_path_is_valid #bytes #cb #tkt #l #li t p group_id =
+val external_path_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> mls_bytes bytes -> t:treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> bool
+let external_path_is_valid #bytes #cb #tkt #l #li group_id t p =
   let old_lp = leaf_at t li in
   let new_lp = get_external_path_leaf p in
   //TODO: something stating that new_lp is related to old_lp
-  let signature_ok = external_path_is_signature_valid p group_id in
+  let signature_ok = external_path_leaf_is_valid group_id p in
   let parent_hash_ok = external_path_is_parent_hash_valid t p in
   //The next one could be proved in MLS.NetworkTypes
   let filter_ok = external_path_is_filter_valid t p in
-  (signature_ok && parent_hash_ok && filter_ok)
+  let source_ok = new_lp.data.source = LNS_commit() in
+  (signature_ok && parent_hash_ok && filter_ok && source_ok)
 
 val external_path_to_valid_external_path_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> mls_bytes bytes -> bool
 let external_path_to_valid_external_path_pre #bytes #cb #tkt #l #i #li t p group_id =

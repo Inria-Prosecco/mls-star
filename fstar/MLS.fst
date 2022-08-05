@@ -116,7 +116,7 @@ let process_proposal sender_id st p =
     if not (sender_id < pow2 st.treesync_state.levels) then
       error "process_proposal: leaf_ind is greater than treesize"
     else (
-      let treesync_state = MLS.TreeSync.API.update st.treesync_state leaf_package sender_id in
+      treesync_state <-- MLS.TreeSync.API.update st.treesync_state leaf_package sender_id;
       assume (length #bytes leaf_package.data.content = hpke_public_key_length #bytes);
       assume(st.treesync_state.levels == st.treekem_state.levels);
       let treekem_state = MLS.TreeKEM.API.update st.treekem_state ({version = 0; public_key = leaf_package.data.content}) sender_id in
@@ -180,14 +180,9 @@ let process_commit state message message_auth =
         uncompressed_path <-- uncompress_update_path sender_id state.treesync_state.tree path;
         let treesync_path = update_path_to_treesync uncompressed_path in
         treekem_path <-- update_path_to_treekem group_context_bytes uncompressed_path;
-        let treesync_path_valid = MLS.TreeSync.Operations.external_path_is_valid state.treesync_state.tree treesync_path state.treesync_state.group_id in
-        if not treesync_path_valid then
-          error "process_commit: invalid update path"
-        else (
-          treesync_state <-- MLS.TreeSync.API.commit state.treesync_state treesync_path;
-          let treekem_state = MLS.TreeKEM.API.commit state.treekem_state treekem_path in
-          return ({ state with treesync_state; treekem_state;})
-        )
+        treesync_state <-- MLS.TreeSync.API.commit state.treesync_state treesync_path;
+        let treekem_state = MLS.TreeKEM.API.commit state.treekem_state treekem_path in
+        return ({ state with treesync_state; treekem_state;})
       )
   );
   // 2. Increase epoch -- TODO when should this happen?!!
@@ -340,7 +335,7 @@ let create e cred private_sign_key group_id =
   let key_package, leaf_secret = tmp in
   treesync_state <-- (
     if not (length #bytes group_id < pow2 30) then error "create: group_id too long"
-    else return #(MLS.TreeSync.API.Types.treesync_state bytes tkt) (MLS.TreeSync.API.create group_id key_package.tbs.leaf_node)
+    else MLS.TreeSync.API.create group_id key_package.tbs.leaf_node
   );
   treekem <-- treesync_to_treekem treesync_state.tree;
   let treekem_state: treekem_state bytes = { levels = treesync_state.levels; tree = treekem } in
@@ -632,6 +627,12 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     | None -> None
   ) None;
   let (group_info, secrets) = tmp in
+  group_id <-- (
+    if not (length group_info.group_context.group_id < pow2 30) then
+      internal_failure "process_welcome_message: group_id too long"
+    else
+      return #(mls_bytes bytes) group_info.group_context.group_id
+  );
   ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes (ps_ratchet_tree_nt tkt)).parse_exact group_info.extensions);
   l <-- ratchet_tree_l ratchet_tree;
   treesync <-- (
@@ -640,8 +641,10 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       error "process_welcome_message: malformed unmerged leaves"
     else if not (MLS.TreeSync.Invariants.ParentHash.parent_hash_invariant treesync) then
       error "process_welcome_message: bad parent hash"
+    else if not (MLS.TreeSync.Invariants.ValidLeaves.valid_leaves_invariant group_id treesync) then
+      error "process_welcome_message: bad parent hash"
     else
-      return #(MLS.TreeSync.Refined.Types.treesync bytes tkt l 0) treesync
+      return #(MLS.TreeSync.Refined.Types.treesync_valid bytes tkt l 0 group_id) treesync
   );
   _ <-- ( //Check signature
     group_info_ok <-- verify_welcome_group_info (fun leaf_ind ->
@@ -692,10 +695,9 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     secret = mk_zero_vector (kdf_length #bytes);
     generation = 0;
   } in
-  assume(length group_info.group_context.group_id < pow2 30); //This is true before the convertion mls_bytes bytes -> bytes...
   let st: state = {
     treesync_state = {
-      group_id = group_info.group_context.group_id;
+      group_id = group_id;
       levels = l;
       tree = treesync;
       version = group_info.group_context.epoch;
