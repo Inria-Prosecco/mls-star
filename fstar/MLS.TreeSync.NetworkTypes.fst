@@ -221,6 +221,7 @@ type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byte
 
 %splice [ps_leaf_node_tbs_nt] (gen_parser (`leaf_node_tbs_nt))
 %splice [ps_leaf_node_tbs_nt_length] (gen_length_lemma (`leaf_node_tbs_nt))
+%splice [ps_leaf_node_tbs_nt_is_valid] (gen_is_valid_lemma (`leaf_node_tbs_nt))
 
 instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (leaf_node_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_leaf_node_tbs_nt tkt)
 
@@ -277,6 +278,9 @@ type parent_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes)
 }
 
 %splice [ps_parent_node_nt] (gen_parser (`parent_node_nt))
+%splice [ps_parent_node_nt_is_valid] (gen_is_valid_lemma (`parent_node_nt))
+
+instance parseable_serializeable_parent_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (parent_node_nt bytes tkt) = mk_parseable_serializeable (ps_parent_node_nt tkt)
 
 /// enum {
 ///     reserved(0),
@@ -291,6 +295,7 @@ type node_type_nt =
 
 %splice [ps_node_type_nt] (gen_parser (`node_type_nt))
 %splice [ps_node_type_nt_length] (gen_length_lemma (`node_type_nt))
+%splice [ps_node_type_nt_is_valid] (gen_is_valid_lemma (`node_type_nt))
 
 /// struct {
 ///     NodeType node_type;

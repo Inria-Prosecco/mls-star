@@ -126,6 +126,16 @@ val ps_option_length: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> ps_a:p
 let ps_option_length #bytes #bl #a ps_a x =
   reveal_opaque (`%ps_option) (ps_option ps_a)
 
+val ps_option_is_valid: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> ps_a:parser_serializer bytes a -> pre:bytes_compatible_pre bytes -> x:option a -> Lemma (
+  (ps_option ps_a).is_valid pre x <==> (
+    match x with
+    | None -> True
+    | Some y -> ps_a.is_valid pre y
+  ))
+  [SMTPat ((ps_option ps_a).is_valid pre x)]
+let ps_option_is_valid #bytes #bl #a ps_a pre x =
+  reveal_opaque (`%ps_option) (ps_option ps_a)
+
 /// struct {
 ///     ProtocolVersion version = mls10;
 ///     CipherSuite cipher_suite;
