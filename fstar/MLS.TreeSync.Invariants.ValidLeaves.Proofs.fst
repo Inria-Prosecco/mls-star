@@ -14,7 +14,7 @@ open MLS.TreeSync.Invariants.ValidLeaves
 #set-options "--fuel 1 --ifuel 1"
 
 val valid_leaves_invariant_tree_add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
-  (requires ln.data.source == LNS_key_package () /\ leaf_is_valid group_id ln /\ valid_leaves_invariant group_id t /\ tree_add_pre t li)
+  (requires ln.data.source == LNS_key_package () /\ leaf_is_valid group_id li ln /\ valid_leaves_invariant group_id t /\ tree_add_pre t li)
   (ensures valid_leaves_invariant group_id (tree_add t li ln))
 let rec valid_leaves_invariant_tree_add #bytes #cb #tkt #l #i group_id t li ln =
   match t with
@@ -24,7 +24,7 @@ let rec valid_leaves_invariant_tree_add #bytes #cb #tkt #l #i group_id t li ln =
     valid_leaves_invariant_tree_add group_id c li ln
 
 val valid_leaves_invariant_tree_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
-  (requires ln.data.source == LNS_update () /\ leaf_is_valid group_id ln /\ valid_leaves_invariant group_id t)
+  (requires ln.data.source == LNS_update () /\ leaf_is_valid group_id li ln /\ valid_leaves_invariant group_id t)
   (ensures valid_leaves_invariant group_id (tree_update t li ln))
 let rec valid_leaves_invariant_tree_update #bytes #cb #tkt #l #i group_id t li ln =
   match t with
@@ -45,7 +45,7 @@ let rec valid_leaves_invariant_tree_remove #bytes #cb #tkt #l #i group_id t li =
 
 #push-options "--z3rlimit 25"
 val valid_leaves_invariant_apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
-  (requires leaf_is_valid group_id (get_external_path_leaf p) /\ valid_leaves_invariant group_id t /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
+  (requires leaf_is_valid group_id li (get_external_path_leaf p) /\ valid_leaves_invariant group_id t /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures valid_leaves_invariant group_id (apply_external_path_aux t p parent_parent_hash))
 let rec valid_leaves_invariant_apply_external_path_aux #bytes #cb #tkt #l #i #li group_id t p parent_parent_hash =
   match t, p with
@@ -57,7 +57,7 @@ let rec valid_leaves_invariant_apply_external_path_aux #bytes #cb #tkt #l #i #li
 #pop-options
 
 val valid_leaves_invariant_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> group_id:mls_bytes bytes -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> Lemma
-  (requires leaf_is_valid group_id (get_external_path_leaf p) /\ valid_leaves_invariant group_id t /\ apply_external_path_pre t p)
+  (requires leaf_is_valid group_id li (get_external_path_leaf p) /\ valid_leaves_invariant group_id t /\ apply_external_path_pre t p)
   (ensures valid_leaves_invariant group_id (apply_external_path t p))
 let valid_leaves_invariant_apply_external_path #bytes #cb #tkt #l #li group_id t p =
   valid_leaves_invariant_apply_external_path_aux group_id t p (root_parent_hash #bytes)

@@ -115,11 +115,13 @@ let rec set_external_path_leaf #bytes #cb #tkt #l #i #li p lp =
 // https://messaginglayersecurity.rocks/mls-protocol/draft-ietf-mls-protocol.html#name-leaf-node-validation
 // ?
 
-val leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> mls_bytes bytes -> leaf_node_nt bytes tkt -> bool
-let leaf_is_valid #bytes #cb #tkt group_id ln =
+val leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> mls_bytes bytes -> nat -> leaf_node_nt bytes tkt -> bool
+let leaf_is_valid #bytes #cb #tkt group_id leaf_index ln =
+  leaf_index < pow2 32 && (
   let tbs = {
     data = ln.data;
     group_id = if ln.data.source = LNS_key_package () then () else group_id;
+    leaf_index = if ln.data.source = LNS_key_package () then () else leaf_index;
   } in
   let tbs_bytes: bytes = serialize (leaf_node_tbs_nt bytes tkt) tbs in
   length tbs_bytes < pow2 30 &&
@@ -127,10 +129,11 @@ let leaf_is_valid #bytes #cb #tkt group_id ln =
   length #bytes ln.data.signature_key = sign_public_key_length #bytes &&
   length #bytes ln.signature = sign_signature_length #bytes &&
   verify_with_label #bytes ln.data.signature_key "LeafNodeTBS" tbs_bytes ln.signature
+  )
 
 val external_path_leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> mls_bytes bytes -> external_pathsync bytes tkt l 0 li -> bool
 let external_path_leaf_is_valid #bytes #cb #tkt #l #li group_id p =
-  leaf_is_valid group_id (get_external_path_leaf p)
+  leaf_is_valid group_id li (get_external_path_leaf p)
 
 val external_path_is_parent_hash_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> bool
 let external_path_is_parent_hash_valid #bytes #cb #tkt #l #li t p =
@@ -170,8 +173,8 @@ val external_path_to_valid_external_path_pre: #bytes:Type0 -> {|crypto_bytes byt
 let external_path_to_valid_external_path_pre #bytes #cb #tkt #l #i #li t p group_id =
   let lp = get_external_path_leaf p in
   compute_leaf_parent_hash_from_external_path_pre t p (length #bytes (root_parent_hash #bytes)) &&
-  lp.data.source = LNS_update () && (
-    let tbs_length = ((prefixes_length #bytes ((ps_leaf_node_tbs_nt tkt).serialize ({data = lp.data; group_id;}))) + 2 + (hash_length #bytes)) in
+  lp.data.source = LNS_update () && li < pow2 32 && (
+    let tbs_length = ((prefixes_length #bytes ((ps_leaf_node_tbs_nt tkt).serialize ({data = lp.data; group_id; leaf_index = li;}))) + 2 + (hash_length #bytes)) in
     tbs_length < pow2 30 &&
     sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
   )
@@ -184,7 +187,7 @@ let external_path_to_valid_external_path #bytes #cb #tkt #l #i #li t p group_id 
   let computed_parent_hash = compute_leaf_parent_hash_from_external_path t p root_parent_hash in
   let lp = get_external_path_leaf p in
   let new_lp_data = { lp.data with source = LNS_commit (); parent_hash = computed_parent_hash; } in
-  let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id;}) in
+  let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id; leaf_index = li;}) in
   let new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
   set_external_path_leaf p ({ data = new_lp_data; signature = new_signature })
 #pop-options

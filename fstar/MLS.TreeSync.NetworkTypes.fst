@@ -214,9 +214,25 @@ let ps_leaf_node_tbs_group_id_nt bytes #bl source =
   | LNS_commit () -> ps_mls_bytes
   | _ -> ps_unit
 
+val leaf_node_tbs_leaf_index_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
+let leaf_node_tbs_leaf_index_nt bytes #bl source =
+  match source with
+  | LNS_update ()
+  | LNS_commit () -> nat_lbytes 4
+  | _ -> unit
+
+val ps_leaf_node_tbs_leaf_index_nt: bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_tbs_leaf_index_nt bytes source)
+let ps_leaf_node_tbs_leaf_index_nt bytes #bl source =
+  match source with
+  | LNS_update ()
+  | LNS_commit () -> ps_nat_lbytes 4
+  | _ -> ps_unit
+
+
 type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   data: leaf_node_data_nt bytes tkt;
   group_id: leaf_node_tbs_group_id_nt bytes data.source;
+  leaf_index: leaf_node_tbs_leaf_index_nt bytes data.source;
 }
 
 %splice [ps_leaf_node_tbs_nt] (gen_parser (`leaf_node_tbs_nt))

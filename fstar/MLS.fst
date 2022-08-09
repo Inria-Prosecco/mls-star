@@ -287,7 +287,8 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   signature <-- (
     let tbs = (ps_to_pse (ps_leaf_node_tbs_nt _)).serialize_exact ({
       data = leaf_data;
-      group_id = ()
+      group_id = ();
+      leaf_index = ();
     }) in
     if not (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" (length #bytes tbs)) then error "fresh_key_package: tbs too long"
     else (
