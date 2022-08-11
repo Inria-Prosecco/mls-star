@@ -22,7 +22,7 @@ class crypto_bytes (bytes:Type0) = {
 
   ciphersuite: available_ciphersuite;
 
-  hash_length: nat;
+  hash_length: pos;
   hash_length_bound: squash (hash_length < 256);
   hash_max_input_length: nat;
   hash_hash: buf:bytes{length buf < hash_max_input_length} -> lbytes bytes hash_length;

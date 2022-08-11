@@ -18,7 +18,7 @@ open MLS.Result
 #push-options "--fuel 1 --ifuel 1"
 val create: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt -> result (treesync_state bytes tkt)
 let create #bytes #cb group_id ln =
-  if not (leaf_is_valid group_id 0 ln) then
+  if not (leaf_is_valid ln group_id 0) then
     error "create: leaf node is not valid"
   else (
     return ({
@@ -57,7 +57,7 @@ let add #bytes #cb #tkt st kp =
     | Some i ->
       if not (tree_add_pre st.tree i) then
         error "add: tree_add_pre is false"
-      else if not (leaf_is_valid st.group_id i ln) then
+      else if not (leaf_is_valid ln st.group_id i) then
         error "add: invalid leaf node"
       else
         return (state_update_tree st (tree_add st.tree i ln), (i <: nat))
@@ -66,7 +66,7 @@ let add #bytes #cb #tkt st kp =
       let i = Some?.v (find_empty_leaf extended_tree) in
       if not (tree_add_pre extended_tree i) then
         error "add: tree_add_pre is false (after extension)"
-      else if not (leaf_is_valid st.group_id i ln) then
+      else if not (leaf_is_valid ln st.group_id i) then
         error "add: invalid leaf node"
       else
         return (state_update_tree st (tree_add extended_tree i ln), (i <: nat))
@@ -76,7 +76,7 @@ val update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -
 let update #bytes #cb #tkt st ln i =
   if not (ln.data.source = LNS_update()) then
     error "update: leaf node has invalid source"
-  else if not (leaf_is_valid st.group_id i ln) then
+  else if not (leaf_is_valid ln st.group_id i) then
     error "update: leaf node is not valid"
   else (
     return (state_update_tree st (tree_update st.tree i ln))

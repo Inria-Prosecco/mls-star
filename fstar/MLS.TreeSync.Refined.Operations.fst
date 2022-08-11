@@ -16,7 +16,7 @@ open MLS.TreeSync.Refined.Types
 #push-options "--fuel 0 --ifuel 0"
 
 val tree_add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #group_id:mls_bytes bytes -> t:treesync_valid bytes tkt l i group_id -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Pure (treesync_valid bytes tkt l i group_id)
-  (requires leaf_at t li == None /\ ln.data.source == LNS_key_package() /\ leaf_is_valid group_id li ln /\ tree_add_pre t li)
+  (requires leaf_at t li == None /\ ln.data.source == LNS_key_package() /\ leaf_is_valid ln group_id li /\ tree_add_pre t li)
   (ensures fun _ -> True)
 let tree_add #bytes #cb #tkt #l #i #group_id t li ln =
   unmerged_leaves_ok_tree_add t li ln;
@@ -25,7 +25,7 @@ let tree_add #bytes #cb #tkt #l #i #group_id t li ln =
   tree_add t li ln
 
 val tree_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #group_id:mls_bytes bytes -> t:treesync_valid bytes tkt l i group_id -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Pure (treesync_valid bytes tkt l i group_id)
-  (requires ln.data.source == LNS_update() /\ leaf_is_valid group_id li ln)
+  (requires ln.data.source == LNS_update() /\ leaf_is_valid ln group_id li)
   (ensures fun _ -> True)
 let tree_update #bytes #cb #tkt #l #i #group_id t li ln =
   unmerged_leaves_ok_tree_update t li ln;

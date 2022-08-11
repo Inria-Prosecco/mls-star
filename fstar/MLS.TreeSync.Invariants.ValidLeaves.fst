@@ -14,6 +14,6 @@ val valid_leaves_invariant: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treek
 let rec valid_leaves_invariant #bytes #cb #tkt #l #i group_id t =
   match t with
   | TLeaf None -> true
-  | TLeaf (Some ln) -> leaf_is_valid group_id i ln
+  | TLeaf (Some ln) -> leaf_is_valid ln group_id i
   | TNode _ left right ->
     valid_leaves_invariant group_id left && valid_leaves_invariant group_id right

@@ -111,19 +111,22 @@ let rec set_external_path_leaf #bytes #cb #tkt #l #i #li p lp =
   match p with
   | PLeaf _ -> PLeaf lp
   | PNode p_content p_next -> PNode p_content (set_external_path_leaf p_next lp)
-// TODO: other checks described in
-// https://messaginglayersecurity.rocks/mls-protocol/draft-ietf-mls-protocol.html#name-leaf-node-validation
-// ?
 
-val leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> mls_bytes bytes -> nat -> leaf_node_nt bytes tkt -> bool
-let leaf_is_valid #bytes #cb #tkt group_id leaf_index ln =
-  leaf_index < pow2 32 && (
-  let tbs = {
+val get_leaf_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> leaf_node_nt bytes tkt -> mls_bytes bytes -> nat_lbytes 4 -> bytes
+let get_leaf_tbs #bytes #bl #tkt ln group_id leaf_index =
+  serialize (leaf_node_tbs_nt bytes tkt) ({
     data = ln.data;
     group_id = if ln.data.source = LNS_key_package () then () else group_id;
     leaf_index = if ln.data.source = LNS_key_package () then () else leaf_index;
-  } in
-  let tbs_bytes: bytes = serialize (leaf_node_tbs_nt bytes tkt) tbs in
+  })
+
+// TODO: other checks described in
+// https://messaginglayersecurity.rocks/mls-protocol/draft-ietf-mls-protocol.html#name-leaf-node-validation
+// ?
+val leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> leaf_node_nt bytes tkt -> mls_bytes bytes -> nat -> bool
+let leaf_is_valid #bytes #cb #tkt ln group_id leaf_index =
+  leaf_index < pow2 32 && (
+  let tbs_bytes = get_leaf_tbs ln group_id leaf_index in
   length tbs_bytes < pow2 30 &&
   sign_with_label_pre #bytes "LeafNodeTBS" (length tbs_bytes) &&
   length #bytes ln.data.signature_key = sign_public_key_length #bytes &&
@@ -133,7 +136,7 @@ let leaf_is_valid #bytes #cb #tkt group_id leaf_index ln =
 
 val external_path_leaf_is_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> mls_bytes bytes -> external_pathsync bytes tkt l 0 li -> bool
 let external_path_leaf_is_valid #bytes #cb #tkt #l #li group_id p =
-  leaf_is_valid group_id li (get_external_path_leaf p)
+  leaf_is_valid (get_external_path_leaf p) group_id li
 
 val external_path_is_parent_hash_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> bool
 let external_path_is_parent_hash_valid #bytes #cb #tkt #l #li t p =
