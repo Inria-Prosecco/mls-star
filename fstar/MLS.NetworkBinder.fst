@@ -55,7 +55,7 @@ let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path
     )
   )
 
-val update_path_to_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> update_path:sparse_update_path bytes l i li -> TS.external_pathsync bytes tkt l i li
+val update_path_to_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> update_path:sparse_update_path bytes l i li -> TS.pathsync bytes tkt l i li
 let rec update_path_to_treesync #bytes #cb #l #i #li p =
   match p with
   | PLeaf ln -> PLeaf ln
@@ -167,7 +167,7 @@ let treekem_to_update_path_node #bytes #cb kp =
     } <: update_path_node_nt bytes)
   )
 
-val mls_star_paths_to_update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.external_pathsync bytes tkt l i li -> TK.pathkem bytes l i li -> result (sparse_update_path bytes l i li)
+val mls_star_paths_to_update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.pathsync bytes tkt l i li -> TK.pathkem bytes l i li -> result (sparse_update_path bytes l i li)
 let rec mls_star_paths_to_update_path #bytes #cb #l #i #li psync pkem =
   match psync, pkem with
   | PLeaf lp, PLeaf _ -> return (PLeaf lp)

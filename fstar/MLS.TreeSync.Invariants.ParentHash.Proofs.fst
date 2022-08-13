@@ -684,7 +684,7 @@ let parent_hash_invariant_tree_add #bytes #cb #tkt #l #i t li content =
 
 (*** Parent-hash invariant: applying external path ***)
 
-val find_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu & treesync bytes tkt lu iu)
+val find_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu & treesync bytes tkt lu iu)
   (requires apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures fun _ -> True)
 let rec find_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
@@ -701,14 +701,14 @@ let rec find_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p parent_parent_ha
       find_parent_hash_link_aux right p_next parent_parent_hash
   )
 
-val path_node_not_blank: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> external_pathsync bytes tkt l i li -> bool
+val path_node_not_blank: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> pathsync bytes tkt l i li -> bool
 let path_node_not_blank #bytes #cb #tkt #l #i #li p =
   match p with
   | PLeaf _ -> true
   | PNode (Some _) _ -> true
   | _ -> false
 
-val find_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu & treesync bytes tkt lu iu)
+val find_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu & treesync bytes tkt lu iu)
   (requires apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures fun _ -> True)
 let find_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_parent_hash =
@@ -722,7 +722,7 @@ let find_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_parent_hash =
       find_parent_hash_link_aux right p_next new_parent_parent_hash
   )
 
-val external_path_is_parent_hash_valid_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> mls_bytes bytes -> bool
+val external_path_is_parent_hash_valid_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> pathsync bytes tkt l i li -> mls_bytes bytes -> bool
 let external_path_is_parent_hash_valid_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   let new_lp = get_external_path_leaf p in
   compute_leaf_parent_hash_from_external_path_pre t p (length #bytes parent_parent_hash) && (
@@ -743,7 +743,7 @@ let rec is_tree_empty_implies_empty_resolution #bytes #bl #tkt #l #i t =
 
 #push-options "--z3rlimit 100"
 //Properties that are just (almost) trivial induction
-val find_parent_hash_link_aux_misc_properties: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
+val find_parent_hash_link_aux_misc_properties: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires external_path_is_parent_hash_valid_aux t p parent_parent_hash /\ external_path_is_filter_valid t p /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures (
     let (|lu, iu, u|) = find_parent_hash_link_aux t p parent_parent_hash in
@@ -772,7 +772,7 @@ let rec find_parent_hash_link_aux_misc_properties #bytes #cb #tkt #l #i #li t p 
 #pop-options
 
 #push-options "--z3rlimit 100"
-val find_parent_hash_link_misc_properties: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Lemma
+val find_parent_hash_link_misc_properties: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires external_path_is_parent_hash_valid_aux t p parent_parent_hash /\ external_path_is_filter_valid t p /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures (
     let (|lu, iu, u|) = find_parent_hash_link t p parent_parent_hash in
@@ -794,7 +794,7 @@ let find_parent_hash_link_misc_properties #bytes #cb #tkt #l #i #li t p parent_p
 #pop-options
 
 #push-options "--fuel 2 --z3rlimit 100"
-val find_parent_hash_link_last_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Lemma
+val find_parent_hash_link_last_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires external_path_is_parent_hash_valid_aux t p parent_parent_hash /\ external_path_is_filter_valid t p /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures (
     find_parent_hash_link_misc_properties t p parent_parent_hash;
@@ -835,7 +835,7 @@ let rec un_add_empty #bytes #tkt #l #i t =
     | None -> ()
     | Some content -> un_add_empty_lemma content.unmerged_leaves
 
-val find_parent_hash_link_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Lemma
+val find_parent_hash_link_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li{path_node_not_blank p} -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires external_path_is_parent_hash_valid_aux t p parent_parent_hash /\ external_path_is_filter_valid t p /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures (
     find_parent_hash_link_misc_properties t p parent_parent_hash;
@@ -855,7 +855,7 @@ let find_parent_hash_link_parent_hash #bytes #cb #tkt #l #i #li t p parent_paren
   )
 
 #push-options "--z3rlimit 100"
-val parent_hash_invariantP_apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
+val parent_hash_invariantP_apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires parent_hash_invariantP t /\ external_path_is_parent_hash_valid_aux t p parent_parent_hash /\ external_path_is_filter_valid t p /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures parent_hash_invariantP (apply_external_path_aux t p parent_parent_hash))
 let rec parent_hash_invariantP_apply_external_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
@@ -879,7 +879,7 @@ let rec parent_hash_invariantP_apply_external_path_aux #bytes #cb #tkt #l #i #li
     )
 #pop-options
 
-val parent_hash_invariant_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> Lemma
+val parent_hash_invariant_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Lemma
   (requires parent_hash_invariant t /\ external_path_is_parent_hash_valid t p /\ external_path_is_filter_valid t p /\ apply_external_path_pre t p)
   (ensures parent_hash_invariant (apply_external_path t p))
 let parent_hash_invariant_apply_external_path #bytes #cb #tkt #l #li t p =

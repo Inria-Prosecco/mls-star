@@ -117,7 +117,7 @@ let rec unmerged_leaves_ok_tree_add #bytes #bl #tkt #l #i t li content =
 
 (*** External path ***)
 
-val unmerged_leaves_ok_apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
+val unmerged_leaves_ok_apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires apply_external_path_aux_pre #bytes t p (length #bytes parent_parent_hash) /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (apply_external_path_aux t p parent_parent_hash))
 let rec unmerged_leaves_ok_apply_external_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
@@ -131,7 +131,7 @@ let rec unmerged_leaves_ok_apply_external_path_aux #bytes #cb #tkt #l #i #li t p
     else
       unmerged_leaves_ok_apply_external_path_aux right p_next new_parent_parent_hash
 
-val unmerged_leaves_ok_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> Lemma
+val unmerged_leaves_ok_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Lemma
   (requires apply_external_path_pre #bytes t p /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (apply_external_path t p))
 let unmerged_leaves_ok_apply_external_path #bytes #cb #tkt #l #li t p =

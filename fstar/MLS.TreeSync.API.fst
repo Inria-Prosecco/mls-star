@@ -92,7 +92,7 @@ let remove #bytes #cb #tkt st i =
     state_update_tree st blanked_tree
 #pop-options
 
-val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> #li:treesync_index st -> external_pathsync bytes tkt st.levels 0 li -> result (treesync_state bytes tkt)
+val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> #li:treesync_index st -> pathsync bytes tkt st.levels 0 li -> result (treesync_state bytes tkt)
 let commit #bytes #cb #tkt st #li p =
   if not (apply_external_path_pre st.tree p) then
     error "commit: bad precondition"

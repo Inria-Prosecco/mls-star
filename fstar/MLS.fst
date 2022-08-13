@@ -504,15 +504,13 @@ let generate_update_path st e proposals =
     let (update_path_kem, _) = tmp in
     let opt_my_leaf_package = leaf_at st.treesync_state.tree st.leaf_index in
     my_leaf_package <-- (from_option "generate_update_path: my leaf is blanked" opt_my_leaf_package);
-    let my_new_leaf_package = ({
-      my_leaf_package with
-      data = { my_leaf_package.data with
-        source = LNS_update ();
-        lifetime = ();
-        parent_hash = ();
-      };
+    let my_new_leaf_package_data = ({
+      my_leaf_package.data with
+      source = LNS_update ();
+      lifetime = ();
+      parent_hash = ();
     }) in
-    update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package update_path_kem;
+    update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package_data update_path_kem;
     update_path_sync <-- (
       if not (MLS.TreeSync.Operations.external_path_to_valid_external_path_pre st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id) then
         error "generate_update_path: bad precondition"

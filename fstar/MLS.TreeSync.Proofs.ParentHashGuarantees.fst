@@ -732,7 +732,7 @@ let parent_hash_invariant_to_tree_list #bytes #cb #tkt #l #i t =
 
 (*** external_path to tree_list ***)
 
-val find_node_and_path_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & treesync bytes tkt lu iu & external_pathsync bytes tkt lu iu li)
+val find_node_and_path_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & treesync bytes tkt lu iu & pathsync bytes tkt lu iu li)
   (requires
     external_path_is_parent_hash_valid_aux t p parent_parent_hash /\
     external_path_is_filter_valid t p /\
@@ -763,7 +763,7 @@ let rec find_node_and_path_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p pa
   )
 
 #push-options "--z3rlimit 25"
-val find_node_and_path_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & (treesync bytes tkt lu iu & external_pathsync bytes tkt lu iu li & mls_bytes bytes))
+val find_node_and_path_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & (treesync bytes tkt lu iu & pathsync bytes tkt lu iu li & mls_bytes bytes))
   (requires
     external_path_is_parent_hash_valid_aux t p parent_parent_hash /\
     external_path_is_filter_valid t p /\
@@ -795,7 +795,7 @@ let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_par
 #pop-options
 
 #push-options "--z3rlimit 25"
-val external_path_to_tree_list_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (tree_list bytes tkt)
+val external_path_to_tree_list_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (tree_list bytes tkt)
   (requires
     apply_external_path_aux_pre t p (length #bytes parent_parent_hash) /\
     external_path_is_parent_hash_valid_aux t p parent_parent_hash /\
@@ -843,7 +843,7 @@ let rec last_to_tree_list_ends_at_root #bytes #bl #tkt tl =
   | _::t -> last_to_tree_list_ends_at_root t
 
 #push-options "--z3rlimit 25"
-val external_path_to_tree_list: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> Pure (tree_list bytes tkt)
+val external_path_to_tree_list: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Pure (tree_list bytes tkt)
   (requires
     apply_external_path_pre t p /\
     external_path_is_parent_hash_valid t p /\

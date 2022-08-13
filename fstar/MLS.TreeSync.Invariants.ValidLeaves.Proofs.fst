@@ -44,7 +44,7 @@ let rec valid_leaves_invariant_tree_remove #bytes #cb #tkt #l #i group_id t li =
     valid_leaves_invariant_tree_remove group_id c li
 
 #push-options "--z3rlimit 25"
-val valid_leaves_invariant_apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
+val valid_leaves_invariant_apply_external_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires leaf_is_valid (get_external_path_leaf p) group_id li /\ valid_leaves_invariant group_id t /\ apply_external_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures valid_leaves_invariant group_id (apply_external_path_aux t p parent_parent_hash))
 let rec valid_leaves_invariant_apply_external_path_aux #bytes #cb #tkt #l #i #li group_id t p parent_parent_hash =
@@ -56,7 +56,7 @@ let rec valid_leaves_invariant_apply_external_path_aux #bytes #cb #tkt #l #i #li
     valid_leaves_invariant_apply_external_path_aux group_id child p_next new_parent_parent_hash
 #pop-options
 
-val valid_leaves_invariant_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> group_id:mls_bytes bytes -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> Lemma
+val valid_leaves_invariant_apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> group_id:mls_bytes bytes -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Lemma
   (requires leaf_is_valid (get_external_path_leaf p) group_id li /\ valid_leaves_invariant group_id t /\ apply_external_path_pre t p)
   (ensures valid_leaves_invariant group_id (apply_external_path t p))
 let valid_leaves_invariant_apply_external_path #bytes #cb #tkt #l #li group_id t p =

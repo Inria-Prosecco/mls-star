@@ -41,7 +41,7 @@ let tree_remove #bytes #cb #tkt #l #i #group_id t li =
   tree_remove t li
 
 #push-options "--ifuel 1"
-val apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> #group_id:mls_bytes bytes -> t:treesync_valid bytes tkt l 0 group_id -> p:external_pathsync bytes tkt l 0 li -> Pure (treesync_valid bytes tkt l 0 group_id)
+val apply_external_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> #group_id:mls_bytes bytes -> t:treesync_valid bytes tkt l 0 group_id -> p:pathsync bytes tkt l 0 li -> Pure (treesync_valid bytes tkt l 0 group_id)
   (requires apply_external_path_pre t p /\ external_path_is_valid group_id t p)
   (ensures fun _ -> True)
 let apply_external_path #bytes #cb #tkt #l #li #group_id t p =
