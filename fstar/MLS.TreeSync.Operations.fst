@@ -95,10 +95,7 @@ let rec compute_leaf_parent_hash_from_external_path #bytes #cb #tkt #path_leaf_t
   | TNode _ left right, PNode opt_ext_content p_next ->
     let (child, sibling) = get_child_sibling t li in
     let (_,  new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
-    if is_left_leaf li then
-      compute_leaf_parent_hash_from_external_path left p_next new_parent_parent_hash
-    else
-      compute_leaf_parent_hash_from_external_path right p_next new_parent_parent_hash
+    compute_leaf_parent_hash_from_external_path child p_next new_parent_parent_hash
 
 val get_external_path_leaf: #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> path leaf_t node_t l i li -> leaf_t
 let rec get_external_path_leaf #leaf_t #node_t #i #li p =

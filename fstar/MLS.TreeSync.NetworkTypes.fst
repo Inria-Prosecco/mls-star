@@ -66,6 +66,7 @@ type leaf_node_source_nt =
 
 %splice [ps_leaf_node_source_nt] (gen_parser (`leaf_node_source_nt))
 %splice [ps_leaf_node_source_nt_length] (gen_length_lemma (`leaf_node_source_nt))
+%splice [ps_leaf_node_source_nt_is_valid] (gen_is_valid_lemma (`leaf_node_source_nt))
 
 /// struct {
 ///     ProtocolVersion versions<V>;
@@ -158,6 +159,7 @@ type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byt
 
 %splice [ps_leaf_node_data_nt] (gen_parser (`leaf_node_data_nt))
 %splice [ps_leaf_node_data_nt_length] (gen_length_lemma (`leaf_node_data_nt))
+%splice [ps_leaf_node_data_nt_is_valid] (gen_is_valid_lemma (`leaf_node_data_nt))
 
 type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   data: leaf_node_data_nt bytes tkt;
@@ -165,6 +167,7 @@ type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
 }
 
 %splice [ps_leaf_node_nt] (gen_parser (`leaf_node_nt))
+%splice [ps_leaf_node_nt_is_valid] (gen_is_valid_lemma (`leaf_node_nt))
 
 instance parseable_serializeable_leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (leaf_node_nt bytes tkt) = mk_parseable_serializeable (ps_leaf_node_nt tkt)
 
