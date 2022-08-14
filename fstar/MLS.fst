@@ -512,10 +512,10 @@ let generate_update_path st e proposals =
     }) in
     update_path_ext_sync <-- treekem_to_treesync my_new_leaf_package_data update_path_kem;
     update_path_sync <-- (
-      if not (MLS.TreeSync.Operations.external_path_to_valid_external_path_pre st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id) then
+      if not (MLS.TreeSync.Operations.external_path_to_path_pre st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id) then
         error "generate_update_path: bad precondition"
       else
-        return (MLS.TreeSync.Operations.external_path_to_valid_external_path st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id st.sign_private_key sign_nonce)
+        return (MLS.TreeSync.Operations.external_path_to_path st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id st.sign_private_key sign_nonce)
     );
     uncompressed_update_path <-- mls_star_paths_to_update_path update_path_sync update_path_kem;
     update_path <-- compress_update_path uncompressed_update_path;

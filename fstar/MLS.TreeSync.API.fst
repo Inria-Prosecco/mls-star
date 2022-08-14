@@ -94,9 +94,9 @@ let remove #bytes #cb #tkt st i =
 
 val commit: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> st:treesync_state bytes tkt -> #li:treesync_index st -> pathsync bytes tkt st.levels 0 li -> result (treesync_state bytes tkt)
 let commit #bytes #cb #tkt st #li p =
-  if not (apply_external_path_pre st.tree p) then
+  if not (apply_path_pre st.tree p) then
     error "commit: bad precondition"
-  else if not (external_path_is_valid st.group_id st.tree p) then
+  else if not (path_is_valid st.group_id st.tree p) then
     error "commit: invalid path"
   else
-    return (state_update_tree st (apply_external_path st.tree p))
+    return (state_update_tree st (apply_path st.tree p))

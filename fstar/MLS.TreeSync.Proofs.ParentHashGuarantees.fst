@@ -730,29 +730,29 @@ let parent_hash_invariant_to_tree_list #bytes #cb #tkt #l #i t =
   tree_list_is_parent_hash_linkedP_rev_eq tl;
   List.Tot.rev tl
 
-(*** external_path to tree_list ***)
+(*** path to tree_list ***)
 
 val find_node_and_path_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & treesync bytes tkt lu iu & pathsync bytes tkt lu iu li)
   (requires
-    external_path_is_parent_hash_valid_aux t p parent_parent_hash /\
-    external_path_is_filter_valid t p /\
-    apply_external_path_aux_pre t p (length #bytes parent_parent_hash)
+    path_is_parent_hash_valid_aux t p parent_parent_hash /\
+    path_is_filter_valid t p /\
+    apply_path_aux_pre t p (length #bytes parent_parent_hash)
   )
   (ensures fun (|lu, iu, tu, pu|) ->
-    external_path_is_parent_hash_valid_aux tu pu parent_parent_hash /\
-    external_path_is_filter_valid tu pu /\
+    path_is_parent_hash_valid_aux tu pu parent_parent_hash /\
+    path_is_filter_valid tu pu /\
     path_node_not_blank pu /\
-    get_external_path_leaf pu == get_external_path_leaf p /\
+    get_path_leaf pu == get_path_leaf p /\
     lu <= l /\ leaf_index_inside l i iu /\ is_subtree_of tu t /\
-    apply_external_path_aux_pre tu pu (length #bytes parent_parent_hash) /\
-    find_parent_hash_link_aux t p parent_parent_hash == (|lu, iu, apply_external_path_aux tu pu parent_parent_hash|)
+    apply_path_aux_pre tu pu (length #bytes parent_parent_hash) /\
+    find_parent_hash_link_aux t p parent_parent_hash == (|lu, iu, apply_path_aux tu pu parent_parent_hash|)
   )
 let rec find_node_and_path_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   match t, p with
   | TLeaf _, PLeaf _
   | TNode _ _ _, PNode (Some _) _ -> (
     //Why do you need this F*???
-    assert(find_parent_hash_link_aux t p parent_parent_hash == (|l, i, apply_external_path_aux t p parent_parent_hash|));
+    assert(find_parent_hash_link_aux t p parent_parent_hash == (|l, i, apply_path_aux t p parent_parent_hash|));
     (|l, i, t, p|)
   )
   | TNode _ left right, PNode None p_next -> (
@@ -765,19 +765,19 @@ let rec find_node_and_path_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p pa
 #push-options "--z3rlimit 25"
 val find_node_and_path_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & (treesync bytes tkt lu iu & pathsync bytes tkt lu iu li & mls_bytes bytes))
   (requires
-    external_path_is_parent_hash_valid_aux t p parent_parent_hash /\
-    external_path_is_filter_valid t p /\
+    path_is_parent_hash_valid_aux t p parent_parent_hash /\
+    path_is_filter_valid t p /\
     path_node_not_blank p /\
-    apply_external_path_aux_pre t p (length #bytes parent_parent_hash)
+    apply_path_aux_pre t p (length #bytes parent_parent_hash)
   )
   (ensures fun (|lu, iu, (tu, pu, new_parent_parent_hash)|) ->
-    external_path_is_parent_hash_valid_aux tu pu new_parent_parent_hash /\
-    external_path_is_filter_valid tu pu /\
+    path_is_parent_hash_valid_aux tu pu new_parent_parent_hash /\
+    path_is_filter_valid tu pu /\
     path_node_not_blank pu /\
-    get_external_path_leaf pu == get_external_path_leaf p /\
+    get_path_leaf pu == get_path_leaf p /\
     lu < l /\ leaf_index_inside l i iu /\ is_subtree_of tu t /\
-    apply_external_path_aux_pre tu pu (length #bytes new_parent_parent_hash) /\
-    find_parent_hash_link t p parent_parent_hash == (|lu, iu, apply_external_path_aux tu pu new_parent_parent_hash|)
+    apply_path_aux_pre tu pu (length #bytes new_parent_parent_hash) /\
+    find_parent_hash_link t p parent_parent_hash == (|lu, iu, apply_path_aux tu pu new_parent_parent_hash|)
   )
 let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   match t, p with
@@ -795,21 +795,21 @@ let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_par
 #pop-options
 
 #push-options "--z3rlimit 25"
-val external_path_to_tree_list_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (tree_list bytes tkt)
+val path_to_tree_list_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (tree_list bytes tkt)
   (requires
-    apply_external_path_aux_pre t p (length #bytes parent_parent_hash) /\
-    external_path_is_parent_hash_valid_aux t p parent_parent_hash /\
-    external_path_is_filter_valid t p /\
+    apply_path_aux_pre t p (length #bytes parent_parent_hash) /\
+    path_is_parent_hash_valid_aux t p parent_parent_hash /\
+    path_is_filter_valid t p /\
     path_node_not_blank p /\
     unmerged_leaves_ok t
   )
   (ensures fun tl ->
     tree_list_is_parent_hash_linkedP_rev tl /\
     Cons? tl /\
-    List.Tot.hd tl == (|l, i, apply_external_path_aux t p parent_parent_hash|) /\
-    List.Tot.last tl == (|0, li, TLeaf (Some (get_external_path_leaf p))|)
+    List.Tot.hd tl == (|l, i, apply_path_aux t p parent_parent_hash|) /\
+    List.Tot.last tl == (|0, li, TLeaf (Some (get_path_leaf p))|)
   )
-let rec external_path_to_tree_list_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
+let rec path_to_tree_list_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   if l = 0 then (
     let PLeaf ln = p in
     let tl = [(|l, i, TLeaf (Some ln)|)] in
@@ -821,9 +821,9 @@ let rec external_path_to_tree_list_aux #bytes #cb #tkt #l #i #li t p parent_pare
     find_parent_hash_link_parent_hash t p parent_parent_hash;
     find_parent_hash_link_last_update t p parent_parent_hash;
     unmerged_leaves_ok_subtree tu t;
-    unmerged_leaves_ok_apply_external_path_aux t p parent_parent_hash;
-    let tail_tl = external_path_to_tree_list_aux tu pu new_parent_parent_hash in
-    (|l, i, apply_external_path_aux t p parent_parent_hash|)::tail_tl
+    unmerged_leaves_ok_apply_path_aux t p parent_parent_hash;
+    let tail_tl = path_to_tree_list_aux tu pu new_parent_parent_hash in
+    (|l, i, apply_path_aux t p parent_parent_hash|)::tail_tl
   )
 #pop-options
 
@@ -843,24 +843,24 @@ let rec last_to_tree_list_ends_at_root #bytes #bl #tkt tl =
   | _::t -> last_to_tree_list_ends_at_root t
 
 #push-options "--z3rlimit 25"
-val external_path_to_tree_list: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Pure (tree_list bytes tkt)
+val path_to_tree_list: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Pure (tree_list bytes tkt)
   (requires
-    apply_external_path_pre t p /\
-    external_path_is_parent_hash_valid t p /\
-    external_path_is_filter_valid t p /\
+    apply_path_pre t p /\
+    path_is_parent_hash_valid t p /\
+    path_is_filter_valid t p /\
     unmerged_leaves_ok t
   )
   (ensures fun tl ->
     tree_list_is_parent_hash_linkedP tl /\
     tree_list_ends_at_root tl /\
     Cons? tl /\
-    List.Tot.hd tl == (|0, li, TLeaf (Some (get_external_path_leaf p))|)
+    List.Tot.hd tl == (|0, li, TLeaf (Some (get_path_leaf p))|)
   )
-let external_path_to_tree_list #bytes #cb #tkt #l #li t p =
+let path_to_tree_list #bytes #cb #tkt #l #li t p =
   //Handle the case where the root node is blank
   let (|l', i', t', p'|) = find_node_and_path_parent_hash_link_aux t p (root_parent_hash #bytes) in
   unmerged_leaves_ok_subtree t' t;
-  let rev_tl = external_path_to_tree_list_aux t' p' (root_parent_hash #bytes) in
+  let rev_tl = path_to_tree_list_aux t' p' (root_parent_hash #bytes) in
   hd_tail_rev rev_tl;
   tree_list_is_parent_hash_linkedP_rev_eq rev_tl;
   let tl = List.Tot.rev rev_tl in

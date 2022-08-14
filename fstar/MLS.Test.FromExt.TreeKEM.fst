@@ -90,9 +90,9 @@ let gen_treekem_output #cb t =
     let uncompressed_update_path = extract_result (uncompress_update_path update_sender ts1 update_path) in
     let ups1 = update_path_to_treesync uncompressed_update_path in
     let upk1 = extract_result (update_path_to_treekem update_group_context uncompressed_update_path) in
-    let ups1_is_valid = external_path_is_valid group_id ts1 ups1 in
+    let ups1_is_valid = path_is_valid group_id ts1 ups1 in
     let _: unit = extract_result (if ups1_is_valid then return () else error "invalid ups1") in
-    let ts2: treesync bytes tkt l 0 = extract_result (if not (apply_external_path_pre ts1 ups1) then error "invalid pre" else return (apply_external_path ts1 ups1)) in
+    let ts2: treesync bytes tkt l 0 = extract_result (if not (apply_path_pre ts1 ups1) then error "invalid pre" else return (apply_path ts1 ups1)) in
     let tk2 = tree_apply_path tk1 upk1 in
 
     let root_secret_after_update = extract_result (root_secret tk2 my_index my_leaf_secret) in
