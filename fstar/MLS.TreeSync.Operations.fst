@@ -67,8 +67,8 @@ let compute_new_np_and_ph #bytes #cb #tkt #l #i opt_ext_content sibling parent_p
   in
   (new_opt_content, new_parent_parent_hash)
 
-val compute_leaf_parent_hash_from_path_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #path_leaf_t:Type -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> path path_leaf_t (option tkt.node_content) l i li -> mls_nat -> bool
-let rec compute_leaf_parent_hash_from_path_pre #bytes #cb #tkt #path_leaf_t #l #i #li t p length_parent_parent_hash =
+val compute_path_parent_hash_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #path_leaf_t:Type -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> path path_leaf_t (option tkt.node_content) l i li -> mls_nat -> bool
+let rec compute_path_parent_hash_pre #bytes #cb #tkt #path_leaf_t #l #i #li t p length_parent_parent_hash =
   match t, p with
   | TLeaf _, PLeaf _ -> true
   | TNode _ left right, PNode opt_ext_content p_next -> (
@@ -80,11 +80,14 @@ let rec compute_leaf_parent_hash_from_path_pre #bytes #cb #tkt #path_leaf_t #l #
     in
     compute_new_np_and_ph_pre opt_ext_content sibling length_parent_parent_hash && (
     if is_left_leaf li then
-      compute_leaf_parent_hash_from_path_pre left p_next new_length_parent_parent_hash
+      compute_path_parent_hash_pre left p_next new_length_parent_parent_hash
     else
-      compute_leaf_parent_hash_from_path_pre right p_next new_length_parent_parent_hash
+      compute_path_parent_hash_pre right p_next new_length_parent_parent_hash
     )
   )
+
+val compute_leaf_parent_hash_from_path_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #path_leaf_t:Type -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> path path_leaf_t (option tkt.node_content) l i li -> mls_nat -> bool
+let compute_leaf_parent_hash_from_path_pre = compute_path_parent_hash_pre
 
 val compute_leaf_parent_hash_from_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #path_leaf_t:Type -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:path path_leaf_t (option tkt.node_content) l i li -> parent_parent_hash:mls_bytes bytes -> Pure (mls_bytes bytes)
   (requires compute_leaf_parent_hash_from_path_pre t p (length #bytes parent_parent_hash))
@@ -143,8 +146,8 @@ let path_is_parent_hash_valid #bytes #cb #tkt #l #li t p =
   (new_lp.data.source = LNS_commit () && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
   )
 
-val path_is_filter_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> pathsync bytes tkt l i li -> bool
-let rec path_is_filter_valid #bytes #cb #tkt #l #i #li t p =
+val path_is_filter_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_t:Type -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> path leaf_t (option tkt.node_content) l i li -> bool
+let rec path_is_filter_valid #bytes #cb #leaf_t #tkt #l #i #li t p =
   match t, p with
   | TLeaf _, PLeaf _ -> true
   | TNode _ _ _, PNode new_opn p_next -> (
@@ -179,35 +182,28 @@ let external_path_to_path_pre #bytes #cb #tkt #l #i #li t p group_id =
     sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
   )
 
+// Auxillary function, useful for proofs
 #push-options "--z3rlimit 50"
-val external_path_to_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> sign_private_key bytes -> sign_nonce bytes -> Pure (pathsync bytes tkt l i li)
+val external_path_to_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> sign_private_key bytes -> sign_nonce bytes -> Pure (leaf_node_nt bytes tkt)
   (requires external_path_to_path_pre t p group_id)
   (ensures fun _ -> True)
-let external_path_to_path #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
+let external_path_to_path_aux #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
   let lp = get_path_leaf p in
   let new_lp_data = { lp with source = LNS_commit (); parent_hash = computed_parent_hash; } in
   let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id; leaf_index = li;}) in
   let new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
-  set_path_leaf p ({ data = new_lp_data; signature = new_signature } <: leaf_node_nt bytes tkt)
+  ({ data = new_lp_data; signature = new_signature } <: leaf_node_nt bytes tkt)
 #pop-options
 
+val external_path_to_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> sign_private_key bytes -> sign_nonce bytes -> Pure (pathsync bytes tkt l i li)
+  (requires external_path_to_path_pre t p group_id)
+  (ensures fun _ -> True)
+let external_path_to_path #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
+  set_path_leaf p (external_path_to_path_aux t p group_id sign_key nonce)
+
 val apply_path_aux_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> pathsync bytes tkt l i li -> mls_nat -> bool
-let rec apply_path_aux_pre #bytes #cb #tkt #l #i #li t p length_parent_parent_hash =
-  match t, p with
-  | TLeaf _, PLeaf _ -> true
-  | TNode _ left right, PNode opt_ext_content p_next ->
-    let (child, sibling) = get_child_sibling t li in
-    let new_length_parent_parent_hash =
-      match opt_ext_content with
-      | None -> length_parent_parent_hash
-      | Some _ -> hash_length #bytes
-    in
-    compute_new_np_and_ph_pre opt_ext_content sibling length_parent_parent_hash && (
-      if is_left_leaf li
-      then apply_path_aux_pre left p_next new_length_parent_parent_hash
-      else apply_path_aux_pre right p_next new_length_parent_parent_hash
-    )
+let apply_path_aux_pre #bytes #cb #tkt = compute_path_parent_hash_pre #bytes #cb #tkt #(leaf_node_nt bytes tkt)
 
 val apply_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (treesync bytes tkt l i)
   (requires apply_path_aux_pre t p (length #bytes parent_parent_hash))
