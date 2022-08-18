@@ -4,6 +4,7 @@ open Comparse
 open MLS.Crypto
 open MLS.Tree
 open MLS.TreeCommon
+open MLS.TreeCommon.Lemmas
 open MLS.TreeKEM.Types
 open MLS.TreeKEM
 open MLS.TreeKEM.API.Types
@@ -21,6 +22,7 @@ let add #bytes #cb st kp =
   | Some i ->
     (state_update_tree st (tree_add st.tree i kp), (i <: nat))
   | None ->
+    find_empty_leaf_tree_extend st.tree;
     let extended_tree = tree_extend st.tree in
     let i = Some?.v (find_empty_leaf extended_tree) in
     (state_update_tree st (tree_add extended_tree i kp), (i <: nat))

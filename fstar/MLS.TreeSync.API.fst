@@ -6,6 +6,7 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.Tree
 open MLS.TreeCommon
+open MLS.TreeCommon.Lemmas
 open MLS.TreeSync.Types
 open MLS.TreeSync.Operations
 open MLS.TreeSync.Refined.Types
@@ -62,6 +63,7 @@ let add #bytes #cb #tkt st kp =
       else
         return (state_update_tree st (tree_add st.tree i ln), (i <: nat))
     | None ->
+      find_empty_leaf_tree_extend st.tree;
       let extended_tree = tree_extend st.tree in
       let i = Some?.v (find_empty_leaf extended_tree) in
       if not (tree_add_pre extended_tree i) then

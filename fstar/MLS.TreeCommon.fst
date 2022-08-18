@@ -60,12 +60,16 @@ let rec find_empty_leaf #leaf_t #node_t #l #i t =
     | None, None -> None
   )
 
-val mk_blank_tree: #leaf_t:Type -> #node_t:Type -> l:nat -> i:tree_index l -> Pure (tree (option leaf_t) (option node_t) l i) (requires True) (ensures fun res -> Some? (find_empty_leaf res))
-let rec mk_blank_tree #leaf_t #node_t l i =
-  if l = 0 then TLeaf None
-  else TNode None (mk_blank_tree (l-1) _) (mk_blank_tree (l-1) _)
+val mk_blank_tree_general: #leaf_t:Type -> #node_t:Type -> l:nat -> i:tree_index l -> leaf_content:leaf_t -> node_content:node_t -> tree leaf_t node_t l i
+let rec mk_blank_tree_general #leaf_t #node_t l i leaf_content node_content =
+  if l = 0 then TLeaf leaf_content
+  else TNode node_content (mk_blank_tree_general (l-1) _ leaf_content node_content) (mk_blank_tree_general (l-1) _ leaf_content node_content)
 
-val tree_extend: #leaf_t:Type -> #node_t:Type -> #l:nat -> tree (option leaf_t) (option node_t) l 0 -> Pure (tree (option leaf_t) (option node_t) (l+1) 0) (requires True) (fun res -> Some? (find_empty_leaf res))
+val mk_blank_tree: #leaf_t:Type -> #node_t:Type -> l:nat -> i:tree_index l -> tree (option leaf_t) (option node_t) l i
+let mk_blank_tree #leaf_t #node_t l i =
+  mk_blank_tree_general l i None None
+
+val tree_extend: #leaf_t:Type -> #node_t:Type -> #l:nat -> tree (option leaf_t) (option node_t) l 0 -> tree (option leaf_t) (option node_t) (l+1) 0
 let tree_extend #leaf_t #node_t #l t =
   TNode None t (mk_blank_tree l _)
 
