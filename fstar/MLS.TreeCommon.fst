@@ -6,29 +6,29 @@ open MLS.Tree
 
 (*** Tree creation ***)
 
-val create_tree: #leaf_t:Type -> #node_t:Type -> leaf_t -> tree (option leaf_t) (option node_t) 0 0
-let create_tree lp =
-  TLeaf (Some lp)
+val tree_create: #leaf_t:Type -> #node_t:Type -> leaf_t -> tree leaf_t node_t 0 0
+let tree_create lp =
+  TLeaf lp
 
 (*** Common tree operations ***)
 
-val tree_blank_path: #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> tree (option leaf_t) (option node_t) l i -> leaf_index l i -> option leaf_t -> tree (option leaf_t) (option node_t) l i
-let rec tree_blank_path #leaf_t #node_t #l #i t li opt_lp =
+val tree_change_path: #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> tree leaf_t node_t l i -> leaf_index l i -> leaf_t -> node_t -> tree leaf_t node_t l i
+let rec tree_change_path #leaf_t #node_t #l #i t li leaf_content node_content =
   match t with
-  | TLeaf _ -> TLeaf opt_lp
-  | TNode opt_node_content left right -> (
+  | TLeaf _ -> TLeaf leaf_content
+  | TNode _ left right -> (
     if is_left_leaf li
-    then TNode None (tree_blank_path left li opt_lp) right
-    else TNode None left (tree_blank_path right li opt_lp)
+    then TNode node_content (tree_change_path left li leaf_content node_content) right
+    else TNode node_content left (tree_change_path right li leaf_content node_content)
   )
 
 val tree_update: #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> tree (option leaf_t) (option node_t) l i -> leaf_index l i -> leaf_t -> tree (option leaf_t) (option node_t) l i
 let tree_update #leaf_t #node_t #l #i t li lp =
-  tree_blank_path t li (Some lp)
+  tree_change_path t li (Some lp) None
 
 val tree_remove: #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> tree (option leaf_t) (option node_t) l i -> leaf_index l i -> tree (option leaf_t) (option node_t) l i
 let tree_remove #leaf_t #node_t #l #i t li =
-  tree_blank_path t li None
+  tree_change_path t li None None
 
 (*** Tree extension / truncation ***)
 

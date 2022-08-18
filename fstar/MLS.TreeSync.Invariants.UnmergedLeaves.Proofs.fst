@@ -17,29 +17,29 @@ open MLS.MiscLemmas
 
 (*** Update/Remove ***)
 
-val unmerged_leaves_ok_tree_blank_path: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) -> Lemma
+val unmerged_leaves_ok_tree_change_path: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) -> Lemma
   (requires unmerged_leaves_ok t)
-  (ensures unmerged_leaves_ok (tree_blank_path t li oln))
-let rec unmerged_leaves_ok_tree_blank_path #l #i t li oln =
+  (ensures unmerged_leaves_ok (tree_change_path t li oln None))
+let rec unmerged_leaves_ok_tree_change_path #l #i t li oln =
   match t with
   | TLeaf _ -> ()
   | TNode _ left right ->
     if is_left_leaf li then
-      unmerged_leaves_ok_tree_blank_path left li oln
+      unmerged_leaves_ok_tree_change_path left li oln
     else
-      unmerged_leaves_ok_tree_blank_path right li oln
+      unmerged_leaves_ok_tree_change_path right li oln
 
 val unmerged_leaves_ok_tree_update: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_update t li ln))
 let unmerged_leaves_ok_tree_update #l #i t li ln =
-  unmerged_leaves_ok_tree_blank_path t li (Some ln)
+  unmerged_leaves_ok_tree_change_path t li (Some ln)
 
 val unmerged_leaves_ok_tree_remove: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_remove t li))
 let unmerged_leaves_ok_tree_remove #l #i t li =
-  unmerged_leaves_ok_tree_blank_path t li None
+  unmerged_leaves_ok_tree_change_path t li None
 
 val unmerged_leaves_ok_mk_blank_tree: #bytes:Type0 -> {|bl:bytes_like bytes|} -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> Lemma
   (ensures unmerged_leaves_ok #bytes #bl #tkt (mk_blank_tree l i))

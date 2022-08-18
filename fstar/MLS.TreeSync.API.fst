@@ -24,7 +24,7 @@ let create #bytes #cb group_id ln =
     return ({
       group_id;
       levels = 0;
-      tree = create_tree ln;
+      tree = tree_create (Some ln);
       version = 0;
     })
   )
