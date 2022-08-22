@@ -11,6 +11,7 @@ open MLS.TreeDEM.NetworkTypes
 open MLS.NetworkBinder
 open MLS.TreeSyncTreeKEMBinder
 open MLS.TreeSync.Extensions
+open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeDEM.KeyPackageRef
 open MLS.TreeKEM
 open MLS.TreeKEM.API.Types
@@ -35,8 +36,14 @@ let universal_sign_nonce =
 
 let group_id = bytes
 
-type state = {
-  treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt;
+let asp: as_parameters bytes = {
+  token_t = unit;
+  credential_ok = (fun _ _ -> True);
+  valid_successor = (fun _ _ -> True);
+}
+
+noeq type state = {
+  treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt asp;
   treekem_state: treekem_state bytes;
   leaf_index: nat;
   leaf_secret: bytes;
@@ -107,8 +114,9 @@ val process_proposal: nat -> state -> proposal bytes -> result state
 let process_proposal sender_id st p =
   match p with
   | Add key_package ->
-    tmp <-- MLS.TreeSync.API.add st.treesync_state key_package;
-    let (treesync_state, _) = tmp in
+    add_pend <-- MLS.TreeSync.API.prepare_add st.treesync_state key_package;
+    // TODO AS check
+    let (treesync_state, _) = MLS.TreeSync.API.finalize_add add_pend () in
     assume (length #bytes key_package.tbs.leaf_node.data.content = hpke_public_key_length #bytes);
     let (treekem_state, _) = MLS.TreeKEM.API.add st.treekem_state ({version = 0; public_key = key_package.tbs.leaf_node.data.content;}) in
     return ({ st with treesync_state; treekem_state })
@@ -116,7 +124,9 @@ let process_proposal sender_id st p =
     if not (sender_id < pow2 st.treesync_state.levels) then
       error "process_proposal: leaf_ind is greater than treesize"
     else (
-      treesync_state <-- MLS.TreeSync.API.update st.treesync_state leaf_package sender_id;
+      pend_update <-- MLS.TreeSync.API.prepare_update st.treesync_state leaf_package sender_id;
+      // TODO AS check
+      let treesync_state = MLS.TreeSync.API.finalize_update pend_update () in
       assume (length #bytes leaf_package.data.content = hpke_public_key_length #bytes);
       assume(st.treesync_state.levels == st.treekem_state.levels);
       let treekem_state = MLS.TreeKEM.API.update st.treekem_state ({version = 0; public_key = leaf_package.data.content}) sender_id in
@@ -127,7 +137,8 @@ let process_proposal sender_id st p =
       error "process_proposal: leaf_index too big"
     else (
       assume(st.treesync_state.levels == st.treekem_state.levels);
-      let treesync_state = MLS.TreeSync.API.remove st.treesync_state leaf_index in
+      remove_pend <-- MLS.TreeSync.API.prepare_remove st.treesync_state leaf_index;
+      let treesync_state = MLS.TreeSync.API.finalize_remove remove_pend in
       let treekem_state = MLS.TreeKEM.API.remove st.treekem_state leaf_index in
       return ({ st with treesync_state; treekem_state })
     )
@@ -180,7 +191,9 @@ let process_commit state message message_auth =
         uncompressed_path <-- uncompress_update_path sender_id state.treesync_state.tree path;
         let treesync_path = update_path_to_treesync uncompressed_path in
         treekem_path <-- update_path_to_treekem group_context_bytes uncompressed_path;
-        treesync_state <-- MLS.TreeSync.API.commit state.treesync_state treesync_path;
+        commit_pend <-- MLS.TreeSync.API.prepare_commit state.treesync_state treesync_path;
+        // TODO AS check
+        let treesync_state = MLS.TreeSync.API.finalize_commit commit_pend () in
         let treekem_state = MLS.TreeKEM.API.commit state.treekem_state treekem_path in
         return ({ state with treesync_state; treekem_state;})
       )
@@ -336,7 +349,11 @@ let create e cred private_sign_key group_id =
   let key_package, leaf_secret = tmp in
   treesync_state <-- (
     if not (length #bytes group_id < pow2 30) then error "create: group_id too long"
-    else MLS.TreeSync.API.create group_id key_package.tbs.leaf_node
+    else (
+      create_pend <-- MLS.TreeSync.API.prepare_create group_id key_package.tbs.leaf_node;
+      //TODO AS check
+      return (MLS.TreeSync.API.finalize_create create_pend ())
+    )
   );
   treekem <-- treesync_to_treekem treesync_state.tree;
   let treekem_state: treekem_state bytes = { levels = treesync_state.levels; tree = treekem } in
@@ -634,17 +651,19 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   );
   ratchet_tree <-- from_option "bad ratchet tree" ((ps_to_pse #bytes (ps_ratchet_tree_nt tkt)).parse_exact group_info.extensions);
   l <-- ratchet_tree_l ratchet_tree;
-  treesync <-- (
+  treesync_state <-- (
     treesync <-- ratchet_tree_to_treesync l 0 ratchet_tree;
-    if not (MLS.TreeSync.Invariants.UnmergedLeaves.unmerged_leaves_ok treesync) then
-      error "process_welcome_message: malformed unmerged leaves"
-    else if not (MLS.TreeSync.Invariants.ParentHash.parent_hash_invariant treesync) then
-      error "process_welcome_message: bad parent hash"
-    else if not (MLS.TreeSync.Invariants.ValidLeaves.valid_leaves_invariant group_id treesync) then
-      error "process_welcome_message: bad parent hash"
-    else
-      return #(MLS.TreeSync.Refined.Types.treesync_valid bytes tkt l 0 group_id) treesync
+    welcome_pend <-- MLS.TreeSync.API.prepare_welcome group_id treesync group_info.group_context.epoch;
+    // TODO AS check
+    let const_unit _ = () in
+    let tokens = List.Tot.map (Option.mapTot const_unit) welcome_pend.as_inputs in
+    welcome_pend.as_inputs_proof;
+    assert(List.Tot.length tokens == pow2 l);
+    FStar.Classical.forall_intro (MLS.MiscLemmas.index_map (Option.mapTot const_unit) welcome_pend.as_inputs);
+    return (MLS.TreeSync.API.finalize_welcome welcome_pend tokens)
   );
+  let treesync = treesync_state.tree in
+  let l = treesync_state.levels in
   _ <-- ( //Check signature
     group_info_ok <-- verify_welcome_group_info (fun leaf_ind ->
       if not (leaf_ind < pow2 l) then
@@ -695,12 +714,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     generation = 0;
   } in
   let st: state = {
-    treesync_state = {
-      group_id = group_id;
-      levels = l;
-      tree = treesync;
-      version = group_info.group_context.epoch;
-    };
+    treesync_state;
     treekem_state = {
       levels = l;
       tree = treekem;

@@ -1,6 +1,7 @@
 module MLS.Tree.Lemmas
 
 open MLS.Tree
+open MLS.MiscLemmas
 open FStar.Mul
 
 let lemma_mult_lt_right_inv (a:int) (b:int) (c:nat): Lemma (requires a*c < b*c) (ensures a < b) = ()
@@ -74,4 +75,19 @@ let leaf_index_inside_subtree lu lc iu ic li =
     lemma_mult_lt_right_inv ku ((kc+1) * (pow2 (lc-lu))) (pow2 lu);
     FStar.Math.Lemmas.lemma_mult_le_right (pow2 lu) (ku+1) ((kc+1) * (pow2 (lc-lu)));
     FStar.Math.Lemmas.distributivity_add_left ku 1 (pow2 lu)
+  )
+
+#set-options "--fuel 1 --ifuel 1"
+
+val index_get_leaf_list: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> t:tree leaf_t node_t l i -> ind:nat{ind < pow2 l} -> Lemma
+  (List.Tot.index (get_leaf_list t) ind == leaf_at t (i+ind))
+let rec index_get_leaf_list #l #i #leaf_t #node_t t ind =
+  match t with
+  | TLeaf _ -> ()
+  | TNode _ left right -> (
+    index_append (get_leaf_list left) (get_leaf_list right) ind;
+    if ind < pow2 (l-1) then
+      index_get_leaf_list left ind
+    else
+      index_get_leaf_list right (ind - pow2 (l-1))
   )

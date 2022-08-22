@@ -1,5 +1,6 @@
 module MLS.MiscLemmas
 
+open FStar.List.Tot
 open Comparse
 
 #push-options "--fuel 1 --ifuel 1"
@@ -26,3 +27,26 @@ let rec bytes_length_unsnoc #bytes #bl #a ps_a l =
   | [x] -> ()
   | h::t -> bytes_length_unsnoc ps_a t
 #pop-options
+
+val index_append: #a:Type -> l1:list a -> l2:list a -> i:nat{i < List.Tot.length (l1@l2)} -> Lemma (
+  index (l1@l2) i == (
+    if i < List.Tot.length l1 then
+      List.Tot.index l1 i
+    else
+      List.Tot.index l2 (i - List.Tot.length l1)
+  )
+)
+let rec index_append #a l1 l2 i =
+  match l1 with
+  | [] -> ()
+  | h1::t1 ->
+    if i = 0 then ()
+    else index_append t1 l2 (i-1)
+
+val index_map: #a:Type -> #b:Type -> f:(a -> b) -> l:list a -> i:nat{i < List.Tot.length l} -> Lemma (
+  index (map f l) i == f (index l i)
+)
+let rec index_map #a #b f l i =
+  let h::t = l in
+  if i = 0 then ()
+  else index_map f t (i-1)
