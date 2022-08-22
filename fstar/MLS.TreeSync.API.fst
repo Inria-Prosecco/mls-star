@@ -40,7 +40,6 @@ val state_update_tree:
 let state_update_tree #bytes #cb #tkt #asp #l st new_tree new_tokens =
   ({ st with
     levels = l;
-    version = st.version + 1;
     tree = new_tree;
     tokens = new_tokens;
   })
@@ -89,13 +88,12 @@ let finalize_create #bytes #cb #tkt #asp #group_id #ln pend token =
     levels = 0;
     tree = tree_create (Some ln);
     tokens = tree_create (Some token);
-    version = 0;
   })
 #pop-options
 
 (*** Welcome ***)
 
-let pending_welcome_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) (version:nat) = 
+let pending_welcome_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) =
   squash (
     unmerged_leaves_ok t /\
     parent_hash_invariant t /\
@@ -103,8 +101,8 @@ let pending_welcome_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_ty
   )
 
 #push-options "--fuel 0 --ifuel 1"
-type pending_welcome (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) (version:nat) = {
-  can_welcome_proof: pending_welcome_proof group_id t version;
+type pending_welcome (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) = {
+  can_welcome_proof: pending_welcome_proof group_id t;
   as_inputs: list (option (as_input bytes));
   as_inputs_proof: squash (
     List.Tot.length as_inputs == pow2 l /\ (
@@ -116,8 +114,8 @@ type pending_welcome (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types b
 
 type tokens_for_welcome
   (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat)
-  (#group_id:mls_bytes bytes) (#t:treesync bytes tkt l 0) (#version:nat)
-  (asp:as_parameters bytes) (pend:pending_welcome group_id t version) =
+  (#group_id:mls_bytes bytes) (#t:treesync bytes tkt l 0)
+  (asp:as_parameters bytes) (pend:pending_welcome group_id t) =
   tokens:list (option asp.token_t){
     List.Tot.length tokens == pow2 l /\ (
       forall li. match List.Tot.index pend.as_inputs li, List.Tot.index tokens li with
@@ -129,9 +127,9 @@ type tokens_for_welcome
 
 val prepare_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat ->
-  group_id:mls_bytes bytes -> t:treesync bytes tkt l 0 -> version:nat ->
-  result (pending_welcome group_id t version)
-let prepare_welcome #bytes #cb #tkt #l group_id t version =
+  group_id:mls_bytes bytes -> t:treesync bytes tkt l 0 ->
+  result (pending_welcome group_id t)
+let prepare_welcome #bytes #cb #tkt #l group_id t =
   if not (unmerged_leaves_ok t) then
     error "prepare_welcome: malformed unmerged leaves"
   else if not (parent_hash_invariant t) then
@@ -184,10 +182,10 @@ let rec leaf_at_token_from_list #bytes #bl asp l i tokens li =
 
 val finalize_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
-  #group_id:mls_bytes bytes -> #t:treesync bytes tkt l 0 -> #version:nat ->
-  pend:pending_welcome group_id t version -> tokens:tokens_for_welcome asp pend ->
+  #group_id:mls_bytes bytes -> #t:treesync bytes tkt l 0 ->
+  pend:pending_welcome group_id t -> tokens:tokens_for_welcome asp pend ->
   treesync_state bytes tkt asp
-let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t #version pend tokens =
+let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
   pend.can_welcome_proof;
   let tokens_tree = tokens_from_list asp l 0 tokens in
   intro_all_credentials_ok t tokens_tree (fun li ->
@@ -199,7 +197,6 @@ let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t #version pend tokens =
     levels = l;
     tree = t;
     tokens = tokens_tree;
-    version;
   })
 
 (*** Add ***)

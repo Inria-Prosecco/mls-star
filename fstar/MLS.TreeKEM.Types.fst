@@ -8,7 +8,6 @@ open MLS.Tree
 
 type member_info (bytes:Type0) {|crypto_bytes bytes|} = {
   public_key: hpke_public_key bytes;
-  version: nat;
 }
 
 //TODO: move this in Crypto.fsti?
@@ -21,7 +20,6 @@ type direction = | Left | Right
 
 type key_package (bytes:Type0) {|crypto_bytes bytes|} = {
   public_key: hpke_public_key bytes;
-  version: nat;
   last_group_context: bytes; //Related to version, correspond to the info used in the ciphertexts
   unmerged_leaves: list nat;
   path_secret_from: direction;

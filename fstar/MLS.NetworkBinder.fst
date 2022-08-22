@@ -76,7 +76,6 @@ let leaf_node_to_treekem #bytes #cb ln =
   else
     return ({
       TK.public_key = ln.data.content;
-      TK.version = 0;
     } <: TK.member_info bytes)
 
 val update_path_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> TK.direction -> update_path_node_nt bytes -> result (TK.key_package bytes)
@@ -95,7 +94,6 @@ let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
     ) update_path_node.encrypted_path_secret;
     return ({
       TK.public_key = update_path_node.encryption_key;
-      TK.version = 0;
       TK.last_group_context = group_context;
       TK.unmerged_leaves = [];
       TK.path_secret_from = dir;

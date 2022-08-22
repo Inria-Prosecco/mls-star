@@ -19,7 +19,6 @@ let treesync_to_treekem_node_package #bytes #cb np =
     let unmerged_leaves = List.Tot.map #(nat_lbytes 4) #nat (fun x -> x) np.unmerged_leaves in
     return ({
       public_key = np.content;
-      version = 0;
       last_group_context = empty;
       unmerged_leaves = unmerged_leaves;
       path_secret_from = Left;
@@ -37,7 +36,7 @@ let rec treesync_to_treekem #bytes #cb #l #i t =
     if not (length (lp.data.content <: bytes) = hpke_public_key_length #bytes) then
       error "treesync_to_treekem: public key has wrong length"
     else
-      return (TLeaf (Some ({public_key = lp.data.content; version = 0} <: member_info bytes)))
+      return (TLeaf (Some ({public_key = lp.data.content} <: member_info bytes)))
   | TNode onp left right -> begin
     tk_left <-- treesync_to_treekem left;
     tk_right <-- treesync_to_treekem right;

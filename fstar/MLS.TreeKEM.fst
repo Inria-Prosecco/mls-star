@@ -158,15 +158,14 @@ let derive_next_path_secret #bytes #cb path_secret =
   res <-- derive_secret path_secret (string_to_bytes #bytes "path");
   return (res <: bytes)
 
-val node_encap: #bytes:Type0 -> {|crypto_bytes bytes|} -> version:nat -> child_secret:bytes -> hpke_info:bytes -> direction -> pks:list (hpke_public_key bytes) -> randomness bytes (hpke_multirecipient_encrypt_entropy_lengths pks) -> result (key_package bytes & bytes)
-let node_encap #bytes #cb version child_secret hpke_info dir pks rand =
+val node_encap: #bytes:Type0 -> {|crypto_bytes bytes|} -> child_secret:bytes -> hpke_info:bytes -> direction -> pks:list (hpke_public_key bytes) -> randomness bytes (hpke_multirecipient_encrypt_entropy_lengths pks) -> result (key_package bytes & bytes)
+let node_encap #bytes #cb child_secret hpke_info dir pks rand =
   node_secret <-- derive_next_path_secret child_secret;
   node_keys <-- derive_keypair_from_path_secret node_secret;
   ciphertext <-- hpke_multirecipient_encrypt pks hpke_info empty node_secret rand;
   return (
     {
       public_key = snd node_keys;
-      version = version;
       last_group_context = hpke_info;
       unmerged_leaves = [];
       path_secret_from = dir;
@@ -212,13 +211,8 @@ let rec update_path #bytes #cb #l #i t leaf_index leaf_secret ad rand =
   | TLeaf (Some mi) ->
     //TODO: in the previous code, it does some credential check here
     leaf_keys <-- derive_keypair_from_path_secret leaf_secret;
-    return (PLeaf ({public_key=snd leaf_keys; version=mi.version+1;} <: member_info bytes), leaf_secret)
+    return (PLeaf ({public_key=snd leaf_keys;} <: member_info bytes), leaf_secret)
   | TNode okp left right ->
-    let version =
-      match okp with
-      | None -> 0
-      | Some kp -> kp.version+1
-    in
     let (child, sibling) = get_child_sibling t leaf_index in
     if tree_resolution sibling = [] then (
       let next_rand: randomness bytes (update_path_entropy_lengths #_ #_ #(l-1) child leaf_index) = rand in
@@ -230,7 +224,7 @@ let rec update_path #bytes #cb #l #i t leaf_index leaf_secret ad rand =
       recursive_call <-- update_path child leaf_index leaf_secret ad rand_next;
       let (child_path, child_path_secret) = recursive_call in
       let dir = (if is_left_leaf leaf_index then Left else Right) in
-      node_encap_call <-- node_encap version child_path_secret ad dir (tree_resolution sibling) rand_cur;
+      node_encap_call <-- node_encap child_path_secret ad dir (tree_resolution sibling) rand_cur;
       let (node_kp, node_path_secret) = node_encap_call in
       return (PNode (Some node_kp) child_path, node_path_secret)
     )

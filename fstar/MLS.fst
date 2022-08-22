@@ -45,6 +45,7 @@ let asp: as_parameters bytes = {
 noeq type state = {
   treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt asp;
   treekem_state: treekem_state bytes;
+  epoch: nat;
   leaf_index: nat;
   leaf_secret: bytes;
   sign_private_key: sign_private_key bytes;
@@ -88,7 +89,7 @@ let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
 
 val state_to_group_context: state -> result (group_context_nt bytes)
 let state_to_group_context st =
-  compute_group_context st.treesync_state.group_id st.treesync_state.version st.treesync_state.tree st.confirmed_transcript_hash
+  compute_group_context st.treesync_state.group_id st.epoch st.treesync_state.tree st.confirmed_transcript_hash
 
 val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
@@ -118,7 +119,7 @@ let process_proposal sender_id st p =
     // TODO AS check
     let (treesync_state, _) = MLS.TreeSync.API.finalize_add add_pend () in
     assume (length #bytes key_package.tbs.leaf_node.data.content = hpke_public_key_length #bytes);
-    let (treekem_state, _) = MLS.TreeKEM.API.add st.treekem_state ({version = 0; public_key = key_package.tbs.leaf_node.data.content;}) in
+    let (treekem_state, _) = MLS.TreeKEM.API.add st.treekem_state ({public_key = key_package.tbs.leaf_node.data.content;}) in
     return ({ st with treesync_state; treekem_state })
   | Update leaf_package ->
     if not (sender_id < pow2 st.treesync_state.levels) then
@@ -129,7 +130,7 @@ let process_proposal sender_id st p =
       let treesync_state = MLS.TreeSync.API.finalize_update pend_update () in
       assume (length #bytes leaf_package.data.content = hpke_public_key_length #bytes);
       assume(st.treesync_state.levels == st.treekem_state.levels);
-      let treekem_state = MLS.TreeKEM.API.update st.treekem_state ({version = 0; public_key = leaf_package.data.content}) sender_id in
+      let treekem_state = MLS.TreeKEM.API.update st.treekem_state ({public_key = leaf_package.data.content}) sender_id in
       return ({ st with treesync_state; treekem_state })
     )
   | Remove leaf_index ->
@@ -199,9 +200,7 @@ let process_commit state message message_auth =
       )
   );
   // 2. Increase epoch -- TODO when should this happen?!!
-  let treesync_state = state.treesync_state in
-  let treesync_state = { treesync_state with version = treesync_state.version + 1 } in
-  let state = { state with treesync_state } in
+  let state = { state with epoch = state.epoch + 1 } in
   // 3. Update transcript
   confirmation_tag <-- (match message_auth.confirmation_tag with | Some x -> return x | None -> error "process_commit: no confirmation tag");
   confirmed_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
@@ -339,7 +338,7 @@ let fresh_key_package e cred private_sign_key =
   hash <-- hash_leaf_package key_package.tbs.leaf_node;
   return (key_package_bytes, hash, leaf_secret)
 
-let current_epoch s = s.treesync_state.MLS.TreeSync.API.Types.version
+let current_epoch s = s.epoch
 
 #push-options "--fuel 2 --z3rlimit 50"
 let create e cred private_sign_key group_id =
@@ -369,6 +368,7 @@ let create e cred private_sign_key group_id =
   return ({
     treesync_state;
     treekem_state;
+    epoch = 0;
     leaf_index = 0;
     leaf_secret;
     sign_private_key = private_sign_key;
@@ -471,7 +471,7 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
       version = PV_mls10 ();
       cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
       group_id = future_state.treesync_state.group_id;
-      epoch = future_state.treesync_state.version;
+      epoch = future_state.epoch;
       tree_hash = tree_hash;
       confirmed_transcript_hash = future_state.confirmed_transcript_hash;
       extensions = []; //TODO handle group context extensions
@@ -551,7 +551,7 @@ let generate_commit state e proposals =
   let msg: message_content bytes = {
     wire_format = WF_mls_ciphertext ();
     group_id = state.treesync_state.group_id;
-    epoch = state.treesync_state.version;
+    epoch = state.epoch;
     sender = S_member (state.leaf_index);
     authenticated_data = Seq.empty; //TODO?
     content_type = CT_commit ();
@@ -606,7 +606,7 @@ let send state e data =
   let msg: message_content bytes = {
     wire_format = WF_mls_ciphertext ();
     group_id = state.treesync_state.group_id;
-    epoch = state.treesync_state.version;
+    epoch = state.epoch;
     sender = S_member state.leaf_index;
     authenticated_data = Seq.empty; //TODO?
     content_type = CT_application ();
@@ -653,7 +653,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   l <-- ratchet_tree_l ratchet_tree;
   treesync_state <-- (
     treesync <-- ratchet_tree_to_treesync l 0 ratchet_tree;
-    welcome_pend <-- MLS.TreeSync.API.prepare_welcome group_id treesync group_info.group_context.epoch;
+    welcome_pend <-- MLS.TreeSync.API.prepare_welcome group_id treesync;
     // TODO AS check
     let const_unit _ = () in
     let tokens = List.Tot.map (Option.mapTot const_unit) welcome_pend.as_inputs in
@@ -719,6 +719,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       levels = l;
       tree = treekem;
     };
+    epoch = group_info.group_context.epoch;
     leaf_index;
     leaf_secret;
     sign_private_key = sign_sk;

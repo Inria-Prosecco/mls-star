@@ -72,7 +72,7 @@ let create_participant #bytes #cb rng =
   let (rng, leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
   let (hpke_sk, hpke_pk) = extract_result (derive_keypair_from_path_secret leaf_secret) in
   let my_secrets = {leaf_secret} in
-  let leaf_package: member_info bytes = {version = 0; public_key = hpke_pk} in
+  let leaf_package: member_info bytes = {public_key = hpke_pk} in
   (rng, leaf_package, my_secrets)
 
 #push-options "--fuel 1 --ifuel 1"
