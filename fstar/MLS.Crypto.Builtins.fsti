@@ -22,8 +22,8 @@ class crypto_bytes (bytes:Type0) = {
 
   ciphersuite: available_ciphersuite;
 
-  hash_length: pos;
-  hash_length_bound: squash (hash_length < 256);
+  hash_length: nat;
+  hash_length_bound: squash (1 <= hash_length /\ hash_length < 256);
   hash_max_input_length: nat;
   hash_hash: buf:bytes{length buf < hash_max_input_length} -> lbytes bytes hash_length;
 
@@ -32,7 +32,7 @@ class crypto_bytes (bytes:Type0) = {
   kdf_expand: prk:bytes -> info:bytes -> len:nat -> result (lbytes bytes len);
 
   hpke_public_key_length: nat;
-  hpke_public_key_length_bound: squash (1 <= hpke_public_key_length /\ hpke_public_key_length < pow2 16);
+  hpke_public_key_length_bound: squash (hpke_public_key_length < pow2 16);
   hpke_private_key_length: nat;
   hpke_private_key_length_bound: squash(hpke_private_key_length <= kdf_length);
   hpke_kem_output_length: nat;
