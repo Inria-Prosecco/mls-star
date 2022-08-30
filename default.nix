@@ -1,4 +1,4 @@
-{stdenv, which, fstar, z3, ocamlPackages, comparse}:
+{stdenv, which, fstar, z3, ocamlPackages, comparse, dolev-yao-star}:
 
 let
   mls-star = stdenv.mkDerivation {
@@ -8,6 +8,7 @@ let
     buildInputs = [ which fstar z3 ];
     FSTAR_HOME = fstar;
     COMPARSE_HOME = comparse;
+    DY_HOME = dolev-yao-star;
     installPhase = ''
       mkdir -p $out
       cp -r ml fstar cache hints $out
@@ -27,6 +28,7 @@ let
       ]);
     FSTAR_HOME = fstar;
     COMPARSE_HOME = comparse;
+    DY_HOME = dolev-yao-star;
     # pre-patch uses build output from mls-star, to avoid building things twice
     prePatch = ''
       cp -pr --no-preserve=mode ${mls-star}/cache ${mls-star}/ml .

@@ -7,6 +7,9 @@ endif
 ifndef COMPARSE_HOME
 	COMPARSE_HOME = ../comparse
 endif
+ifndef DY_HOME
+	DY_HOME = ../dolev-yao-star
+endif
 
 include $(FSTAR_HOME)/ulib/gmake/fstar.mk
 include $(FSTAR_HOME)/ulib/ml/Makefile.include
@@ -14,10 +17,11 @@ include $(FSTAR_HOME)/ulib/ml/Makefile.include
 HACL_SNAPSHOT_DIR = hacl-star-snapshot
 SOURCE_DIR = fstar
 
-INCLUDE_DIRS = $(SOURCE_DIR) $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)/src
+INCLUDE_DIRS = $(SOURCE_DIR) $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)/src $(DY_HOME) $(DY_HOME)/symbolic
 FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
 
-FSTAR_EXTRACT = --extract '-* +MLS +Comparse -Comparse.Tactic'
+DY_EXTRACT = +CryptoLib +SecrecyLabels +ComparseGlue +LabeledCryptoAPI
+FSTAR_EXTRACT = --extract '-* +MLS +Comparse $(DY_EXTRACT) -Comparse.Tactic'
 FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --warn_error '+241@247+285' --cache_dir cache --odir obj --cmi
 
 .PHONY: all clean
