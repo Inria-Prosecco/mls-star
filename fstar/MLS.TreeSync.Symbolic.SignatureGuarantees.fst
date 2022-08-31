@@ -54,7 +54,7 @@ val tree_list_has_pred: tkp:treekem_parameters -> timestamp -> tree_list dy_byte
 let tree_list_has_pred tkp time tl =
   for_allP (tkp.pred time) tl
 
-val leaf_node_spred: treekem_parameters -> sign_predicate
+val leaf_node_spred: treekem_parameters -> sign_pred
 let leaf_node_spred tkp usg time vk ln_tbs_bytes =
   match (parse (leaf_node_tbs_nt dy_bytes tkp.types) ln_tbs_bytes) with
   | None -> False
@@ -168,7 +168,7 @@ let rec leaf_at_has_pre #bytes #bl #tkt #l #i pre t li =
 #push-options "--z3rlimit 50"
 val parent_hash_implies_treekem_pred: #l:nat -> #i:tree_index l -> gu:global_usage -> time:timestamp -> tkp:treekem_parameters -> group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkp.types l i -> ast:as_tokens dy_bytes (dy_asp gu time) l i -> Lemma
   (requires
-    has_sign_predicate gu "LeafNodeTBS" (leaf_node_spred tkp) /\
+    has_sign_pred gu "LeafNodeTBS" (leaf_node_spred tkp) /\
     unmerged_leaves_ok t /\ parent_hash_invariant t /\ valid_leaves_invariant group_id t /\
     node_has_parent_hash t /\
     all_credentials_ok t ast /\
@@ -296,7 +296,7 @@ let external_path_has_pred #tkp #l #li time t p group_id sk nonce =
 #push-options "--z3rlimit 25"
 val is_valid_external_path_to_path: #tkp:treekem_parameters -> #l:nat -> #li:leaf_index l 0 -> gu:global_usage -> time:timestamp -> t:treesync dy_bytes tkp.types l 0 -> p:external_pathsync dy_bytes tkp.types l 0 li -> group_id:mls_bytes dy_bytes -> sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes -> Lemma
   (requires
-    has_sign_predicate gu "LeafNodeTBS" (leaf_node_spred tkp) /\
+    has_sign_pred gu "LeafNodeTBS" (leaf_node_spred tkp) /\
     treesync_has_pre (is_valid gu time) t /\
     external_pathsync_has_pre (is_valid gu time) p /\
     is_valid gu time group_id /\
