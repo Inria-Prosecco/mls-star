@@ -236,6 +236,7 @@ let is_corrupt time x = LabeledCryptoAPI.corrupt_id time x
 val can_flow_to_public_implies_corruption: time:timestamp -> x:id -> Lemma
   (requires (can_flow time (readers [x]) public))
   (ensures is_corrupt time x)
+let can_flow_to_public_implies_corruption time x = LabeledCryptoAPI.can_flow_to_public_implies_corruption time x
 
 (*** Labeled signature predicate ***)
 
