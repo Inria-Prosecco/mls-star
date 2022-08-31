@@ -4,6 +4,8 @@ open Comparse
 open MLS.Crypto
 open ComparseGlue
 open MLS.NetworkTypes
+open MLS.Symbolic.SplitPredicate
+open MLS.MiscLemmas
 open MLS.Result
 
 #push-options "--fuel 1 --ifuel 1"
@@ -218,7 +220,7 @@ val is_publishable: global_usage -> timestamp -> bytes_compatible_pre dy_bytes
 let is_publishable p i = is_msg p SecrecyLabels.public i
 
 val is_verification_key: global_usage -> string -> timestamp -> label -> dy_bytes -> prop
-let is_verification_key gu usg time sk_lab vk = True /\ LabeledCryptoAPI.is_verification_key gu time vk sk_lab usg
+let is_verification_key gu usg time sk_lab vk = LabeledCryptoAPI.is_verification_key gu time vk sk_lab usg (* convert to prop *) /\ True
 
 val hash_hash_inj: b1:dy_bytes -> b2:dy_bytes -> Lemma (
   length b1 < hash_max_input_length #dy_bytes /\
@@ -237,15 +239,48 @@ val can_flow_to_public_implies_corruption: time:timestamp -> x:id -> Lemma
 
 (*** Labeled signature predicate ***)
 
+val get_mls_label_inj: l1:valid_label -> l2:valid_label -> Lemma
+  (requires get_mls_label #dy_bytes l1 == get_mls_label #dy_bytes l2)
+  (ensures l1 == l2)
+let get_mls_label_inj l1 l2 =
+  let bytes_mls = CryptoLib.string_to_bytes "MLS 1.0 " in
+  let bytes_label1 = CryptoLib.string_to_bytes l1 in
+  let bytes_label2 = CryptoLib.string_to_bytes l2 in
+  CryptoLib.split_at_raw_concat_lemma bytes_mls bytes_label1;
+  CryptoLib.split_at_raw_concat_lemma bytes_mls bytes_label2;
+  CryptoLib.string_to_bytes_lemma l1;
+  CryptoLib.string_to_bytes_lemma l2
+
+let split_sign_predicate_func: split_predicate_input_values = {
+  label_t = valid_label;
+  encoded_label_t = dy_bytes;
+  raw_data_t = dy_bytes;
+  labeled_data_t = dy_bytes;
+  other_values_t = (string & timestamp & dy_bytes);
+
+  decode_labeled_data = (fun labeled_data -> (
+    match parse (sign_content_nt dy_bytes) labeled_data with
+    | Some ({label; content}) -> Some (label, content)
+    | None -> None
+  ));
+
+  encode_label = get_mls_label #dy_bytes;
+  encode_label_inj = get_mls_label_inj;
+}
+
 let sign_predicate = usage:string -> timestamp -> key:dy_bytes -> msg:dy_bytes -> prop
+
+val sign_predicate_to_local_pred: sign_predicate -> local_pred split_sign_predicate_func
+let sign_predicate_to_local_pred spred msg (usg, time, key) =
+  spred usg time key msg
+
+val global_usage_to_global_pred: global_usage -> global_pred split_sign_predicate_func
+let global_usage_to_global_pred gu msg (usg, time, key) =
+  gu.usage_preds.can_sign time usg key msg (* convert to prop *) /\ True
 
 val has_sign_predicate: global_usage -> valid_label -> sign_predicate -> prop
 let has_sign_predicate gu lab spred =
-  forall (time:timestamp) (usg:string) (key:dy_bytes) (msg:dy_bytes).
-    match (parse (sign_content_nt dy_bytes) msg) with
-    | Some ({label; content;}) ->
-      label == get_mls_label lab ==> (gu.usage_preds.can_sign time usg key msg <==> spred usg time key content)
-    | None -> True
+  has_local_pred split_sign_predicate_func (global_usage_to_global_pred gu) lab (sign_predicate_to_local_pred spred)
 
 val get_mls_label_is_valid: gu:global_usage -> time:timestamp -> lab:valid_label -> Lemma (is_valid gu time (get_mls_label #dy_bytes lab))
 let get_mls_label_is_valid gu time lab =
@@ -269,6 +304,7 @@ val sign_with_label_valid: gu:global_usage -> spred:sign_predicate -> usg:string
   )
   (ensures is_valid gu time (sign_with_label sk lab msg nonce))
 let sign_with_label_valid gu spred usg time sk lab msg nonce =
+  assert_norm (forall msg usg time key. global_usage_to_global_pred gu msg (usg, time, key) <==> gu.usage_preds.can_sign time usg key msg); //???
   get_mls_label_is_valid gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label #dy_bytes lab;
@@ -290,6 +326,7 @@ val verify_with_label_is_valid: gu:global_usage -> spred:sign_predicate -> usg:s
   )
   (ensures can_flow time sk_label public \/ (exists time_sig. time_sig <$ time /\ spred usg time_sig vk content))
 let verify_with_label_is_valid gu spred usg sk_label time vk lab content signature =
+  assert_norm (forall msg usg time key. global_usage_to_global_pred gu msg (usg, time, key) <==> gu.usage_preds.can_sign time usg key msg); //???
   get_mls_label_is_valid gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label #dy_bytes lab;
@@ -300,115 +337,13 @@ let verify_with_label_is_valid gu spred usg sk_label time vk lab content signatu
   let sign_content_bytes: dy_bytes = serialize (sign_content_nt dy_bytes) sign_content in
   LabeledCryptoAPI.verify_lemma #gu #time #SecrecyLabels.private_label #SecrecyLabels.private_label vk sign_content_bytes signature
 
-// The following proof on `mk_can_sign` can probably be generalized for other authentication predicates, maybe even key usages?
+val label_sign_predicate_to_label_local_pred: valid_label & sign_predicate -> valid_label & local_pred split_sign_predicate_func
+let label_sign_predicate_to_label_local_pred (label, spred) =
+  (label, sign_predicate_to_local_pred spred)
 
 val mk_can_sign: list (valid_label & sign_predicate) -> timestamp -> string -> dy_bytes -> dy_bytes -> prop
-let rec mk_can_sign l time usg key msg =
-  match l with
-  | [] -> False
-  | (lab, spred)::t ->
-    let cur_prop =
-      match parse (sign_content_nt dy_bytes) msg with
-      | Some ({label; content;}) ->
-      label == get_mls_label lab /\ spred usg time key content
-      | None -> False
-    in
-    cur_prop \/ mk_can_sign t time usg key msg
-
-val get_mls_label_inj: l1:valid_label -> l2:valid_label -> Lemma
-  (requires get_mls_label #dy_bytes l1 == get_mls_label #dy_bytes l2)
-  (ensures l1 == l2)
-let get_mls_label_inj l1 l2 =
-  let bytes_mls = CryptoLib.string_to_bytes "MLS 1.0 " in
-  let bytes_label1 = CryptoLib.string_to_bytes l1 in
-  let bytes_label2 = CryptoLib.string_to_bytes l2 in
-  CryptoLib.split_at_raw_concat_lemma bytes_mls bytes_label1;
-  CryptoLib.split_at_raw_concat_lemma bytes_mls bytes_label2;
-  CryptoLib.string_to_bytes_lemma l1;
-  CryptoLib.string_to_bytes_lemma l2
-
-val mk_can_sign_wrong_label: lab:valid_label -> l:list (valid_label & sign_predicate) -> time:timestamp -> usg:string -> key:dy_bytes -> msg:dy_bytes -> Lemma
-  (requires ~(List.Tot.memP lab (List.Tot.map fst l)))
-  (ensures (
-    match parse (sign_content_nt dy_bytes) msg with
-    | Some ({label; content;}) ->
-      label == get_mls_label lab ==> ~(mk_can_sign l time usg key msg)
-    | None -> ~(mk_can_sign l time usg key msg)
-  ))
-let rec mk_can_sign_wrong_label lab l time usg key msg =
-  match l with
-  | [] -> ()
-  | (h_lab, _)::t -> (
-    FStar.Classical.move_requires_2 get_mls_label_inj lab h_lab;
-    mk_can_sign_wrong_label lab t time usg key msg
-  )
-
-val disjointP: #a:Type -> list a -> list a -> prop
-let rec disjointP #a l1 l2 =
-  match l1 with
-  | [] -> True
-  | h1::t1 ->
-    ~(List.Tot.memP h1 l2) /\ disjointP t1 l2
-
-val disjointP_cons: #a:Type -> x:a -> l1:list a -> l2:list a -> Lemma
-  (requires disjointP l1 l2 /\ ~(List.Tot.memP x l1))
-  (ensures disjointP l1 (x::l2))
-let rec disjointP_cons #a x l1 l2 =
-  match l1 with
-  | [] -> ()
-  | h1::t1 -> disjointP_cons x t1 l2
-
-val memP_map: #a:Type -> #b:Type -> x:a -> f:(a -> b) -> l:list a -> Lemma
-  (requires List.Tot.memP x l)
-  (ensures List.Tot.memP (f x) (List.Tot.map f l))
-let rec memP_map #a #b x f l =
-  match l with
-  | [] -> ()
-  | h::t ->
-    introduce x =!= h ==> List.Tot.memP (f x) (List.Tot.map f t)
-    with _. memP_map x f t
-
-val mk_can_sign_correct_aux: gu:global_usage -> lspred1:list (valid_label & sign_predicate) -> lspred2:list (valid_label & sign_predicate) -> lab:valid_label -> spred:sign_predicate -> Lemma
-  (requires
-    (forall time usg key msg. (mk_can_sign lspred1 time usg key msg \/ mk_can_sign lspred2 time usg key msg) <==> gu.usage_preds.can_sign time usg key msg) /\
-    List.Tot.no_repeats_p (List.Tot.map fst lspred1) /\
-    disjointP (List.Tot.map fst lspred1) (List.Tot.map fst lspred2) /\
-    List.Tot.memP (lab, spred) lspred1
-  )
-  (ensures has_sign_predicate gu lab spred)
-let rec mk_can_sign_correct_aux gu lspred1 lspred2 lab spred =
-  match lspred1 with
-  | [] -> ()
-  | (h_lab, h_spred)::t -> (
-    if h_lab = lab then (
-      introduce forall (time:timestamp) (usg:string) (key:dy_bytes) (msg:dy_bytes). (
-        match parse (sign_content_nt dy_bytes) msg with
-        | Some ({label; content;}) ->
-          label == get_mls_label lab ==> (gu.usage_preds.can_sign time usg key msg <==> spred usg time key content)
-        | None -> True
-      ) with (
-        match parse (sign_content_nt dy_bytes) msg with
-        | Some ({label; content;}) -> (
-          if label = get_mls_label lab then (
-            get_mls_label_inj lab h_lab;
-            mk_can_sign_wrong_label lab t time usg key msg;
-            mk_can_sign_wrong_label lab lspred2 time usg key msg;
-            FStar.Classical.move_requires_3 memP_map (lab, spred) fst t
-          ) else ()
-        )
-        | None -> ()
-      )
-    ) else (
-      disjointP_cons h_lab (List.Tot.map fst t) (List.Tot.map fst lspred2);
-      mk_can_sign_correct_aux gu t ((h_lab, h_spred)::lspred2) lab spred
-    )
-  )
-
-val disjointP_nil: #a:Type -> l:list a -> Lemma (disjointP l [])
-let rec disjointP_nil #a l =
-  match l with
-  | [] -> ()
-  | _::t -> disjointP_nil t
+let mk_can_sign l time usg key msg =
+  mk_global_pred split_sign_predicate_func (List.Tot.map label_sign_predicate_to_label_local_pred l) msg (usg, time, key)
 
 val mk_can_sign_correct: gu:global_usage -> lspred:list (valid_label & sign_predicate) -> lab:valid_label -> spred:sign_predicate -> Lemma
   (requires
@@ -418,5 +353,10 @@ val mk_can_sign_correct: gu:global_usage -> lspred:list (valid_label & sign_pred
   )
   (ensures has_sign_predicate gu lab spred)
 let mk_can_sign_correct gu lspred lab spred =
-  disjointP_nil (List.Tot.map fst lspred);
-  mk_can_sign_correct_aux gu lspred [] lab spred
+  assert_norm (forall msg usg time key. global_usage_to_global_pred gu msg (usg, time, key) <==> gu.usage_preds.can_sign time usg key msg); //???
+  memP_map (lab, spred) label_sign_predicate_to_label_local_pred lspred;
+  FStar.Classical.forall_intro_2 (index_map label_sign_predicate_to_label_local_pred);
+  FStar.Classical.forall_intro_2 (index_map (fst #valid_label #sign_predicate));
+  FStar.Classical.forall_intro_2 (index_map (fst #valid_label #(local_pred split_sign_predicate_func)));
+  List.Tot.index_extensionality (List.Tot.map fst lspred) (List.Tot.map fst (List.Tot.map label_sign_predicate_to_label_local_pred lspred));
+  mk_global_pred_correct split_sign_predicate_func (List.Tot.map label_sign_predicate_to_label_local_pred lspred) lab (sign_predicate_to_local_pred spred)
