@@ -5,7 +5,6 @@ open MLS.Crypto
 open ComparseGlue
 open MLS.NetworkTypes
 open MLS.Symbolic.SplitPredicate
-open MLS.MiscLemmas
 open MLS.Result
 
 #push-options "--fuel 1 --ifuel 1"
@@ -354,6 +353,7 @@ val mk_can_sign_correct: gu:global_usage -> lspred:list (valid_label & sign_pred
   )
   (ensures has_sign_pred gu lab spred)
 let mk_can_sign_correct gu lspred lab spred =
+  let open MLS.MiscLemmas in
   assert_norm (forall msg usg time key. global_usage_to_global_pred gu msg (usg, time, key) <==> gu.usage_preds.can_sign time usg key msg); //???
   memP_map (lab, spred) label_sign_pred_to_label_local_pred lspred;
   FStar.Classical.forall_intro_2 (index_map label_sign_pred_to_label_local_pred);

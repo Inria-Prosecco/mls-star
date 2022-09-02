@@ -25,9 +25,6 @@ type global_pred (func:split_predicate_input_values) =
 type local_pred (func:split_predicate_input_values) =
   func.raw_data_t -> func.other_values_t -> prop
 
-type label_decoder (func:split_predicate_input_values) =
-  func.labeled_data_t -> option (func.encoded_label_t & func.raw_data_t)
-
 val has_local_pred: func:split_predicate_input_values -> global_pred func -> func.label_t -> local_pred func -> prop
 let has_local_pred func gpred the_label lpred =
   forall labeled_data other_values.
