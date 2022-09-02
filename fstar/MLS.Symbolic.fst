@@ -153,8 +153,14 @@ instance crypto_dy_bytes: crypto_bytes dy_bytes = dy_bytes_has_crypto AC_mls_128
 val principal: Type0
 let principal = SecrecyLabels.principal
 
+val ps_principal: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes principal
+let ps_principal #bytes #bl = ps_principal #bytes
+
 val timestamp: Type0
 let timestamp = SecrecyLabels.timestamp
+
+val ps_timestamp: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes timestamp
+let ps_timestamp #bytes #bl = ps_nat #bytes
 
 // In universe 1 because it contains predicates
 val global_usage: Type u#1
