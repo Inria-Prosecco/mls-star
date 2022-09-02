@@ -59,6 +59,33 @@ let bare_session_pred_is_msg spred =
 
 type session_pred = spred:bare_session_pred{bare_session_pred_later spred /\ bare_session_pred_is_msg spred}
 
+val mk_session_pred:
+  spred:bare_session_pred ->
+  (gu:global_usage -> p:principal -> time0:timestamp -> time1:timestamp -> si:nat -> vi:nat -> session:dy_bytes -> Lemma
+    (requires spred gu p time0 si vi session /\ time0 <$ time1)
+    (ensures spred gu p time1 si vi session)
+  ) ->
+  (gu:global_usage -> p:principal -> time:timestamp -> si:nat -> vi:nat -> session:dy_bytes -> Lemma
+    (requires spred gu p time si vi session)
+    (ensures is_msg gu (readers [psv_id p si vi]) time session)
+  ) ->
+  session_pred
+
+let mk_session_pred spred later_lemma is_msg_lemma =
+  introduce forall gu p time0 time1 si vi session. (spred gu p time0 si vi session /\ time0 <$ time1) ==> spred gu p time1 si vi session
+  with (
+    introduce _ ==> _ with _. (
+      later_lemma gu p time0 time1 si vi session
+    )
+  );
+  introduce forall gu p time si vi session. spred gu p time si vi session ==> is_msg gu (readers [psv_id p si vi]) time session
+  with (
+    introduce _ ==> _ with _. (
+      is_msg_lemma gu p time si vi session
+    )
+  );
+  spred
+
 val session_pred_to_local_pred: global_usage -> session_pred -> local_pred split_session_pred_func
 let session_pred_to_local_pred gu spred (p, time, si, vi, session) =
   spred gu p time si vi session
@@ -77,18 +104,18 @@ val label_session_pred_to_label_local_pred: global_usage -> string & session_pre
 let label_session_pred_to_label_local_pred gu (label, spred) =
   (label, session_pred_to_local_pred gu spred)
 
-val mk_session_pred: list (string & session_pred) -> global_usage -> timestamp -> principal -> nat -> nat -> dy_bytes -> prop
-let mk_session_pred l gu time p si vi session =
+val mk_global_session_pred: list (string & session_pred) -> global_usage -> timestamp -> principal -> nat -> nat -> dy_bytes -> prop
+let mk_global_session_pred l gu time p si vi session =
   mk_global_pred split_session_pred_func (List.Tot.map (label_session_pred_to_label_local_pred gu) l) (p, time, si, vi, session)
 
-val mk_session_pred_correct: pr:preds -> lspred:list (string & session_pred) -> lab:string -> spred:session_pred -> Lemma
+val mk_global_session_pred_correct: pr:preds -> lspred:list (string & session_pred) -> lab:string -> spred:session_pred -> Lemma
   (requires
-    pr.trace_preds.session_st_inv == mk_session_pred lspred pr.global_usage /\
+    pr.trace_preds.session_st_inv == mk_global_session_pred lspred pr.global_usage /\
     List.Tot.no_repeats_p (List.Tot.map fst lspred) /\
     List.Tot.memP (lab, spred) lspred
   )
   (ensures has_session_pred pr lab spred)
-let mk_session_pred_correct pr lspred lab spred =
+let mk_global_session_pred_correct pr lspred lab spred =
   let open MLS.MiscLemmas in
   assert_norm (forall session p time si vi. preds_to_global_pred pr (p, time, si, vi, session) <==> pr.trace_preds.session_st_inv time p si vi session);
   memP_map (lab, spred) (label_session_pred_to_label_local_pred pr.global_usage) lspred;
@@ -98,14 +125,14 @@ let mk_session_pred_correct pr lspred lab spred =
   List.Tot.index_extensionality (List.Tot.map fst lspred) (List.Tot.map fst (List.Tot.map (label_session_pred_to_label_local_pred pr.global_usage) lspred));
   mk_global_pred_correct split_session_pred_func (List.Tot.map (label_session_pred_to_label_local_pred pr.global_usage) lspred) lab (session_pred_to_local_pred pr.global_usage spred)
 
-val mk_session_pred_is_msg: lspred:list (string & session_pred) -> gu:global_usage -> time:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes -> Lemma
-  (requires mk_session_pred lspred gu time p si vi st)
+val mk_global_session_pred_is_msg: lspred:list (string & session_pred) -> gu:global_usage -> time:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes -> Lemma
+  (requires mk_global_session_pred lspred gu time p si vi st)
   (ensures is_msg gu (readers [psv_id p si vi]) time st)
-let rec mk_session_pred_is_msg lspred gu time p si vi st =
+let rec mk_global_session_pred_is_msg lspred gu time p si vi st =
   match lspred with
   | [] -> ()
   | (current_label, current_spred)::tspred ->
-    FStar.Classical.move_requires (mk_session_pred_is_msg tspred gu time p si vi) st;
+    FStar.Classical.move_requires (mk_global_session_pred_is_msg tspred gu time p si vi) st;
     match parse (labeled_session dy_bytes) st with
     | None -> ()
     | Some ({label; content}) -> (
@@ -121,19 +148,19 @@ let rec mk_session_pred_is_msg lspred gu time p si vi st =
       ) else ()
     )
 
-val mk_session_pred_later: lspred:list (string & session_pred) -> gu:global_usage -> time0:timestamp -> time1:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes -> Lemma
-  (requires mk_session_pred lspred gu time0 p si vi st /\ time0 <$ time1)
-  (ensures mk_session_pred lspred gu time1 p si vi st)
-let rec mk_session_pred_later lspred gu time0 time1 p si vi st =
+val mk_global_session_pred_later: lspred:list (string & session_pred) -> gu:global_usage -> time0:timestamp -> time1:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes -> Lemma
+  (requires mk_global_session_pred lspred gu time0 p si vi st /\ time0 <$ time1)
+  (ensures mk_global_session_pred lspred gu time1 p si vi st)
+let rec mk_global_session_pred_later lspred gu time0 time1 p si vi st =
   match lspred with
   | [] -> ()
   | (current_label, current_spred)::tspred -> (
-    FStar.Classical.move_requires (mk_session_pred_later tspred gu time0 time1 p si vi) st;
+    FStar.Classical.move_requires (mk_global_session_pred_later tspred gu time0 time1 p si vi) st;
     match parse (labeled_session dy_bytes) st with
     | None -> ()
     | Some ({label; content}) -> (
       if label = CryptoLib.string_to_bytes current_label then (
-        assert(current_spred gu p time0 si vi content ==> mk_session_pred lspred gu time1 p si vi st)
+        assert(current_spred gu p time0 si vi content ==> mk_global_session_pred lspred gu time1 p si vi st)
       ) else ()
     )
   )
