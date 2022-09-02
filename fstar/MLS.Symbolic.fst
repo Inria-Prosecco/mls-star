@@ -252,15 +252,14 @@ let get_mls_label_inj l1 l2 =
   CryptoLib.string_to_bytes_lemma l2
 
 let split_sign_pred_func: split_predicate_input_values = {
+  labeled_data_t = (string & timestamp & dy_bytes & dy_bytes);
   label_t = valid_label;
   encoded_label_t = dy_bytes;
-  raw_data_t = dy_bytes;
-  labeled_data_t = dy_bytes;
-  other_values_t = (string & timestamp & dy_bytes);
+  raw_data_t = (string & timestamp & dy_bytes & dy_bytes);
 
-  decode_labeled_data = (fun labeled_data -> (
-    match parse (sign_content_nt dy_bytes) labeled_data with
-    | Some ({label; content}) -> Some (label, content)
+  decode_labeled_data = (fun (usg, time, key, data) -> (
+    match parse (sign_content_nt dy_bytes) data with
+    | Some ({label; content}) -> Some (label, (usg, time, key, content))
     | None -> None
   ));
 
@@ -271,11 +270,11 @@ let split_sign_pred_func: split_predicate_input_values = {
 let sign_pred = usage:string -> timestamp -> key:dy_bytes -> msg:dy_bytes -> prop
 
 val sign_pred_to_local_pred: sign_pred -> local_pred split_sign_pred_func
-let sign_pred_to_local_pred spred msg (usg, time, key) =
+let sign_pred_to_local_pred spred (usg, time, key, msg) =
   spred usg time key msg
 
 val global_usage_to_global_pred: global_usage -> global_pred split_sign_pred_func
-let global_usage_to_global_pred gu msg (usg, time, key) =
+let global_usage_to_global_pred gu (usg, time, key, msg) =
   gu.usage_preds.can_sign time usg key msg (* convert to prop *) /\ True
 
 val has_sign_pred: global_usage -> valid_label -> sign_pred -> prop
@@ -304,7 +303,7 @@ val sign_with_label_valid: gu:global_usage -> spred:sign_pred -> usg:string -> t
   )
   (ensures is_valid gu time (sign_with_label sk lab msg nonce))
 let sign_with_label_valid gu spred usg time sk lab msg nonce =
-  assert_norm (forall msg usg time key. global_usage_to_global_pred gu msg (usg, time, key) <==> gu.usage_preds.can_sign time usg key msg); //???
+  assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
   get_mls_label_is_valid gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label #dy_bytes lab;
@@ -326,7 +325,7 @@ val verify_with_label_is_valid: gu:global_usage -> spred:sign_pred -> usg:string
   )
   (ensures can_flow time sk_label public \/ (exists time_sig. time_sig <$ time /\ spred usg time_sig vk content))
 let verify_with_label_is_valid gu spred usg sk_label time vk lab content signature =
-  assert_norm (forall msg usg time key. global_usage_to_global_pred gu msg (usg, time, key) <==> gu.usage_preds.can_sign time usg key msg); //???
+  assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
   get_mls_label_is_valid gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label #dy_bytes lab;
@@ -343,7 +342,7 @@ let label_sign_pred_to_label_local_pred (label, spred) =
 
 val mk_can_sign: list (valid_label & sign_pred) -> timestamp -> string -> dy_bytes -> dy_bytes -> prop
 let mk_can_sign l time usg key msg =
-  mk_global_pred split_sign_pred_func (List.Tot.map label_sign_pred_to_label_local_pred l) msg (usg, time, key)
+  mk_global_pred split_sign_pred_func (List.Tot.map label_sign_pred_to_label_local_pred l) (usg, time, key, msg)
 
 val mk_can_sign_correct: gu:global_usage -> lspred:list (valid_label & sign_pred) -> lab:valid_label -> spred:sign_pred -> Lemma
   (requires
@@ -354,7 +353,7 @@ val mk_can_sign_correct: gu:global_usage -> lspred:list (valid_label & sign_pred
   (ensures has_sign_pred gu lab spred)
 let mk_can_sign_correct gu lspred lab spred =
   let open MLS.MiscLemmas in
-  assert_norm (forall msg usg time key. global_usage_to_global_pred gu msg (usg, time, key) <==> gu.usage_preds.can_sign time usg key msg); //???
+  assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
   memP_map (lab, spred) label_sign_pred_to_label_local_pred lspred;
   FStar.Classical.forall_intro_2 (index_map label_sign_pred_to_label_local_pred);
   FStar.Classical.forall_intro_2 (index_map (fst #valid_label #sign_pred));

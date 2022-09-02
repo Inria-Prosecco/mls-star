@@ -4,13 +4,12 @@ module MLS.Symbolic.SplitPredicate
 
 // Some kind of cheap module functor like ocaml but in F*
 noeq type split_predicate_input_values = {
+  labeled_data_t: Type;
   label_t: Type;
   encoded_label_t: Type;
   raw_data_t: Type;
-  labeled_data_t: Type;
-  other_values_t: Type;
 
-  decode_labeled_data: labeled_data_t -> option (encoded_label_t & raw_data_t);
+  decode_labeled_data: labeled_data_t -> GTot (option (encoded_label_t & raw_data_t));
 
   encode_label: label_t -> encoded_label_t;
   encode_label_inj: l1:label_t -> l2:label_t -> Lemma
@@ -21,45 +20,45 @@ noeq type split_predicate_input_values = {
 
 // Can probably be generalized to handle kdf usage too?
 type global_pred (func:split_predicate_input_values) =
-  func.labeled_data_t -> func.other_values_t -> prop
+  func.labeled_data_t -> prop
 type local_pred (func:split_predicate_input_values) =
-  func.raw_data_t -> func.other_values_t -> prop
+  func.raw_data_t -> prop
 
 val has_local_pred: func:split_predicate_input_values -> global_pred func -> func.label_t -> local_pred func -> prop
 let has_local_pred func gpred the_label lpred =
-  forall labeled_data other_values.
+  forall labeled_data.
     match func.decode_labeled_data labeled_data with
     | Some (label, raw_data) ->
-      label == func.encode_label the_label ==> (gpred labeled_data other_values <==> lpred raw_data other_values)
+      label == func.encode_label the_label ==> (gpred labeled_data <==> lpred raw_data)
     | None -> True
 
 val mk_global_pred: func:split_predicate_input_values -> list (func.label_t & local_pred func) -> global_pred func
-let rec mk_global_pred func l labeled_data other_values =
+let rec mk_global_pred func l labeled_data =
   match l with
   | [] -> False
   | (the_label, lpred)::t ->
     let cur_prop =
       match func.decode_labeled_data labeled_data with
       | Some (label, raw_data) ->
-        label == func.encode_label the_label /\ lpred raw_data other_values
+        label == func.encode_label the_label /\ lpred raw_data
       | None -> False
     in
-    cur_prop \/ mk_global_pred func t labeled_data other_values
+    cur_prop \/ mk_global_pred func t labeled_data
 
-val mk_global_pred_wrong_label: func:split_predicate_input_values -> the_label:func.label_t -> l:list (func.label_t & local_pred func) -> labeled_data:func.labeled_data_t -> other_values:func.other_values_t -> Lemma
+val mk_global_pred_wrong_label: func:split_predicate_input_values -> the_label:func.label_t -> l:list (func.label_t & local_pred func) -> labeled_data:func.labeled_data_t -> Lemma
   (requires ~(List.Tot.memP the_label (List.Tot.map fst l)))
   (ensures (
     match func.decode_labeled_data labeled_data with
     | Some (label, raw_data) ->
-      label == func.encode_label the_label ==> ~(mk_global_pred func l labeled_data other_values)
-    | None -> ~(mk_global_pred func l labeled_data other_values)
+      label == func.encode_label the_label ==> ~(mk_global_pred func l labeled_data)
+    | None -> ~(mk_global_pred func l labeled_data)
   ))
-let rec mk_global_pred_wrong_label func the_label l labeled_data other_values =
+let rec mk_global_pred_wrong_label func the_label l labeled_data =
   match l with
   | [] -> ()
   | (label, _)::t -> (
     FStar.Classical.move_requires_2 func.encode_label_inj the_label label;
-    mk_global_pred_wrong_label func the_label t labeled_data other_values
+    mk_global_pred_wrong_label func the_label t labeled_data
   )
 
 val disjointP: #a:Type -> list a -> list a -> prop
@@ -89,7 +88,7 @@ let rec memP_map #a #b x f l =
 
 val mk_global_pred_correct_aux: func:split_predicate_input_values -> gpred:global_pred func -> lpreds1:list (func.label_t & local_pred func) -> lpreds2:list (func.label_t & local_pred func) -> the_label:func.label_t -> lpred:local_pred func -> Lemma
   (requires
-    (forall labeled_data other_values. (mk_global_pred func lpreds1 labeled_data other_values \/ mk_global_pred func lpreds2 labeled_data other_values) <==> gpred labeled_data other_values) /\
+    (forall labeled_data. (mk_global_pred func lpreds1 labeled_data \/ mk_global_pred func lpreds2 labeled_data) <==> gpred labeled_data) /\
     List.Tot.no_repeats_p (List.Tot.map fst lpreds1) /\
     disjointP (List.Tot.map fst lpreds1) (List.Tot.map fst lpreds2) /\
     List.Tot.memP (the_label, lpred) lpreds1
@@ -100,18 +99,18 @@ let rec mk_global_pred_correct_aux func gpred lpreds1 lpreds2 the_label lpred =
   | [] -> ()
   | (h_lab, h_spred)::t -> (
     eliminate h_lab == the_label \/ h_lab =!= the_label returns _ with _. (
-      introduce forall labeled_data other_values. (
+      introduce forall labeled_data. (
         match func.decode_labeled_data labeled_data with
         | Some (label, raw_data) ->
-          label == func.encode_label the_label ==> (gpred labeled_data other_values <==> lpred raw_data other_values)
+          label == func.encode_label the_label ==> (gpred labeled_data <==> lpred raw_data)
         | None -> True
       ) with (
         match func.decode_labeled_data labeled_data with
         | Some (label, raw_data) -> (
           eliminate label == func.encode_label the_label \/ label =!= func.encode_label the_label returns _ with _. (
             func.encode_label_inj the_label h_lab;
-            mk_global_pred_wrong_label func the_label t labeled_data other_values;
-            mk_global_pred_wrong_label func the_label lpreds2 labeled_data other_values;
+            mk_global_pred_wrong_label func the_label t labeled_data;
+            mk_global_pred_wrong_label func the_label lpreds2 labeled_data;
             FStar.Classical.move_requires_3 memP_map (the_label, lpred) fst t
           ) and _. ()
         )

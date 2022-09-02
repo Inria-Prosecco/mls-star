@@ -23,15 +23,14 @@ type labeled_session (bytes:Type0) {|bytes_like bytes|} = {
 instance parseable_serializeable_labeled_session (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (labeled_session bytes) = mk_parseable_serializeable (ps_labeled_session)
 
 let split_session_pred_func: split_predicate_input_values = {
+  labeled_data_t = principal & timestamp & nat & nat & dy_bytes;
   label_t = string;
   encoded_label_t = dy_bytes;
-  raw_data_t = dy_bytes;
-  labeled_data_t = dy_bytes;
-  other_values_t = (principal & timestamp & nat & nat);
+  raw_data_t = principal & timestamp & nat & nat & dy_bytes;
 
-  decode_labeled_data = (fun labeled_data -> (
-    match parse (labeled_session dy_bytes) labeled_data with
-    | Some ({label; content}) -> Some (label, content)
+  decode_labeled_data = (fun (p, time, si, vi, session) -> (
+    match parse (labeled_session dy_bytes) session with
+    | Some ({label; content}) -> Some (label, (p, time, si, vi, content))
     | None -> None
   ));
 
@@ -61,11 +60,11 @@ let bare_session_pred_is_msg spred =
 type session_pred = spred:bare_session_pred{bare_session_pred_later spred /\ bare_session_pred_is_msg spred}
 
 val session_pred_to_local_pred: global_usage -> session_pred -> local_pred split_session_pred_func
-let session_pred_to_local_pred gu spred session (p, time, si, vi) =
+let session_pred_to_local_pred gu spred (p, time, si, vi, session) =
   spred gu p time si vi session
 
 val preds_to_global_pred: preds -> global_pred split_session_pred_func
-let preds_to_global_pred pr session (p, time, si, vi) =
+let preds_to_global_pred pr (p, time, si, vi, session) =
   pr.trace_preds.session_st_inv time p si vi session (* convert to prop *) /\ True
 
 val has_session_pred: preds -> string -> session_pred -> prop
@@ -80,7 +79,7 @@ let label_session_pred_to_label_local_pred gu (label, spred) =
 
 val mk_session_pred: list (string & session_pred) -> global_usage -> timestamp -> principal -> nat -> nat -> dy_bytes -> prop
 let mk_session_pred l gu time p si vi session =
-  mk_global_pred split_session_pred_func (List.Tot.map (label_session_pred_to_label_local_pred gu) l) session (p, time, si, vi)
+  mk_global_pred split_session_pred_func (List.Tot.map (label_session_pred_to_label_local_pred gu) l) (p, time, si, vi, session)
 
 val mk_session_pred_correct: pr:preds -> lspred:list (string & session_pred) -> lab:string -> spred:session_pred -> Lemma
   (requires
@@ -91,7 +90,7 @@ val mk_session_pred_correct: pr:preds -> lspred:list (string & session_pred) -> 
   (ensures has_session_pred pr lab spred)
 let mk_session_pred_correct pr lspred lab spred =
   let open MLS.MiscLemmas in
-  assert_norm (forall session p time si vi. preds_to_global_pred pr session (p, time, si, vi) <==> pr.trace_preds.session_st_inv time p si vi session);
+  assert_norm (forall session p time si vi. preds_to_global_pred pr (p, time, si, vi, session) <==> pr.trace_preds.session_st_inv time p si vi session);
   memP_map (lab, spred) (label_session_pred_to_label_local_pred pr.global_usage) lspred;
   FStar.Classical.forall_intro_2 (index_map (label_session_pred_to_label_local_pred pr.global_usage));
   FStar.Classical.forall_intro_2 (index_map (fst #string #session_pred));
@@ -156,7 +155,7 @@ val new_session:
   (requires fun t0 -> spred pr.global_usage p (trace_len t0) si vi st /\ has_session_pred pr label spred)
   (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
 let new_session pr label spred p si vi st =
-  assert_norm (forall session p time si vi. preds_to_global_pred pr session (p, time, si, vi) <==> pr.trace_preds.session_st_inv time p si vi session);
+  assert_norm (forall session p time si vi. preds_to_global_pred pr (p, time, si, vi, session) <==> pr.trace_preds.session_st_inv time p si vi session);
   let time = global_timestamp () in
   let session = {
     label = CryptoLib.string_to_bytes label;
@@ -174,7 +173,7 @@ val update_session:
   (requires fun t0 -> spred pr.global_usage p (trace_len t0) si vi st /\ has_session_pred pr label spred)
   (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
 let update_session pr label spred p si vi st =
-  assert_norm (forall session p time si vi. preds_to_global_pred pr session (p, time, si, vi) <==> pr.trace_preds.session_st_inv time p si vi session);
+  assert_norm (forall session p time si vi. preds_to_global_pred pr (p, time, si, vi, session) <==> pr.trace_preds.session_st_inv time p si vi session);
   let time = global_timestamp () in
   let session = {
     label = CryptoLib.string_to_bytes label;
@@ -195,7 +194,7 @@ val get_session:
     is_msg pr.global_usage (readers [psv_id p si vi]) (trace_len t0) st
   )
 let get_session pr label spred p si =
-  assert_norm (forall session p time si vi. preds_to_global_pred pr session (p, time, si, vi) <==> pr.trace_preds.session_st_inv time p si vi session);
+  assert_norm (forall session p time si vi. preds_to_global_pred pr (p, time, si, vi, session) <==> pr.trace_preds.session_st_inv time p si vi session);
   let time = global_timestamp () in
   let (|vi, session_bytes|) = get_session #pr #time p si in
   // Why the typeclass instantiation??
