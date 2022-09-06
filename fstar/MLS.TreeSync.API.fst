@@ -35,7 +35,7 @@ let state_leaf_at #bytes #cb #tkt #asp st li =
 
 val state_update_tree:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
-  st:treesync_state bytes tkt asp -> new_tree:treesync_valid bytes tkt l 0 st.group_id -> new_tokens:Ghost.erased (as_tokens bytes asp l 0){all_credentials_ok new_tree new_tokens} ->
+  st:treesync_state bytes tkt asp -> new_tree:treesync_valid bytes tkt l 0 st.group_id -> new_tokens:as_tokens bytes asp l 0{all_credentials_ok new_tree new_tokens} ->
   treesync_state bytes tkt asp
 let state_update_tree #bytes #cb #tkt #asp #l st new_tree new_tokens =
   ({ st with
@@ -282,7 +282,7 @@ let finalize_add #bytes #cb #tkt #asp #st #kp pend token =
   | None -> (
     find_empty_leaf_tree_extend st.tree;
     let extended_tree = tree_extend st.tree in
-    let extended_tokens = Ghost.hide (as_extend st.tokens) in
+    let extended_tokens = as_extend st.tokens in
     let li = Some?.v (find_empty_leaf extended_tree) in
     all_credentials_ok_tree_extend st.tree st.tokens;
     all_credentials_ok_tree_add extended_tree extended_tokens li ln token;
@@ -370,8 +370,8 @@ val finalize_remove:
   pend:pending_remove st li ->
   treesync_state bytes tkt asp
 let finalize_remove #bytes #cb #tkt #asp #st #li pend =
-  let blanked_tree = (tree_remove st.tree li) in
-  let blanked_tokens = Ghost.hide (as_remove st.tokens li) in
+  let blanked_tree = tree_remove st.tree li in
+  let blanked_tokens = as_remove st.tokens li in
   all_credentials_ok_tree_remove st.tree st.tokens li;
   if TNode? blanked_tree && is_tree_empty (TNode?.right blanked_tree) then (
     all_credentials_ok_tree_truncate blanked_tree blanked_tokens;
