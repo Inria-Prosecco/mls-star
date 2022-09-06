@@ -176,7 +176,7 @@ let rec leaf_at_has_pre #bytes #bl #tkt #l #i pre t li =
     leaf_at_has_pre pre child li
 
 #push-options "--z3rlimit 50"
-val parent_hash_implies_treekem_pred: #l:nat -> #i:tree_index l -> gu:global_usage -> time:timestamp -> tkp:treekem_parameters -> group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkp.types l i -> ast:as_tokens dy_bytes (dy_asp gu time) l i -> Lemma
+val parent_hash_implies_treekem_pred: #l:nat -> #i:tree_index l -> gu:global_usage -> time:timestamp -> tkp:treekem_parameters -> group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkp.types l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i -> Lemma
   (requires
     has_sign_pred gu "LeafNodeTBS" (leaf_node_spred tkp) /\
     unmerged_leaves_ok t /\ parent_hash_invariant t /\ valid_leaves_invariant group_id t /\

@@ -13,7 +13,7 @@ type treesync_state (bytes:Type0) {|crypto_bytes bytes|} (tkt:treekem_types byte
   group_id: mls_bytes bytes;
   levels: nat;
   tree: treesync_valid bytes tkt levels 0 group_id;
-  tokens: tokens:as_tokens bytes asp levels 0{all_credentials_ok tree tokens};
+  tokens: tokens:as_tokens bytes asp.token_t levels 0{all_credentials_ok tree tokens};
 }
 
 type treesync_index (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) = i:nat{i < pow2 st.levels}

@@ -35,7 +35,7 @@ let state_leaf_at #bytes #cb #tkt #asp st li =
 
 val state_update_tree:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
-  st:treesync_state bytes tkt asp -> new_tree:treesync_valid bytes tkt l 0 st.group_id -> new_tokens:as_tokens bytes asp l 0{all_credentials_ok new_tree new_tokens} ->
+  st:treesync_state bytes tkt asp -> new_tree:treesync_valid bytes tkt l 0 st.group_id -> new_tokens:as_tokens bytes asp.token_t l 0{all_credentials_ok new_tree new_tokens} ->
   treesync_state bytes tkt asp
 let state_update_tree #bytes #cb #tkt #asp #l st new_tree new_tokens =
   ({ st with
@@ -151,7 +151,7 @@ let prepare_welcome #bytes #cb #tkt #l group_id t =
   )
 
 #push-options "--fuel 2 --ifuel 2"
-val tokens_from_list: #bytes:Type0 -> {|bytes_like bytes|} -> asp:as_parameters bytes -> l:nat -> i:tree_index l -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 l} -> as_tokens bytes asp l i
+val tokens_from_list: #bytes:Type0 -> {|bytes_like bytes|} -> asp:as_parameters bytes -> l:nat -> i:tree_index l -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 l} -> as_tokens bytes asp.token_t l i
 let rec tokens_from_list #bytes #bl asp l i tokens =
   if l = 0 then (
     let [token] = tokens in
