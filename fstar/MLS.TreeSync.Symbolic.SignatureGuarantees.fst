@@ -38,12 +38,22 @@ noeq type treekem_parameters = {
     (ensures pred t2 t)
 }
 
+type dy_as_token_ (bytes:Type0) {|bytes_like bytes|} = {
+  who: principal;
+  time: timestamp;
+}
+
+%splice [ps_dy_as_token_] (gen_parser (`dy_as_token_))
+
+let dy_as_token = dy_as_token_ dy_bytes
+let ps_dy_as_token: parser_serializer dy_bytes dy_as_token = ps_dy_as_token_
+
 val dy_asp: global_usage -> timestamp -> as_parameters dy_bytes
 let dy_asp gu current_time = {
-  token_t = principal & timestamp;
-  credential_ok = (fun (vk, cred) (prin, ok_time) ->
-    ok_time <$ current_time /\
-    is_verification_key gu "MLS.LeafSignKey" ok_time (readers [p_id prin]) vk
+  token_t = dy_as_token;
+  credential_ok = (fun (vk, cred) token ->
+    token.time <$ current_time /\
+    is_verification_key gu "MLS.LeafSignKey" token.time (readers [p_id token.who]) vk
   );
   valid_successor = (fun (vk_old, cred_old) (vk_new, cred_new) ->
     True
@@ -175,7 +185,7 @@ val parent_hash_implies_treekem_pred: #l:nat -> #i:tree_index l -> gu:global_usa
     treesync_has_pre (is_valid gu time) t /\
     is_valid gu time group_id
   )
-  (ensures tkp.pred time (|l, i, t|) \/ is_corrupt time (p_id (fst (Some?.v (leaf_at ast (get_authentifier_index t))))))
+  (ensures tkp.pred time (|l, i, t|) \/ is_corrupt time (p_id ((Some?.v (leaf_at ast (get_authentifier_index t))).who)))
 let parent_hash_implies_treekem_pred #l #i gu time tkp group_id t ast =
   // Explicit typeclass instantiation is a workaround for FStarLang/FStar#2684
   let my_tl = parent_hash_invariant_to_tree_list #dy_bytes #crypto_dy_bytes t in
@@ -191,8 +201,8 @@ let parent_hash_implies_treekem_pred #l #i gu time tkp group_id t ast =
     leaf_index = leaf_i;
   } in
   let ln_tbs_bytes = get_leaf_tbs ln group_id leaf_i in
-  let (leaf_prin, leaf_time) = Some?.v (leaf_at ast leaf_i) in
-  let leaf_sk_label = readers [p_id leaf_prin] in
+  let leaf_token = Some?.v (leaf_at ast leaf_i) in
+  let leaf_sk_label = readers [p_id leaf_token.who] in
   serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkp.types) (is_valid gu time) ln_tbs;
   verify_with_label_is_valid gu (leaf_node_spred tkp) "MLS.LeafSignKey" leaf_sk_label time ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature;
 
@@ -220,9 +230,9 @@ let parent_hash_implies_treekem_pred #l #i gu time tkp group_id t ast =
     )
   );
 
-  introduce (can_flow time leaf_sk_label public) ==> is_corrupt time (p_id (fst (Some?.v (leaf_at ast (get_authentifier_index t)))))
+  introduce (can_flow time leaf_sk_label public) ==> is_corrupt time (p_id ((Some?.v (leaf_at ast (get_authentifier_index t))).who))
   with _. (
-    can_flow_to_public_implies_corruption time (p_id leaf_prin)
+    can_flow_to_public_implies_corruption time (p_id leaf_token.who)
   )
 #pop-options
 
