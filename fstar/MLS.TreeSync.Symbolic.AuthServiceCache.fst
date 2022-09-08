@@ -82,11 +82,7 @@ let as_cache_invariant =
       introduce forall x. as_cache_state_elem_invariant gu time x ==> ps_as_cache_state_elem_.is_valid pre x
       with (
         introduce _ ==> _ with _. (
-          // TODO this back-and-forth trick to weaken predicate should be in Comparse library
-          let strong_pre = is_publishable gu x.time in
-          (ps_to_pse ps_credential_nt).parse_serialize_inv_exact x.credential;
-          (ps_to_pse ps_credential_nt).serialize_pre_exact strong_pre x.credential;
-          (ps_to_pse ps_credential_nt).parse_pre_exact pre ((ps_to_pse ps_credential_nt).serialize_exact x.credential)
+          MLS.MiscLemmas.comparse_is_valid_weaken ps_credential_nt (is_publishable gu x.time) pre x.credential
         )
       );
       serialize_pre_lemma as_cache_state pre st

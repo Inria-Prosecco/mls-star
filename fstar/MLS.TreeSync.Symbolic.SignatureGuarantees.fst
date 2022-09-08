@@ -44,6 +44,7 @@ type dy_as_token_ (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_dy_as_token_] (gen_parser (`dy_as_token_))
+%splice [ps_dy_as_token__is_valid] (gen_is_valid_lemma (`dy_as_token_))
 
 let dy_as_token = dy_as_token_ dy_bytes
 let ps_dy_as_token: parser_serializer dy_bytes dy_as_token = ps_dy_as_token_
