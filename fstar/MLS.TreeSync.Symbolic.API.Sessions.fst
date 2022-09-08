@@ -129,7 +129,6 @@ val treesync_state_to_session_bytes:
   (requires
     is_publishable pr.global_usage time st.group_id /\
     treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
-    (ps_dy_as_tokens st.levels 0).is_valid (is_publishable pr.global_usage time) st.tokens /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun res -> treesync_public_state_invariant tkt pr.global_usage p time si vi res)
@@ -152,7 +151,6 @@ val new_public_treesync_state:
     time == trace_len t0 /\
     is_publishable pr.global_usage time st.group_id /\
     treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
-    (ps_dy_as_tokens st.levels 0).is_valid (is_publishable pr.global_usage time) st.tokens /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun t0 si t1 -> trace_len t1 == trace_len t0 + 1)
@@ -171,7 +169,6 @@ val set_public_treesync_state:
     time == trace_len t0 /\
     is_publishable pr.global_usage time st.group_id /\
     treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
-    (ps_dy_as_tokens st.levels 0).is_valid (is_publishable pr.global_usage time) st.tokens /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)

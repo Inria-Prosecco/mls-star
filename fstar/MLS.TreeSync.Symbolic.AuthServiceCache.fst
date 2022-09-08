@@ -186,6 +186,7 @@ val find_verified_credential:
   )
   (ensures fun t0 (who, usg, time) t1 ->
     is_verification_key pr.global_usage usg time (readers [p_id who]) verification_key /\
+    time <$ (trace_len t0) /\
     t1 == t0
   )
 let find_verified_credential pr p si verification_key credential =
