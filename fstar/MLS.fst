@@ -13,7 +13,7 @@ open MLS.TreeSyncTreeKEMBinder
 open MLS.TreeSync.Extensions
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeDEM.KeyPackageRef
-open MLS.TreeKEM
+open MLS.TreeKEM.Operations
 open MLS.TreeKEM.API.Types
 open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Content
@@ -229,7 +229,7 @@ let process_commit state message message_auth =
         error "process_commit: leaf index is too big"
       else (
         assume(state.treesync_state.levels == state.treekem_state.levels);
-        commit_secret <-- MLS.TreeKEM.root_secret state.treekem_state.tree state.leaf_index leaf_secret;
+        commit_secret <-- MLS.TreeKEM.Operations.root_secret state.treekem_state.tree state.leaf_index leaf_secret;
         return (Some commit_secret)
       )
   );
@@ -281,7 +281,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   tmp <-- chop_entropy e (kdf_length #bytes);
   let fresh, e = tmp in
   let leaf_secret = fresh in
-  key_pair <-- MLS.TreeKEM.derive_keypair_from_path_secret #bytes leaf_secret;
+  key_pair <-- MLS.TreeKEM.Operations.derive_keypair_from_path_secret #bytes leaf_secret;
   let (_, encryption_key) = key_pair in
   capabilities <-- default_capabilities;
   let extensions = empty_extensions #bytes #cb.base in
@@ -636,7 +636,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     match lookup kp_hash with
     | Some leaf_secret -> (
       //TODO: here we break result's encapsulation
-      match MLS.TreeKEM.derive_keypair_from_path_secret leaf_secret with
+      match MLS.TreeKEM.Operations.derive_keypair_from_path_secret leaf_secret with
       | Success (sk, _) -> Some sk
       | _ -> None
     )
@@ -692,7 +692,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
         error "process_welcome_message: signer index is too big"
       else (
         update_path_kem <-- mk_init_path treekem leaf_index signer_index path_secret (empty #bytes);
-        return (MLS.TreeKEM.tree_apply_path treekem update_path_kem)
+        return (MLS.TreeKEM.Operations.tree_apply_path treekem update_path_kem)
       )
   );
   interim_transcript_hash <-- MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.group_context.confirmed_transcript_hash;

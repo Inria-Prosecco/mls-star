@@ -8,7 +8,7 @@ open MLS.Tree
 open MLS.TreeKEM.API.Types
 open MLS.TreeKEM.API
 open MLS.TreeKEM.Types
-open MLS.TreeKEM
+open MLS.TreeKEM.Operations
 open MLS.Test.Utils
 open MLS.StringUtils
 open MLS.Result

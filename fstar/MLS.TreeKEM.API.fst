@@ -6,7 +6,7 @@ open MLS.Tree
 open MLS.TreeCommon
 open MLS.TreeCommon.Lemmas
 open MLS.TreeKEM.Types
-open MLS.TreeKEM
+open MLS.TreeKEM.Operations
 open MLS.TreeKEM.API.Types
 
 val state_update_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> treekem_state bytes -> treekem bytes l 0 -> treekem_state bytes

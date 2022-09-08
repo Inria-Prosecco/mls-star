@@ -10,7 +10,7 @@ open MLS.TreeSync.Types
 open MLS.TreeSync.ParentHash
 open MLS.TreeSync.Operations
 open MLS.TreeSync.TreeHash
-open MLS.TreeKEM
+open MLS.TreeKEM.Operations
 open MLS.TreeSyncTreeKEMBinder
 open MLS.NetworkBinder
 open MLS.NetworkTypes

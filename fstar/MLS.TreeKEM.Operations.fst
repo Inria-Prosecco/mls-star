@@ -1,4 +1,4 @@
-module MLS.TreeKEM
+module MLS.TreeKEM.Operations
 
 open Comparse.Bytes
 open MLS.Crypto
