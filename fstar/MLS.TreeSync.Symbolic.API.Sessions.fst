@@ -14,6 +14,7 @@ open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.API.Types
 open MLS.Symbolic
 open MLS.Symbolic.Sessions
+open MLS.Symbolic.TypedSession
 open MLS.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.IsValid
 open MLS.TreeSync.Symbolic.SignatureGuarantees
@@ -80,39 +81,34 @@ instance parseable_serializeable_bare_treesync_state (tkt:treekem_types dy_bytes
 val treesync_public_state_label: string
 let treesync_public_state_label = "MLS.TreeSync.PublicState"
 
-val bare_treesync_public_state_invariant: tkt:treekem_types dy_bytes -> bare_session_pred
-let bare_treesync_public_state_invariant tkt gu p time si vi session =
-  match parse (bare_treesync_state tkt) session with
-  | None -> False
-  | Some st -> (
-    is_publishable gu time st.group_id /\
-    treesync_has_pre (is_publishable gu time) st.tree /\
-    unmerged_leaves_ok st.tree /\
-    parent_hash_invariant st.tree /\
-    valid_leaves_invariant st.group_id st.tree /\
-    all_credentials_ok st.tree (st.tokens <: as_tokens dy_bytes (dy_asp gu time).token_t st.levels 0)
-  )
+// The `fun` is a workaround for FStarLang/FStar#2694
+val bare_treesync_public_state_invariant: tkt:treekem_types dy_bytes -> bare_typed_session_pred (bare_treesync_state tkt)
+let bare_treesync_public_state_invariant tkt = fun gu p time si vi st ->
+  is_publishable gu time st.group_id /\
+  treesync_has_pre (is_publishable gu time) st.tree /\
+  unmerged_leaves_ok st.tree /\
+  parent_hash_invariant st.tree /\
+  valid_leaves_invariant st.group_id st.tree /\
+  all_credentials_ok st.tree (st.tokens <: as_tokens dy_bytes (dy_asp gu time).token_t st.levels 0)
 
 #push-options "--fuel 0 --ifuel 0"
 val treesync_public_state_invariant: treekem_types dy_bytes -> session_pred
 let treesync_public_state_invariant tkt =
-  mk_session_pred (bare_treesync_public_state_invariant tkt)
-    (fun gu p time0 time1 si vi session ->
-      let st = Some?.v (parse (bare_treesync_state tkt) session) in
-      // Prove publishability of treesync in the future
-      ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time0) st.tree;
-      ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time1) st.tree;
-      MLS.MiscLemmas.comparse_is_valid_weaken (ps_treesync tkt st.levels 0) (is_publishable gu time0) (is_publishable gu time1) st.tree
-    )
-    (fun gu p time si vi session ->
-      let st = Some?.v (parse (bare_treesync_state tkt) session) in
-      let pre = is_msg gu (readers [psv_id p si vi]) time in
-      ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time) st.tree;
-      MLS.MiscLemmas.comparse_is_valid_weaken (ps_treesync tkt st.levels 0) (is_publishable gu time) pre st.tree;
-      ps_dy_as_tokens_is_valid pre st.tokens;
-      serialize_parse_inv_lemma (bare_treesync_state tkt) session;
-      serialize_pre_lemma (bare_treesync_state tkt) pre st
-    )
+  typed_session_pred_to_session_pred (
+    mk_typed_session_pred (bare_treesync_public_state_invariant tkt)
+      (fun gu p time0 time1 si vi st ->
+        // Prove publishability of treesync in the future
+        ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time0) st.tree;
+        ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time1) st.tree;
+        MLS.MiscLemmas.comparse_is_valid_weaken (ps_treesync tkt st.levels 0) (is_publishable gu time0) (is_publishable gu time1) st.tree
+      )
+      (fun gu p time si vi st ->
+        let pre = is_msg gu (readers [psv_id p si vi]) time in
+        ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time) st.tree;
+        MLS.MiscLemmas.comparse_is_valid_weaken (ps_treesync tkt st.levels 0) (is_publishable gu time) pre st.tree;
+        ps_dy_as_tokens_is_valid pre st.tokens
+      )
+  )
 #pop-options
 
 val has_treesync_public_state_invariant: treekem_types dy_bytes -> preds -> prop
@@ -215,23 +211,13 @@ instance parseable_serializeable_treesync_private_state: parseable_serializeable
 val treesync_private_state_label: string
 let treesync_private_state_label = "MLS.TreeSync.PrivateState"
 
-val bare_treesync_private_state_invariant: bare_session_pred
-let bare_treesync_private_state_invariant gu p time si vi session =
-  match parse treesync_private_state session with
-  | None -> False
-  | Some st ->
-    is_signature_key gu "MLS.LeafSignKey" (readers [p_id p]) time st.signature_key
+val bare_treesync_private_state_invariant: bare_typed_session_pred treesync_private_state
+let bare_treesync_private_state_invariant gu p time si vi st =
+  is_signature_key gu "MLS.LeafSignKey" (readers [p_id p]) time st.signature_key
 
 val treesync_private_state_invariant: session_pred
 let treesync_private_state_invariant =
-  mk_session_pred bare_treesync_private_state_invariant
-    (fun gu p time0 time1 si vi session -> ())
-    (fun gu p time si vi session ->
-      let st = Some?.v (parse treesync_private_state session) in
-      let pre = is_msg gu (readers [psv_id p si vi]) time in
-      serialize_parse_inv_lemma treesync_private_state session;
-      serialize_pre_lemma treesync_private_state pre st
-    )
+  typed_session_pred_to_session_pred bare_treesync_private_state_invariant
 
 val has_treesync_private_state_invariant: preds -> prop
 let has_treesync_private_state_invariant pr =

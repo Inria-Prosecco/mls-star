@@ -7,6 +7,7 @@ open GlobalRuntimeLib
 open LabeledRuntimeAPI
 open MLS.Symbolic
 open MLS.Symbolic.Sessions
+open MLS.Symbolic.TypedSession
 
 type group_manager_state_elem_ (bytes:Type0) {|bytes_like bytes|} = {
   group_id: mls_bytes bytes;
@@ -49,30 +50,24 @@ val group_manager_state_invariant_eq: gu:global_usage -> time:timestamp -> st:gr
 let group_manager_state_invariant_eq gu time st =
   for_allP_eq (group_manager_state_elem_invariant gu time) st.group_sessions
 
-val bare_group_manager_invariant: bare_session_pred
-let bare_group_manager_invariant gu p time si vi session =
-  match parse group_manager_state session with
-  | None -> False
-  | Some st -> (
-      group_manager_state_invariant gu time st
-  )
+val bare_group_manager_invariant: bare_typed_session_pred group_manager_state
+let bare_group_manager_invariant gu p time si vi st =
+  group_manager_state_invariant gu time st
 
 val group_manager_invariant: session_pred
 let group_manager_invariant =
-  mk_session_pred bare_group_manager_invariant
-    (fun gu p time0 time1 si vi session ->
-      let st = Some?.v (parse group_manager_state session) in
-      group_manager_state_invariant_eq gu time0 st;
-      group_manager_state_invariant_eq gu time1 st
-    )
-    (fun gu p time si vi session ->
-      let pre = is_msg gu (readers [psv_id p si vi]) time in
-      serialize_parse_inv_lemma group_manager_state session;
-      let st = Some?.v (parse group_manager_state session) in
-      group_manager_state_invariant_eq gu time st;
-      for_allP_eq (ps_group_manager_state_elem_.is_valid pre) st.group_sessions;
-      serialize_pre_lemma group_manager_state pre st
-    )
+  typed_session_pred_to_session_pred (
+    mk_typed_session_pred bare_group_manager_invariant
+      (fun gu p time0 time1 si vi st ->
+        group_manager_state_invariant_eq gu time0 st;
+        group_manager_state_invariant_eq gu time1 st
+      )
+      (fun gu p time si vi st ->
+        let pre = is_msg gu (readers [psv_id p si vi]) time in
+        group_manager_state_invariant_eq gu time st;
+        for_allP_eq (ps_group_manager_state_elem_.is_valid pre) st.group_sessions
+      )
+  )
 
 val has_group_manager_invariant: preds -> prop
 let has_group_manager_invariant pr =

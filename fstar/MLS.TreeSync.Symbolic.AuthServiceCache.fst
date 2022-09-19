@@ -8,6 +8,7 @@ open GlobalRuntimeLib
 open LabeledRuntimeAPI
 open MLS.Symbolic
 open MLS.Symbolic.Sessions
+open MLS.Symbolic.TypedSession
 
 #set-options "--fuel 0 --ifuel 0"
 
@@ -57,36 +58,30 @@ let as_cache_state_invariant_eq gu time st =
 val as_cache_label: string
 let as_cache_label = "MLS.TreeSync.AuthServiceCache"
 
-val bare_as_cache_invariant: bare_session_pred
-let bare_as_cache_invariant gu p time si vi session =
-  match parse as_cache_state session with
-  | None -> False
-  | Some st -> (
-      as_cache_state_invariant gu time st
-  )
+val bare_as_cache_invariant: bare_typed_session_pred as_cache_state
+let bare_as_cache_invariant gu p time si vi st =
+  as_cache_state_invariant gu time st
 
 val as_cache_invariant: session_pred
 let as_cache_invariant =
-  mk_session_pred bare_as_cache_invariant
-    (fun gu p time0 time1 si vi session ->
-      let st = Some?.v (parse as_cache_state session) in
-      as_cache_state_invariant_eq gu time0 st;
-      as_cache_state_invariant_eq gu time1 st
-    )
-    (fun gu p time si vi session ->
-      let pre = is_msg gu (readers [psv_id p si vi]) time in
-      serialize_parse_inv_lemma as_cache_state session;
-      let st = Some?.v (parse as_cache_state session) in
-      as_cache_state_invariant_eq gu time st;
-      for_allP_eq (ps_as_cache_state_elem_.is_valid pre) st.cached_values;
-      introduce forall x. as_cache_state_elem_invariant gu time x ==> ps_as_cache_state_elem_.is_valid pre x
-      with (
-        introduce _ ==> _ with _. (
-          MLS.MiscLemmas.comparse_is_valid_weaken ps_credential_nt (is_publishable gu x.time) pre x.credential
+  typed_session_pred_to_session_pred (
+    mk_typed_session_pred bare_as_cache_invariant
+      (fun gu p time0 time1 si vi st ->
+        as_cache_state_invariant_eq gu time0 st;
+        as_cache_state_invariant_eq gu time1 st
+      )
+      (fun gu p time si vi st ->
+        let pre = is_msg gu (readers [psv_id p si vi]) time in
+        as_cache_state_invariant_eq gu time st;
+        for_allP_eq (ps_as_cache_state_elem_.is_valid pre) st.cached_values;
+        introduce forall x. as_cache_state_elem_invariant gu time x ==> ps_as_cache_state_elem_.is_valid pre x
+        with (
+          introduce _ ==> _ with _. (
+            MLS.MiscLemmas.comparse_is_valid_weaken ps_credential_nt (is_publishable gu x.time) pre x.credential
+          )
         )
-      );
-      serialize_pre_lemma as_cache_state pre st
-    )
+      )
+  )
 
 val has_as_cache_invariant: preds -> prop
 let has_as_cache_invariant pr =
