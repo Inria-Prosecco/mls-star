@@ -7,7 +7,7 @@ open ComparseGlue
 open GlobalRuntimeLib
 open LabeledRuntimeAPI
 open MLS.Symbolic
-open MLS.Symbolic.Sessions
+open MLS.Symbolic.Session
 open MLS.Symbolic.TypedSession
 
 #set-options "--fuel 0 --ifuel 0"

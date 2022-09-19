@@ -6,7 +6,7 @@ open ComparseGlue
 open GlobalRuntimeLib
 open LabeledRuntimeAPI
 open MLS.Symbolic
-open MLS.Symbolic.Sessions
+open MLS.Symbolic.Session
 open MLS.Symbolic.TypedSession
 
 type group_manager_state_elem_ (bytes:Type0) {|bytes_like bytes|} = {

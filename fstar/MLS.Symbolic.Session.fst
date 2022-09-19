@@ -1,4 +1,4 @@
-module MLS.Symbolic.Sessions
+module MLS.Symbolic.Session
 
 open Comparse
 open ComparseGlue

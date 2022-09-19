@@ -2,7 +2,7 @@ module MLS.Symbolic.TypedSession
 
 open Comparse
 open MLS.Symbolic
-open MLS.Symbolic.Sessions
+open MLS.Symbolic.Session
 open LabeledRuntimeAPI
 
 type bare_typed_session_pred (a:Type) {|parseable_serializeable dy_bytes a|} = gu:global_usage -> p:principal -> time:timestamp -> si:nat -> vi:nat -> session:a -> prop

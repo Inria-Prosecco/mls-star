@@ -13,7 +13,7 @@ open MLS.TreeSync.Invariants.ValidLeaves
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.API.Types
 open MLS.Symbolic
-open MLS.Symbolic.Sessions
+open MLS.Symbolic.Session
 open MLS.Symbolic.TypedSession
 open MLS.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.IsValid
