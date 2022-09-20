@@ -7,189 +7,60 @@ open ComparseGlue
 open GlobalRuntimeLib
 open LabeledRuntimeAPI
 open MLS.Symbolic
-open MLS.Symbolic.Session
-open MLS.Symbolic.TypedSession
+open MLS.Symbolic.MapSession
 
 #set-options "--fuel 0 --ifuel 0"
 
-(*** AS cache state & invariants ***)
+(*** AS cache types & invariants ***)
 
-type as_cache_state_elem_ (bytes:Type0) {|bytes_like bytes|} = {
+type as_cache_key (bytes:Type0) {|bytes_like bytes|} = {
   verification_key: signature_public_key_nt bytes;
   credential: credential_nt bytes;
+}
+
+%splice [ps_as_cache_key] (gen_parser (`as_cache_key))
+%splice [ps_as_cache_key_is_valid] (gen_is_valid_lemma (`as_cache_key))
+
+type as_cache_value (bytes:Type0) {|bytes_like bytes|} = {
   who: principal;
   [@@@ with_parser #bytes ps_string]
   usg: string;
   time: timestamp;
 }
 
-%splice [ps_as_cache_state_elem_] (gen_parser (`as_cache_state_elem_))
-%splice [ps_as_cache_state_elem__is_valid] (gen_is_valid_lemma (`as_cache_state_elem_))
+%splice [ps_as_cache_value] (gen_parser (`as_cache_value))
+%splice [ps_as_cache_value_is_valid] (gen_is_valid_lemma (`as_cache_value))
 
-type as_cache_state_elem = as_cache_state_elem_ dy_bytes
-
-type as_cache_state_ (bytes:Type0) {|bytes_like bytes|} = {
-  [@@@ with_parser #bytes (ps_list ps_as_cache_state_elem_)]
-  cached_values: list (as_cache_state_elem_ bytes);
+val as_cache_types: map_types dy_bytes
+let as_cache_types = {
+  key = as_cache_key dy_bytes;
+  ps_key = ps_as_cache_key;
+  value = as_cache_value dy_bytes;
+  ps_value = ps_as_cache_value;
 }
 
-%splice [ps_as_cache_state_] (gen_parser (`as_cache_state_))
-%splice [ps_as_cache_state__is_valid] (gen_is_valid_lemma (`as_cache_state_))
-
-type as_cache_state = as_cache_state_ dy_bytes
-
-instance parseable_serializeable_as_cache_state_ (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (as_cache_state_ bytes) = mk_parseable_serializeable (ps_as_cache_state_)
-
-val as_cache_state_elem_invariant: global_usage -> timestamp -> as_cache_state_elem -> prop
-let as_cache_state_elem_invariant gu time x =
-  x.time <$ time /\
-  is_verification_key gu x.usg x.time (readers [(p_id x.who)]) x.verification_key /\
-  ps_credential_nt.is_valid (is_publishable gu x.time) x.credential
-
-val as_cache_state_invariant: global_usage -> timestamp -> as_cache_state -> prop
-let as_cache_state_invariant gu time st =
-  for_allP (as_cache_state_elem_invariant gu time) st.cached_values
-
-val as_cache_state_invariant_eq: gu:global_usage -> time:timestamp -> st:as_cache_state -> Lemma
-  (as_cache_state_invariant gu time st <==> (forall x. List.Tot.memP x st.cached_values ==> as_cache_state_elem_invariant gu time x))
-let as_cache_state_invariant_eq gu time st =
-  for_allP_eq (as_cache_state_elem_invariant gu time) st.cached_values
+val as_cache_pred: map_predicate as_cache_types
+let as_cache_pred = {
+  pred = (fun gu time (key:as_cache_types.key) value ->
+    value.time <$ time /\
+    is_verification_key gu value.usg value.time (readers [(p_id value.who)]) key.verification_key /\
+    ps_credential_nt.is_valid (is_publishable gu value.time) key.credential
+  );
+  pred_later = (fun gu time0 time1 key value -> ());
+  pred_is_msg = (fun gu time key value ->
+    MLS.MiscLemmas.comparse_is_valid_weaken ps_credential_nt (is_publishable gu value.time) (is_publishable gu time) key.credential
+  );
+}
 
 val as_cache_label: string
 let as_cache_label = "MLS.TreeSync.AuthServiceCache"
 
-val bare_as_cache_invariant: bare_typed_session_pred as_cache_state
-let bare_as_cache_invariant gu p time si vi st =
-  as_cache_state_invariant gu time st
-
-val as_cache_invariant: session_pred
-let as_cache_invariant =
-  typed_session_pred_to_session_pred (
-    mk_typed_session_pred bare_as_cache_invariant
-      (fun gu p time0 time1 si vi st ->
-        as_cache_state_invariant_eq gu time0 st;
-        as_cache_state_invariant_eq gu time1 st
-      )
-      (fun gu p time si vi st ->
-        let pre = is_msg gu (readers [psv_id p si vi]) time in
-        as_cache_state_invariant_eq gu time st;
-        for_allP_eq (ps_as_cache_state_elem_.is_valid pre) st.cached_values;
-        introduce forall x. as_cache_state_elem_invariant gu time x ==> ps_as_cache_state_elem_.is_valid pre x
-        with (
-          introduce _ ==> _ with _. (
-            MLS.MiscLemmas.comparse_is_valid_weaken ps_credential_nt (is_publishable gu x.time) pre x.credential
-          )
-        )
-      )
-  )
-
 val has_as_cache_invariant: preds -> prop
 let has_as_cache_invariant pr =
-  has_session_pred pr as_cache_label as_cache_invariant
+  has_map_session_invariant as_cache_types as_cache_pred as_cache_label pr
 
 (*** AS cache API ***)
 
-#push-options "--fuel 1"
-val initialize_as_cache:
-  pr:preds -> p:principal -> LCrypto nat pr
-  (requires fun t0 -> has_as_cache_invariant pr)
-  (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
-let initialize_as_cache pr p =
-  let time = global_timestamp () in
-  let si = new_session_number pr p in
-  let session = { cached_values = [] } in
-  let session_bytes: dy_bytes = serialize as_cache_state session in
-  parse_serialize_inv_lemma #dy_bytes as_cache_state session;
-  new_session pr as_cache_label as_cache_invariant p si 0 session_bytes;
-  si
-#pop-options
-
-val set_as_cache:
-  pr:preds -> p:principal -> si:nat ->
-  st:as_cache_state ->
-  LCrypto unit pr
-  (requires fun t0 -> as_cache_state_invariant pr.global_usage (trace_len t0) st /\ has_as_cache_invariant pr)
-  (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
-let set_as_cache pr p si st =
-  let st_bytes: dy_bytes = serialize as_cache_state st in
-  parse_serialize_inv_lemma #dy_bytes as_cache_state st;
-  update_session pr as_cache_label as_cache_invariant p si 0 st_bytes
-
-val get_as_cache:
-  pr:preds -> p:principal -> si:nat ->
-  LCrypto as_cache_state pr
-  (requires fun t0 ->  has_as_cache_invariant pr)
-  (ensures fun t0 st t1 ->
-    as_cache_state_invariant pr.global_usage (trace_len t0) st /\
-    t1 == t0
-  )
-let get_as_cache pr p si =
-  let (_, st_bytes) = get_session pr as_cache_label as_cache_invariant p si in
-  Some?.v (parse as_cache_state st_bytes)
-
-#push-options "--fuel 1"
-val add_verified_credential:
-  pr:preds -> p:principal -> si:nat ->
-  verification_key:signature_public_key_nt dy_bytes -> credential:credential_nt dy_bytes -> who: principal -> usg:string -> time:timestamp ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    time <$ (trace_len t0) /\
-    is_verification_key pr.global_usage usg time (readers [p_id who]) verification_key /\
-    ps_credential_nt.is_valid (is_publishable pr.global_usage time) credential /\
-    has_as_cache_invariant pr
-  )
-  (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 1)
-let add_verified_credential pr p si verification_key credential who usg time =
-  let cached_elem = {
-    verification_key;
-    credential;
-    who;
-    usg;
-    time;
-  } in
-  let st = get_as_cache pr p si in
-  let new_st = { cached_values = cached_elem::st.cached_values } in
-  set_as_cache pr p si new_st
-#pop-options
-
-#push-options "--fuel 1 --ifuel 1"
-val find_verified_credential_aux: verification_key:signature_public_key_nt dy_bytes -> credential:credential_nt dy_bytes -> l:list as_cache_state_elem -> Pure (option (principal & string & timestamp))
-  (requires True)
-  (ensures fun res ->
-    match res with
-    | None -> True
-    | Some (who, usg, time) -> List.Tot.memP ({verification_key; credential; who; usg; time;}) l
-  )
-let rec find_verified_credential_aux verification_key credential l =
-  match l with
-  | [] -> None
-  | h::t ->
-    if h.verification_key = verification_key && h.credential = credential then
-      Some (h.who, h.usg, h.time)
-    else
-      match find_verified_credential_aux verification_key credential t with
-      | Some res -> Some res
-      | None -> None
-#pop-options
-
-val find_verified_credential:
-  pr:preds -> p:principal -> si:nat ->
-  verification_key:signature_public_key_nt dy_bytes -> credential:credential_nt dy_bytes ->
-  LCrypto (principal & string & timestamp) pr
-  (requires fun t0 ->
-    has_as_cache_invariant pr
-  )
-  (ensures fun t0 (who, usg, time) t1 ->
-    is_verification_key pr.global_usage usg time (readers [p_id who]) verification_key /\
-    time <$ (trace_len t0) /\
-    t1 == t0
-  )
-let find_verified_credential pr p si verification_key credential =
-  let st = get_as_cache pr p si in
-  match find_verified_credential_aux verification_key credential st.cached_values with
-  | None -> error "find_verified_credential: no credential found!"
-  | Some (who, usg, time) -> (
-    let now = global_timestamp () in
-    as_cache_state_invariant_eq pr.global_usage now st;
-    (who, usg, time)
-  )
+let initialize_as_cache = initialize_map as_cache_types as_cache_pred as_cache_label
+let add_verified_credential = add_key_value as_cache_types as_cache_pred as_cache_label
+let find_verified_credential = find_value as_cache_types as_cache_pred as_cache_label

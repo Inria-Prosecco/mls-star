@@ -46,9 +46,9 @@ val get_token_for:
     (dy_asp pr.global_usage (trace_len t0)).credential_ok inp token /\
     t1 == t0
   )
-let get_token_for pr p as_session (verif_key, credential) =
+let get_token_for pr p as_session (verification_key, credential) =
   let now = global_timestamp () in
-  let (who, usg, time) = find_verified_credential pr p as_session verif_key credential in
+  let { who; usg; time; } = find_verified_credential pr p as_session ({ verification_key; credential; }) in
   guard pr (usg = "MLS.LeafSignKey");
   { who; time; }
 
