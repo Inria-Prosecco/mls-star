@@ -189,6 +189,31 @@ let rec find_value_aux #mt key l =
       | None -> None
 #pop-options
 
+val try_find_value:
+  mt:map_types dy_bytes -> mpred:map_predicate mt -> label:string ->
+  pr:preds -> p:principal -> si:nat ->
+  key:mt.key ->
+  LCrypto (option mt.value) pr
+  (requires fun t0 ->
+    has_map_session_invariant mt mpred label pr
+  )
+  (ensures fun t0 opt_value t1 ->
+    (match opt_value with
+    | None -> True
+    | Some value -> mpred.pred pr.global_usage (trace_len t0) key value
+    ) /\
+    t1 == t0
+  )
+let try_find_value mt mpred label pr p si key =
+  let st = get_map mt mpred label pr p si in
+  match find_value_aux key st.key_values with
+  | None -> None
+  | Some value -> (
+    let now = global_timestamp () in
+    map_invariant_eq mt mpred pr.global_usage now st;
+    Some value
+  )
+
 val find_value:
   mt:map_types dy_bytes -> mpred:map_predicate mt -> label:string ->
   pr:preds -> p:principal -> si:nat ->
@@ -202,11 +227,8 @@ val find_value:
     t1 == t0
   )
 let find_value mt mpred label pr p si key =
-  let st = get_map mt mpred label pr p si in
-  match find_value_aux key st.key_values with
+  match try_find_value mt mpred label pr p si key with
   | None -> error "find_value: no such key found!"
   | Some value -> (
-    let now = global_timestamp () in
-    map_invariant_eq mt mpred pr.global_usage now st;
     value
   )
