@@ -12,7 +12,7 @@ open MLS.TreeSync.Symbolic.API.GroupManager
 open MLS.TreeSync.Symbolic.API.KeyPackageManager
 open MLS.TreeSync.Symbolic.API.Sessions
 open MLS.TreeSync.Symbolic.API.HasPreInvariant
-open MLS.TreeSync.Symbolic.SignatureGuarantees
+open MLS.TreeSync.Symbolic.LeafNodeSignature
 open MLS.TreeSync.Symbolic.AuthServiceCache
 open MLS.TreeSync.Symbolic.IsValid
 

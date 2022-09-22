@@ -17,7 +17,7 @@ open MLS.Symbolic.Session
 open MLS.Symbolic.TypedSession
 open MLS.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.IsValid
-open MLS.TreeSync.Symbolic.SignatureGuarantees
+open MLS.TreeSync.Symbolic.LeafNodeSignature
 
 #set-options "--fuel 1 --ifuel 1"
 
