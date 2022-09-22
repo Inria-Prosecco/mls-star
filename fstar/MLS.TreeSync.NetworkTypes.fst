@@ -255,6 +255,7 @@ instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like byt
 type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   version: protocol_version_nt;
   cipher_suite: cipher_suite_nt;
+  //TODO: should this type abstracted away?
   init_key: hpke_public_key_nt bytes;
   leaf_node: leaf_node_nt bytes tkt;
   extensions: mls_list bytes ps_extension_nt;
