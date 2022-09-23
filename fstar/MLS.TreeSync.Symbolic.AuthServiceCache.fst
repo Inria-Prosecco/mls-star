@@ -43,7 +43,7 @@ val as_cache_pred: map_predicate as_cache_types
 let as_cache_pred = {
   pred = (fun gu time (key:as_cache_types.key) value ->
     value.time <$ time /\
-    is_verification_key gu value.usg value.time (readers [(p_id value.who)]) key.verification_key /\
+    is_verification_key gu value.usg (readers [(p_id value.who)]) value.time key.verification_key /\
     ps_credential_nt.is_valid (is_publishable gu value.time) key.credential
   );
   pred_later = (fun gu time0 time1 key value -> ());

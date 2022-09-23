@@ -224,9 +224,8 @@ let is_msg p l i = ComparseGlue.is_msg p l i
 val is_publishable: global_usage -> timestamp -> bytes_compatible_pre dy_bytes
 let is_publishable p i = is_msg p SecrecyLabels.public i
 
-// TODO: swap timestamp and label to be more consistent
-val is_verification_key: global_usage -> string -> timestamp -> label -> dy_bytes -> prop
-let is_verification_key gu usg time sk_lab vk = LabeledCryptoAPI.is_verification_key gu time vk sk_lab usg (* convert to prop *) /\ True
+val is_verification_key: global_usage -> string -> label -> timestamp -> dy_bytes -> prop
+let is_verification_key gu usg sk_lab time vk = LabeledCryptoAPI.is_verification_key gu time vk sk_lab usg (* convert to prop *) /\ True
 
 val is_signature_key: global_usage -> string -> label -> timestamp -> dy_bytes -> prop
 let is_signature_key gu usg sk_lab time sk = LabeledCryptoAPI.is_signing_key gu time sk sk_lab usg
@@ -327,7 +326,7 @@ let sign_with_label_valid gu spred usg time sk lab msg nonce =
 val verify_with_label_is_valid: gu:global_usage -> spred:sign_pred -> usg:string -> sk_label:label -> time:timestamp -> vk:sign_public_key dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:sign_signature dy_bytes -> Lemma
   (requires
     has_sign_pred gu lab spred /\
-    is_verification_key gu usg time sk_label vk /\
+    is_verification_key gu usg sk_label time vk /\
     is_valid gu time content /\
     is_valid gu time signature /\
     sign_with_label_pre #dy_bytes lab (length #dy_bytes content) /\

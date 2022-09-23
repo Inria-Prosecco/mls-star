@@ -54,7 +54,7 @@ let dy_asp gu current_time = {
   token_t = dy_as_token;
   credential_ok = (fun (vk, cred) token ->
     token.time <$ current_time /\
-    is_verification_key gu "MLS.LeafSignKey" token.time (readers [p_id token.who]) vk
+    is_verification_key gu "MLS.LeafSignKey" (readers [p_id token.who]) token.time vk
   );
   valid_successor = (fun (vk_old, cred_old) (vk_new, cred_new) ->
     True
@@ -349,7 +349,7 @@ let external_path_has_pred #tkp #l #li time t p group_id sk nonce =
   path_is_filter_valid_external_path_to_path t p group_id sk nonce;
   tree_list_has_pred tkp time (path_to_tree_list t auth_p)
 
-#push-options "--z3rlimit 25"
+#push-options "--z3rlimit 50"
 val is_valid_external_path_to_path: #tkp:treekem_parameters -> #l:nat -> #li:leaf_index l 0 -> gu:global_usage -> time:timestamp -> t:treesync dy_bytes tkp.types l 0 -> p:external_pathsync dy_bytes tkp.types l 0 li -> group_id:mls_bytes dy_bytes -> sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes -> Lemma
   (requires
     has_leaf_node_tbs_invariant tkp gu /\
