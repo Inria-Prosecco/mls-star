@@ -46,11 +46,11 @@ val un_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> 
 let un_add #bytes #bl #tkt #l #i t leaves =
   un_addP t (un_add_unmerged_leaf leaves)
 
-val parent_hash_correct: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu{node_has_parent_hash u} -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
-let parent_hash_correct #bytes #cb #tkt #lu #lp #iu #ip u p =
+val parent_hash_correct: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
+let parent_hash_correct #bytes #cb #tkt #ld #lp #id #ip d p =
   let p_content = (Some?.v (TNode?.data p)) in
-  let expected_parent_hash = get_parent_hash_of u in
-  let (_, sibling) = get_child_sibling p iu in
+  let expected_parent_hash = get_parent_hash_of d in
+  let (_, sibling) = get_child_sibling p id in
   let original_sibling = un_add sibling p_content.unmerged_leaves in
   compute_parent_hash_pre p_content.content (length #bytes p_content.parent_hash) original_sibling &&
   expected_parent_hash = compute_parent_hash p_content.content p_content.parent_hash original_sibling
@@ -81,41 +81,41 @@ let rec resolution #bytes #bl #tkt #l #i t =
     resolution left @ resolution right
   | TNode (Some content) _ _ -> (|l, i|)::(unmerged_resolution content.unmerged_leaves)
 
-val last_update_lhs: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip{node_not_blank p} -> list node_index
-let last_update_lhs #bytes #bl #tkt #lu #lp #iu #ip u p =
-  let (c, _) = get_child_sibling p iu in
-  List.Tot.filter (op_disEquality (|lu, iu|)) (resolution c)
+val last_update_lhs: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> list node_index
+let last_update_lhs #bytes #bl #tkt #ld #lp #id #ip d p =
+  let (c, _) = get_child_sibling p id in
+  List.Tot.filter (op_disEquality (|ld, id|)) (resolution c)
 
-val last_update_rhs: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip{node_not_blank p} -> list node_index
-let last_update_rhs #bytes #bl #tkt #lu #lp #iu #ip u p =
-  let (c, _) = get_child_sibling p iu in
+val last_update_rhs: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> list node_index
+let last_update_rhs #bytes #bl #tkt #ld #lp #id #ip d p =
+  let (c, _) = get_child_sibling p id in
   let p_unmerged_leaves = (Some?.v (TNode?.data p)).unmerged_leaves in
   unmerged_resolution (List.Tot.filter (leaf_index_inside_tree c) p_unmerged_leaves)
 
-val last_update_u_in_res_c: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
-let last_update_u_in_res_c #bytes #bl #tkt #lu #lp #iu #ip u p =
-  let (c, _) = get_child_sibling p iu in
-  List.Tot.mem (|lu, iu|) (resolution c)
+val last_update_d_in_res_c: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
+let last_update_d_in_res_c #bytes #bl #tkt #ld #lp #id #ip d p =
+  let (c, _) = get_child_sibling p id in
+  List.Tot.mem (|ld, id|) (resolution c)
 
-val last_update_correct: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
-let last_update_correct #bytes #bl #tkt #lu #lp #iu #ip u p =
-  last_update_u_in_res_c u p && set_eq (last_update_lhs u p) (last_update_rhs u p)
+val last_update_correct: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
+let last_update_correct #bytes #bl #tkt #ld #lp #id #ip d p =
+  last_update_d_in_res_c d p && set_eq (last_update_lhs d p) (last_update_rhs d p)
 
-val parent_hash_linked: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu{node_has_parent_hash u} -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
-let parent_hash_linked #bytes #cb #tkt #lu #lp #iu #ip u p =
-  parent_hash_correct u p && last_update_correct u p
+val parent_hash_linked: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
+let parent_hash_linked #bytes #cb #tkt #ld #lp #id #ip d p =
+  parent_hash_correct d p && last_update_correct d p
 
-val node_has_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
-let rec node_has_parent_hash_link_aux #bytes #cb #tkt #lu #lp #iu #ip u p =
-  match u with
+val node_has_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> bool
+let rec node_has_parent_hash_link_aux #bytes #cb #tkt #ld #lp #id #ip d p =
+  match d with
   | TLeaf None -> false
   | TLeaf (Some lp) -> (
     match lp.data.source with
-    | LNS_commit () -> parent_hash_linked u p
+    | LNS_commit () -> parent_hash_linked d p
     | _ -> false
   )
   | TNode (Some kp) _ _ ->
-    parent_hash_linked u p
+    parent_hash_linked d p
   | TNode None left right -> (
     node_has_parent_hash_link_aux left p || node_has_parent_hash_link_aux right p
   )

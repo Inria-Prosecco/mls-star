@@ -81,93 +81,93 @@ let rec un_addP_eq_lemma #bytes #bl #tkt #l #i t p1 p2 =
       filter_eq_lemma p1 p2 content.unmerged_leaves
     )
 
-val leaf_at_subtree_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lc:nat -> #iu:tree_index 0 -> #ic:tree_index lc{leaf_index_inside lc ic iu} -> u:treesync bytes tkt 0 iu -> c:treesync bytes tkt lc ic -> Lemma
-  (requires is_subtree_of u c)
-  (ensures leaf_at c iu == TLeaf?.data u)
-let rec leaf_at_subtree_leaf #bytes #bl #tkt #lc #iu #ic u c =
+val leaf_at_subtree_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lc:nat -> #id:tree_index 0 -> #ic:tree_index lc{leaf_index_inside lc ic id} -> d:treesync bytes tkt 0 id -> c:treesync bytes tkt lc ic -> Lemma
+  (requires is_subtree_of d c)
+  (ensures leaf_at c id == TLeaf?.data d)
+let rec leaf_at_subtree_leaf #bytes #bl #tkt #lc #id #ic d c =
   if lc = 0 then ()
   else (
-    let (c_child, _) = get_child_sibling c iu in
-    leaf_at_subtree_leaf u c_child
+    let (c_child, _) = get_child_sibling c id in
+    leaf_at_subtree_leaf d c_child
   )
 
-val is_subtree_of_node_index_inside: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lc:nat{lu <= lc} -> #iu:tree_index lu -> #ic:tree_index lc{leaf_index_inside lc ic iu} -> u:treesync bytes tkt lu iu -> c:treesync bytes tkt lc ic -> x:node_index -> Lemma
-  (requires is_subtree_of u c /\ node_index_inside_tree x u)
+val is_subtree_of_node_index_inside: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lc:nat{ld <= lc} -> #id:tree_index ld -> #ic:tree_index lc{leaf_index_inside lc ic id} -> d:treesync bytes tkt ld id -> c:treesync bytes tkt lc ic -> x:node_index -> Lemma
+  (requires is_subtree_of d c /\ node_index_inside_tree x d)
   (ensures node_index_inside_tree x c)
-let rec is_subtree_of_node_index_inside #bytes #bl #tkt #lu #lc #iu #ic u c x =
-  if lu = lc then ()
+let rec is_subtree_of_node_index_inside #bytes #bl #tkt #ld #lc #id #ic d c x =
+  if ld = lc then ()
   else (
-    let (c_child, _) = get_child_sibling c iu in
-    is_subtree_of_node_index_inside u c_child x
+    let (c_child, _) = get_child_sibling c id in
+    is_subtree_of_node_index_inside d c_child x
   )
 
-val unmerged_leaves_ok_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu <= lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip -> Lemma
-  (requires unmerged_leaves_ok p /\ is_subtree_of u p)
-  (ensures unmerged_leaves_ok u)
-let rec unmerged_leaves_ok_subtree #bytes #bl #tkt #lu #lp #iu #ip u p =
-  if lu = lp then ()
+val unmerged_leaves_ok_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
+  (requires unmerged_leaves_ok p /\ is_subtree_of d p)
+  (ensures unmerged_leaves_ok d)
+let rec unmerged_leaves_ok_subtree #bytes #bl #tkt #ld #lp #id #ip d p =
+  if ld = lp then ()
   else (
-    let (c, _) = get_child_sibling p iu in
-    unmerged_leaves_ok_subtree u c
+    let (c, _) = get_child_sibling p id in
+    unmerged_leaves_ok_subtree d c
   )
 
 #push-options "--fuel 2 --ifuel 2 --z3rlimit 50"
-val resolution_cap_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lc:nat{lu <= lc} -> #iu:tree_index lu -> #ic:tree_index lc{leaf_index_inside lc ic iu} -> u:treesync bytes tkt lu iu -> c:treesync bytes tkt lc ic -> x:node_index -> Lemma
-  (requires is_subtree_of u c /\ List.Tot.mem (|lu, iu|) (resolution c) /\ unmerged_leaves_ok c)
-  (ensures (List.Tot.mem x (resolution c) /\ node_index_inside_tree x u) <==> (List.Tot.mem x (resolution u)))
-let rec resolution_cap_subtree #bytes #bl #tkt #lu #lc #iu #ic u c x =
-  unmerged_leaves_ok_subtree u c;
-  if lu = lc then (
-    if List.Tot.mem x (resolution u) then
-      resolution_inside_tree u x
+val resolution_cap_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lc:nat{ld <= lc} -> #id:tree_index ld -> #ic:tree_index lc{leaf_index_inside lc ic id} -> d:treesync bytes tkt ld id -> c:treesync bytes tkt lc ic -> x:node_index -> Lemma
+  (requires is_subtree_of d c /\ List.Tot.mem (|ld, id|) (resolution c) /\ unmerged_leaves_ok c)
+  (ensures (List.Tot.mem x (resolution c) /\ node_index_inside_tree x d) <==> (List.Tot.mem x (resolution d)))
+let rec resolution_cap_subtree #bytes #bl #tkt #ld #lc #id #ic d c x =
+  unmerged_leaves_ok_subtree d c;
+  if ld = lc then (
+    if List.Tot.mem x (resolution d) then
+      resolution_inside_tree d x
     else ()
   ) else (
     match c with
     | TNode (Some c_content) _ _ -> (
-      // In this case, u is actually a leaf
-      mem_unmerged_resolution_eq c_content.unmerged_leaves (|lu, iu|);
-      mem_ul_eq iu c_content.unmerged_leaves;
+      // In this case, d is actually a leaf
+      mem_unmerged_resolution_eq c_content.unmerged_leaves (|ld, id|);
+      mem_ul_eq id c_content.unmerged_leaves;
       list_for_all_eq (unmerged_leaf_exists c) c_content.unmerged_leaves;
-      leaf_at_subtree_leaf u c
+      leaf_at_subtree_leaf d c
     )
     | TNode None c_left c_right -> (
-      List.Tot.append_mem (resolution c_left) (resolution c_right) (|lu, iu|);
+      List.Tot.append_mem (resolution c_left) (resolution c_right) (|ld, id|);
       List.Tot.append_mem (resolution c_left) (resolution c_right) x;
       let (|xl, xi|) = x in
-      if List.Tot.mem (|lu, iu|) (resolution c_left) then (
+      if List.Tot.mem (|ld, id|) (resolution c_left) then (
         if leaf_index_inside_tree c_left xi then (
-          resolution_inside_tree c_left (|lu, iu|);
-          resolution_cap_subtree u c_left x;
+          resolution_inside_tree c_left (|ld, id|);
+          resolution_cap_subtree d c_left x;
           if List.Tot.mem x (resolution c_right) then (
             resolution_inside_tree c_right x
           ) else ()
         ) else (
-          resolution_inside_tree c_left (|lu, iu|);
-          assert(is_subtree_of u c_left);
-          if node_index_inside_tree x u then (
-            is_subtree_of_node_index_inside u c_left x
+          resolution_inside_tree c_left (|ld, id|);
+          assert(is_subtree_of d c_left);
+          if node_index_inside_tree x d then (
+            is_subtree_of_node_index_inside d c_left x
           ) else (
-            if List.Tot.mem x (resolution u) then
-              resolution_inside_tree u x
+            if List.Tot.mem x (resolution d) then
+              resolution_inside_tree d x
             else ()
           )
         )
       ) else (
         // Copy-pasted from the previous case, but with left <--> right
         if leaf_index_inside_tree c_right xi then (
-          resolution_inside_tree c_right (|lu, iu|);
-          resolution_cap_subtree u c_right x;
+          resolution_inside_tree c_right (|ld, id|);
+          resolution_cap_subtree d c_right x;
           if List.Tot.mem x (resolution c_left) then (
             resolution_inside_tree c_left x
           ) else ()
         ) else (
-          resolution_inside_tree c_right (|lu, iu|);
-          assert(is_subtree_of u c_right);
-          if node_index_inside_tree x u then (
-            is_subtree_of_node_index_inside u c_right x
+          resolution_inside_tree c_right (|ld, id|);
+          assert(is_subtree_of d c_right);
+          if node_index_inside_tree x d then (
+            is_subtree_of_node_index_inside d c_right x
           ) else (
-            if List.Tot.mem x (resolution u) then
-              resolution_inside_tree u x
+            if List.Tot.mem x (resolution d) then
+              resolution_inside_tree d x
             else ()
           )
         )
@@ -190,51 +190,51 @@ let non_blank_resolution_eq_unmerged_leaves_of #bytes #bl #tkt #l #i t x =
 
 val last_update_unmerged_leaves_eq:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
-  #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} ->
-  u:treesync bytes tkt lu iu{node_has_parent_hash u} -> p:treesync bytes tkt lp ip{node_not_blank p} -> x:nat -> Lemma
-  (requires is_subtree_of u p /\ last_update_correct u p /\ unmerged_leaves_ok p)
-  (ensures (mem_ul x (unmerged_leaves_of u)) <==> (mem_ul x (unmerged_leaves_of p) /\ leaf_index_inside_tree u x))
-let last_update_unmerged_leaves_eq #bytes #bl #tkt #lu #lp #iu #ip u p x =
-  let (c, _) = get_child_sibling p iu in
-  introduce leaf_index_inside_tree u x ==> leaf_index_inside_tree c x with _. is_subtree_of_node_index_inside u c (|0, x|);
-  mem_ul_eq x (unmerged_leaves_of u);
+  #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
+  d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} -> x:nat -> Lemma
+  (requires is_subtree_of d p /\ last_update_correct d p /\ unmerged_leaves_ok p)
+  (ensures (mem_ul x (unmerged_leaves_of d)) <==> (mem_ul x (unmerged_leaves_of p) /\ leaf_index_inside_tree d x))
+let last_update_unmerged_leaves_eq #bytes #bl #tkt #ld #lp #id #ip d p x =
+  let (c, _) = get_child_sibling p id in
+  introduce leaf_index_inside_tree d x ==> leaf_index_inside_tree c x with _. is_subtree_of_node_index_inside d c (|0, x|);
+  mem_ul_eq x (unmerged_leaves_of d);
   mem_ul_eq x (unmerged_leaves_of p);
-  mem_last_update_lhs_eq u p (|0, x|);
-  mem_last_update_rhs_eq u p (|0, x|);
-  set_eq_to_set_eqP (last_update_lhs u p) (last_update_rhs u p);
-  resolution_cap_subtree u c (|0, x|);
-  non_blank_resolution_eq_unmerged_leaves_of u x
+  mem_last_update_lhs_eq d p (|0, x|);
+  mem_last_update_rhs_eq d p (|0, x|);
+  set_eq_to_set_eqP (last_update_lhs d p) (last_update_rhs d p);
+  resolution_cap_subtree d c (|0, x|);
+  non_blank_resolution_eq_unmerged_leaves_of d x
 
-val parent_hash_guarantee_theorem_step_for_u:
+val parent_hash_guarantee_theorem_step_for_d:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
-  #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} ->
-  u:treesync bytes tkt lu iu{node_has_parent_hash u} -> p:treesync bytes tkt lp ip{node_not_blank p} ->
-  li:leaf_index lu iu -> Lemma
-  (requires is_subtree_of u p /\ last_update_correct u p /\ unmerged_leaves_ok p)
-  (ensures canonicalize u li == remove_leaf_signature (un_add u (unmerged_leaves_of p)) li)
-let parent_hash_guarantee_theorem_step_for_u #bytes #bl #tkt #lu #lp #iu #ip u p li =
-  unmerged_leaves_ok_subtree u p;
-  match u with
+  #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
+  d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} ->
+  li:leaf_index ld id -> Lemma
+  (requires is_subtree_of d p /\ last_update_correct d p /\ unmerged_leaves_ok p)
+  (ensures canonicalize d li == remove_leaf_signature (un_add d (unmerged_leaves_of p)) li)
+let parent_hash_guarantee_theorem_step_for_d #bytes #bl #tkt #ld #lp #id #ip d p li =
+  unmerged_leaves_ok_subtree d p;
+  match d with
   | TLeaf _ -> (
-    last_update_unmerged_leaves_eq u p iu
+    last_update_unmerged_leaves_eq d p id
   )
   | TNode _ _ _ -> (
-    introduce forall li. leaf_index_inside lu iu li ==> (un_add_unmerged_leaf (unmerged_leaves_of u)) li == (un_add_unmerged_leaf (unmerged_leaves_of p)) li with (
-      last_update_unmerged_leaves_eq u p li
+    introduce forall li. leaf_index_inside ld id li ==> (un_add_unmerged_leaf (unmerged_leaves_of d)) li == (un_add_unmerged_leaf (unmerged_leaves_of p)) li with (
+      last_update_unmerged_leaves_eq d p li
     );
-    un_addP_eq_lemma u (un_add_unmerged_leaf (unmerged_leaves_of u)) (un_add_unmerged_leaf (unmerged_leaves_of p))
+    un_addP_eq_lemma d (un_add_unmerged_leaf (unmerged_leaves_of d)) (un_add_unmerged_leaf (unmerged_leaves_of p))
   )
 
 val is_subtree_with_blanks_between:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
-  #lu:nat -> #lp:nat{lu <= lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} ->
-  u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip -> prop
-let rec is_subtree_with_blanks_between #bytes #bl #tkt #lu #lp #iu #ip u p =
-  if lu = lp then
-    iu == ip /\ u == p
+  #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
+  d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> prop
+let rec is_subtree_with_blanks_between #bytes #bl #tkt #ld #lp #id #ip d p =
+  if ld = lp then
+    id == ip /\ d == p
   else (
-    let (c, s) = get_child_sibling p iu in
-    TNode?.data p == None /\ is_tree_empty s /\ is_subtree_with_blanks_between u c
+    let (c, s) = get_child_sibling p id in
+    TNode?.data p == None /\ is_tree_empty s /\ is_subtree_with_blanks_between d c
   )
 
 val is_tree_empty_eq_lemma:
@@ -252,16 +252,16 @@ let rec is_tree_empty_eq_lemma #bytes #bl #tkt #l #i t1 t2 =
 
 val is_subtree_with_blanks_between_eq_lemma:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
-  #lu:nat -> #lp:nat{lu <= lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} ->
-  u:treesync bytes tkt lu iu -> p1:treesync bytes tkt lp ip -> p2:treesync bytes tkt lp ip -> Lemma
-  (requires is_subtree_with_blanks_between u p1 /\ is_subtree_with_blanks_between u p2)
+  #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
+  d:treesync bytes tkt ld id -> p1:treesync bytes tkt lp ip -> p2:treesync bytes tkt lp ip -> Lemma
+  (requires is_subtree_with_blanks_between d p1 /\ is_subtree_with_blanks_between d p2)
   (ensures p1 == p2)
-let rec is_subtree_with_blanks_between_eq_lemma #bytes #bl #tkt #lu #lp #iu #ip u p1 p2 =
-  if lu = lp then ()
+let rec is_subtree_with_blanks_between_eq_lemma #bytes #bl #tkt #ld #lp #id #ip d p1 p2 =
+  if ld = lp then ()
   else (
-    let (c1, s1) = get_child_sibling p1 iu in
-    let (c2, s2) = get_child_sibling p2 iu in
-    is_subtree_with_blanks_between_eq_lemma u c1 c2;
+    let (c1, s1) = get_child_sibling p1 id in
+    let (c2, s2) = get_child_sibling p2 id in
+    is_subtree_with_blanks_between_eq_lemma d c1 c2;
     is_tree_empty_eq_lemma s1 s2
   )
 
@@ -283,26 +283,26 @@ let rec blank_sibling #bytes #bl #tkt #l #i t p_unmerged_leaves =
     blank_sibling right p_unmerged_leaves
   )
 
-val is_subtree_with_blanks_between_u_p_aux:
+val is_subtree_with_blanks_between_d_p_aux:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
-  #lu:nat -> #lc:nat{lu <= lc} -> #iu:tree_index lu -> #ic:tree_index lc{leaf_index_inside lc ic iu} ->
-  u:treesync bytes tkt lu iu -> c:treesync bytes tkt lc ic -> p_unmerged_leaves:list (nat_lbytes 4) -> li:leaf_index lu iu -> Lemma
-  (requires is_subtree_of u c /\ (forall x. List.Tot.mem x (resolution c) ==> (x == (|lu, iu|) \/ List.Tot.mem x (unmerged_resolution p_unmerged_leaves))) /\ unmerged_leaves_ok c)
+  #ld:nat -> #lc:nat{ld <= lc} -> #id:tree_index ld -> #ic:tree_index lc{leaf_index_inside lc ic id} ->
+  d:treesync bytes tkt ld id -> c:treesync bytes tkt lc ic -> p_unmerged_leaves:list (nat_lbytes 4) -> li:leaf_index ld id -> Lemma
+  (requires is_subtree_of d c /\ (forall x. List.Tot.mem x (resolution c) ==> (x == (|ld, id|) \/ List.Tot.mem x (unmerged_resolution p_unmerged_leaves))) /\ unmerged_leaves_ok c)
   (ensures (
-    leaf_index_inside_subtree lu lc iu ic li;
-    is_subtree_with_blanks_between (remove_leaf_signature (un_add u p_unmerged_leaves) li) (remove_leaf_signature (un_add c p_unmerged_leaves) li)
+    leaf_index_inside_subtree ld lc id ic li;
+    is_subtree_with_blanks_between (remove_leaf_signature (un_add d p_unmerged_leaves) li) (remove_leaf_signature (un_add c p_unmerged_leaves) li)
   ))
-let rec is_subtree_with_blanks_between_u_p_aux #bytes #bl #tkt #lu #lc #iu #ic u c p_unmerged_leaves li =
-  if lu = lc then ()
+let rec is_subtree_with_blanks_between_d_p_aux #bytes #bl #tkt #ld #lc #id #ic d c p_unmerged_leaves li =
+  if ld = lc then ()
   else (
-    let (c_child, c_sibling) = get_child_sibling c iu in
+    let (c_child, c_sibling) = get_child_sibling c id in
     match c with
     | TNode (Some _) _ _ -> (
       mem_unmerged_resolution_eq p_unmerged_leaves (|lc, ic|);
       assert(False)
     )
     | TNode None left right -> (
-      introduce forall x. List.Tot.mem x (resolution c_child) ==> (x == (|lu, iu|) \/ List.Tot.mem x (unmerged_resolution p_unmerged_leaves))
+      introduce forall x. List.Tot.mem x (resolution c_child) ==> (x == (|ld, id|) \/ List.Tot.mem x (unmerged_resolution p_unmerged_leaves))
       with (
         List.Tot.append_mem (resolution left) (resolution right) x
       );
@@ -314,34 +314,34 @@ let rec is_subtree_with_blanks_between_u_p_aux #bytes #bl #tkt #lu #lc #iu #ic u
           resolution_inside_tree c_sibling x
         )
       );
-      is_subtree_with_blanks_between_u_p_aux u c_child p_unmerged_leaves li;
-      leaf_index_inside_subtree lu lc iu ic li;
-      leaf_index_same_side lu lc iu ic li;
+      is_subtree_with_blanks_between_d_p_aux d c_child p_unmerged_leaves li;
+      leaf_index_inside_subtree ld lc id ic li;
+      leaf_index_same_side ld lc id ic li;
       blank_sibling c_sibling p_unmerged_leaves
     )
   )
 
-val is_subtree_with_blanks_between_u_p:
+val is_subtree_with_blanks_between_d_p:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
-  #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} ->
-  u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip{node_not_blank p} -> li:leaf_index lu iu -> Lemma
-  (requires is_subtree_of u p /\ last_update_correct u p /\ unmerged_leaves_ok p)
+  #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
+  d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> li:leaf_index ld id -> Lemma
+  (requires is_subtree_of d p /\ last_update_correct d p /\ unmerged_leaves_ok p)
   (ensures (
-    leaf_index_inside_subtree lu lp iu ip li;
-    leaf_index_same_side lu lp iu ip li;
-    let (c, _) = get_child_sibling p iu in
-    is_subtree_with_blanks_between (remove_leaf_signature (un_add u (unmerged_leaves_of p)) li) (remove_leaf_signature (un_add c (unmerged_leaves_of p)) li)
+    leaf_index_inside_subtree ld lp id ip li;
+    leaf_index_same_side ld lp id ip li;
+    let (c, _) = get_child_sibling p id in
+    is_subtree_with_blanks_between (remove_leaf_signature (un_add d (unmerged_leaves_of p)) li) (remove_leaf_signature (un_add c (unmerged_leaves_of p)) li)
   ))
-let is_subtree_with_blanks_between_u_p #bytes #bl #tkt #lu #lp #iu #ip u p li =
-  let (c, _) = get_child_sibling p iu in
-  introduce forall x. List.Tot.mem x (resolution c) ==> (x == (|lu, iu|) \/ List.Tot.mem x (unmerged_resolution (unmerged_leaves_of p)))
+let is_subtree_with_blanks_between_d_p #bytes #bl #tkt #ld #lp #id #ip d p li =
+  let (c, _) = get_child_sibling p id in
+  introduce forall x. List.Tot.mem x (resolution c) ==> (x == (|ld, id|) \/ List.Tot.mem x (unmerged_resolution (unmerged_leaves_of p)))
   with (
-    mem_last_update_lhs_eq u p x;
-    mem_last_update_rhs_eq u p x;
-    set_eq_to_set_eqP (last_update_lhs u p) (last_update_rhs u p);
+    mem_last_update_lhs_eq d p x;
+    mem_last_update_rhs_eq d p x;
+    set_eq_to_set_eqP (last_update_lhs d p) (last_update_rhs d p);
     mem_unmerged_resolution_eq (unmerged_leaves_of p) x
   );
-  is_subtree_with_blanks_between_u_p_aux u c (unmerged_leaves_of p) li
+  is_subtree_with_blanks_between_d_p_aux d c (unmerged_leaves_of p) li
 
 val un_add_myself_aux: l1:list (nat_lbytes 4) -> l2:list (nat_lbytes 4) -> Lemma
   (requires forall x. List.Tot.mem x l2 ==> List.Tot.mem x l1)
@@ -361,34 +361,34 @@ let un_add_myself l =
 #push-options "--z3rlimit 100"
 val parent_hash_guarantee_theorem_step:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  #lu1:nat -> #lu2:nat -> #lp1:nat{lu1 < lp1} -> #lp2:nat{lu2 < lp2} ->
-  #iu1:tree_index lu1 ->
-  #iu2:tree_index lu2 ->
-  #ip1:tree_index lp1{leaf_index_inside lp1 ip1 iu1} ->
-  #ip2:tree_index lp2{leaf_index_inside lp2 ip2 iu2} ->
-  u1:treesync bytes tkt lu1 iu1{node_has_parent_hash u1} -> u2:treesync bytes tkt lu2 iu2{node_has_parent_hash u2} ->
+  #ld1:nat -> #ld2:nat -> #lp1:nat{ld1 < lp1} -> #lp2:nat{ld2 < lp2} ->
+  #id1:tree_index ld1 ->
+  #id2:tree_index ld2 ->
+  #ip1:tree_index lp1{leaf_index_inside lp1 ip1 id1} ->
+  #ip2:tree_index lp2{leaf_index_inside lp2 ip2 id2} ->
+  d1:treesync bytes tkt ld1 id1{node_has_parent_hash d1} -> d2:treesync bytes tkt ld2 id2{node_has_parent_hash d2} ->
   p1:treesync bytes tkt lp1 ip1{node_not_blank p1} -> p2:treesync bytes tkt lp2 ip2{node_not_blank p2} ->
-  li:leaf_index lu1 iu1 ->
+  li:leaf_index ld1 id1 ->
   Pure (bytes & bytes)
-  (requires equivalent u1 u2 li /\ parent_hash_linkedP u1 p1 /\ parent_hash_linkedP u2 p2 /\ unmerged_leaves_ok p1 /\ unmerged_leaves_ok p2)
+  (requires equivalent d1 d2 li /\ parent_hash_linkedP d1 p1 /\ parent_hash_linkedP d2 p2 /\ unmerged_leaves_ok p1 /\ unmerged_leaves_ok p2)
   (ensures fun (b1, b2) ->
     equivalent p1 p2 li \/
     length b1 < hash_max_input_length #bytes /\
     length b2 < hash_max_input_length #bytes /\
     hash_hash b1 == hash_hash b2 /\ ~(b1 == b2))
-let parent_hash_guarantee_theorem_step #bytes #cb #tkt #lu1 #lu2 #lp1 #lp2 #iu1 #iu2 #ip1 #ip2 u1 u2 p1 p2 li =
-  leaf_index_inside_subtree lu1 lp1 iu1 ip1 li;
-  let (c1, s1) = get_child_sibling p1 iu1 in
-  let (c2, s2) = get_child_sibling p2 iu2 in
-  assert(lu1 == lu2 /\ iu1 == iu2);
-  get_parent_hash_of_canonicalize u1 li;
-  get_parent_hash_of_canonicalize u2 li;
+let parent_hash_guarantee_theorem_step #bytes #cb #tkt #ld1 #ld2 #lp1 #lp2 #id1 #id2 #ip1 #ip2 d1 d2 p1 p2 li =
+  leaf_index_inside_subtree ld1 lp1 id1 ip1 li;
+  let (c1, s1) = get_child_sibling p1 id1 in
+  let (c2, s2) = get_child_sibling p2 id2 in
+  assert(ld1 == ld2 /\ id1 == id2);
+  get_parent_hash_of_canonicalize d1 li;
+  get_parent_hash_of_canonicalize d2 li;
   let p1_content = Some?.v (TNode?.data p1) in
   let p2_content = Some?.v (TNode?.data p2) in
   let ls1 = lp1-1 in
   let ls2 = lp2-1 in
-  let is1 = (if is_left_leaf #lp1 #ip1 iu1 then right_index ip1 else left_index ip1) in
-  let is2 = (if is_left_leaf #lp2 #ip2 iu2 then right_index ip2 else left_index ip2) in
+  let is1 = (if is_left_leaf #lp1 #ip1 id1 then right_index ip1 else left_index ip1) in
+  let is2 = (if is_left_leaf #lp2 #ip2 id2 then right_index ip2 else left_index ip2) in
   let s1: treesync bytes tkt ls1 is1 = s1 in //Sanity check
   let s2: treesync bytes tkt ls2 is2 = s2 in //Sanity check
   let (b1, b2) = compute_parent_hash_inj p1_content.content p1_content.parent_hash (un_add s1 p1_content.unmerged_leaves) p2_content.content p2_content.parent_hash (un_add s2 p2_content.unmerged_leaves) in
@@ -400,13 +400,13 @@ let parent_hash_guarantee_theorem_step #bytes #cb #tkt #lu1 #lu2 #lp1 #lp2 #iu1 
     left_right_index_disj ip2 ip1;
     assert(ip1 == ip2);
     assert(un_add s1 p1_content.unmerged_leaves == un_add s2 p2_content.unmerged_leaves);
-    parent_hash_guarantee_theorem_step_for_u u1 p1 li;
-    parent_hash_guarantee_theorem_step_for_u u2 p2 li;
-    assert(remove_leaf_signature (un_add u1 p1_content.unmerged_leaves) li == remove_leaf_signature (un_add u2 p2_content.unmerged_leaves) li);
-    is_subtree_with_blanks_between_u_p u1 p1 li;
-    is_subtree_with_blanks_between_u_p u2 p2 li;
-    leaf_index_same_side lu1 lp1 iu1 ip1 li;
-    is_subtree_with_blanks_between_eq_lemma (remove_leaf_signature (un_add u1 p1_content.unmerged_leaves) li) (remove_leaf_signature (un_add c1 p1_content.unmerged_leaves) li) (remove_leaf_signature (un_add c2 p2_content.unmerged_leaves) li);
+    parent_hash_guarantee_theorem_step_for_d d1 p1 li;
+    parent_hash_guarantee_theorem_step_for_d d2 p2 li;
+    assert(remove_leaf_signature (un_add d1 p1_content.unmerged_leaves) li == remove_leaf_signature (un_add d2 p2_content.unmerged_leaves) li);
+    is_subtree_with_blanks_between_d_p d1 p1 li;
+    is_subtree_with_blanks_between_d_p d2 p2 li;
+    leaf_index_same_side ld1 lp1 id1 ip1 li;
+    is_subtree_with_blanks_between_eq_lemma (remove_leaf_signature (un_add d1 p1_content.unmerged_leaves) li) (remove_leaf_signature (un_add c1 p1_content.unmerged_leaves) li) (remove_leaf_signature (un_add c2 p2_content.unmerged_leaves) li);
     un_add_myself p1_content.unmerged_leaves;
     un_add_myself p2_content.unmerged_leaves;
     (empty, empty)
@@ -442,12 +442,12 @@ let equal_tbs_implies_equivalence #bytes #bl #tkt #i1 #i2 t1 t2 group_id1 group_
 type tree_list (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = list (l:nat & i:tree_index l & t:treesync bytes tkt l i)
 
 val tree_parent_hash_linkedP: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> (l:nat & i:tree_index l & t:treesync bytes tkt l i) -> (l:nat & i:tree_index l & t:treesync bytes tkt l i) -> prop
-let tree_parent_hash_linkedP (|lu, iu, u|) (|lp, ip, p|) =
-  lu < lp /\
-  leaf_index_inside lp ip iu /\
-  node_has_parent_hash u /\
+let tree_parent_hash_linkedP (|ld, id, d|) (|lp, ip, p|) =
+  ld < lp /\
+  leaf_index_inside lp ip id /\
+  node_has_parent_hash d /\
   node_not_blank p /\
-  parent_hash_linkedP u p /\
+  parent_hash_linkedP d p /\
   unmerged_leaves_ok p
 
 // Doing these nested match are a bit verbose, but it really helps the SMT (and works with ifuel 1)
@@ -455,10 +455,10 @@ val tree_list_is_parent_hash_linkedP: #bytes:Type0 -> {|crypto_bytes bytes|} -> 
 let rec tree_list_is_parent_hash_linkedP #bytes #cb #tkt tl =
   match tl with
   | [] -> True
-  | u::tail ->
+  | d::tail ->
     tree_list_is_parent_hash_linkedP tail /\ (
       match tail with
-      | p::_ -> tree_parent_hash_linkedP u p
+      | p::_ -> tree_parent_hash_linkedP d p
       | _ -> True
     )
 
@@ -533,15 +533,15 @@ let rec parent_hash_guarantee_theorem_aux #bytes #cb #tkt tl1 tl2 li =
     (empty, empty)
   )
   //Not possible with `tree_list_ends_at_root tl1`
-  | (|lu1, iu1, u1|)::(|lp1, ip1, p1|)::tail_tl1, [(|l2, i2, t2|)] -> (
-    get_parent_hash_of_canonicalize u1 li;
+  | (|ld1, id1, d1|)::(|lp1, ip1, p1|)::tail_tl1, [(|l2, i2, t2|)] -> (
+    get_parent_hash_of_canonicalize d1 li;
     get_parent_hash_of_canonicalize t2 li;
     assert(False);
     (empty, empty)
   )
-  | (|lu1, iu1, u1|)::(|lp1, ip1, p1|)::tail_tl1 , (|lu2, iu2, u2|)::(|lp2, ip2, p2|)::tail_tl2 -> (
+  | (|ld1, id1, d1|)::(|lp1, ip1, p1|)::tail_tl1 , (|ld2, id2, d2|)::(|lp2, ip2, p2|)::tail_tl2 -> (
     if not (equivalent p1 p2 li) then
-      parent_hash_guarantee_theorem_step u1 u2 p1 p2 li
+      parent_hash_guarantee_theorem_step d1 d2 p1 p2 li
     else (
       parent_hash_guarantee_theorem_aux ((|lp1, ip1, p1|)::tail_tl1) ((|lp2, ip2, p2|)::tail_tl2) li
     )
@@ -583,7 +583,7 @@ let rec tree_list_is_parent_hash_linkedP_rev #bytes #cb #tkt tl =
   | p::tail1 ->
     tree_list_is_parent_hash_linkedP_rev tail1 /\ (
       match tail1 with
-      | u::_ -> tree_parent_hash_linkedP u p
+      | d::_ -> tree_parent_hash_linkedP d p
       | _ -> True
     )
 
@@ -592,14 +592,14 @@ let rec tree_list_is_parent_hash_linkedP_rev #bytes #cb #tkt tl =
 val tree_list_is_parent_hash_linkedP_rev_acc_eq: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> tl1:tree_list bytes tkt -> tl2:tree_list bytes tkt -> Lemma
   (requires tree_list_is_parent_hash_linkedP_rev tl1 /\ tree_list_is_parent_hash_linkedP tl2 /\ (
     match tl1, tl2 with
-    | u::_, p::_ -> tree_parent_hash_linkedP u p
+    | d::_, p::_ -> tree_parent_hash_linkedP d p
     | _, _ -> True
   ))
   (ensures tree_list_is_parent_hash_linkedP (List.Tot.rev_acc tl1 tl2))
 let rec tree_list_is_parent_hash_linkedP_rev_acc_eq #bytes #cb #tkt tl1 tl2 =
   match tl1 with
   | [] -> ()
-  | [u] -> ()
+  | [d] -> ()
   | h::t -> (
     tree_list_is_parent_hash_linkedP_rev_acc_eq t (h::tl2)
   )
@@ -632,27 +632,27 @@ let hd_tail_rev #a l =
 
 (*** tree_list from parent hash invariant ***)
 
-val compute_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu < lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip{node_not_blank p} -> Pure (l:nat & i:tree_index l & treesync bytes tkt l i)
+val compute_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> Pure (l:nat & i:tree_index l & treesync bytes tkt l i)
   (requires
-    is_subtree_of u p /\
-    node_has_parent_hash_link_aux u p
+    is_subtree_of d p /\
+    node_has_parent_hash_link_aux d p
   )
   (ensures fun (|lres, ires, res|) ->
     lres < lp /\ leaf_index_inside lp ip ires /\
     node_has_parent_hash res /\
     parent_hash_linkedP res p
   )
-let rec compute_parent_hash_link_aux #bytes #cb #tkt #lu #lp #iu #ip u p =
-  match u with
+let rec compute_parent_hash_link_aux #bytes #cb #tkt #ld #lp #id #ip d p =
+  match d with
   | TLeaf None -> false_elim ()
   | TLeaf (Some lp) -> (
     match lp.data.source with
-    | LNS_commit () -> (|lu, iu, u|)
+    | LNS_commit () -> (|ld, id, d|)
     | _ -> false_elim ()
   )
-  | TNode (Some kp) _ _ -> (|lu, iu, u|)
+  | TNode (Some kp) _ _ -> (|ld, id, d|)
   | TNode None left right -> (
-    is_subtree_of_left_right u p;
+    is_subtree_of_left_right d p;
     if node_has_parent_hash_link_aux left p then (
       compute_parent_hash_link_aux left p
     ) else (
@@ -676,15 +676,15 @@ let compute_parent_hash_link #bytes #cb #tkt #lp #ip p =
     else
       compute_parent_hash_link_aux right p
 
-val parent_hash_invariant_subtree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat{lu <= lp} -> #iu:tree_index lu -> #ip:tree_index lp{leaf_index_inside lp ip iu} -> u:treesync bytes tkt lu iu -> p:treesync bytes tkt lp ip -> Lemma
-  (requires parent_hash_invariant p /\ is_subtree_of u p)
-  (ensures parent_hash_invariant u)
-let rec parent_hash_invariant_subtree #bytes #cb #tkt #lu #lp #iu #ip u p =
-  if lu = lp then
+val parent_hash_invariant_subtree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
+  (requires parent_hash_invariant p /\ is_subtree_of d p)
+  (ensures parent_hash_invariant d)
+let rec parent_hash_invariant_subtree #bytes #cb #tkt #ld #lp #id #ip d p =
+  if ld = lp then
     ()
   else
-    let (p_child, _) = get_child_sibling p iu in
-    parent_hash_invariant_subtree u p_child
+    let (p_child, _) = get_child_sibling p id in
+    parent_hash_invariant_subtree d p_child
 
 val parent_hash_invariant_to_tree_list_rev: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> Pure (tree_list bytes tkt)
   (requires
@@ -704,10 +704,10 @@ let rec parent_hash_invariant_to_tree_list_rev #bytes #cb #tkt #l #i t =
     assert_norm(tree_list_is_parent_hash_linkedP_rev tl);
     tl
   ) else (
-    let (|lu, iu, u|) = compute_parent_hash_link t in
-    unmerged_leaves_ok_subtree u t;
-    parent_hash_invariant_subtree u t;
-    let tail_tl = (parent_hash_invariant_to_tree_list_rev u) in
+    let (|ld, id, d|) = compute_parent_hash_link t in
+    unmerged_leaves_ok_subtree d t;
+    parent_hash_invariant_subtree d t;
+    let tail_tl = (parent_hash_invariant_to_tree_list_rev d) in
     let tl = (|l, i, t|)::tail_tl in
     tl
   )
@@ -732,20 +732,20 @@ let parent_hash_invariant_to_tree_list #bytes #cb #tkt #l #i t =
 
 (*** path to tree_list ***)
 
-val find_node_and_path_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & treesync bytes tkt lu iu & pathsync bytes tkt lu iu li)
+val find_node_and_path_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (ld:nat & id:tree_index ld{leaf_index_inside ld id li} & treesync bytes tkt ld id & pathsync bytes tkt ld id li)
   (requires
     path_is_parent_hash_valid_aux t p parent_parent_hash /\
     path_is_filter_valid t p /\
     apply_path_aux_pre t p (length #bytes parent_parent_hash)
   )
-  (ensures fun (|lu, iu, tu, pu|) ->
-    path_is_parent_hash_valid_aux tu pu parent_parent_hash /\
-    path_is_filter_valid tu pu /\
-    path_node_not_blank pu /\
-    get_path_leaf pu == get_path_leaf p /\
-    lu <= l /\ leaf_index_inside l i iu /\ is_subtree_of tu t /\
-    apply_path_aux_pre tu pu (length #bytes parent_parent_hash) /\
-    find_parent_hash_link_aux t p parent_parent_hash == (|lu, iu, apply_path_aux tu pu parent_parent_hash|)
+  (ensures fun (|ld, id, td, pd|) ->
+    path_is_parent_hash_valid_aux td pd parent_parent_hash /\
+    path_is_filter_valid td pd /\
+    path_node_not_blank pd /\
+    get_path_leaf pd == get_path_leaf p /\
+    ld <= l /\ leaf_index_inside l i id /\ is_subtree_of td t /\
+    apply_path_aux_pre td pd (length #bytes parent_parent_hash) /\
+    find_parent_hash_link_aux t p parent_parent_hash == (|ld, id, apply_path_aux td pd parent_parent_hash|)
   )
 let rec find_node_and_path_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   match t, p with
@@ -763,34 +763,34 @@ let rec find_node_and_path_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p pa
   )
 
 #push-options "--z3rlimit 25"
-val find_node_and_path_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (lu:nat & iu:tree_index lu{leaf_index_inside lu iu li} & (treesync bytes tkt lu iu & pathsync bytes tkt lu iu li & mls_bytes bytes))
+val find_node_and_path_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (ld:nat & id:tree_index ld{leaf_index_inside ld id li} & (treesync bytes tkt ld id & pathsync bytes tkt ld id li & mls_bytes bytes))
   (requires
     path_is_parent_hash_valid_aux t p parent_parent_hash /\
     path_is_filter_valid t p /\
     path_node_not_blank p /\
     apply_path_aux_pre t p (length #bytes parent_parent_hash)
   )
-  (ensures fun (|lu, iu, (tu, pu, new_parent_parent_hash)|) ->
-    path_is_parent_hash_valid_aux tu pu new_parent_parent_hash /\
-    path_is_filter_valid tu pu /\
-    path_node_not_blank pu /\
-    get_path_leaf pu == get_path_leaf p /\
-    lu < l /\ leaf_index_inside l i iu /\ is_subtree_of tu t /\
-    apply_path_aux_pre tu pu (length #bytes new_parent_parent_hash) /\
-    find_parent_hash_link t p parent_parent_hash == (|lu, iu, apply_path_aux tu pu new_parent_parent_hash|)
+  (ensures fun (|ld, id, (td, pd, new_parent_parent_hash)|) ->
+    path_is_parent_hash_valid_aux td pd new_parent_parent_hash /\
+    path_is_filter_valid td pd /\
+    path_node_not_blank pd /\
+    get_path_leaf pd == get_path_leaf p /\
+    ld < l /\ leaf_index_inside l i id /\ is_subtree_of td t /\
+    apply_path_aux_pre td pd (length #bytes new_parent_parent_hash) /\
+    find_parent_hash_link t p parent_parent_hash == (|ld, id, apply_path_aux td pd new_parent_parent_hash|)
   )
 let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   match t, p with
   | TNode _ left right, PNode opt_ext_content p_next -> (
     let (child, sibling) = get_child_sibling t li in
     let (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
-    let (|lu, iu, tu, pu|) = 
+    let (|ld, id, td, pd|) =
       if is_left_leaf li then
         find_node_and_path_parent_hash_link_aux left p_next new_parent_parent_hash
       else
         find_node_and_path_parent_hash_link_aux right p_next new_parent_parent_hash
     in
-    (|lu, iu, (tu, pu, new_parent_parent_hash)|)
+    (|ld, id, (td, pd, new_parent_parent_hash)|)
   )
 #pop-options
 
@@ -816,13 +816,13 @@ let rec path_to_tree_list_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
     assert_norm(tree_list_is_parent_hash_linkedP_rev tl);
     tl
   ) else (
-    let (|lu, iu, (tu, pu, new_parent_parent_hash)|) = find_node_and_path_parent_hash_link t p parent_parent_hash in
+    let (|ld, id, (td, pd, new_parent_parent_hash)|) = find_node_and_path_parent_hash_link t p parent_parent_hash in
     find_parent_hash_link_misc_properties t p parent_parent_hash;
     find_parent_hash_link_parent_hash t p parent_parent_hash;
     find_parent_hash_link_last_update t p parent_parent_hash;
-    unmerged_leaves_ok_subtree tu t;
+    unmerged_leaves_ok_subtree td t;
     unmerged_leaves_ok_apply_path_aux t p parent_parent_hash;
-    let tail_tl = path_to_tree_list_aux tu pu new_parent_parent_hash in
+    let tail_tl = path_to_tree_list_aux td pd new_parent_parent_hash in
     (|l, i, apply_path_aux t p parent_parent_hash|)::tail_tl
   )
 #pop-options
