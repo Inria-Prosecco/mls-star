@@ -439,9 +439,9 @@ let equal_tbs_implies_equivalence #bytes #bl #tkt #i1 #i2 t1 t2 group_id1 group_
 
 (*** Induction ***)
 
-type tree_list (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = list (l:nat & i:tree_index l & t:treesync bytes tkt l i)
+type tree_list (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = list (l:nat & i:tree_index l & treesync bytes tkt l i)
 
-val tree_parent_hash_linkedP: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> (l:nat & i:tree_index l & t:treesync bytes tkt l i) -> (l:nat & i:tree_index l & t:treesync bytes tkt l i) -> prop
+val tree_parent_hash_linkedP: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> (l:nat & i:tree_index l & treesync bytes tkt l i) -> (l:nat & i:tree_index l & treesync bytes tkt l i) -> prop
 let tree_parent_hash_linkedP (|ld, id, d|) (|lp, ip, p|) =
   ld < lp /\
   leaf_index_inside lp ip id /\
@@ -794,7 +794,7 @@ let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_par
   )
 #pop-options
 
-#push-options "--z3rlimit 25"
+#push-options "--z3rlimit 50"
 val path_to_tree_list_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (tree_list bytes tkt)
   (requires
     apply_path_aux_pre t p (length #bytes parent_parent_hash) /\

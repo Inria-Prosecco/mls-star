@@ -61,7 +61,7 @@ let unmerged_leaves_ok_tree_extend #bytes #bl #tkt #l t =
 val unmerged_leaves_ok_tree_truncate: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:pos -> t:treesync bytes tkt l 0{is_tree_empty (TNode?.right t)} -> Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_truncate t))
-let unmerged_leaves_ok_canonicalize_tree #bytes #bl #tkt #l t =
+let unmerged_leaves_ok_tree_truncate #bytes #bl #tkt #l t =
   ()
 
 (*** Add ***)

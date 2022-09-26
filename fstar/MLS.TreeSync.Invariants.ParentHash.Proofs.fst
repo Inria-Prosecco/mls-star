@@ -353,7 +353,7 @@ let rec parent_hash_invariant_mk_blank_tree #bytes #cb #tkt l i =
 val parent_hash_invariant_tree_extend: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> Lemma
   (requires parent_hash_invariant t)
   (ensures parent_hash_invariant (tree_extend t))
-let extend_parent_hash_invariant #bytes #cb #tkt #l t =
+let parent_hash_invariant_tree_extend #bytes #cb #tkt #l t =
   parent_hash_invariant_mk_blank_tree #bytes #cb #tkt l (right_index #(l+1) 0)
 
 val parent_hash_invariant_tree_truncate: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> t:treesync bytes tkt l 0{is_tree_empty (TNode?.right t)} -> Lemma
