@@ -23,23 +23,6 @@ open MLS.TreeSync.Symbolic.LeafNodeSignature
 
 (*** Session predicate for public state ***)
 
-val ps_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> tkt:treekem_types bytes -> l:nat -> i:tree_index l -> parser_serializer bytes (treesync bytes tkt l i)
-let ps_treesync #bytes tkt l i =
-  ps_tree (ps_option (ps_leaf_node_nt tkt)) (ps_option (ps_parent_node_nt tkt)) l i
-
-val ps_treesync_is_valid: #bytes:Type0 -> {|bytes_like bytes|} -> tkt:treekem_types bytes -> l:nat -> i:tree_index l -> pre:bytes_compatible_pre bytes -> x:treesync bytes tkt l i -> Lemma
-  ((ps_treesync tkt l i).is_valid pre x <==> treesync_has_pre pre x)
-let rec ps_treesync_is_valid #bytes #bl tkt l i pre x =
-  match x with
-  | TLeaf _ -> ()
-  | TNode data left right ->
-    ps_treesync_is_valid tkt (l-1) (left_index i) pre left;
-    ps_treesync_is_valid tkt (l-1) (right_index i) pre right
-
-val ps_as_tokens: #bytes:Type0 -> {|bytes_like bytes|} -> #as_token:Type0 -> parser_serializer bytes as_token -> l:nat -> i:tree_index l -> parser_serializer bytes (as_tokens bytes as_token l i)
-let ps_as_tokens #bytes #bl #as_token ps_token l i =
-  ps_tree (ps_option ps_token) ps_unit l i
-
 val ps_dy_as_tokens: l:nat -> i:tree_index l -> parser_serializer dy_bytes (as_tokens dy_bytes dy_as_token l i)
 let ps_dy_as_tokens l i =
   ps_as_tokens ps_dy_as_token l i

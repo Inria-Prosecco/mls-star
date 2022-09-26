@@ -2,6 +2,11 @@ module MLS.Symbolic.Parsers
 
 open Comparse
 open MLS.Tree
+open MLS.NetworkTypes
+open MLS.TreeSync.NetworkTypes
+open MLS.TreeSync.Types
+open MLS.TreeSync.Invariants.AuthService
+open MLS.TreeSync.Symbolic.IsValid
 
 #set-options "--fuel 1 --ifuel 1"
 
@@ -44,3 +49,20 @@ val ps_tree_is_valid: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #
 let ps_tree_is_valid #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i pre x =
   // For some reason, reveal_opaque doesn't work here
   normalize_term_spec (ps_tree ps_leaf_t ps_node_t l i)
+
+val ps_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> tkt:treekem_types bytes -> l:nat -> i:tree_index l -> parser_serializer bytes (treesync bytes tkt l i)
+let ps_treesync #bytes tkt l i =
+  ps_tree (ps_option (ps_leaf_node_nt tkt)) (ps_option (ps_parent_node_nt tkt)) l i
+
+val ps_treesync_is_valid: #bytes:Type0 -> {|bytes_like bytes|} -> tkt:treekem_types bytes -> l:nat -> i:tree_index l -> pre:bytes_compatible_pre bytes -> x:treesync bytes tkt l i -> Lemma
+  ((ps_treesync tkt l i).is_valid pre x <==> treesync_has_pre pre x)
+let rec ps_treesync_is_valid #bytes #bl tkt l i pre x =
+  match x with
+  | TLeaf _ -> ()
+  | TNode data left right ->
+    ps_treesync_is_valid tkt (l-1) (left_index i) pre left;
+    ps_treesync_is_valid tkt (l-1) (right_index i) pre right
+
+val ps_as_tokens: #bytes:Type0 -> {|bytes_like bytes|} -> #as_token:Type0 -> parser_serializer bytes as_token -> l:nat -> i:tree_index l -> parser_serializer bytes (as_tokens bytes as_token l i)
+let ps_as_tokens #bytes #bl #as_token ps_token l i =
+  ps_tree (ps_option ps_token) ps_unit l i
