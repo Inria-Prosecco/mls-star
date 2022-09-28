@@ -92,7 +92,7 @@ let session_pred_to_local_pred gu spred (p, time, si, vi, session) =
 
 val preds_to_global_pred: preds -> global_pred split_session_pred_func
 let preds_to_global_pred pr (p, time, si, vi, session) =
-  pr.trace_preds.session_st_inv time p si vi session (* convert to prop *) /\ True
+  pr.trace_preds.session_st_inv time p si vi session
 
 val has_session_pred: preds -> string -> session_pred -> prop
 let has_session_pred pr lab spred =

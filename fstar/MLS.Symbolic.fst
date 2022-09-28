@@ -225,7 +225,7 @@ val is_publishable: global_usage -> timestamp -> bytes_compatible_pre dy_bytes
 let is_publishable p i = is_msg p SecrecyLabels.public i
 
 val is_verification_key: global_usage -> string -> label -> timestamp -> dy_bytes -> prop
-let is_verification_key gu usg sk_lab time vk = LabeledCryptoAPI.is_verification_key gu time vk sk_lab usg (* convert to prop *) /\ True
+let is_verification_key gu usg sk_lab time vk = LabeledCryptoAPI.is_verification_key gu time vk sk_lab usg
 
 val is_signature_key: global_usage -> string -> label -> timestamp -> dy_bytes -> prop
 let is_signature_key gu usg sk_lab time sk = LabeledCryptoAPI.is_signing_key gu time sk sk_lab usg
@@ -284,7 +284,7 @@ let sign_pred_to_local_pred spred (usg, time, key, msg) =
 
 val global_usage_to_global_pred: global_usage -> global_pred split_sign_pred_func
 let global_usage_to_global_pred gu (usg, time, key, msg) =
-  gu.usage_preds.can_sign time usg key msg (* convert to prop *) /\ True
+  gu.usage_preds.can_sign time usg key msg
 
 val has_sign_pred: global_usage -> valid_label -> sign_pred -> prop
 let has_sign_pred gu lab spred =
