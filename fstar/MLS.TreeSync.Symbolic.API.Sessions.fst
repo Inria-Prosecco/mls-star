@@ -54,7 +54,9 @@ type bare_treesync_state_ (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types 
 }
 
 %splice [ps_bare_treesync_state_] (gen_parser (`bare_treesync_state_))
+#push-options "--z3rlimit 20"
 %splice [ps_bare_treesync_state__is_valid] (gen_is_valid_lemma (`bare_treesync_state_))
+#pop-options
 
 type bare_treesync_state (tkt:treekem_types dy_bytes) =
   bare_treesync_state_ dy_bytes tkt dy_as_token ps_dy_as_token
