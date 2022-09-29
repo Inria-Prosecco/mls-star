@@ -2,6 +2,7 @@ module MLS.TreeSync.Symbolic.API
 
 open GlobalRuntimeLib
 open LabeledRuntimeAPI
+open MLS.Tree
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
@@ -201,6 +202,27 @@ let remove #tkt pr p as_session gmgr_session group_id li =
   finalize_remove_has_pre (is_publishable pr.global_usage now) remove_pend;
   set_public_treesync_state pr p group_session.si_public now new_st
 
-//TODO: commit
+#push-options "--z3rlimit 25"
+val commit:
+  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
+  group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
+  LCrypto unit pr
+  (requires fun t0 ->
+    pathsync_has_pre (is_publishable pr.global_usage (trace_len t0)) path /\
+    has_treesync_invariants tkt pr
+  )
+  (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 1)
+let commit #tkt #l #li pr p as_session gmgr_session group_id path =
+  let now = global_timestamp () in
+  let group_session = find_group_sessions pr p gmgr_session group_id in
+  let st = get_public_treesync_state #tkt pr p group_session.si_public now in
+  guard pr (l = st.levels);
+  let commit_pend = extract_result pr (prepare_commit st path) in
+  let token = get_token_for pr p as_session commit_pend.as_input in
+  let new_st = finalize_commit commit_pend token in
+  finalize_commit_has_pre (is_publishable pr.global_usage now) commit_pend token;
+  set_public_treesync_state pr p group_session.si_public now new_st
+#pop-options
 
 //TODO: validate external path
