@@ -60,7 +60,7 @@ let psk_label_to_network label =
   else if not (label.index < pow2 16) then
     internal_failure "psk_label_to_network: index is too big"
   else (
-    id <-- psk_id_nonce_to_network label.id_nonce;
+    let? id = psk_id_nonce_to_network label.id_nonce in
     return ({
       NT.id = id;
       NT.index = label.index;
@@ -70,7 +70,7 @@ let psk_label_to_network label =
 
 val network_to_psk_label: #bytes:Type0 -> {|bytes_like bytes|} -> NT.psk_label_nt bytes -> result (psk_label bytes)
 let network_to_psk_label label =
-  id_nonce <-- network_to_psk_id_nonce label.NT.id;
+  let? id_nonce = network_to_psk_id_nonce label.NT.id in
   return ({
     id_nonce = id_nonce;
     index = label.NT.index;
@@ -80,10 +80,10 @@ let network_to_psk_label label =
 // Compute psk_secret[i+1] given psk[i], psk_label[i] and psk_secret[i]
 val compute_psk_secret_step: #bytes:Type0 -> {|crypto_bytes bytes|} -> psk_label bytes -> bytes -> bytes -> result bytes
 let compute_psk_secret_step #bytes #cb label psk prev_psk_secret =
-    label_network <-- psk_label_to_network label;
-    psk_extracted <-- kdf_extract (zero_vector #bytes) psk;
-    psk_input <-- expand_with_label #bytes psk_extracted (string_to_bytes #bytes "derived psk") (serialize (NT.psk_label_nt bytes) label_network) (kdf_length #bytes);
-    new_psk_secret <-- kdf_extract psk_input prev_psk_secret;
+    let? label_network = psk_label_to_network label in
+    let? psk_extracted = kdf_extract (zero_vector #bytes) psk in
+    let? psk_input = expand_with_label #bytes psk_extracted (string_to_bytes #bytes "derived psk") (serialize (NT.psk_label_nt bytes) label_network) (kdf_length #bytes) in
+    let? new_psk_secret = kdf_extract psk_input prev_psk_secret in
     return (new_psk_secret <: bytes)
 
 // Compute psk_secret[n] given psk_secret[ind]
@@ -98,7 +98,7 @@ let rec compute_psk_secret_aux #bytes #cb l ind psk_secret_ind =
       index = ind;
       count = List.Tot.length l;
     }) in
-    next_psk_secret <-- compute_psk_secret_step label psk psk_secret_ind;
+    let? next_psk_secret = compute_psk_secret_step label psk psk_secret_ind in
     compute_psk_secret_aux l (ind+1) next_psk_secret
   )
 

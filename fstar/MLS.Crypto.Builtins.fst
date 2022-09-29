@@ -248,7 +248,7 @@ let mk_concrete_crypto_bytes acs =
     else if not ( Seq.length ciphertext <= AEAD.max_length (cs.aead) + AEAD.tag_length (cs.aead)) then
       error "aead_decrypt: ciphertext too long"
     else (
-      result <-- from_option "aead_decrypt: AEAD.decrypt failed" (AEAD.decrypt #(cs.aead) key nonce ad ciphertext);
+      let? result = from_option "aead_decrypt: AEAD.decrypt failed" (AEAD.decrypt #(cs.aead) key nonce ad ciphertext) in
       return (result <: hacl_star_bytes)
     )
   );

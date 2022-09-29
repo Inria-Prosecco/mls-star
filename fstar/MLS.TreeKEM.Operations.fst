@@ -144,25 +144,25 @@ let rec hpke_multirecipient_encrypt #bytes #cb public_keys info ad plaintext ran
   | [] -> return []
   | pk::pks ->
     let (rand_cur, rand_next) = dest_randomness rand in
-    res_hd <-- hpke_encrypt pk info ad plaintext rand_cur;
-    res_tl <-- hpke_multirecipient_encrypt pks info ad plaintext rand_next;
+    let? res_hd = hpke_encrypt pk info ad plaintext rand_cur in
+    let? res_tl = hpke_multirecipient_encrypt pks info ad plaintext rand_next in
     return (({kem_output = fst res_hd; ciphertext = snd res_hd} <: path_secret_ciphertext bytes)::res_tl)
 
 val derive_keypair_from_path_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (hpke_private_key bytes & hpke_public_key bytes)
 let derive_keypair_from_path_secret #bytes #cb path_secret =
-  node_secret <-- derive_secret path_secret (string_to_bytes #bytes "node");
+  let? node_secret = derive_secret path_secret (string_to_bytes #bytes "node") in
   hpke_gen_keypair (node_secret <: bytes)
 
 val derive_next_path_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result bytes
 let derive_next_path_secret #bytes #cb path_secret =
-  res <-- derive_secret path_secret (string_to_bytes #bytes "path");
+  let? res = derive_secret path_secret (string_to_bytes #bytes "path") in
   return (res <: bytes)
 
 val node_encap: #bytes:Type0 -> {|crypto_bytes bytes|} -> child_secret:bytes -> hpke_info:bytes -> direction -> pks:list (hpke_public_key bytes) -> randomness bytes (hpke_multirecipient_encrypt_entropy_lengths pks) -> result (key_package bytes & bytes)
 let node_encap #bytes #cb child_secret hpke_info dir pks rand =
-  node_secret <-- derive_next_path_secret child_secret;
-  node_keys <-- derive_keypair_from_path_secret node_secret;
-  ciphertext <-- hpke_multirecipient_encrypt pks hpke_info empty node_secret rand;
+  let? node_secret = derive_next_path_secret child_secret in
+  let? node_keys = derive_keypair_from_path_secret node_secret in
+  let? ciphertext = hpke_multirecipient_encrypt pks hpke_info empty node_secret rand in
   return (
     {
       public_key = snd node_keys;
@@ -183,7 +183,7 @@ let node_decap #bytes #cb child_secret i dir kp =
       derive_next_path_secret child_secret
   ) else (
     let ciphertext = List.Tot.index kp.path_secret_ciphertext i in
-    child_keys <-- derive_keypair_from_path_secret child_secret;
+    let? child_keys = derive_keypair_from_path_secret child_secret in
     let child_sk = fst child_keys in
     hpke_decrypt ciphertext.kem_output child_sk (kp.last_group_context) empty ciphertext.ciphertext
   )
@@ -210,21 +210,21 @@ let rec update_path #bytes #cb #l #i t leaf_index leaf_secret ad rand =
   | TLeaf None -> admit() //TODO: in the previous code, it fails in this case
   | TLeaf (Some mi) ->
     //TODO: in the previous code, it does some credential check here
-    leaf_keys <-- derive_keypair_from_path_secret leaf_secret;
+    let? leaf_keys = derive_keypair_from_path_secret leaf_secret in
     return (PLeaf ({public_key=snd leaf_keys;} <: member_info bytes), leaf_secret)
   | TNode okp left right ->
     let (child, sibling) = get_child_sibling t leaf_index in
     if tree_resolution sibling = [] then (
       let next_rand: randomness bytes (update_path_entropy_lengths #_ #_ #(l-1) child leaf_index) = rand in
-      recursive_call <-- update_path child leaf_index leaf_secret ad next_rand;
+      let? recursive_call = update_path child leaf_index leaf_secret ad next_rand in
       let (child_path, child_path_secret) = recursive_call in
       return (PNode None child_path, child_path_secret)
     ) else (
       let (rand_cur, rand_next) = split_randomness rand in
-      recursive_call <-- update_path child leaf_index leaf_secret ad rand_next;
+      let? recursive_call = update_path child leaf_index leaf_secret ad rand_next in
       let (child_path, child_path_secret) = recursive_call in
       let dir = (if is_left_leaf leaf_index then Left else Right) in
-      node_encap_call <-- node_encap child_path_secret ad dir (tree_resolution sibling) rand_cur;
+      let? node_encap_call = node_encap child_path_secret ad dir (tree_resolution sibling) rand_cur in
       let (node_kp, node_path_secret) = node_encap_call in
       return (PNode (Some node_kp) child_path, node_path_secret)
     )
@@ -242,7 +242,7 @@ let rec root_secret #bytes #cb #l #i t leaf_index leaf_secret =
     ) else (
       let dir = if is_left_leaf leaf_index then Left else Right in
       let (child, _) = get_child_sibling t leaf_index in
-      child_path_secret <-- root_secret child leaf_index leaf_secret;
+      let? child_path_secret = root_secret child leaf_index leaf_secret in
       //The condition is here becaus the `i` argument has not sense when dir = kp.path_secret_from.
       //Maybe we should refactor `node_decap`?
       let i = if dir = kp.path_secret_from then 0 else original_resolution_index kp.unmerged_leaves child leaf_index in
@@ -294,7 +294,7 @@ let rec mk_init_path_aux #bytes #cb #l t update_index =
         })
       | None -> None
     in
-    next <-- mk_init_path_aux child update_index;
+    let? next = mk_init_path_aux child update_index in
     return (PNode okp next)
   end
 
@@ -312,7 +312,7 @@ let rec mk_init_path #bytes #cb #l t my_index update_index path_secret hpke_info
         })
         | None -> None
       in
-      next <-- mk_init_path child my_index update_index path_secret hpke_info;
+      let? next = mk_init_path child my_index update_index path_secret hpke_info in
       return (PNode new_okp next)
     ) else (
       if not (Some? okp && (Some?.v okp).unmerged_leaves = []) then
@@ -322,15 +322,15 @@ let rec mk_init_path #bytes #cb #l t my_index update_index path_secret hpke_info
         let resol_size = List.Tot.length (original_tree_resolution [] sibling) in
         let resol_index = original_resolution_index [] sibling my_index in
         let fake_randomness = mk_zero_vector (hpke_private_key_length #bytes) in
-        my_pk <-- from_option "leaf at my_index is empty!" (leaf_public_key t my_index);
-        my_path_secret_ciphertext <-- hpke_encrypt my_pk hpke_info empty path_secret fake_randomness;
+        let? my_pk = from_option "leaf at my_index is empty!" (leaf_public_key t my_index) in
+        let? my_path_secret_ciphertext = hpke_encrypt my_pk hpke_info empty path_secret fake_randomness in
         let new_kp = { kp with
           path_secret_from = update_dir;
           last_group_context = hpke_info;
           //TODO: put the {kem_output = ...; ...} in a separate function
           path_secret_ciphertext = Seq.seq_to_list (Seq.upd (Seq.create resol_size (empty_path_secret_ciphertext)) resol_index (({kem_output=fst my_path_secret_ciphertext; ciphertext = snd my_path_secret_ciphertext} <: path_secret_ciphertext bytes)));
         } in
-        next <-- mk_init_path_aux child update_index;
+        let? next = mk_init_path_aux child update_index in
         return (PNode (Some new_kp) next)
       )
     )

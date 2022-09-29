@@ -69,8 +69,8 @@ let message_content_to_network #bytes #bl msg =
   else if not (length msg.authenticated_data < pow2 30) then
     internal_failure "compute_confirmed_transcript_hash: authenticated_data too long"
   else (
-    sender <-- sender_to_network msg.sender;
-    content <-- message_content_pair_to_network #_ #_ #msg.content_type msg.content;
+    let? sender = sender_to_network msg.sender in
+    let? content = message_content_pair_to_network #_ #_ #msg.content_type msg.content in
     return ({
       group_id = msg.group_id;
       epoch = msg.epoch;
@@ -82,8 +82,8 @@ let message_content_to_network #bytes #bl msg =
 
 val network_to_message_content: #bytes:Type0 -> {|bytes_like bytes|} -> wire_format_nt -> mls_content_nt bytes -> result (message_content bytes)
 let network_to_message_content #bytes #bl wire_format msg =
-  sender <-- network_to_sender msg.sender;
-  content_pair <-- network_to_message_content_pair msg.content;
+  let? sender = network_to_sender msg.sender in
+  let? content_pair = network_to_message_content_pair msg.content in
   let (|content_type, content|) = content_pair in
   return ({
     wire_format = wire_format;

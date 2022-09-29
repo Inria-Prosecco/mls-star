@@ -42,14 +42,14 @@ let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path
     else (
       let (child, sibling) = get_child_sibling t li in
       if tree_resolution_empty sibling then (
-        path_next <-- uncompress_update_path _ child update_path;
+        let? path_next = uncompress_update_path _ child update_path in
         return (PNode None path_next)
       ) else (
         let update_path_length = (List.length update_path.nodes) in
         let (tail_update_path_nodes, head_update_path_nodes) = List.unsnoc update_path.nodes in
         bytes_length_unsnoc ps_update_path_node_nt update_path.nodes;
         let next_update_path = { update_path with nodes = tail_update_path_nodes } in
-        path_next <-- uncompress_update_path _ child next_update_path;
+        let? path_next = uncompress_update_path _ child next_update_path in
         return (PNode (Some head_update_path_nodes) path_next)
       )
     )
@@ -83,7 +83,7 @@ let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
   if not (length (update_path_node.encryption_key <: bytes) = hpke_public_key_length #bytes) then
     error "update_path_node_to_treekem: public key has wrong length"
   else (
-    path_secret_ciphertext <-- mapM (fun (hpke_ciphertext: hpke_ciphertext_nt bytes) ->
+    let? path_secret_ciphertext = mapM (fun (hpke_ciphertext: hpke_ciphertext_nt bytes) ->
       if not (length (hpke_ciphertext.kem_output <: bytes) = hpke_kem_output_length #bytes) then
         error "update_path_node_to_treekem: kem output has wrong length"
       else
@@ -91,7 +91,7 @@ let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
           TK.kem_output = hpke_ciphertext.kem_output;
           TK.ciphertext = hpke_ciphertext.ciphertext;
         } <: TK.path_secret_ciphertext bytes)
-    ) update_path_node.encrypted_path_secret;
+    ) update_path_node.encrypted_path_secret in
     return ({
       TK.public_key = update_path_node.encryption_key;
       TK.last_group_context = group_context;
@@ -105,20 +105,20 @@ val update_path_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> 
 let rec update_path_to_treekem #bytes #cb #l #i #li group_context p =
   match p with
   | PLeaf ln -> (
-    leaf_package <-- leaf_node_to_treekem ln;
+    let? leaf_package = leaf_node_to_treekem ln in
     return (PLeaf leaf_package)
   )
   | PNode onp p_next -> (
     let dir = if is_left_leaf li then TK.Left else TK.Right in
-    path_next <-- update_path_to_treekem group_context p_next;
-    path_data <-- (
+    let? path_next = update_path_to_treekem group_context p_next in
+    let? path_data = (
       match onp with
       | Some np -> (
-        res <-- update_path_node_to_treekem group_context dir np;
+        let? res = update_path_node_to_treekem group_context dir np in
         return (Some res)
       )
       | None -> return None
-    );
+    ) in
     return (PNode path_data path_next)
   )
 
@@ -130,7 +130,7 @@ let rec compress_update_path #bytes #bl #l #i #li update_path =
   | PLeaf ln ->
     return ({leaf_node = ln; nodes = []})
   | PNode p_opt_data p_next ->
-    compressed_p_next <-- compress_update_path p_next;
+    let? compressed_p_next = compress_update_path p_next in
     match p_opt_data with
     | None -> return compressed_p_next
     | Some p_data -> (
@@ -155,7 +155,7 @@ let encrypted_path_secret_tk_to_nt #bytes #cb x =
 
 val treekem_to_update_path_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> TK.key_package bytes -> result (update_path_node_nt bytes)
 let treekem_to_update_path_node #bytes #cb kp =
-  encrypted_path_secret <-- mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext;
+  let? encrypted_path_secret = mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext in
   if not (bytes_length ps_hpke_ciphertext_nt encrypted_path_secret < pow2 30) then
     error "treekem_to_update_path_node: encrypted_path_secret too long"
   else (
@@ -170,15 +170,15 @@ let rec mls_star_paths_to_update_path #bytes #cb #l #i #li psync pkem =
   match psync, pkem with
   | PLeaf lp, PLeaf _ -> return (PLeaf lp)
   | PNode _ psync_next, PNode onp pkem_next ->
-    res_next <-- mls_star_paths_to_update_path psync_next pkem_next;
-    opt_upn <-- (
+    let? res_next = mls_star_paths_to_update_path psync_next pkem_next in
+    let? opt_upn = (
       match onp with
       | None -> return None
       | Some np -> (
-        upn <-- treekem_to_update_path_node np;
+        let? upn = treekem_to_update_path_node np in
         return (Some upn)
       )
-    );
+    ) in
     return (PNode opt_upn res_next)
 
 (*** ratchet_tree extension (13.4.3.3) ***)
@@ -210,8 +210,8 @@ let rec ratchet_tree_to_treesync #bytes #bl #tkt l i nodes =
   ) else (
     let (left_nodes, my_node, right_nodes) = List.Tot.split3 nodes ((pow2 l) - 1) in
     List.Pure.lemma_split3_length nodes ((pow2 l) - 1);
-    left_res <-- ratchet_tree_to_treesync (l-1) _ left_nodes;
-    right_res <-- ratchet_tree_to_treesync (l-1) _ right_nodes;
+    let? left_res = ratchet_tree_to_treesync (l-1) _ left_nodes in
+    let? right_res = ratchet_tree_to_treesync (l-1) _ right_nodes in
     match my_node with
     | Some (N_parent pn) ->
       return (TNode (Some pn) left_res right_res)
@@ -229,12 +229,12 @@ let rec treesync_to_ratchet_tree #bytes #bl #tkt #l #i t =
   | TLeaf (Some lp) ->
     return [Some (N_leaf lp)]
   | TNode onp left right ->
-    parent_node <-- (
+    let? parent_node = (
       match onp with
       | None -> return None
       | Some np ->
         return (Some (N_parent np))
-    );
-    left_ratchet <-- treesync_to_ratchet_tree left;
-    right_ratchet <-- treesync_to_ratchet_tree right;
+    ) in
+    let? left_ratchet = treesync_to_ratchet_tree left in
+    let? right_ratchet = treesync_to_ratchet_tree right in
     return (left_ratchet @ [parent_node] @ right_ratchet)

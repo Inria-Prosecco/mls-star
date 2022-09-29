@@ -55,7 +55,7 @@ val network_to_proposal_or_ref: #bytes:Type0 -> {|bytes_like bytes|} -> proposal
 let network_to_proposal_or_ref #bytes #bl por =
   match por with
   | POR_proposal p ->
-    res <-- network_to_proposal p;
+    let? res = network_to_proposal p in
     return (Proposal res)
   | POR_reference r ->
     return (Reference r)
@@ -63,7 +63,7 @@ let network_to_proposal_or_ref #bytes #bl por =
 
 val network_to_commit: #bytes:Type0 -> {|bytes_like bytes|} -> commit_nt bytes -> result (commit bytes)
 let network_to_commit #bytes #bl c =
-  proposals <-- mapM network_to_proposal_or_ref c.proposals;
+  let? proposals = mapM network_to_proposal_or_ref c.proposals in
   return ({
     c_proposals = proposals;
     c_path = c.path;
@@ -90,7 +90,7 @@ let network_to_message_content_pair #bytes #bl content =
   | CT_application ()
   | CT_proposal ()
   | CT_commit () -> (
-    res <-- network_to_message_bare_content content.content;
+    let? res = network_to_message_bare_content content.content in
     return (make_message_content_pair res)
   )
   | _ -> error "network_to_message_content_pair: invalid content type"
@@ -116,7 +116,7 @@ val proposal_or_ref_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> proposal
 let proposal_or_ref_to_network #bytes #bl por =
   match por with
   | Proposal p ->
-    res <-- proposal_to_network p;
+    let? res = proposal_to_network p in
     return (POR_proposal res)
   | Reference ref ->
     if not (length (ref <: bytes) < pow2 30) then
@@ -126,7 +126,7 @@ let proposal_or_ref_to_network #bytes #bl por =
 
 val commit_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> commit bytes -> result (commit_nt bytes)
 let commit_to_network #bytes #bl c =
-  proposals <-- mapM (proposal_or_ref_to_network) c.c_proposals;
+  let? proposals = mapM (proposal_or_ref_to_network) c.c_proposals in
   if not (Comparse.bytes_length ps_proposal_or_ref_nt proposals < pow2 30) then
     internal_failure "commit_to_network: proposals too long"
   else (
@@ -151,7 +151,7 @@ let message_bare_content_to_network #bytes #bl #content_type content =
 
 val message_content_pair_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> message_bare_content bytes content_type -> result (mls_tagged_content_nt bytes)
 let message_content_pair_to_network #bytes #cb #content_type msg =
-  network_content <-- message_bare_content_to_network msg;
+  let? network_content = message_bare_content_to_network msg in
   match content_type with
   | CT_application () -> return ({content_type = content_type; content = network_content;} <: mls_tagged_content_nt bytes)
   | CT_proposal () -> return ({content_type = content_type; content = network_content;} <: mls_tagged_content_nt bytes)

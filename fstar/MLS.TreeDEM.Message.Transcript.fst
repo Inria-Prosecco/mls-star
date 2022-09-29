@@ -14,7 +14,7 @@ let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcrip
   else if not (msg.content_type = CT_commit ()) then
     internal_failure "compute_confirmed_transcript_hash: should only be used on a commit message"
   else (
-    msg_network <-- message_content_to_network msg;
+    let? msg_network = message_content_to_network msg in
     let serialized_msg = serialize (confirmed_transcript_hash_input_nt bytes) ({
       wire_format = msg.wire_format;
       content = msg_network;

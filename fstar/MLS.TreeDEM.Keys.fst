@@ -31,7 +31,7 @@ let rec leaf_kdf #bytes #cb #l #i encryption_secret leaf_index =
   ) else (
     let dir_string = if is_left_leaf leaf_index then "left" else "right" in
     let new_i = if is_left_leaf leaf_index then left_index i else right_index i in
-    new_encryption_secret <-- expand_with_label encryption_secret (string_to_bytes #bytes "tree") (string_to_bytes #bytes dir_string) (kdf_length #bytes);
+    let? new_encryption_secret = expand_with_label encryption_secret (string_to_bytes #bytes "tree") (string_to_bytes #bytes dir_string) (kdf_length #bytes) in
     leaf_kdf #bytes #cb #_ #new_i new_encryption_secret leaf_index
   )
 
@@ -43,17 +43,17 @@ let opt_secret_to_secret #bytes #cb opt_secret =
 
 val secret_init_to_joiner: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> option bytes -> bytes -> result (lbytes bytes (kdf_length #bytes))
 let secret_init_to_joiner #bytes #cb init_secret opt_commit_secret group_context =
-  prk <-- kdf_extract init_secret (opt_secret_to_secret opt_commit_secret);
+  let? prk = kdf_extract init_secret (opt_secret_to_secret opt_commit_secret) in
   expand_with_label #bytes prk (string_to_bytes #bytes "joiner") group_context (kdf_length #bytes)
 
 val secret_joiner_to_welcome: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> option bytes -> result (lbytes bytes (kdf_length #bytes))
 let secret_joiner_to_welcome #bytes #cb joiner_secret opt_psk_secret =
-  prk <-- kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret);
+  let? prk = kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret) in
   derive_secret #bytes prk (string_to_bytes #bytes "welcome")
 
 val secret_joiner_to_epoch: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> option bytes -> bytes -> result (lbytes bytes (kdf_length #bytes))
 let secret_joiner_to_epoch #bytes #cb joiner_secret opt_psk_secret group_context =
-  prk <-- kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret);
+  let? prk = kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret) in
   expand_with_label #bytes prk (string_to_bytes #bytes "epoch") group_context (kdf_length #bytes)
 
 val secret_epoch_to_sender_data: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes (kdf_length #bytes))
@@ -110,7 +110,7 @@ type ratchet_output (bytes:Type0) {|crypto_bytes bytes|} = {
 
 val init_handshake_ratchet: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (init_ratchet_state bytes)
 let init_handshake_ratchet #bytes #cb tree_node_secret =
-  ratchet_secret <-- expand_with_label tree_node_secret (string_to_bytes #bytes "handshake") (string_to_bytes #bytes "") (kdf_length #bytes);
+  let? ratchet_secret = expand_with_label tree_node_secret (string_to_bytes #bytes "handshake") (string_to_bytes #bytes "") (kdf_length #bytes) in
   return ({
     secret = ratchet_secret;
     generation = 0;
@@ -119,7 +119,7 @@ let init_handshake_ratchet #bytes #cb tree_node_secret =
 //TODO: this is a copy-paste of init_handeshake_ratchet, factorize?
 val init_application_ratchet: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (init_ratchet_state bytes)
 let init_application_ratchet #bytes #cb tree_node_secret =
-  ratchet_secret <-- expand_with_label tree_node_secret (string_to_bytes #bytes "application") (string_to_bytes #bytes "") (kdf_length #bytes);
+  let? ratchet_secret = expand_with_label tree_node_secret (string_to_bytes #bytes "application") (string_to_bytes #bytes "") (kdf_length #bytes) in
   return ({
     secret = ratchet_secret;
     generation = 0;
@@ -127,8 +127,8 @@ let init_application_ratchet #bytes #cb tree_node_secret =
 
 val ratchet_get_key: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> result (ratchet_output bytes)
 let ratchet_get_key #bytes #cb st =
-  nonce <-- derive_tree_secret st.secret (string_to_bytes #bytes "nonce") st.generation (aead_nonce_length #bytes);
-  key <-- derive_tree_secret st.secret (string_to_bytes #bytes "key") st.generation (aead_key_length #bytes);
+  let? nonce = derive_tree_secret st.secret (string_to_bytes #bytes "nonce") st.generation (aead_nonce_length #bytes) in
+  let? key = derive_tree_secret st.secret (string_to_bytes #bytes "key") st.generation (aead_key_length #bytes) in
   return ({
     nonce = nonce;
     key = key;
@@ -136,7 +136,7 @@ let ratchet_get_key #bytes #cb st =
 
 val ratchet_next_state: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> result (ratchet_state bytes)
 let ratchet_next_state #bytes #cb st =
-  new_secret <-- derive_tree_secret st.secret (string_to_bytes #bytes "secret") st.generation (kdf_length #bytes);
+  let? new_secret = derive_tree_secret st.secret (string_to_bytes #bytes "secret") st.generation (kdf_length #bytes) in
   return ({
     secret = new_secret;
     generation = st.generation + 1;

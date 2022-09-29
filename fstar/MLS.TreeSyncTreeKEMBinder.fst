@@ -38,13 +38,13 @@ let rec treesync_to_treekem #bytes #cb #l #i t =
     else
       return (TLeaf (Some ({public_key = lp.data.content} <: member_info bytes)))
   | TNode onp left right -> begin
-    tk_left <-- treesync_to_treekem left;
-    tk_right <-- treesync_to_treekem right;
+    let? tk_left = treesync_to_treekem left in
+    let? tk_right = treesync_to_treekem right in
     match onp with
     | None ->
       return (TNode None tk_left tk_right)
     | Some np ->
-      kp <-- treesync_to_treekem_node_package np;
+      let? kp = treesync_to_treekem_node_package np in
       return (TNode (Some kp) tk_left tk_right)
   end
 
@@ -58,7 +58,7 @@ let rec treekem_to_treesync #bytes #cb #l #i #li new_leaf_package pk =
       content = mi.public_key;
     } <: leaf_node_data_nt bytes tkt))
   | PNode okp pk_next ->
-    next <-- treekem_to_treesync new_leaf_package pk_next;
+    let? next = treekem_to_treesync new_leaf_package pk_next in
     match okp with
     | Some kp -> (
       return (PNode (Some kp.public_key) next)

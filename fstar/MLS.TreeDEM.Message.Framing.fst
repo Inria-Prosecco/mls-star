@@ -64,20 +64,20 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
 //TODO: this function should be refactored
 val message_compute_auth: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes -> result (message_auth bytes)
 let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key interim_transcript_hash =
-  msg_network <-- message_content_to_network msg;
+  let? msg_network = message_content_to_network msg in
   if not (Some? group_context = knows_group_context msg_network.sender) then
     internal_failure "message_compute_auth: bad optional group context"
   else (
-    signature <-- compute_message_signature sk rand msg.wire_format msg_network group_context;
-    confirmation_tag <-- (
+    let? signature = compute_message_signature sk rand msg.wire_format msg_network group_context in
+    let? confirmation_tag = (
       if msg.content_type = CT_commit () then (
-        confirmed_transcript_hash <-- compute_confirmed_transcript_hash msg signature interim_transcript_hash;
-        confirmation_tag <-- compute_message_confirmation_tag confirmation_key confirmed_transcript_hash;
+        let? confirmed_transcript_hash = compute_confirmed_transcript_hash msg signature interim_transcript_hash in
+        let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
         return (Some confirmation_tag <: option bytes)
       ) else (
         return None
       )
-    );
+    ) in
     return ({
       signature = signature;
       confirmation_tag = confirmation_tag;
@@ -97,14 +97,14 @@ let message_plaintext_to_message #bytes #bl pt =
 
 val message_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> membership_key:bytes -> auth_msg:mls_authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_plaintext ()} -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context auth_msg.content.sender} -> result (mls_plaintext_nt bytes)
 let message_to_message_plaintext #bytes #cb membership_key auth_msg group_context =
-  membership_tag <-- (
+  let? membership_tag = (
     match auth_msg.content.sender with
     | NT.S_member _ -> (
-      res <-- compute_message_membership_tag membership_key auth_msg.content auth_msg.auth group_context;
+      let? res = compute_message_membership_tag membership_key auth_msg.content auth_msg.auth group_context in
       return (res <: membership_tag_nt bytes auth_msg.content.sender)
     )
     | _ -> return ()
-  );
+  ) in
   return ({
     content = auth_msg.content;
     auth = auth_msg.auth;
@@ -141,15 +141,15 @@ let message_to_sender_data_aad #bytes #bl content =
 
 val decrypt_sender_data: #bytes:Type0 -> {|crypto_bytes bytes|} -> mls_sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> encrypted_sender_data:bytes -> result (mls_sender_data_nt bytes)
 let decrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret encrypted_sender_data =
-  sender_data_key <-- expand_with_label sender_data_secret (string_to_bytes #bytes "key") ciphertext_sample (aead_key_length #bytes);
-  sender_data_nonce <-- expand_with_label sender_data_secret (string_to_bytes #bytes "nonce") ciphertext_sample (aead_nonce_length #bytes);
-  sender_data <-- aead_decrypt sender_data_key sender_data_nonce (serialize (mls_sender_data_aad_nt bytes) ad) encrypted_sender_data;
+  let? sender_data_key = expand_with_label sender_data_secret (string_to_bytes #bytes "key") ciphertext_sample (aead_key_length #bytes) in
+  let? sender_data_nonce = expand_with_label sender_data_secret (string_to_bytes #bytes "nonce") ciphertext_sample (aead_nonce_length #bytes) in
+  let? sender_data = aead_decrypt sender_data_key sender_data_nonce (serialize (mls_sender_data_aad_nt bytes) ad) encrypted_sender_data in
   from_option "decrypt_sender_data: malformed sender data" (parse (mls_sender_data_nt bytes) sender_data)
 
 val encrypt_sender_data: #bytes:Type0 -> {|crypto_bytes bytes|} -> mls_sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> mls_sender_data_nt bytes -> result bytes
 let encrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret sender_data =
-  sender_data_key <-- expand_with_label sender_data_secret (string_to_bytes #bytes "key") ciphertext_sample (aead_key_length #bytes);
-  sender_data_nonce <-- expand_with_label sender_data_secret (string_to_bytes #bytes "nonce") ciphertext_sample (aead_nonce_length #bytes);
+  let? sender_data_key = expand_with_label sender_data_secret (string_to_bytes #bytes "key") ciphertext_sample (aead_key_length #bytes) in
+  let? sender_data_nonce = expand_with_label sender_data_secret (string_to_bytes #bytes "nonce") ciphertext_sample (aead_nonce_length #bytes) in
   aead_encrypt sender_data_key sender_data_nonce (serialize (mls_sender_data_aad_nt bytes) ad) (serialize (mls_sender_data_nt bytes) sender_data)
 
 // Used in decryption
@@ -164,7 +164,7 @@ let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
 
 val decrypt_ciphertext_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> ad:mls_ciphertext_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> ct:bytes -> result (mls_ciphertext_content_nt bytes ad.content_type)
 let decrypt_ciphertext_content #bytes #cb ad key nonce ct =
-  ciphertext_content <-- aead_decrypt key nonce (serialize (mls_ciphertext_content_aad_nt bytes) ad) ct;
+  let? ciphertext_content = aead_decrypt key nonce (serialize (mls_ciphertext_content_aad_nt bytes) ad) ct in
   from_option "decrypt_ciphertext_content: malformed ciphertext content" (parse (mls_ciphertext_content_nt bytes ad.content_type) ciphertext_content)
 
 // Used in encryption
@@ -191,32 +191,32 @@ let apply_reuse_guard #bytes #cb reuse_guard nonce =
 
 val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> encryption_secret:bytes -> sender_data_secret:bytes -> mls_ciphertext_nt bytes -> result (mls_authenticated_content_nt bytes)
 let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_secret ct =
-  sender_data <-- (
+  let? sender_data = (
     let sender_data_ad = message_ciphertext_to_sender_data_aad ct in
     decrypt_sender_data sender_data_ad (get_ciphertext_sample ct.ciphertext) sender_data_secret ct.encrypted_sender_data
-  );
-  rs_output <-- (
-    sender_index <-- (
+  ) in
+  let? rs_output = (
+    let? sender_index = (
       if not (sender_data.leaf_index < pow2 l) then
         error "message_ciphertext_to_message: leaf_index too big"
       else
         return sender_data.leaf_index
-    );
-    leaf_tree_secret <-- leaf_kdf encryption_secret (sender_index <: MLS.Tree.leaf_index l 0);
-    init_ratchet <-- (
+    ) in
+    let? leaf_tree_secret = leaf_kdf encryption_secret (sender_index <: MLS.Tree.leaf_index l 0) in
+    let? init_ratchet = (
       match ct.content_type with
       | CT_application () -> init_application_ratchet leaf_tree_secret
       | _ -> init_handshake_ratchet leaf_tree_secret
-    );
+    ) in
     ratchet_get_generation_key init_ratchet sender_data.generation
-  );
-  ciphertext_content <-- (
+  ) in
+  let? ciphertext_content = (
     let nonce = rs_output.nonce in
     let key = rs_output.key in
     let patched_nonce = apply_reuse_guard sender_data.reuse_guard nonce in
     let ciphertext_content_ad = message_ciphertext_to_ciphertext_content_aad ct in
     decrypt_ciphertext_content ciphertext_content_ad key patched_nonce ct.ciphertext
-  );
+  ) in
   return ({
     wire_format = WF_mls_ciphertext ();
     content = {
@@ -245,8 +245,8 @@ let get_serializeable_bytes #bytes #bl b =
 
 val message_to_message_ciphertext: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:mls_authenticated_content_nt bytes{msg.wire_format == WF_mls_ciphertext ()} -> result (mls_ciphertext_nt bytes & ratchet_state bytes)
 let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_secret auth_msg =
-  ciphertext <-- (
-    key_nonce <-- ratchet_get_key ratchet;
+  let? ciphertext = (
+    let? key_nonce = ratchet_get_key ratchet in
     let key = key_nonce.key in
     let patched_nonce = apply_reuse_guard reuse_guard key_nonce.nonce in
     let ciphertext_content: mls_ciphertext_content_nt bytes (auth_msg.content.content.content_type) = {
@@ -257,10 +257,10 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
       padding = []; //TODO
     } in
     let ciphertext_content_ad = message_to_ciphertext_content_aad auth_msg.content in
-    ciphertext <-- encrypt_ciphertext_content ciphertext_content_ad key patched_nonce ciphertext_content;
+    let? ciphertext = encrypt_ciphertext_content ciphertext_content_ad key patched_nonce ciphertext_content in
     get_serializeable_bytes ciphertext
-  );
-  encrypted_sender_data <-- (
+  ) in
+  let? encrypted_sender_data = (
     if not (NT.S_member? auth_msg.content.sender) then
       error "message_to_message_ciphertext: sender is not a member"
     else if not (ratchet.generation < pow2 32) then
@@ -272,11 +272,11 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
         generation = ratchet.generation;
         reuse_guard = reuse_guard;
       }) in
-      encrypted_sender_data <-- encrypt_sender_data sender_data_ad (get_ciphertext_sample ciphertext) sender_data_secret sender_data;
+      let? encrypted_sender_data = encrypt_sender_data sender_data_ad (get_ciphertext_sample ciphertext) sender_data_secret sender_data in
       get_serializeable_bytes encrypted_sender_data
     )
-  );
-  new_ratchet <-- ratchet_next_state ratchet;
+  ) in
+  let? new_ratchet = ratchet_next_state ratchet in
   return (({
     group_id = auth_msg.content.group_id;
     epoch = auth_msg.content.epoch;
