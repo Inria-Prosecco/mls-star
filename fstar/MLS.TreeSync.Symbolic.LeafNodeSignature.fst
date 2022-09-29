@@ -1,5 +1,6 @@
 module MLS.TreeSync.Symbolic.LeafNodeSignature
 
+open FStar.Mul
 open Comparse
 open MLS.Crypto
 open MLS.Tree
@@ -46,8 +47,6 @@ let dy_asp gu current_time = {
   );
 }
 
-open FStar.Mul
-
 type group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   group_id: mls_bytes bytes;
   [@@@ with_parser #bytes ps_nat]
@@ -61,8 +60,6 @@ type group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types 
 %splice [ps_group_has_tree_event] (gen_parser (`group_has_tree_event))
 
 instance parseable_serializeable_group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (group_has_tree_event bytes tkt) = mk_parseable_serializeable (ps_group_has_tree_event tkt)
-
-open GlobalRuntimeLib
 
 #push-options "--z3cliopt smt.arith.nl=false"
 val tree_has_event_arithmetic_lemma: l:nat -> i:tree_index l -> Lemma
@@ -98,7 +95,7 @@ let tree_list_has_pred tkt time prin group_id tl =
 val leaf_node_label: string
 let leaf_node_label = "LeafNodeTBS"
 
-val leaf_node_spred: LabeledCryptoAPI.key_usages -> treekem_types dy_bytes -> sign_pred
+val leaf_node_spred: key_usages -> treekem_types dy_bytes -> sign_pred
 let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
   match (parse (leaf_node_tbs_nt dy_bytes tkt) ln_tbs_bytes) with
   | None -> False
@@ -106,7 +103,7 @@ let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
     match ln_tbs.data.source with
     | LNS_commit () -> (
       exists prin tl.
-        LabeledCryptoAPI.get_signkey_label ku vk == readers [p_id prin] /\
+        get_signkey_label ku vk == readers [p_id prin] /\
         tree_list_starts_with_tbs tl ln_tbs_bytes /\
         tree_list_is_parent_hash_linkedP tl /\
         tree_list_ends_at_root tl /\
@@ -114,7 +111,7 @@ let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
     )
     | LNS_update () ->
       (exists prin.
-        LabeledCryptoAPI.get_signkey_label ku vk == readers [p_id prin] /\
+        get_signkey_label ku vk == readers [p_id prin] /\
         tree_has_event tkt prin time ln_tbs.group_id (|0, ln_tbs.leaf_index, TLeaf (Some ({data = ln_tbs.data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|)
       )
     | LNS_key_package () ->
@@ -271,7 +268,7 @@ let parent_hash_implies_event #l #i gu time tkt group_id t ast =
       parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
 
       eliminate exists (prin:principal) (leaf_tl: tree_list dy_bytes tkt).
-        LabeledCryptoAPI.get_signkey_label gu.key_usages ln.data.signature_key == readers [p_id prin] /\
+        get_signkey_label gu.key_usages ln.data.signature_key == readers [p_id prin] /\
         tree_list_starts_with_tbs leaf_tl ln_tbs_bytes /\
         tree_list_is_parent_hash_linkedP leaf_tl /\
         tree_list_ends_at_root leaf_tl /\
@@ -282,9 +279,8 @@ let parent_hash_implies_event #l #i gu time tkt group_id t ast =
         hash_hash_inj b1 b2;
         last_tree_equivalent my_tl leaf_tl leaf_i;
         for_allP_eq (tree_has_event tkt prin time_sig group_id) leaf_tl;
-        LabeledCryptoAPI.verification_key_label_lemma gu time ln.data.signature_key (readers [p_id authentifier]);
-        SecrecyLabels.readers_is_injective prin;
-        assert(prin == authentifier);
+        is_verification_key_to_signkey_label gu "MLS.LeafSignKey" (readers [p_id authentifier]) time ln.data.signature_key;
+        readers_is_injective prin authentifier;
         let (|_, _, original_t|) = List.Tot.index leaf_tl (List.Tot.length my_tl - 1) in
         introduce exists (t':treesync dy_bytes tkt l i). equivalent t t' authentifier_li /\ tree_has_event tkt authentifier time group_id (|l, i, t'|)
         with original_t
@@ -437,7 +433,7 @@ let is_valid_external_path_to_path #tkt #l #li gu prin time t p group_id sk nonc
   serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_valid gu time) ({data = new_ln_data; group_id; leaf_index = li;});
   let tl = path_to_tree_list t unsigned_path in
   introduce exists prin tl.
-    LabeledCryptoAPI.get_signkey_label gu.key_usages (CryptoLib.vk sk) == readers [p_id prin] /\
+    get_signkey_label gu.key_usages (CryptoLib.vk sk) == readers [p_id prin] /\
     tree_list_starts_with_tbs tl new_ln_tbs_bytes /\
     tree_list_is_parent_hash_linkedP tl /\
     tree_list_ends_at_root tl /\

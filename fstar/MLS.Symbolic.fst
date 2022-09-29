@@ -162,6 +162,9 @@ let timestamp = SecrecyLabels.timestamp
 val ps_timestamp: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes timestamp
 let ps_timestamp #bytes #bl = ps_nat #bytes
 
+val key_usages: Type0
+let key_usages = LabeledCryptoAPI.key_usages
+
 // In universe 1 because it contains predicates
 val global_usage: Type u#1
 let global_usage = LabeledCryptoAPI.global_usage
@@ -230,6 +233,21 @@ let is_verification_key gu usg sk_lab time vk = LabeledCryptoAPI.is_verification
 val is_signature_key: global_usage -> string -> label -> timestamp -> dy_bytes -> prop
 let is_signature_key gu usg sk_lab time sk = LabeledCryptoAPI.is_signing_key gu time sk sk_lab usg
 
+val get_signkey_label: key_usages -> dy_bytes -> label
+let get_signkey_label ku vk = LabeledCryptoAPI.get_signkey_label ku vk
+
+val is_verification_key_to_signkey_label: gu:global_usage -> usg:string -> sk_lab:label -> time:timestamp -> vk:dy_bytes -> Lemma
+  (requires is_verification_key gu usg sk_lab time vk)
+  (ensures get_signkey_label gu.key_usages vk == sk_lab)
+let is_verification_key_to_signkey_label gu usg sk_lab time vk =
+  LabeledCryptoAPI.verification_key_label_lemma gu time vk sk_lab
+
+val event: Type0
+let event = CryptoEffect.event
+
+val did_event_occur_before: timestamp -> principal -> event -> prop
+let did_event_occur_before time prin e = GlobalRuntimeLib.did_event_occur_before time prin e
+
 val hash_hash_inj: b1:dy_bytes -> b2:dy_bytes -> Lemma (
   length b1 < hash_max_input_length #dy_bytes /\
   length b2 < hash_max_input_length #dy_bytes /\
@@ -245,6 +263,12 @@ val can_flow_to_public_implies_corruption: time:timestamp -> x:id -> Lemma
   (requires (can_flow time (readers [x]) public))
   (ensures is_corrupt time x)
 let can_flow_to_public_implies_corruption time x = LabeledCryptoAPI.can_flow_to_public_implies_corruption time x
+
+val readers_is_injective: x:principal -> y:principal -> Lemma
+  (requires readers [p_id x] == readers [p_id y])
+  (ensures x == y)
+let readers_is_injective x y =
+  SecrecyLabels.readers_is_injective x
 
 (*** Labeled signature predicate ***)
 
