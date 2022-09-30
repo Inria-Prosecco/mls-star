@@ -278,8 +278,7 @@ let default_capabilities =
 
 val fresh_key_package_internal: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key bytes -> result (key_package_nt bytes tkt & bytes)
 let fresh_key_package_internal e { identity; signature_key } private_sign_key =
-  let? tmp = chop_entropy e (kdf_length #bytes) in
-  let fresh, e = tmp in
+  let? fresh, e = chop_entropy e (kdf_length #bytes) in
   let leaf_secret = fresh in
   let? key_pair = MLS.TreeKEM.Operations.derive_keypair_from_path_secret #bytes leaf_secret in
   let (_, encryption_key) = key_pair in
@@ -332,8 +331,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   )
 
 let fresh_key_package e cred private_sign_key =
-  let? tmp = fresh_key_package_internal e cred private_sign_key in
-  let key_package, leaf_secret = tmp in
+  let? key_package, leaf_secret = fresh_key_package_internal e cred private_sign_key in
   let key_package_bytes = (ps_to_pse (ps_key_package_nt _)).serialize_exact key_package in
   let? hash = hash_leaf_package key_package.tbs.leaf_node in
   return (key_package_bytes, hash, leaf_secret)
@@ -342,10 +340,8 @@ let current_epoch s = s.epoch
 
 #push-options "--fuel 2 --z3rlimit 50"
 let create e cred private_sign_key group_id =
-  let? tmp = chop_entropy e 64 in
-  let fresh, e = tmp in
-  let? tmp = fresh_key_package_internal fresh cred private_sign_key in
-  let key_package, leaf_secret = tmp in
+  let? fresh, e = chop_entropy e 64 in
+  let? key_package, leaf_secret = fresh_key_package_internal fresh cred private_sign_key in
   let? treesync_state = (
     if not (length #bytes group_id < pow2 30) then error "create: group_id too long"
     else (
@@ -359,8 +355,7 @@ let create e cred private_sign_key group_id =
   // 10. In principle, the above process could be streamlined by having the
   // creator directly create a tree and choose a random value for first epoch's
   // epoch secret.
-  let? tmp = chop_entropy e 32 in
-  let epoch_secret, e = tmp in
+  let? epoch_secret, e = chop_entropy e 32 in
   let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption #bytes epoch_secret in
   let? leaf_dem_secret = MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 #0 encryption_secret 0 in
   let? handshake_state = MLS.TreeDEM.Keys.init_handshake_ratchet leaf_dem_secret in
@@ -449,8 +444,7 @@ let generate_key_package_and_path_secret future_state msg new_key_package =
 
 val generate_welcome_message: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> message_auth bytes -> bool -> new_key_packages:list (key_package_nt bytes tkt) -> bytes -> result (welcome bytes)
 let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packages e =
-  let? tmp = process_commit st msg msg_auth in
-  let (future_state, joiner_secret) = tmp in
+  let? (future_state, joiner_secret) = process_commit st msg msg_auth in
   let? confirmation_tag = from_option "generate_welcome_message: confirmation tag is missing" msg_auth.confirmation_tag in
   let? tree_hash = (
     if not (MLS.TreeSync.TreeHash.tree_hash_pre future_state.treesync_state.tree) then
@@ -509,16 +503,14 @@ let generate_update_path st e proposals =
     let update_path_entropy = update_path_entropy_lengths st.treekem_state.tree st.leaf_index in
     let? (update_path_rand, e) = unsafe_mk_randomness e in
     let update_path_rand: randomness bytes update_path_entropy = update_path_rand in
-    let? tmp = chop_entropy e (sign_nonce_length #bytes) in
-    let fresh, e = tmp in
+    let? fresh, e = chop_entropy e (sign_nonce_length #bytes) in
     let sign_nonce = fresh in
     assume(length #bytes sign_nonce == Seq.length sign_nonce);
     let? group_context = state_to_group_context st in
     let group_context_bytes = (ps_to_pse ps_group_context_nt).serialize_exact group_context in
     let new_leaf_secret = Seq.create (hpke_private_key_length #bytes) (Lib.IntTypes.u8 0)  in
     assume(length new_leaf_secret == Seq.length new_leaf_secret);
-    let? tmp = update_path st.treekem_state.tree st.leaf_index new_leaf_secret group_context_bytes update_path_rand in
-    let (update_path_kem, _) = tmp in
+    let? (update_path_kem, _) = update_path st.treekem_state.tree st.leaf_index new_leaf_secret group_context_bytes update_path_rand in
     let opt_my_leaf_package = leaf_at st.treesync_state.tree st.leaf_index in
     let? my_leaf_package = (from_option "generate_update_path: my leaf is blanked" opt_my_leaf_package) in
     let my_new_leaf_package_data = ({
@@ -545,8 +537,7 @@ let message_commit = m:message_content bytes{m.wire_format == WF_mls_ciphertext 
 
 val generate_commit: state -> entropy -> list (proposal bytes) -> result (message_commit & state & entropy)
 let generate_commit state e proposals =
-  let? tmp = generate_update_path state e proposals in
-  let (update_path, pending, e) = tmp in
+  let? (update_path, pending, e) = generate_update_path state e proposals in
   let state = { state with pending_updatepath = pending::state.pending_updatepath} in
   let msg: message_content bytes = {
     wire_format = WF_mls_ciphertext ();
@@ -562,14 +553,10 @@ let generate_commit state e proposals =
 let add state key_package e =
   let? kp = from_option "error message if it is malformed" ((ps_to_pse (ps_key_package_nt tkt)).parse_exact key_package) in
   let proposals = [ (Add kp) ] in
-  let? tmp = generate_commit state e proposals in
-  let (msg, state, e) = tmp in
-  let? tmp = chop_entropy e 4 in
-  let fresh, e = tmp in
-  let? tmp = send_helper state msg fresh in
-  let (state, msg_auth, g) = tmp in
-  let? tmp = chop_entropy e 32 in
-  let fresh, e = tmp in
+  let? (msg, state, e) = generate_commit state e proposals in
+  let? fresh, e = chop_entropy e 4 in
+  let? (state, msg_auth, g) = send_helper state msg fresh in
+  let? fresh, e = chop_entropy e 32 in
   let rand = fresh in
   assume (hpke_private_key_length #bytes == 32);
   assert_norm (List.Tot.length [kp] == 1);
@@ -583,23 +570,17 @@ let remove state p e =
   | None -> error "remove: can't find the leaf to remove"
   | Some i -> (
     let proposals = [Remove i] in
-    let? tmp = generate_commit state e proposals in
-    let (msg, state, e) = tmp in
-    let? tmp = chop_entropy e 4 in
-    let fresh, e = tmp in
-    let? tmp = send_helper state msg fresh in
-    let (state, _, g) = tmp in
+    let? (msg, state, e) = generate_commit state e proposals in
+    let? fresh, e = chop_entropy e 4 in
+    let? (state, _, g) = send_helper state msg fresh in
     return (state, g)
   )
 
 let update state e =
   let proposals = [] in
-  let? tmp = generate_commit state e proposals in
-  let (msg, state, e) = tmp in
-  let? tmp = chop_entropy e 4 in
-  let fresh, e = tmp in
-  let? tmp = send_helper state msg fresh in
-  let (state, _, g) = tmp in
+  let? (msg, state, e) = generate_commit state e proposals in
+  let? fresh, e = chop_entropy e 4 in
+  let? (state, _, g) = send_helper state msg fresh in
   return (state, g)
 
 let send state e data =
@@ -612,8 +593,7 @@ let send state e data =
     content_type = CT_application ();
     content = data;
   } in
-  let? tmp = send_helper state msg e in
-  let (new_state, msg_auth, g) = tmp in
+  let? (new_state, msg_auth, g) = send_helper state msg e in
   return (new_state, g)
 
 
@@ -632,7 +612,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
   let? welcome_network = from_option "process_welcome_message: can't parse welcome message" ((ps_to_pse ps_welcome_nt).parse_exact welcome_bytes) in
   let welcome = network_to_welcome welcome_network in
-  let? tmp = decrypt_welcome welcome (fun kp_hash ->
+  let? (group_info, secrets) = decrypt_welcome welcome (fun kp_hash ->
     match lookup kp_hash with
     | Some leaf_secret -> (
       //TODO: here we break result's encapsulation
@@ -642,7 +622,6 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     )
     | None -> None
   ) None in
-  let (group_info, secrets) = tmp in
   let? group_id = (
     if not (length group_info.group_context.group_id < pow2 30) then
       internal_failure "process_welcome_message: group_id too long"
@@ -737,7 +716,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
 let process_group_message state msg =
   let? msg = from_option "process_group_message: can't parse group message"
     ((ps_to_pse ps_mls_message_nt).parse_exact msg) in
-  let? tmp = (
+  let? message, message_auth = (
     match msg with
     | M_mls10 (M_plaintext msg) ->
         let auth_msg = message_plaintext_to_message msg in
@@ -754,7 +733,6 @@ let process_group_message state msg =
     | _ ->
         internal_failure "unknown message type"
   ) in
-  let message, message_auth = tmp in
   // Note: can't do a dependent pair pattern matching, have to nest matches +
   // annotations because of the dependency
   match message.content_type with
@@ -768,8 +746,7 @@ let process_group_message state msg =
       let message_content: commit bytes = message.content in
       begin match message_content with
       | { c_proposals = [ Proposal (Add key_package) ]; c_path = _ } ->
-          let? tmp = process_commit state message message_auth in
-          let (state, _) = tmp in
+          let? (state, _) = process_commit state message message_auth in
           let leaf_package = key_package.tbs.leaf_node in
           let? identity = (
             match leaf_package.data.credential with
