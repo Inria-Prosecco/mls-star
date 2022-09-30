@@ -164,8 +164,8 @@ let mem_last_update_rhs_eq #bytes #bl #tkt #ld #lp #id #ip d p x =
 
 (*** prop invariant definition ***)
 
-val is_subtree_of_: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> treesync bytes tkt ld id -> treesync bytes tkt lp ip -> prop
-let rec is_subtree_of_ #bytes #bl #tkt #ld #lp #id #ip d p =
+val is_subtree_of_: #leaf_t:Type -> #node_t:Type -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> tree leaf_t node_t ld id -> tree leaf_t node_t lp ip -> prop
+let rec is_subtree_of_ #leaf_t #node_t #ld #lp #id #ip d p =
   if ld = lp then (
     id == ip /\ d == p
   ) else (
@@ -173,8 +173,8 @@ let rec is_subtree_of_ #bytes #bl #tkt #ld #lp #id #ip d p =
     is_subtree_of_ d p_child
   )
 
-val is_subtree_of: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> treesync bytes tkt ld id -> treesync bytes tkt lp ip -> prop
-let is_subtree_of #bytes #bl #tkt #ld #lp #id #ip d p =
+val is_subtree_of: #leaf_t:Type -> #node_t:Type -> #ld:nat -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> tree leaf_t node_t ld id -> tree leaf_t node_t lp ip -> prop
+let is_subtree_of #leaf_t #node_t #ld #lp #id #ip d p =
   ld <= lp /\ leaf_index_inside lp ip id /\ is_subtree_of_ d p
 
 val parent_hash_linkedP: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} -> prop
