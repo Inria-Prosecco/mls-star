@@ -21,26 +21,6 @@ open MLS.Result
 open MLS.StringUtils
 open MLS.Utils
 open MLS.Crypto
-open MLS.TreeSync.IntegrityCheck
-
-val leaf_integrity_error_to_string: leaf_integrity_error -> string
-let leaf_integrity_error_to_string err =
-  match err with
-  | LIE_BadSignature -> "BadSignature"
-  | LIE_ExtensionsNotInCapabilities -> "ExtensionsNotInCapabilities"
-
-val node_integrity_error_to_string: node_integrity_error -> string
-let node_integrity_error_to_string err =
-  match err with
-  | NIE_BadParentHash -> "BadParentHash"
-
-val integrity_error_to_string: integrity_error -> string
-let integrity_error_to_string ie =
-  match ie with
-  | IE_LeafError err ind ->
-    leaf_integrity_error_to_string err ^ " " ^ nat_to_string ind
-  | IE_NodeError err left lev ->
-    node_integrity_error_to_string err ^ " " ^ nat_to_string left ^ " " ^ nat_to_string lev
 
 val find_my_index: {|bytes_like bytes|} -> #l:nat -> treesync bytes tkt l 0 -> key_package_nt bytes tkt -> ML (res:nat{res<pow2 l})
 let find_my_index #bl #l t kp =
@@ -52,6 +32,12 @@ let find_my_index #bl #l t kp =
   in
   let res = extract_option "couldn't find my_index" (find_first test (get_leaf_list t)) in
   res
+
+val check_treesync: #l:nat -> #i:tree_index l -> {|crypto_bytes bytes|} -> treesync bytes tkt l i -> mls_bytes bytes -> bool
+let check_treesync #l #i #cb t group_id =
+  MLS.TreeSync.Invariants.UnmergedLeaves.unmerged_leaves_ok t &&
+  MLS.TreeSync.Invariants.ParentHash.parent_hash_invariant t &&
+  MLS.TreeSync.Invariants.ValidLeaves.valid_leaves_invariant group_id t
 
 #push-options "--z3rlimit 100"
 val gen_treekem_output: {|crypto_bytes bytes|} -> treekem_test_input -> ML treekem_test_output
@@ -67,11 +53,10 @@ let gen_treekem_output #cb t =
   let update_group_context = hex_string_to_bytes t.update_group_context in
   let l = extract_result (ratchet_tree_l ratchet_tree) in
   let ts0 = extract_result (ratchet_tree_to_treesync l 0 ratchet_tree) in
-  let ts0_valid = extract_result (check_treesync ts0 group_id) in
+  let ts0_valid = check_treesync ts0 group_id in
   (
-    match ts0_valid with
-    | IE_Good -> ()
-    | IE_Errors lerr -> IO.print_string ("ratchet_tree_before is not valid: " ^ list_to_string integrity_error_to_string lerr ^ "\n")
+    if ts0_valid then ()
+    else IO.print_string ("ratchet_tree_before is not validn")
   );
   let my_index = find_my_index ts0 my_key_package in
   let tk0 = extract_result (treesync_to_treekem ts0) in
