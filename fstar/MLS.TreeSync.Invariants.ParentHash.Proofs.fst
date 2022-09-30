@@ -164,16 +164,20 @@ let mem_last_update_rhs_eq #bytes #bl #tkt #ld #lp #id #ip d p x =
 
 (*** prop invariant definition ***)
 
-val is_subtree_of: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> treesync bytes tkt ld id -> treesync bytes tkt lp ip -> prop
-let rec is_subtree_of #bytes #bl #tkt #ld #lp #id #ip d p =
+val is_subtree_of_: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> treesync bytes tkt ld id -> treesync bytes tkt lp ip -> prop
+let rec is_subtree_of_ #bytes #bl #tkt #ld #lp #id #ip d p =
   if ld = lp then (
     id == ip /\ d == p
   ) else (
     let (p_child, _) = get_child_sibling p id in
-    is_subtree_of d p_child
+    is_subtree_of_ d p_child
   )
 
-val parent_hash_linkedP: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} -> prop
+val is_subtree_of: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> treesync bytes tkt ld id -> treesync bytes tkt lp ip -> prop
+let is_subtree_of #bytes #bl #tkt #ld #lp #id #ip d p =
+  ld <= lp /\ leaf_index_inside lp ip id /\ is_subtree_of_ d p
+
+val parent_hash_linkedP: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} -> prop
 let parent_hash_linkedP #bytes #cb #tkt #ld #lp #id #ip d p =
   is_subtree_of d p /\ parent_hash_linked d p
 
@@ -213,7 +217,7 @@ let node_has_parent_hash_linkP_intro #bytes #cb #tkt #lp #ld #ip #id p d _ _ _ _
   and ()
 
 
-val leaf_at_subtree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip -> Lemma
+val leaf_at_subtree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip -> Lemma
   (requires leaf_index_inside ld id li /\ is_subtree_of d p)
   (ensures leaf_at p li == leaf_at d li)
 let rec leaf_at_subtree #bytes #cb #tkt #ld #lp #id #ip d p li =
@@ -227,7 +231,7 @@ let rec leaf_at_subtree #bytes #cb #tkt #ld #lp #id #ip d p li =
 (*** is_subtree_of lemmas ***)
 
 #push-options "--fuel 2 --ifuel 1"
-val is_subtree_of_left_right: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:pos -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
+val is_subtree_of_left_right: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:pos -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
   (requires is_subtree_of d p)
   (ensures (
     match d with
@@ -244,7 +248,7 @@ let rec is_subtree_of_left_right #bytes #bl #tkt #ld #lp #id #ip d p =
 
 (*** bool invariant <==> prop invariant ***)
 
-val node_has_parent_hash_link_bool2prop: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> Lemma
+val node_has_parent_hash_link_bool2prop: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} -> Lemma
   (requires is_subtree_of d p /\ node_has_parent_hash_link_aux d p)
   (ensures node_has_parent_hash_linkP p)
 let rec node_has_parent_hash_link_bool2prop #bytes #cb #tkt #ld #lp #id #ip d p =
@@ -288,7 +292,7 @@ let rec parent_hash_invariant_bool2prop #bytes #cb #tkt #lp #ip t =
 #push-options "--z3rlimit 100"
 val node_has_parent_hash_link_aux_prop2bool:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  #ld:nat -> #lp:nat{ld < lp} -> #lt:nat{ld <= lt /\ lt < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> #it:tree_index lt{leaf_index_inside lt it id /\ leaf_index_inside lp ip it} ->
+  #ld:nat -> #lp:nat{ld < lp} -> #lt:nat{lt < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> #it:tree_index lt{leaf_index_inside lp ip it} ->
   d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} -> t:treesync bytes tkt lt it ->
   res_subset:(x:node_index{List.Tot.mem x (resolution t)} -> squash (let (p_child, _) = get_child_sibling p id in List.Tot.mem x (resolution p_child))) ->
   Lemma
@@ -388,7 +392,7 @@ let rec parent_hash_invariant_tree_remove #bytes #cb #tkt #l #i t li =
 
 (*** Parent-hash invariant: adding inside ***)
 
-val add_inside_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip{leaf_index_inside ld id li} -> content:leaf_node_nt bytes tkt -> Lemma
+val add_inside_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip{leaf_index_inside ld id li} -> content:leaf_node_nt bytes tkt -> Lemma
   (requires is_subtree_of d p /\ tree_add_pre d li /\ tree_add_pre p li)
   (ensures is_subtree_of (tree_add d li content) (tree_add p li content))
 let rec add_inside_subtree #bytes #bl #tkt #ld #lp #id #ip d p li content =
@@ -492,7 +496,7 @@ let add_inside_parent_hash #bytes #cb #tkt #ld #lp #id #ip d p li content =
 
 (*** Parent-hash invariant: adding outside ***)
 
-val add_outside_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip{~(leaf_index_inside ld id li) /\ leaf_at p li == None} -> content:leaf_node_nt bytes tkt -> Lemma
+val add_outside_subtree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip{~(leaf_index_inside ld id li) /\ leaf_at p li == None} -> content:leaf_node_nt bytes tkt -> Lemma
   (requires is_subtree_of d p /\ tree_add_pre p li)
   (ensures is_subtree_of d (tree_add p li content))
 let rec add_outside_subtree #bytes #bl #tkt #ld #lp #id #ip d p li content =
@@ -618,7 +622,7 @@ let add_outside_parent_hash #bytes #cb #tkt #ld #lp #id #ip d p li content =
   )
 #pop-options
 
-val tree_add_pre_subtree_inside: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat{ld <= lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip{leaf_index_inside ld id li} -> content:leaf_node_nt bytes tkt -> Lemma
+val tree_add_pre_subtree_inside: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #ld:nat -> #lp:nat -> #id:tree_index ld -> #ip:tree_index lp -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> li:leaf_index lp ip{leaf_index_inside ld id li} -> content:leaf_node_nt bytes tkt -> Lemma
   (requires is_subtree_of d p /\ tree_add_pre p li)
   (ensures tree_add_pre d li)
 let rec tree_add_pre_subtree_inside #bytes #bl #tkt #ld #lp #id #ip d p li content =

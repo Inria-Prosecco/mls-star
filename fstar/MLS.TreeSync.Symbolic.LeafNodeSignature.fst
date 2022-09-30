@@ -146,18 +146,13 @@ let rec last_tree_equivalent #bytes #bl #tkt tl1 tl2 li =
   | h1::t1, h2::t2 -> last_tree_equivalent t1 t2 li
 #pop-options
 
-//TODO: the actual is_subtree should be like that ?!
-val is_subtree_of_nopre: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #lu:nat -> #lp:nat -> #iu:tree_index lu -> #ip:tree_index lp -> treesync bytes tkt lu iu -> treesync bytes tkt lp ip -> prop
-let is_subtree_of_nopre #bytes #bl #tkt #lu #lp #iu #ip u p =
-  lu <= lp /\ leaf_index_inside lp ip iu /\ is_subtree_of u p
-
 val is_subtree_of_transitive:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l1:nat -> #l2:nat -> #l3:nat -> #i1:tree_index l1 -> #i2:tree_index l2 -> #i3:tree_index l3 ->
   t1:treesync bytes tkt l1 i1 -> t2:treesync bytes tkt l2 i2 -> t3:treesync bytes tkt l3 i3 ->
   Lemma
-  (requires is_subtree_of_nopre t1 t2 /\ is_subtree_of_nopre t2 t3)
-  (ensures is_subtree_of_nopre t1 t3)
+  (requires is_subtree_of t1 t2 /\ is_subtree_of t2 t3)
+  (ensures is_subtree_of t1 t3)
 let rec is_subtree_of_transitive #bytes #bl #tkt #l1 #l2 #l3 #i1 #i2 #i3 t1 t2 t3 =
   if l2 = l3 then ()
   else (
@@ -173,7 +168,7 @@ val tree_list_head_subtree_tail: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:
   (ensures (
     let (|_, _, t1|) = List.Tot.hd tl in
     let (|_, _, t2|) = List.Tot.last tl in
-    is_subtree_of_nopre t1 t2
+    is_subtree_of t1 t2
   ))
 let rec tree_list_head_subtree_tail #bytes #cb #tkt tl =
   match tl with
