@@ -16,6 +16,7 @@ open MLS.TreeSync.Invariants.ValidLeaves
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Invariants.AuthService.Proofs
 open MLS.TreeSync.Proofs.ParentHashGuarantees
+open MLS.TreeSync.API.Types
 open MLS.TreeSync.Symbolic.IsValid
 open MLS.Symbolic.Parsers
 open MLS.Symbolic
@@ -128,7 +129,7 @@ val has_leaf_node_tbs_invariant: treekem_types dy_bytes -> global_usage -> prop
 let has_leaf_node_tbs_invariant tkt gu =
   has_sign_pred gu leaf_node_label (leaf_node_spred gu.key_usages tkt)
 
-(*** Proof for verification ***)
+(*** Proof of verification, for a tree ***)
 
 #push-options "--fuel 2 --ifuel 1 --z3rlimit 25"
 val last_tree_equivalent: #bytes:eqtype -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> tl1:tree_list bytes tkt -> tl2:tree_list bytes tkt -> li:nat -> Lemma
@@ -222,7 +223,7 @@ let rec leaf_at_has_pre #bytes #bl #tkt #l #i pre t li =
     leaf_at_has_pre pre child li
 
 #push-options "--z3rlimit 100"
-val parent_hash_implies_event: #l:nat -> #i:tree_index l -> gu:global_usage -> time:timestamp -> tkt:treekem_types dy_bytes -> group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i -> Lemma
+val parent_hash_implies_event: #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_index l -> gu:global_usage -> time:timestamp -> group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i -> Lemma
   (requires
     has_leaf_node_tbs_invariant tkt gu /\
     unmerged_leaves_ok t /\ parent_hash_invariant t /\ valid_leaves_invariant group_id t /\
@@ -240,7 +241,7 @@ val parent_hash_implies_event: #l:nat -> #i:tree_index l -> gu:global_usage -> t
       is_corrupt time (p_id authentifier)
     )
   ))
-let parent_hash_implies_event #l #i gu time tkt group_id t ast =
+let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
   let my_tl = parent_hash_invariant_to_tree_list t in
   let (|leaf_l, leaf_i, leaf|) = List.Tot.hd my_tl in
   tree_list_head_subtree_tail my_tl;
@@ -296,7 +297,86 @@ let parent_hash_implies_event #l #i gu time tkt group_id t ast =
   )
 #pop-options
 
-(*** Proof for signature ***)
+(*** Proof of verification, for a state ***)
+
+val valid_leaves_invariant_subtree:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #lp:nat -> #ld:nat -> #ip:tree_index lp -> #id:tree_index ld ->
+  group_id:mls_bytes bytes -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
+  (requires valid_leaves_invariant group_id p /\ is_subtree_of d p)
+  (ensures valid_leaves_invariant group_id d)
+let rec valid_leaves_invariant_subtree #bytes #cb #tkt #lp #ld #ip #id group_id d p =
+  if ld = lp then ()
+  else (
+    let (c,  _) = get_child_sibling p id in
+    valid_leaves_invariant_subtree group_id d c
+  )
+
+val treesync_has_pre_subtree:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #lp:nat -> #ld:nat -> #ip:tree_index lp -> #id:tree_index ld ->
+  pre:bytes_compatible_pre bytes -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
+  (requires treesync_has_pre pre p /\ is_subtree_of d p)
+  (ensures treesync_has_pre pre d)
+let rec treesync_has_pre_subtree #bytes #cb #tkt #lp #ld #ip #id pre d p =
+  if ld = lp then ()
+  else (
+    let (c,  _) = get_child_sibling p id in
+    treesync_has_pre_subtree pre d c
+  )
+
+val all_credentials_ok_subtree:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
+  #lp:nat -> #ld:nat -> #ip:tree_index lp -> #id:tree_index ld ->
+  d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip ->
+  ast_d:as_tokens bytes asp.token_t ld id -> ast_p:as_tokens bytes asp.token_t lp ip ->
+  Lemma
+  (requires all_credentials_ok p ast_p /\ is_subtree_of d p /\ is_subtree_of ast_d ast_p)
+  (ensures all_credentials_ok d ast_d)
+let rec all_credentials_ok_subtree #bytes #cb #tkt #asp #lp #ld #ip #id d p ast_d ast_p =
+  if ld = lp then ()
+  else (
+    let (c,  _) = get_child_sibling p id in
+    let (ast_c,  _) = get_child_sibling ast_p id in
+    introduce forall li. one_credential_ok c ast_c li with (
+      assert(one_credential_ok p ast_p li)
+    );
+    all_credentials_ok_subtree d c ast_d ast_c
+  )
+
+val state_implies_event:
+  #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_index l ->
+  gu:global_usage -> time:timestamp ->
+  st:treesync_state dy_bytes tkt (dy_asp gu time) -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i -> Lemma
+  (requires
+    has_leaf_node_tbs_invariant tkt gu /\
+    node_has_parent_hash t /\
+    treesync_has_pre (is_valid gu time) st.tree /\
+    is_valid gu time st.group_id /\
+    is_subtree_of t st.tree /\
+    is_subtree_of ast st.tokens
+  )
+  (ensures (
+    // The following line is only there as precondition for the rest of the theorem
+    unmerged_leaves_ok t /\ parent_hash_invariant t /\ all_credentials_ok t ast /\ (
+      let authentifier_li = get_authentifier_index t in
+      let authentifier = (Some?.v (leaf_at ast authentifier_li)).who in
+      (
+        tree_has_equivalent_event tkt authentifier time st.group_id t authentifier_li
+      ) \/ (
+        is_corrupt time (p_id authentifier)
+      )
+    )
+  ))
+let state_implies_event #tkt #l #i gu time st t ast =
+  unmerged_leaves_ok_subtree t st.tree;
+  parent_hash_invariant_subtree t st.tree;
+  valid_leaves_invariant_subtree st.group_id t st.tree;
+  treesync_has_pre_subtree (is_valid gu time) t st.tree;
+  all_credentials_ok_subtree t st.tree ast st.tokens;
+  parent_hash_implies_event gu time st.group_id t ast
+
+(*** Proof of signature ***)
 
 val external_path_to_path_aux_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> Pure (leaf_node_nt bytes tkt)
   (requires external_path_to_path_pre t p group_id)
