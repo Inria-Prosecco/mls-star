@@ -67,8 +67,8 @@ val treesync_public_state_label: string
 let treesync_public_state_label = "MLS.TreeSync.PublicState"
 
 // The `fun` is a workaround for FStarLang/FStar#2694
-val bare_treesync_public_state_invariant: tkt:treekem_types dy_bytes -> bare_typed_session_pred (bare_treesync_state tkt)
-let bare_treesync_public_state_invariant tkt = fun gu p time si vi st ->
+val bare_treesync_public_state_pred: tkt:treekem_types dy_bytes -> bare_typed_session_pred (bare_treesync_state tkt)
+let bare_treesync_public_state_pred tkt = fun gu p time si vi st ->
   is_publishable gu time st.group_id /\
   treesync_has_pre (is_publishable gu time) st.tree /\
   unmerged_leaves_ok st.tree /\
@@ -77,10 +77,10 @@ let bare_treesync_public_state_invariant tkt = fun gu p time si vi st ->
   all_credentials_ok st.tree (st.tokens <: as_tokens dy_bytes (dy_asp gu time).token_t st.levels 0)
 
 #push-options "--fuel 0 --ifuel 0"
-val treesync_public_state_invariant: treekem_types dy_bytes -> session_pred
-let treesync_public_state_invariant tkt =
+val treesync_public_state_pred: treekem_types dy_bytes -> session_pred
+let treesync_public_state_pred tkt =
   typed_session_pred_to_session_pred (
-    mk_typed_session_pred (bare_treesync_public_state_invariant tkt)
+    mk_typed_session_pred (bare_treesync_public_state_pred tkt)
       (fun gu p time0 time1 si vi st ->
         // Prove publishability of treesync in the future
         ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time0) st.tree;
@@ -98,7 +98,7 @@ let treesync_public_state_invariant tkt =
 
 val has_treesync_public_state_invariant: treekem_types dy_bytes -> preds -> prop
 let has_treesync_public_state_invariant tkt pr =
-  has_session_pred pr treesync_public_state_label (treesync_public_state_invariant tkt)
+  has_session_pred pr treesync_public_state_label (treesync_public_state_pred tkt)
 
 (*** LCrypto API for public state ***)
 
@@ -112,7 +112,7 @@ val treesync_state_to_session_bytes:
     treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
     has_treesync_public_state_invariant tkt pr
   )
-  (ensures fun res -> treesync_public_state_invariant tkt pr.global_usage p time si vi res)
+  (ensures fun res -> treesync_public_state_pred tkt pr.global_usage p time si vi res)
 let treesync_state_to_session_bytes #tkt pr p time si vi st =
   let bare_st: bare_treesync_state tkt = {
     group_id = st.group_id;
@@ -138,7 +138,7 @@ val new_public_treesync_state:
 let new_public_treesync_state #tkt pr p time st =
   let si = new_session_number pr p in
   let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 st in
-  new_session pr treesync_public_state_label (treesync_public_state_invariant tkt) p si 0 bare_st_bytes;
+  new_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si 0 bare_st_bytes;
   si
 
 val set_public_treesync_state:
@@ -155,7 +155,7 @@ val set_public_treesync_state:
   (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
 let set_public_treesync_state #tkt pr p si time st =
   let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 st in
-  update_session pr treesync_public_state_label (treesync_public_state_invariant tkt) p si 0 bare_st_bytes
+  update_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si 0 bare_st_bytes
 
 val get_public_treesync_state:
   #tkt:treekem_types dy_bytes ->
@@ -171,7 +171,7 @@ val get_public_treesync_state:
     t1 == t0
   )
 let get_public_treesync_state #tkt pr p si time =
-  let (_, st_bytes) = get_session pr treesync_public_state_label (treesync_public_state_invariant tkt) p si in
+  let (_, st_bytes) = get_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si in
   let st = Some?.v (parse (bare_treesync_state tkt) st_bytes) in
   {
     group_id = st.group_id;
@@ -196,17 +196,17 @@ instance parseable_serializeable_treesync_private_state: parseable_serializeable
 val treesync_private_state_label: string
 let treesync_private_state_label = "MLS.TreeSync.PrivateState"
 
-val bare_treesync_private_state_invariant: bare_typed_session_pred treesync_private_state
-let bare_treesync_private_state_invariant gu p time si vi st =
+val bare_treesync_private_state_pred: bare_typed_session_pred treesync_private_state
+let bare_treesync_private_state_pred gu p time si vi st =
   is_signature_key gu "MLS.LeafSignKey" (readers [p_id p]) time st.signature_key
 
-val treesync_private_state_invariant: session_pred
-let treesync_private_state_invariant =
-  typed_session_pred_to_session_pred bare_treesync_private_state_invariant
+val treesync_private_state_pred: session_pred
+let treesync_private_state_pred =
+  typed_session_pred_to_session_pred bare_treesync_private_state_pred
 
 val has_treesync_private_state_invariant: preds -> prop
 let has_treesync_private_state_invariant pr =
-  has_session_pred pr treesync_private_state_label treesync_private_state_invariant
+  has_session_pred pr treesync_private_state_label treesync_private_state_pred
 
 (*** LCrypto API for private state ***)
 
@@ -223,7 +223,7 @@ let new_private_treesync_state pr p st =
   let si = new_session_number pr p in
   let st_bytes = serialize treesync_private_state st in
   parse_serialize_inv_lemma #dy_bytes treesync_private_state st;
-  new_session pr treesync_private_state_label treesync_private_state_invariant p si 0 st_bytes;
+  new_session pr treesync_private_state_label treesync_private_state_pred p si 0 st_bytes;
   si
 
 val set_private_treesync_state:
@@ -238,7 +238,7 @@ val set_private_treesync_state:
 let set_private_treesync_state pr p si st =
   let st_bytes = serialize treesync_private_state st in
   parse_serialize_inv_lemma #dy_bytes treesync_private_state st;
-  new_session pr treesync_private_state_label treesync_private_state_invariant p si 0 st_bytes
+  new_session pr treesync_private_state_label treesync_private_state_pred p si 0 st_bytes
 
 val get_private_treesync_state:
   pr:preds -> p:principal -> si:nat ->
@@ -249,6 +249,6 @@ val get_private_treesync_state:
     t1 == t0
   )
 let get_private_treesync_state pr p si =
-  let (_, st_bytes) = get_session pr treesync_private_state_label treesync_private_state_invariant p si in
+  let (_, st_bytes) = get_session pr treesync_private_state_label treesync_private_state_pred p si in
   let st = Some?.v (parse treesync_private_state st_bytes) in
   st
