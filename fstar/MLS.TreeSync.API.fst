@@ -76,20 +76,20 @@ let prepare_create #bytes #cb #tkt group_id ln =
     })
   )
 
-#push-options "--fuel 1 --ifuel 1"
 val finalize_create:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
   #group_id:mls_bytes bytes -> #ln:leaf_node_nt bytes tkt ->
   pend:pending_create group_id ln -> token:token_for_create asp pend ->
   treesync_state bytes tkt asp
 let finalize_create #bytes #cb #tkt #asp #group_id #ln pend token =
+  pend.can_create_proof;
+  all_credentials_ok_tree_create ln token;
   ({
     group_id;
     levels = 0;
-    tree = tree_create (Some ln);
-    tokens = tree_create (Some token);
+    tree = tree_create ln;
+    tokens = MLS.TreeCommon.tree_create (Some token);
   })
-#pop-options
 
 (*** Welcome ***)
 

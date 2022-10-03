@@ -15,6 +15,12 @@ open MLS.MiscLemmas
 
 #set-options "--fuel 1 --ifuel 1"
 
+(*** Create ***)
+
+val unmerged_leaves_ok_tree_create: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> ln:leaf_node_nt bytes tkt -> Lemma
+  (unmerged_leaves_ok (tree_create (Some ln)))
+let unmerged_leaves_ok_tree_create #bytes #bl #tkt ln = ()
+
 (*** Update/Remove ***)
 
 val unmerged_leaves_ok_tree_change_path: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) -> Lemma

@@ -15,6 +15,15 @@ open MLS.TreeSync.Refined.Types
 
 #push-options "--fuel 0 --ifuel 0"
 
+val tree_create: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt -> Pure (treesync_valid bytes tkt 0 0 group_id)
+  (requires leaf_is_valid ln group_id 0)
+  (ensures fun _ -> True)
+let tree_create #bytes #cb #tkt #group_id ln =
+  unmerged_leaves_ok_tree_create ln;
+  parent_hash_invariant_tree_create ln;
+  valid_leaves_invariant_tree_create group_id ln;
+  tree_create (Some ln)
+
 val tree_add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #group_id:mls_bytes bytes -> t:treesync_valid bytes tkt l i group_id -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Pure (treesync_valid bytes tkt l i group_id)
   (requires leaf_at t li == None /\ ln.data.source == LNS_key_package() /\ leaf_is_valid ln group_id li /\ tree_add_pre t li)
   (ensures fun _ -> True)

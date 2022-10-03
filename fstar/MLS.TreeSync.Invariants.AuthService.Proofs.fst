@@ -20,6 +20,11 @@ let intro_all_credentials_ok #bytes #bl #tkt #asp #l #i ts ast one_proof =
 
 (*** Invariant theorems ***)
 
+val all_credentials_ok_tree_create: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> ln:leaf_node_nt bytes tkt -> token:asp.token_t -> Lemma
+  (requires asp.credential_ok (ln.data.signature_key, ln.data.credential) token)
+  (ensures all_credentials_ok (tree_create (Some ln)) (tree_create (Some token)))
+let all_credentials_ok_tree_create #bytes #bl #tkt ln token = ()
+
 val all_credentials_ok_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat -> #i:tree_index l -> ts:treesync bytes tkt l i -> ast:as_tokens bytes asp.token_t l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> token:asp.token_t -> Lemma
   (requires
     asp.credential_ok (ln.data.signature_key, ln.data.credential) token /\

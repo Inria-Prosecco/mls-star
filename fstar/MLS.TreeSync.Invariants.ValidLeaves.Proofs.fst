@@ -13,6 +13,11 @@ open MLS.TreeSync.Invariants.ValidLeaves
 
 #set-options "--fuel 1 --ifuel 1"
 
+val valid_leaves_invariant_tree_create: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt -> Lemma
+  (requires leaf_is_valid ln group_id 0)
+  (ensures valid_leaves_invariant group_id (tree_create (Some ln)))
+let valid_leaves_invariant_tree_create #bytes #cb #tkt group_id ln = ()
+
 val valid_leaves_invariant_tree_add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
   (requires ln.data.source == LNS_key_package () /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t /\ tree_add_pre t li)
   (ensures valid_leaves_invariant group_id (tree_add t li ln))

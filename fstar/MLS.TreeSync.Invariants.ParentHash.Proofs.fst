@@ -346,6 +346,10 @@ let rec parent_hash_invariant_prop2bool #bytes #cb #tkt #l #i t =
 
 (*** Parent-hash invariant: easy cases ***)
 
+val parent_hash_invariant_tree_create: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> ln:leaf_node_nt bytes tkt -> Lemma
+  (parent_hash_invariant (tree_create (Some ln)))
+let parent_hash_invariant_tree_create #bytes #cb #tkt ln = ()
+
 val parent_hash_invariant_mk_blank_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> Lemma (parent_hash_invariant (mk_blank_tree l i <: treesync bytes tkt l i))
 let rec parent_hash_invariant_mk_blank_tree #bytes #cb #tkt l i =
   if l = 0 then ()
