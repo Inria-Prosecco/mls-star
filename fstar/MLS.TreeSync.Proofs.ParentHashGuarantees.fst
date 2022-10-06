@@ -739,28 +739,30 @@ let parent_hash_invariant_to_tree_list #bytes #cb #tkt #l #i t =
 
 (*** path to tree_list ***)
 
-#push-options "--z3rlimit 25"
-val find_node_and_path_parent_hash_link_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (ld:nat & id:tree_index ld{leaf_index_inside ld id li} & treesync bytes tkt ld id & pathsync bytes tkt ld id li)
-  (requires
-    path_is_parent_hash_valid_aux t p parent_parent_hash /\
-    path_is_filter_valid t p /\
-    apply_path_aux_pre t p (length #bytes parent_parent_hash)
-  )
+// This proof uses a weird style, both intrinsic and extrinsic.
+// Intrinsic proofs are used to prove the preconditions that are useful to actually compute the tree list
+// The fact that this tree list has some properties is proved extrinsically.
+//
+// Everything could be done intrinsically (it was done like that in the past),
+// however in TreeSync proofs it is useful to talk about this tree list without knowning its properties.
+// Hence this split allows to create the tree list without superfluous pre-conditions.
+// The "annoying" pre-conditions are only useful when you want the nice post-condition.
+
+val find_node_and_path_parent_hash_link_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Pure (ld:nat & id:tree_index ld{leaf_index_inside ld id li} & treesync bytes tkt ld id & pathsync bytes tkt ld id li)
+  (requires apply_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures fun (|ld, id, td, pd|) ->
-    path_is_parent_hash_valid_aux td pd parent_parent_hash /\
-    path_is_filter_valid td pd /\
     path_node_not_blank pd /\
-    get_path_leaf pd == get_path_leaf p /\
-    ld <= l /\ leaf_index_inside l i id /\ is_subtree_of td t /\
-    apply_path_aux_pre td pd (length #bytes parent_parent_hash) /\
-    find_parent_hash_link_aux t p parent_parent_hash == (|ld, id, apply_path_aux td pd parent_parent_hash|)
+    ld <= l /\
+    apply_path_aux_pre td pd (length #bytes parent_parent_hash)
   )
 let rec find_node_and_path_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   match t, p with
   | TLeaf _, PLeaf _
   | TNode _ _ _, PNode (Some _) _ -> (
-    //Why do you need this F*???
-    assert(find_parent_hash_link_aux t p parent_parent_hash == (|l, i, apply_path_aux t p parent_parent_hash|));
     (|l, i, t, p|)
   )
   | TNode _ left right, PNode None p_next -> (
@@ -769,24 +771,55 @@ let rec find_node_and_path_parent_hash_link_aux #bytes #cb #tkt #l #i #li t p pa
     else
       find_node_and_path_parent_hash_link_aux right p_next parent_parent_hash
   )
-#pop-options
 
 #push-options "--z3rlimit 25"
-val find_node_and_path_parent_hash_link: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:pos -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (ld:nat & id:tree_index ld{leaf_index_inside ld id li} & (treesync bytes tkt ld id & pathsync bytes tkt ld id li & mls_bytes bytes))
+val find_node_and_path_parent_hash_link_aux_lemma:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
   (requires
     path_is_parent_hash_valid_aux t p parent_parent_hash /\
     path_is_filter_valid t p /\
+    apply_path_aux_pre t p (length #bytes parent_parent_hash)
+  )
+  (ensures (
+    let (|ld, id, td, pd|) = find_node_and_path_parent_hash_link_aux t p parent_parent_hash in
+    path_is_parent_hash_valid_aux td pd parent_parent_hash /\
+    path_is_filter_valid td pd /\
+    path_node_not_blank pd /\
+    get_path_leaf pd == get_path_leaf p /\
+    ld <= l /\ leaf_index_inside l i id /\ is_subtree_of td t /\
+    apply_path_aux_pre td pd (length #bytes parent_parent_hash) /\
+    find_parent_hash_link_aux t p parent_parent_hash == (|ld, id, apply_path_aux td pd parent_parent_hash|)
+  ))
+let rec find_node_and_path_parent_hash_link_aux_lemma #bytes #cb #tkt #l #i #li t p parent_parent_hash =
+  match t, p with
+  | TLeaf _, PLeaf _
+  | TNode _ _ _, PNode (Some _) _ -> (
+    //Why do you need this F*???
+    assert(find_parent_hash_link_aux t p parent_parent_hash == (|l, i, apply_path_aux t p parent_parent_hash|))
+  )
+  | TNode _ left right, PNode None p_next -> (
+    if is_left_leaf li then
+      find_node_and_path_parent_hash_link_aux_lemma left p_next parent_parent_hash
+    else
+      find_node_and_path_parent_hash_link_aux_lemma right p_next parent_parent_hash
+  )
+#pop-options
+
+val find_node_and_path_parent_hash_link:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:pos -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Pure (ld:nat & id:tree_index ld{leaf_index_inside ld id li} & (treesync bytes tkt ld id & pathsync bytes tkt ld id li & mls_bytes bytes))
+  (requires
     path_node_not_blank p /\
     apply_path_aux_pre t p (length #bytes parent_parent_hash)
   )
   (ensures fun (|ld, id, (td, pd, new_parent_parent_hash)|) ->
-    path_is_parent_hash_valid_aux td pd new_parent_parent_hash /\
-    path_is_filter_valid td pd /\
     path_node_not_blank pd /\
-    get_path_leaf pd == get_path_leaf p /\
-    ld < l /\ leaf_index_inside l i id /\ is_subtree_of td t /\
     apply_path_aux_pre td pd (length #bytes new_parent_parent_hash) /\
-    find_parent_hash_link t p parent_parent_hash == (|ld, id, apply_path_aux td pd new_parent_parent_hash|)
+    ld < l
   )
 let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   match t, p with
@@ -801,10 +834,68 @@ let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_par
     in
     (|ld, id, (td, pd, new_parent_parent_hash)|)
   )
+
+#push-options "--z3rlimit 25"
+val find_node_and_path_parent_hash_link_lemma:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:pos -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Lemma
+  (requires
+    path_is_parent_hash_valid_aux t p parent_parent_hash /\
+    path_is_filter_valid t p /\
+    path_node_not_blank p /\
+    apply_path_aux_pre t p (length #bytes parent_parent_hash)
+  )
+  (ensures (
+    let (|ld, id, (td, pd, new_parent_parent_hash)|) = find_node_and_path_parent_hash_link t p parent_parent_hash in
+    path_is_parent_hash_valid_aux td pd new_parent_parent_hash /\
+    path_is_filter_valid td pd /\
+    path_node_not_blank pd /\
+    get_path_leaf pd == get_path_leaf p /\
+    ld < l /\ leaf_index_inside l i id /\ is_subtree_of td t /\
+    apply_path_aux_pre td pd (length #bytes new_parent_parent_hash) /\
+    find_parent_hash_link t p parent_parent_hash == (|ld, id, apply_path_aux td pd new_parent_parent_hash|)
+  ))
+let find_node_and_path_parent_hash_link_lemma #bytes #cb #tkt #l #i #li t p parent_parent_hash =
+  match t, p with
+  | TNode _ left right, PNode opt_ext_content p_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    let (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+    if is_left_leaf li then (
+      find_node_and_path_parent_hash_link_aux_lemma left p_next new_parent_parent_hash
+    ) else (
+      find_node_and_path_parent_hash_link_aux_lemma right p_next new_parent_parent_hash
+    )
+  )
 #pop-options
 
+val path_to_tree_list_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Pure (tree_list bytes tkt)
+  (requires
+    apply_path_aux_pre t p (length #bytes parent_parent_hash) /\
+    path_node_not_blank p
+  )
+  (ensures fun tl -> True)
+let rec path_to_tree_list_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
+  if l = 0 then (
+    let PLeaf ln = p in
+    [(|l, i, TLeaf (Some ln)|)]
+  ) else (
+    let (|ld, id, (td, pd, new_parent_parent_hash)|) = find_node_and_path_parent_hash_link t p parent_parent_hash in
+    let tail_tl = path_to_tree_list_aux td pd new_parent_parent_hash in
+    (|l, i, apply_path_aux t p parent_parent_hash|)::tail_tl
+  )
+
 #push-options "--z3rlimit 50"
-val path_to_tree_list_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Pure (tree_list bytes tkt)
+val path_to_tree_list_aux_lemma:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Lemma
   (requires
     apply_path_aux_pre t p (length #bytes parent_parent_hash) /\
     path_is_parent_hash_valid_aux t p parent_parent_hash /\
@@ -812,27 +903,28 @@ val path_to_tree_list_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treeke
     path_node_not_blank p /\
     unmerged_leaves_ok t
   )
-  (ensures fun tl ->
+  (ensures (
+    let tl = path_to_tree_list_aux t p parent_parent_hash in
     tree_list_is_parent_hash_linkedP_rev tl /\
     Cons? tl /\
     List.Tot.hd tl == (|l, i, apply_path_aux t p parent_parent_hash|) /\
     List.Tot.last tl == (|0, li, TLeaf (Some (get_path_leaf p))|)
-  )
-let rec path_to_tree_list_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
+  ))
+let rec path_to_tree_list_aux_lemma #bytes #cb #tkt #l #i #li t p parent_parent_hash =
   if l = 0 then (
     let PLeaf ln = p in
     let tl = [(|l, i, TLeaf (Some ln)|)] in
     assert_norm(tree_list_is_parent_hash_linkedP_rev tl);
-    tl
+    assert(tl == path_to_tree_list_aux t p parent_parent_hash)
   ) else (
     let (|ld, id, (td, pd, new_parent_parent_hash)|) = find_node_and_path_parent_hash_link t p parent_parent_hash in
+    find_node_and_path_parent_hash_link_lemma t p parent_parent_hash;
     find_parent_hash_link_misc_properties t p parent_parent_hash;
     find_parent_hash_link_parent_hash t p parent_parent_hash;
     find_parent_hash_link_last_update t p parent_parent_hash;
     unmerged_leaves_ok_subtree td t;
     unmerged_leaves_ok_apply_path_aux t p parent_parent_hash;
-    let tail_tl = path_to_tree_list_aux td pd new_parent_parent_hash in
-    (|l, i, apply_path_aux t p parent_parent_hash|)::tail_tl
+    path_to_tree_list_aux_lemma td pd new_parent_parent_hash
   )
 #pop-options
 
@@ -851,28 +943,45 @@ let rec last_to_tree_list_ends_at_root #bytes #bl #tkt tl =
   | [_] -> ()
   | _::t -> last_to_tree_list_ends_at_root t
 
-#push-options "--z3rlimit 25"
-val path_to_tree_list: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Pure (tree_list bytes tkt)
+val path_to_tree_list:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
+  Pure (tree_list bytes tkt)
+  (requires apply_path_pre t p)
+  (ensures fun tl -> True)
+let path_to_tree_list #bytes #cb #tkt #l #li t p =
+  //Handle the case where the root node is blank
+  let (|l', i', t', p'|) = find_node_and_path_parent_hash_link_aux t p (root_parent_hash #bytes) in
+  let rev_tl = path_to_tree_list_aux t' p' (root_parent_hash #bytes) in
+  List.Tot.rev rev_tl
+
+#push-options "--z3rlimit 50"
+val path_to_tree_list_lemma:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
+  Lemma
   (requires
     apply_path_pre t p /\
     path_is_parent_hash_valid t p /\
     path_is_filter_valid t p /\
     unmerged_leaves_ok t
   )
-  (ensures fun tl ->
+  (ensures (
+    let tl = path_to_tree_list t p in
     tree_list_is_parent_hash_linkedP tl /\
     tree_list_ends_at_root tl /\
     Cons? tl /\
     List.Tot.hd tl == (|0, li, TLeaf (Some (get_path_leaf p))|)
-  )
-let path_to_tree_list #bytes #cb #tkt #l #li t p =
-  //Handle the case where the root node is blank
+  ))
+let path_to_tree_list_lemma #bytes #cb #tkt #l #li t p =
   let (|l', i', t', p'|) = find_node_and_path_parent_hash_link_aux t p (root_parent_hash #bytes) in
+  find_node_and_path_parent_hash_link_aux_lemma t p (root_parent_hash #bytes);
   unmerged_leaves_ok_subtree t' t;
   let rev_tl = path_to_tree_list_aux t' p' (root_parent_hash #bytes) in
+  path_to_tree_list_aux_lemma t' p' (root_parent_hash #bytes);
   hd_tail_rev rev_tl;
   tree_list_is_parent_hash_linkedP_rev_eq rev_tl;
-  let tl = List.Tot.rev rev_tl in
-  last_to_tree_list_ends_at_root tl;
-  tl
+  last_to_tree_list_ends_at_root (List.Tot.rev rev_tl)
 #pop-options

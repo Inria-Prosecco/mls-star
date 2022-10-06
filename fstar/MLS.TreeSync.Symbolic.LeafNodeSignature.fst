@@ -467,22 +467,81 @@ let path_is_filter_valid_external_path_to_path #bytes #cb #tkt #l #li t p group_
 *)
 
 val external_path_has_pred: #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 -> prin:principal -> time:timestamp -> t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes -> Pure prop
-  (requires
-    external_path_to_path_pre t p group_id /\
-    path_is_filter_valid t p /\
-    unmerged_leaves_ok t
-  )
+  (requires external_path_to_path_pre t p group_id)
   (ensures fun _ -> True)
 let external_path_has_pred #tkt #l #li prin time t p group_id =
+  //This lemma is useful to know that auth_ln.data.source == LNS_commit
+  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
   let auth_p = external_path_to_path_nosig t p group_id in
   let auth_ln = get_path_leaf auth_p in
-  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
-  path_is_filter_valid_external_path_to_path_nosig t p group_id;
   leaf_node_has_event prin time ({data = auth_ln.data; group_id; leaf_index = li;}) /\
   tree_list_has_pred time prin group_id (path_to_tree_list t auth_p)
 
+// Main (and generic) theorem about external_path_to_path
 #push-options "--z3rlimit 50"
-val is_valid_external_path_to_path: #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 -> gu:global_usage -> prin:principal -> time:timestamp -> t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes -> sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes -> Lemma
+val is_msg_external_path_to_path:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  gu:global_usage -> prin:principal -> label:label -> time:timestamp ->
+  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
+  Lemma
+  (requires
+    external_path_to_path_pre t p group_id /\
+    path_is_filter_valid t p /\
+    unmerged_leaves_ok t /\
+    external_path_has_pred prin time t p group_id /\
+    treesync_has_pre (is_msg gu label time) t /\
+    external_pathsync_has_pre (is_msg gu label time) p /\
+    is_msg gu label time group_id /\
+    is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
+    is_valid gu time nonce /\
+    get_label gu sk == readers [p_id prin] /\
+    get_label gu nonce == readers [p_id prin] /\
+    has_leaf_node_tbs_invariant tkt gu
+  )
+  (ensures pathsync_has_pre (is_msg gu label time) (external_path_to_path t p group_id sk nonce))
+let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk nonce =
+  let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
+  let ln_data = get_path_leaf p in
+  let new_ln_data = { ln_data with source = LNS_commit (); parent_hash = computed_parent_hash; } in
+  let new_ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = new_ln_data; group_id; leaf_index = li;}) in
+  let new_ln_tbs_bytes: dy_bytes = serialize (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs in
+  let new_signature = sign_with_label sk "LeafNodeTBS" new_ln_tbs_bytes nonce in
+  let new_ln = ({ data = new_ln_data; signature = new_signature; } <: leaf_node_nt dy_bytes tkt) in
+  let new_unsigned_ln = ({ data = new_ln_data; signature = empty #dy_bytes; } <: leaf_node_nt dy_bytes tkt) in
+  let unsigned_path = set_path_leaf p new_unsigned_ln in
+  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
+  path_is_filter_valid_external_path_to_path_nosig t p group_id;
+  get_path_leaf_set_path_leaf p new_unsigned_ln;
+  pre_compute_leaf_parent_hash_from_path (is_msg gu label time) t p root_parent_hash;
+  pre_get_path_leaf (is_msg gu label time) p;
+  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ({data = new_ln_data; group_id; leaf_index = li;});
+  let tl = path_to_tree_list t unsigned_path in
+  path_to_tree_list_lemma t unsigned_path;
+  introduce exists prin tl.
+    get_signkey_label gu.key_usages (CryptoLib.vk sk) == readers [p_id prin] /\
+    tree_list_starts_with_tbs tl new_ln_tbs_bytes /\
+    tree_list_is_parent_hash_linkedP tl /\
+    tree_list_ends_at_root tl /\
+    tree_list_has_pred time prin new_ln_tbs.group_id tl /\
+    leaf_node_has_event prin time new_ln_tbs
+  with prin tl and (
+    LabeledCryptoAPI.vk_lemma #gu #time #(readers [p_id prin]) sk
+  );
+  parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs;
+  sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" new_ln_tbs_bytes nonce;
+  pre_set_path_leaf (is_msg gu label time) p new_ln
+#pop-options
+
+// A specific instance of the previous theorem (with is_valid)
+val is_valid_external_path_to_path:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  gu:global_usage -> prin:principal -> time:timestamp ->
+  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
+  Lemma
   (requires
     external_path_to_path_pre t p group_id /\
     path_is_filter_valid t p /\
@@ -499,33 +558,33 @@ val is_valid_external_path_to_path: #tkt:treekem_types dy_bytes -> #l:nat -> #li
   )
   (ensures pathsync_has_pre (is_valid gu time) (external_path_to_path t p group_id sk nonce))
 let is_valid_external_path_to_path #tkt #l #li gu prin time t p group_id sk nonce =
-  let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
-  let ln_data = get_path_leaf p in
-  let new_ln_data = { ln_data with source = LNS_commit (); parent_hash = computed_parent_hash; } in
-  let new_ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = new_ln_data; group_id; leaf_index = li;}) in
-  let new_ln_tbs_bytes: dy_bytes = serialize (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs in
-  let new_signature = sign_with_label sk "LeafNodeTBS" new_ln_tbs_bytes nonce in
-  let new_ln = ({ data = new_ln_data; signature = new_signature; } <: leaf_node_nt dy_bytes tkt) in
-  let new_unsigned_ln = ({ data = new_ln_data; signature = empty #dy_bytes; } <: leaf_node_nt dy_bytes tkt) in
-  let unsigned_path = set_path_leaf p new_unsigned_ln in
-  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
-  path_is_filter_valid_external_path_to_path_nosig t p group_id;
-  get_path_leaf_set_path_leaf p new_unsigned_ln;
-  pre_compute_leaf_parent_hash_from_path (is_valid gu time) t p root_parent_hash;
-  pre_get_path_leaf (is_valid gu time) p;
-  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_valid gu time) ({data = new_ln_data; group_id; leaf_index = li;});
-  let tl = path_to_tree_list t unsigned_path in
-  introduce exists prin tl.
-    get_signkey_label gu.key_usages (CryptoLib.vk sk) == readers [p_id prin] /\
-    tree_list_starts_with_tbs tl new_ln_tbs_bytes /\
-    tree_list_is_parent_hash_linkedP tl /\
-    tree_list_ends_at_root tl /\
-    tree_list_has_pred time prin new_ln_tbs.group_id tl /\
-    leaf_node_has_event prin time new_ln_tbs
-  with prin tl and (
-    LabeledCryptoAPI.vk_lemma #gu #time #(readers [p_id prin]) sk
-  );
-  parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs;
-  sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" new_ln_tbs_bytes nonce;
-  pre_set_path_leaf (is_valid gu time) p new_ln
-#pop-options
+    treesync_has_pre_weaken (is_valid gu time) (is_msg gu SecrecyLabels.private_label time) t;
+    external_pathsync_has_pre_weaken (is_valid gu time) (is_msg gu SecrecyLabels.private_label time) p;
+    is_msg_external_path_to_path gu prin SecrecyLabels.private_label time t p group_id sk nonce;
+    pathsync_has_pre_weaken (is_msg gu SecrecyLabels.private_label time) (is_valid gu time) (external_path_to_path t p group_id sk nonce)
+
+// A specific instance of the previous theorem (with is_publishable)
+val is_publishable_external_path_to_path:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  gu:global_usage -> prin:principal -> time:timestamp ->
+  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
+  Lemma
+  (requires
+    external_path_to_path_pre t p group_id /\
+    path_is_filter_valid t p /\
+    unmerged_leaves_ok t /\
+    external_path_has_pred prin time t p group_id /\
+    treesync_has_pre (is_publishable gu time) t /\
+    external_pathsync_has_pre (is_publishable gu time) p /\
+    is_publishable gu time group_id /\
+    is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
+    is_valid gu time nonce /\
+    get_label gu sk == readers [p_id prin] /\
+    get_label gu nonce == readers [p_id prin] /\
+    has_leaf_node_tbs_invariant tkt gu
+  )
+  (ensures pathsync_has_pre (is_publishable gu time) (external_path_to_path t p group_id sk nonce))
+let is_publishable_external_path_to_path #tkt #l #li gu prin time t p group_id sk nonce =
+    is_msg_external_path_to_path gu prin SecrecyLabels.public time t p group_id sk nonce

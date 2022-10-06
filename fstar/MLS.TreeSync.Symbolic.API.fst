@@ -1,12 +1,17 @@
 module MLS.TreeSync.Symbolic.API
 
+open Comparse
+open MLS.Crypto
 open GlobalRuntimeLib
 open LabeledRuntimeAPI
 open MLS.Tree
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
+open MLS.TreeSync.Operations
+open MLS.TreeSync.Invariants.UnmergedLeaves
 open MLS.TreeSync.Invariants.AuthService
+open MLS.TreeSync.Proofs.ParentHashGuarantees
 open MLS.TreeSync.API
 open MLS.Symbolic
 open MLS.TreeSync.Symbolic.API.GroupManager
@@ -18,6 +23,8 @@ open MLS.TreeSync.Symbolic.AuthServiceCache
 open MLS.TreeSync.Symbolic.IsValid
 
 #set-options "--fuel 0 --ifuel 0"
+
+(*** Utility functions ***)
 
 val guard: pr:preds -> b:bool -> LCrypto unit pr
   (requires fun t0 -> True)
@@ -92,6 +99,8 @@ let rec get_tokens_for pr p as_session inps =
     assert(forall i. i <> 0 ==> List.Tot.index inps i == List.Tot.index inps_tail (i-1));
     tokens
 #pop-options
+
+(*** Process proposals ***)
 
 val create:
   #tkt:treekem_types dy_bytes ->
@@ -225,4 +234,82 @@ let commit #tkt #l #li pr p as_session gmgr_session group_id path =
   set_public_treesync_state pr p group_session.si_public now new_st
 #pop-options
 
-//TODO: validate external path
+(*** Create signature keypair ***)
+
+val create_signature_keypair:
+  pr:preds -> p:principal ->
+  LCrypto (nat & signature_public_key_nt dy_bytes) pr
+  (requires fun t0 ->
+    has_treesync_private_state_invariant pr
+  )
+  (ensures fun t0 (private_si, verification_key) t1 ->
+    is_verification_key pr.global_usage "MLS.LeafSignKey" (readers [p_id p]) (trace_len t0) verification_key /\
+    trace_len t1 == trace_len t0 + 2
+  )
+let create_signature_keypair pr p =
+  let (|now, signature_key|) = rand_gen #pr (readers [p_id p]) (sig_usage "MLS.LeafSignKey") in
+  let verification_key = LabeledCryptoAPI.vk #pr.global_usage #now #(readers [p_id p]) signature_key in
+  guard pr (length (signature_key <: dy_bytes) < pow2 30);
+  guard pr (length (verification_key <: dy_bytes) < pow2 30);
+  let private_state: treesync_private_state = {signature_key;} in
+  let private_si = new_private_treesync_state pr p private_state in
+  (private_si, verification_key)
+
+(*** Sign stuff ***)
+
+val external_path_has_pred_later:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  prin:principal -> time0:timestamp -> time1:timestamp ->
+  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  Lemma
+  (requires
+    external_path_to_path_pre t p group_id /\
+    external_path_has_pred prin time0 t p group_id /\
+    time0 <$ time1
+  )
+  (ensures external_path_has_pred prin time1 t p group_id)
+let external_path_has_pred_later #tkt #l #li prin time0 time1 t p group_id =
+  let auth_p = external_path_to_path_nosig t p group_id in
+  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
+  for_allP_eq (tree_has_event prin time0 group_id) (path_to_tree_list t auth_p);
+  for_allP_eq (tree_has_event prin time1 group_id) (path_to_tree_list t auth_p)
+
+#push-options "--z3rlimit 25"
+val authenticate_path:
+  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
+  group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
+  LCrypto (pathsync dy_bytes tkt l 0 li) pr
+  (requires fun t0 ->
+    external_path_to_path_pre tree path group_id /\
+    external_path_has_pred p (trace_len t0) tree path group_id /\
+    external_pathsync_has_pre (is_publishable pr.global_usage (trace_len t0)) path /\
+    has_treesync_invariants tkt pr /\
+    has_leaf_node_tbs_invariant tkt pr.global_usage
+  )
+  (ensures fun t0 auth_path t1 ->
+    pathsync_has_pre (is_publishable pr.global_usage (trace_len t1)) auth_path /\
+    trace_len t1 == trace_len t0 + 1
+  )
+let authenticate_path #tkt #l pr p as_session gmgr_session group_id tree path =
+  let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
+  let now1 = global_timestamp () in
+  let group_session = find_group_sessions pr p gmgr_session group_id in
+  let st = get_public_treesync_state #tkt pr p group_session.si_public now1 in
+  let private_st = get_private_treesync_state pr p group_session.si_private in
+  guard pr (
+    (group_id = st.group_id) &&
+    (l = st.levels) &&
+    (tree = st.tree) &&
+    (external_path_to_path_pre tree path group_id) &&
+    (path_is_filter_valid tree path) &&
+    (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
+    (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
+  );
+  let auth_path = external_path_to_path tree path group_id private_st.signature_key signature_nonce in
+  external_pathsync_has_pre_weaken (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) path;
+  external_path_has_pred_later p now0 now1 tree path group_id;
+  is_publishable_external_path_to_path pr.global_usage p now1 tree path group_id private_st.signature_key signature_nonce;
+  auth_path
+#pop-options

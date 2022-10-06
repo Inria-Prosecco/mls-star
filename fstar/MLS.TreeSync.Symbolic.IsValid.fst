@@ -61,6 +61,87 @@ val pre_is_hash_compatible: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:(bytes
 let pre_is_hash_compatible #bytes #cb pre =
   forall b. (pre b /\ length b < hash_max_input_length #bytes) ==> pre (hash_hash b)
 
+(*** Weakening lemmas ***)
+
+val value_has_pre_weaken:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> {|parseable_serializeable bytes a|} ->
+  pre_strong:bytes_compatible_pre bytes -> pre_weak:bytes_compatible_pre bytes ->
+  x:a -> Lemma
+  (requires value_has_pre pre_strong x /\ (forall b. pre_strong b ==> pre_weak b))
+  (ensures value_has_pre pre_weak x)
+let value_has_pre_weaken #bytes #bl #a #ps_a pre_strong pre_weak x =
+  parse_serialize_inv_lemma #bytes a x;
+  serialize_pre_lemma a pre_strong x;
+  parse_pre_lemma a pre_weak (serialize _ x)
+
+val option_has_pre_weaken:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> {|parseable_serializeable bytes a|} ->
+  pre_strong:bytes_compatible_pre bytes -> pre_weak:bytes_compatible_pre bytes ->
+  opt_x:option a -> Lemma
+  (requires option_has_pre pre_strong opt_x /\ (forall b. pre_strong b ==> pre_weak b))
+  (ensures option_has_pre pre_weak opt_x)
+let option_has_pre_weaken #bytes #bl #a #ps_a pre_strong pre_weak opt_x =
+  match opt_x with
+  | None -> ()
+  | Some x ->
+    value_has_pre_weaken pre_strong pre_weak x
+
+val treesync_has_pre_weaken:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  pre_strong:bytes_compatible_pre bytes -> pre_weak:bytes_compatible_pre bytes ->
+  t:treesync bytes tkt l i -> Lemma
+  (requires treesync_has_pre pre_strong t /\ (forall b. pre_strong b ==> pre_weak b))
+  (ensures treesync_has_pre pre_weak t)
+let rec treesync_has_pre_weaken #bytes #bl #tkt #l #i pre_strong pre_weak t =
+  match t with
+  | TLeaf oln -> option_has_pre_weaken pre_strong pre_weak oln
+  | TNode opn left right -> (
+    treesync_has_pre_weaken pre_strong pre_weak left;
+    treesync_has_pre_weaken pre_strong pre_weak right;
+    option_has_pre_weaken pre_strong pre_weak opn
+  )
+
+val pathsync_has_pre_weaken:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  pre_strong:bytes_compatible_pre bytes -> pre_weak:bytes_compatible_pre bytes ->
+  p:pathsync bytes tkt l i li ->
+  Lemma
+  (requires pathsync_has_pre pre_strong p /\ (forall b. pre_strong b ==> pre_weak b))
+  (ensures pathsync_has_pre pre_weak p)
+let rec pathsync_has_pre_weaken #bytes #bl #tkt #l #i pre_strong pre_weak p =
+  match p with
+  | PLeaf ln ->
+    value_has_pre_weaken pre_strong pre_weak (ln <: leaf_node_nt bytes tkt)
+  | PNode opt_content p_next ->
+    pathsync_has_pre_weaken pre_strong pre_weak p_next;
+    match opt_content with
+    | None -> ()
+    | Some content -> (
+      MLS.MiscLemmas.comparse_is_valid_weaken tkt.ps_node_content pre_strong pre_weak content
+    )
+
+val external_pathsync_has_pre_weaken:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  pre_strong:bytes_compatible_pre bytes -> pre_weak:bytes_compatible_pre bytes ->
+  p:external_pathsync bytes tkt l i li ->
+  Lemma
+  (requires external_pathsync_has_pre pre_strong p /\ (forall b. pre_strong b ==> pre_weak b))
+  (ensures external_pathsync_has_pre pre_weak p)
+let rec external_pathsync_has_pre_weaken #bytes #bl #tkt #l #i pre_strong pre_weak p =
+  match p with
+  | PLeaf ln_data ->
+    MLS.MiscLemmas.comparse_is_valid_weaken (ps_leaf_node_data_nt tkt) pre_strong pre_weak ln_data
+  | PNode opt_content p_next ->
+    external_pathsync_has_pre_weaken pre_strong pre_weak p_next;
+    match opt_content with
+    | None -> ()
+    | Some content -> (
+      MLS.MiscLemmas.comparse_is_valid_weaken tkt.ps_node_content pre_strong pre_weak content
+    )
+
 (*** Invariant proofs ***)
 
 val treesync_has_pre_tree_change_path: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) -> Lemma

@@ -270,6 +270,12 @@ val readers_is_injective: x:principal -> y:principal -> Lemma
 let readers_is_injective x y =
   SecrecyLabels.readers_is_injective x
 
+val can_flow_transitive: time:timestamp -> l1:label -> l2:label -> l3:label -> Lemma
+  (requires can_flow time l1 l2 /\ can_flow time l2 l3)
+  (ensures can_flow time l1 l3)
+let can_flow_transitive time l1 l2 l3 =
+  LabeledCryptoAPI.can_flow_transitive time l1 l2 l3
+
 (*** Labeled signature predicate ***)
 
 val get_mls_label_inj: l1:valid_label -> l2:valid_label -> Lemma
@@ -314,8 +320,8 @@ val has_sign_pred: global_usage -> valid_label -> sign_pred -> prop
 let has_sign_pred gu lab spred =
   has_local_pred split_sign_pred_func (global_usage_to_global_pred gu) lab (sign_pred_to_local_pred spred)
 
-val get_mls_label_is_valid: gu:global_usage -> time:timestamp -> lab:valid_label -> Lemma (is_valid gu time (get_mls_label #dy_bytes lab))
-let get_mls_label_is_valid gu time lab =
+val get_mls_label_is_publishable: gu:global_usage -> time:timestamp -> lab:valid_label -> Lemma (is_publishable gu time (get_mls_label #dy_bytes lab))
+let get_mls_label_is_publishable gu time lab =
   LabeledCryptoAPI.string_to_bytes_lemma #gu #time "MLS 1.0 ";
   LabeledCryptoAPI.string_to_bytes_lemma #gu #time lab;
   let bytes_mls = string_to_bytes #dy_bytes "MLS 1.0 " in
@@ -325,6 +331,7 @@ let get_mls_label_is_valid gu time lab =
 // We can omit the `is_publishable` disjunction in the precondition,
 // because it will never be used inside a protocol security proof.
 // It can however be used to demonstrate attacks, but that is not our goal.
+#push-options "--z3rlimit 25"
 val sign_with_label_valid: gu:global_usage -> spred:sign_pred -> usg:string -> time:timestamp -> sk:sign_private_key dy_bytes -> lab:valid_label -> msg:mls_bytes dy_bytes -> nonce:sign_nonce dy_bytes -> Lemma
   (requires
     sign_with_label_pre #dy_bytes lab (length #dy_bytes msg) /\
@@ -334,18 +341,24 @@ val sign_with_label_valid: gu:global_usage -> spred:sign_pred -> usg:string -> t
     is_valid gu time msg /\
     has_sign_pred gu lab spred /\ (exists time_sig. time_sig <$ time /\ spred usg time_sig (CryptoLib.vk sk) msg)
   )
-  (ensures is_valid gu time (sign_with_label sk lab msg nonce))
+  (ensures
+    is_valid gu time (sign_with_label sk lab msg nonce) /\
+    can_flow time (get_label gu (sign_with_label sk lab msg nonce)) (get_label gu msg)
+  )
 let sign_with_label_valid gu spred usg time sk lab msg nonce =
   assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
-  get_mls_label_is_valid gu time lab;
+  get_mls_label_is_publishable gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label #dy_bytes lab;
     content = msg;
   } in
   serialize_pre_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
+  serialize_pre_lemma (sign_content_nt dy_bytes) (is_msg gu (get_label gu msg) time) sign_content;
   parse_serialize_inv_lemma #dy_bytes (sign_content_nt dy_bytes) sign_content;
   let sign_content_bytes: dy_bytes = serialize (sign_content_nt dy_bytes) sign_content in
-  LabeledCryptoAPI.sign_lemma #gu #time #(get_label gu sk) #SecrecyLabels.private_label sk nonce sign_content_bytes
+  LabeledCryptoAPI.sign_lemma #gu #time #(get_label gu sk) #(get_label gu sign_content_bytes) sk nonce sign_content_bytes;
+  can_flow_transitive time (get_label gu (CryptoLib.sign sk nonce sign_content_bytes)) (get_label gu sign_content_bytes) (get_label gu msg)
+#pop-options
 
 val verify_with_label_is_valid: gu:global_usage -> spred:sign_pred -> usg:string -> sk_label:label -> time:timestamp -> vk:sign_public_key dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:sign_signature dy_bytes -> Lemma
   (requires
@@ -359,7 +372,7 @@ val verify_with_label_is_valid: gu:global_usage -> spred:sign_pred -> usg:string
   (ensures can_flow time sk_label public \/ (exists time_sig. time_sig <$ time /\ spred usg time_sig vk content))
 let verify_with_label_is_valid gu spred usg sk_label time vk lab content signature =
   assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
-  get_mls_label_is_valid gu time lab;
+  get_mls_label_is_publishable gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label #dy_bytes lab;
     content = content;
