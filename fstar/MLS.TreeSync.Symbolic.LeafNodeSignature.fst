@@ -388,7 +388,7 @@ let state_implies_event #tkt #l #i gu time st t ast =
   all_credentials_ok_subtree t st.tree ast st.tokens;
   parent_hash_implies_event gu time st.group_id t ast
 
-(*** Proof of signature ***)
+(*** Proof of path signature ***)
 
 val external_path_to_path_aux_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> Pure (leaf_node_nt bytes tkt)
   (requires external_path_to_path_pre t p group_id)
@@ -489,7 +489,9 @@ let external_path_has_pred #tkt #l #li prin time t p group_id =
   leaf_node_has_event prin time ({data = auth_ln.data; group_id; leaf_index = li;}) /\
   tree_list_has_pred time prin group_id (path_to_tree_list t auth_p)
 
-// Main (and generic) theorem about external_path_to_path
+// This theorem can be instantiated with various labels to prove more specific theorems.
+// With label = SecrecyLabels.public, we get a version with `is_publishable`.
+// With label= SecrecyLabels.private_label, we get a version with `is_valid`.
 #push-options "--z3rlimit 50"
 val is_msg_external_path_to_path:
   #tkt:treekem_types dy_bytes ->
@@ -546,57 +548,59 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
   pre_set_path_leaf (is_msg gu label time) p new_ln
 #pop-options
 
-// A specific instance of the previous theorem (with is_valid)
-val is_valid_external_path_to_path:
-  #tkt:treekem_types dy_bytes ->
-  #l:nat -> #li:leaf_index l 0 ->
-  gu:global_usage -> prin:principal -> time:timestamp ->
-  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
-  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
-  Lemma
-  (requires
-    external_path_to_path_pre t p group_id /\
-    path_is_filter_valid t p /\
-    unmerged_leaves_ok t /\
-    external_path_has_pred prin time t p group_id /\
-    treesync_has_pre (is_valid gu time) t /\
-    external_pathsync_has_pre (is_valid gu time) p /\
-    is_valid gu time group_id /\
-    is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
-    is_valid gu time nonce /\
-    get_label gu sk == readers [p_id prin] /\
-    get_label gu nonce == readers [p_id prin] /\
-    has_leaf_node_tbs_invariant tkt gu
-  )
-  (ensures pathsync_has_pre (is_valid gu time) (external_path_to_path t p group_id sk nonce))
-let is_valid_external_path_to_path #tkt #l #li gu prin time t p group_id sk nonce =
-    treesync_has_pre_weaken (is_valid gu time) (is_msg gu SecrecyLabels.private_label time) t;
-    external_pathsync_has_pre_weaken (is_valid gu time) (is_msg gu SecrecyLabels.private_label time) p;
-    is_msg_external_path_to_path gu prin SecrecyLabels.private_label time t p group_id sk nonce;
-    pathsync_has_pre_weaken (is_msg gu SecrecyLabels.private_label time) (is_valid gu time) (external_path_to_path t p group_id sk nonce)
+(*** Proof of individual leaf signature ***)
 
-// A specific instance of the previous theorem (with is_publishable)
-val is_publishable_external_path_to_path:
+val is_msg_sign_leaf_node_data_key_package:
   #tkt:treekem_types dy_bytes ->
-  #l:nat -> #li:leaf_index l 0 ->
-  gu:global_usage -> prin:principal -> time:timestamp ->
-  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  gu:global_usage -> prin:principal -> label:label -> time:timestamp ->
+  ln_data:leaf_node_data_nt dy_bytes tkt ->
   sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
-    external_path_to_path_pre t p group_id /\
-    path_is_filter_valid t p /\
-    unmerged_leaves_ok t /\
-    external_path_has_pred prin time t p group_id /\
-    treesync_has_pre (is_publishable gu time) t /\
-    external_pathsync_has_pre (is_publishable gu time) p /\
-    is_publishable gu time group_id /\
+    ln_data.source == LNS_key_package () /\
+    sign_leaf_node_data_key_package_pre ln_data /\
+    leaf_node_has_event prin time ({data = ln_data; group_id = (); leaf_index = ();}) /\
+    (ps_leaf_node_data_nt tkt).is_valid (is_msg gu label time) ln_data /\
     is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
     is_valid gu time nonce /\
     get_label gu sk == readers [p_id prin] /\
     get_label gu nonce == readers [p_id prin] /\
     has_leaf_node_tbs_invariant tkt gu
   )
-  (ensures pathsync_has_pre (is_publishable gu time) (external_path_to_path t p group_id sk nonce))
-let is_publishable_external_path_to_path #tkt #l #li gu prin time t p group_id sk nonce =
-    is_msg_external_path_to_path gu prin SecrecyLabels.public time t p group_id sk nonce
+  (ensures value_has_pre (is_msg gu label time) (sign_leaf_node_data_key_package ln_data sk nonce))
+let is_msg_sign_leaf_node_data_key_package #tkt gu prin label time ln_data sk nonce =
+  let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id = (); leaf_index = ();}) in
+  let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
+  parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
+  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ln_tbs;
+  sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" ln_tbs_bytes nonce
+
+#push-options "--z3rlimit 25"
+val is_msg_sign_leaf_node_data_update:
+  #tkt:treekem_types dy_bytes ->
+  gu:global_usage -> prin:principal -> label:label -> time:timestamp ->
+  ln_data:leaf_node_data_nt dy_bytes tkt -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
+  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
+  Lemma
+  (requires
+    ln_data.source == LNS_update () /\
+    sign_leaf_node_data_update_pre ln_data group_id /\
+    leaf_node_has_event prin time ({data = ln_data; group_id; leaf_index;}) /\
+    tree_has_event prin time group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
+    (ps_leaf_node_data_nt tkt).is_valid (is_msg gu label time) ln_data /\
+    is_msg gu label time group_id /\
+    is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
+    is_valid gu time nonce /\
+    get_label gu sk == readers [p_id prin] /\
+    get_label gu nonce == readers [p_id prin] /\
+    has_leaf_node_tbs_invariant tkt gu
+  )
+  (ensures value_has_pre (is_msg gu label time) (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce))
+let is_msg_sign_leaf_node_data_update #tkt gu prin label time ln_data group_id leaf_index sk nonce =
+  let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id; leaf_index;}) in
+  let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
+  parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
+  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ln_tbs;
+  LabeledCryptoAPI.vk_lemma #gu #time #(readers [p_id prin]) sk;
+  sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" ln_tbs_bytes nonce
+#pop-options

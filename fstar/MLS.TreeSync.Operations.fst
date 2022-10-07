@@ -254,3 +254,45 @@ let rec un_addP #bytes #bl #tkt #l #i t pred =
       unmerged_leaves = List.Tot.filter pred content.unmerged_leaves;
     } in
     TNode (Some new_content) (un_addP left pred) (un_addP right pred)
+
+val sign_leaf_node_data_key_package_pre:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  ln_data:leaf_node_data_nt bytes tkt ->
+  bool
+let sign_leaf_node_data_key_package_pre #bytes #cb #tkt ln_data =
+  let tbs_length = (prefixes_length #bytes ((ps_leaf_node_data_nt tkt).serialize ln_data)) in
+  tbs_length < pow2 30 &&
+  sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
+
+val sign_leaf_node_data_key_package:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  ln_data:leaf_node_data_nt bytes tkt ->
+  sign_private_key bytes -> sign_nonce bytes ->
+  Pure (leaf_node_nt bytes tkt)
+  (requires ln_data.source = LNS_key_package() /\ sign_leaf_node_data_key_package_pre ln_data)
+  (ensures fun _ -> True)
+let sign_leaf_node_data_key_package #bytes #cb #tkt ln_data sign_key nonce =
+  let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id = (); leaf_index = ();}) in
+  let signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
+  ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)
+
+val sign_leaf_node_data_update_pre:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  ln_data:leaf_node_data_nt bytes tkt -> group_id:mls_bytes bytes ->
+  bool
+let sign_leaf_node_data_update_pre #bytes #cb #tkt ln_data group_id =
+  let tbs_length = (prefixes_length #bytes ((ps_leaf_node_data_nt tkt).serialize ln_data)) + 4 + (length #bytes group_id) + 4 in
+  tbs_length < pow2 30 &&
+  sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
+
+val sign_leaf_node_data_update:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  ln_data:leaf_node_data_nt bytes tkt -> group_id:mls_bytes bytes -> leaf_index:nat_lbytes 4 ->
+  sign_private_key bytes -> sign_nonce bytes ->
+  Pure (leaf_node_nt bytes tkt)
+  (requires ln_data.source = LNS_update() /\ sign_leaf_node_data_update_pre ln_data group_id)
+  (ensures fun _ -> True)
+let sign_leaf_node_data_update #bytes #cb #tkt ln_data group_id leaf_index sign_key nonce =
+  let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id; leaf_index;}) in
+  let signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
+  ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)

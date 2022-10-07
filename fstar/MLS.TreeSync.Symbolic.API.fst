@@ -50,7 +50,8 @@ let has_treesync_invariants tkt pr =
   has_treesync_private_state_invariant pr /\
   has_group_manager_invariant pr /\
   has_key_package_manager_invariant tkt pr /\
-  has_as_cache_invariant pr
+  has_as_cache_invariant pr /\
+  has_leaf_node_tbs_invariant tkt pr.global_usage
 
 val get_token_for:
   pr:preds -> p:principal -> as_session:nat ->
@@ -285,8 +286,7 @@ val authenticate_path:
     external_path_to_path_pre tree path group_id /\
     external_path_has_pred p (trace_len t0) tree path group_id /\
     external_pathsync_has_pre (is_publishable pr.global_usage (trace_len t0)) path /\
-    has_treesync_invariants tkt pr /\
-    has_leaf_node_tbs_invariant tkt pr.global_usage
+    has_treesync_invariants tkt pr
   )
   (ensures fun t0 auth_path t1 ->
     pathsync_has_pre (is_publishable pr.global_usage (trace_len t1)) auth_path /\
@@ -310,6 +310,66 @@ let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
   let auth_path = external_path_to_path tree path group_id private_st.signature_key signature_nonce in
   external_pathsync_has_pre_weaken (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) path;
   external_path_has_pred_later p now0 now1 tree path group_id;
-  is_publishable_external_path_to_path pr.global_usage p now1 tree path group_id private_st.signature_key signature_nonce;
+  is_msg_external_path_to_path pr.global_usage p SecrecyLabels.public now1 tree path group_id private_st.signature_key signature_nonce;
   auth_path
 #pop-options
+
+val authenticate_leaf_node_data_from_key_package:
+  #tkt:treekem_types dy_bytes ->
+  pr:preds -> p:principal ->
+  si_private:nat ->
+  ln_data:leaf_node_data_nt dy_bytes tkt ->
+  LCrypto (leaf_node_nt dy_bytes tkt) pr
+  (requires fun t0 ->
+    ln_data.source == LNS_key_package () /\
+    (ps_leaf_node_data_nt tkt).is_valid (is_publishable pr.global_usage (trace_len t0)) ln_data /\
+    leaf_node_has_event p (trace_len t0) ({data = ln_data; group_id = (); leaf_index = ();}) /\
+    has_treesync_invariants tkt pr
+  )
+  (ensures fun t0 ln t1 ->
+    value_has_pre (is_publishable pr.global_usage (trace_len t1)) ln /\
+    trace_len t1 == trace_len t0 + 1
+  )
+let authenticate_leaf_node_data_from_key_package #tkt pr p si_private ln_data =
+  let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
+  let now1 = global_timestamp () in
+  let private_st = get_private_treesync_state pr p si_private in
+  guard pr (
+    sign_leaf_node_data_key_package_pre ln_data &&
+    (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
+    (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
+  );
+  MLS.MiscLemmas.comparse_is_valid_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
+  is_msg_sign_leaf_node_data_key_package pr.global_usage p SecrecyLabels.public now1 ln_data private_st.signature_key signature_nonce;
+  sign_leaf_node_data_key_package ln_data private_st.signature_key signature_nonce
+
+val authenticate_leaf_node_data_from_update:
+  #tkt:treekem_types dy_bytes ->
+  pr:preds -> p:principal ->
+  si_private:nat ->
+  ln_data:leaf_node_data_nt dy_bytes tkt -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
+  LCrypto (leaf_node_nt dy_bytes tkt) pr
+  (requires fun t0 ->
+    ln_data.source == LNS_update () /\
+    (ps_leaf_node_data_nt tkt).is_valid (is_publishable pr.global_usage (trace_len t0)) ln_data /\
+    is_publishable pr.global_usage (trace_len t0) group_id /\
+    leaf_node_has_event p (trace_len t0) ({data = ln_data; group_id; leaf_index;}) /\
+    tree_has_event p (trace_len t0) group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
+    has_treesync_invariants tkt pr
+  )
+  (ensures fun t0 ln t1 ->
+    value_has_pre (is_publishable pr.global_usage (trace_len t1)) ln /\
+    trace_len t1 == trace_len t0 + 1
+  )
+let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_id leaf_index =
+  let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
+  let now1 = global_timestamp () in
+  let private_st = get_private_treesync_state pr p si_private in
+  guard pr (
+    sign_leaf_node_data_update_pre ln_data group_id &&
+    (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
+    (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
+  );
+  MLS.MiscLemmas.comparse_is_valid_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
+  is_msg_sign_leaf_node_data_update pr.global_usage p SecrecyLabels.public now1 ln_data group_id leaf_index private_st.signature_key signature_nonce;
+  sign_leaf_node_data_update ln_data group_id leaf_index private_st.signature_key signature_nonce
