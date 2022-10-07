@@ -48,6 +48,15 @@ let dy_asp gu current_time = {
   );
 }
 
+val leaf_node_to_event: #tkt:treekem_types dy_bytes -> leaf_node_tbs_nt dy_bytes tkt -> event
+let leaf_node_to_event #tkt ln_tbs =
+  let evt_bytes = serialize _ ln_tbs in
+  ("MLS.TreeSync.LeafNodeEvent", [evt_bytes])
+
+val leaf_node_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> leaf_node_tbs_nt dy_bytes tkt -> prop
+let leaf_node_has_event #tkt prin time ln_tbs =
+  did_event_occur_before time prin (leaf_node_to_event ln_tbs)
+
 type group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   group_id: mls_bytes bytes;
   [@@@ with_parser #bytes ps_nat]
@@ -73,13 +82,12 @@ let tree_has_event_arithmetic_lemma l i =
   )
 #pop-options
 
-val leaf_node_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> leaf_node_tbs_nt dy_bytes tkt -> prop
-let leaf_node_has_event #tkt prin time ln_tbs =
-  let evt_bytes = serialize _ ln_tbs in
-  did_event_occur_before time prin ("MLS.TreeSync.LeafNodeEvent", [evt_bytes])
-
-val tree_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> prop
-let tree_has_event #tkt prin time group_id (|l, i, t|) =
+val tree_to_event:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #i:tree_index l ->
+  mls_bytes dy_bytes -> treesync dy_bytes tkt l i ->
+  event
+let tree_to_event #tkt #l #i group_id t =
   tree_has_event_arithmetic_lemma l i;
   let evt: group_has_tree_event dy_bytes tkt = {
     group_id;
@@ -88,7 +96,11 @@ let tree_has_event #tkt prin time group_id (|l, i, t|) =
     t;
   } in
   let evt_bytes = serialize _ evt in
-  did_event_occur_before time prin ("MLS.TreeSync.GroupHasTreeEvent", [evt_bytes])
+  ("MLS.TreeSync.GroupHasTreeEvent", [evt_bytes])
+
+val tree_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> prop
+let tree_has_event #tkt prin time group_id (|l, i, t|) =
+  did_event_occur_before time prin (tree_to_event group_id t)
 
 val tree_has_equivalent_event: #l:nat -> #i:tree_index l -> tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> treesync dy_bytes tkt l i -> leaf_index l i -> prop
 let tree_has_equivalent_event #l #i tkt prin time group_id t li =

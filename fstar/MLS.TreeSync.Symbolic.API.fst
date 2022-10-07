@@ -278,7 +278,7 @@ let external_path_has_pred_later #tkt #l #li prin time0 time1 t p group_id =
 #push-options "--z3rlimit 25"
 val authenticate_path:
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
-  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
+  pr:preds -> p:principal -> gmgr_session:nat ->
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
   LCrypto (pathsync dy_bytes tkt l 0 li) pr
   (requires fun t0 ->
@@ -292,7 +292,7 @@ val authenticate_path:
     pathsync_has_pre (is_publishable pr.global_usage (trace_len t1)) auth_path /\
     trace_len t1 == trace_len t0 + 1
   )
-let authenticate_path #tkt #l pr p as_session gmgr_session group_id tree path =
+let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
   let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
   let now1 = global_timestamp () in
   let group_session = find_group_sessions pr p gmgr_session group_id in
