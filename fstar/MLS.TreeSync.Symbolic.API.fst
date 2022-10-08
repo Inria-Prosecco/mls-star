@@ -153,19 +153,19 @@ let welcome #tkt pr p as_session gmgr_session kpmgr_session my_key_package group
 val add:
   #tkt:treekem_types dy_bytes ->
   pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
-  group_id:mls_bytes dy_bytes -> kp:key_package_nt dy_bytes tkt ->
+  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
   LCrypto nat pr
   (requires fun t0 ->
-    value_has_pre (is_publishable pr.global_usage (trace_len t0)) kp.tbs.leaf_node /\
+    value_has_pre (is_publishable pr.global_usage (trace_len t0)) ln /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 _ t1 -> trace_len t1 == trace_len t0 + 1)
-let add #tkt pr p as_session gmgr_session group_id kp =
+let add #tkt pr p as_session gmgr_session group_id ln =
   let now = global_timestamp () in
   let group_session = find_group_sessions pr p gmgr_session group_id in
   let st = get_public_treesync_state #tkt pr p group_session.si_public now in
 
-  let add_pend = extract_result pr (prepare_add st kp) in
+  let add_pend = extract_result pr (prepare_add st ln) in
   let token = get_token_for pr p as_session add_pend.as_input in
   let (new_st, new_leaf_index) = finalize_add add_pend token in
   finalize_add_has_pre (is_publishable pr.global_usage now) add_pend token;

@@ -115,7 +115,8 @@ val process_proposal: nat -> state -> proposal bytes -> result state
 let process_proposal sender_id st p =
   match p with
   | Add key_package ->
-    let? add_pend = MLS.TreeSync.API.prepare_add st.treesync_state key_package in
+    //TODO key package signature check
+    let? add_pend = MLS.TreeSync.API.prepare_add st.treesync_state key_package.tbs.leaf_node in
     // TODO AS check
     let (treesync_state, _) = MLS.TreeSync.API.finalize_add add_pend () in
     assume (length #bytes key_package.tbs.leaf_node.data.content = hpke_public_key_length #bytes);

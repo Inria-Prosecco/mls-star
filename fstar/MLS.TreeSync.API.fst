@@ -201,43 +201,41 @@ let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
 
 (*** Add ***)
 
-let pending_add_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (kp:key_package_nt bytes tkt) =
+let pending_add_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) =
   squash (
-    kp.tbs.leaf_node.data.source == LNS_key_package () /\
-    True /\ ( //TODO: check key package signature
+    ln.data.source == LNS_key_package () /\ ( //TODO: check key package signature
       match find_empty_leaf st.tree with
       | Some li ->
         tree_add_pre st.tree li /\
-        leaf_is_valid kp.tbs.leaf_node st.group_id li
+        leaf_is_valid ln st.group_id li
       | None ->
         find_empty_leaf_tree_extend st.tree;
         let extended_tree = tree_extend st.tree in
         let li = Some?.v (find_empty_leaf extended_tree) in
         tree_add_pre extended_tree li /\
-        leaf_is_valid kp.tbs.leaf_node st.group_id li
+        leaf_is_valid ln st.group_id li
     )
   )
 
-type pending_add (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (kp:key_package_nt bytes tkt) = {
-  can_add_proof: pending_add_proof st kp;
-  as_input: as_input_for kp.tbs.leaf_node;
+type pending_add (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) = {
+  can_add_proof: pending_add_proof st ln;
+  as_input: as_input_for ln;
 }
 
 type token_for_add
   (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
-  (#st:treesync_state bytes tkt asp) (#kp:key_package_nt bytes tkt)
-  (pend:pending_add st kp) =
+  (#st:treesync_state bytes tkt asp) (#ln:leaf_node_nt bytes tkt)
+  (pend:pending_add st ln) =
   as_token_for asp pend.as_input
 
 val prepare_add:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
-  st:treesync_state bytes tkt asp -> kp:key_package_nt bytes tkt ->
-  result (pending_add st kp)
-let prepare_add #bytes #cb #tkt #asp st kp =
-  if not (kp.tbs.leaf_node.data.source = LNS_key_package ()) then
+  st:treesync_state bytes tkt asp -> ln:leaf_node_nt bytes tkt ->
+  result (pending_add st ln)
+let prepare_add #bytes #cb #tkt #asp st ln =
+  if not (ln.data.source = LNS_key_package ()) then
     error "prepare_add: source is not key_package"
   else (
-    let ln = kp.tbs.leaf_node in
     match find_empty_leaf st.tree with
     | Some li ->
       if not (tree_add_pre st.tree li) then
@@ -268,12 +266,11 @@ let prepare_add #bytes #cb #tkt #asp st kp =
 
 val finalize_add:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
-  #st:treesync_state bytes tkt asp -> #kp:key_package_nt bytes tkt ->
-  pend:pending_add st kp -> token:token_for_add pend ->
+  #st:treesync_state bytes tkt asp -> #ln:leaf_node_nt bytes tkt ->
+  pend:pending_add st ln -> token:token_for_add pend ->
   treesync_state bytes tkt asp & nat
-let finalize_add #bytes #cb #tkt #asp #st #kp pend token =
+let finalize_add #bytes #cb #tkt #asp #st #ln pend token =
   pend.can_add_proof;
-  let ln = kp.tbs.leaf_node in
   match find_empty_leaf st.tree with
   | Some li -> (
     all_credentials_ok_tree_add st.tree st.tokens li ln token;

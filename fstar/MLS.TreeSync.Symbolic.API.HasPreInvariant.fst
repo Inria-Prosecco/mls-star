@@ -43,16 +43,15 @@ let finalize_welcome_has_pre #bytes #cb #tkt #asp #l #group_id #t pre pend token
 
 val finalize_add_has_pre:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
-  #st:treesync_state bytes tkt asp -> #kp:key_package_nt bytes tkt ->
+  #st:treesync_state bytes tkt asp -> #ln:leaf_node_nt bytes tkt ->
   pre:bytes_compatible_pre bytes ->
-  pend:pending_add st kp -> token:token_for_add pend -> Lemma
-  (requires treesync_has_pre pre st.tree /\ value_has_pre pre kp.tbs.leaf_node)
+  pend:pending_add st ln -> token:token_for_add pend -> Lemma
+  (requires treesync_has_pre pre st.tree /\ value_has_pre pre ln)
   (ensures (
     let (new_state, _) = finalize_add pend token in
     treesync_has_pre pre new_state.tree
   ))
-let finalize_add_has_pre #bytes #cb #tkt #asp #st #kp pre pend token =
-  let ln = kp.tbs.leaf_node in
+let finalize_add_has_pre #bytes #cb #tkt #asp #st #ln pre pend token =
   match find_empty_leaf st.tree with
   | Some li -> (
     treesync_has_pre_tree_add pre st.tree li ln
