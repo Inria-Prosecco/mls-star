@@ -378,7 +378,7 @@ let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_i
 
 val tree_event_triggerable: #tkt:treekem_types dy_bytes -> pr:preds -> p:principal -> time:timestamp -> group_id:mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> prop
 let tree_event_triggerable pr p time group_id t =
-  LabeledRuntimeAPI.event_pred_at pr time p (tree_to_event group_id t)
+  event_pred_at pr p time (tree_to_event group_id t)
 
 val trigger_one_tree_event:
   #tkt:treekem_types dy_bytes ->
@@ -388,7 +388,7 @@ val trigger_one_tree_event:
   LCrypto unit pr
   (requires fun t0 -> now == trace_len t0)
   (ensures fun t0 () t1 ->
-    did_event_occur_before (trace_len t1) p (tree_to_event group_id t) /\
+    did_event_occur_before p (trace_len t1) (tree_to_event group_id t) /\
     trace_len t1 == trace_len t0 + 1
   )
 let trigger_one_tree_event #tkt pr p now group_id t proof =
@@ -431,7 +431,7 @@ val trigger_leaf_node_event:
   pr:preds -> p:principal ->
   ln_tbs:leaf_node_tbs_nt dy_bytes tkt ->
   LCrypto unit pr
-  (requires fun t0 -> LabeledRuntimeAPI.event_pred_at pr (trace_len t0) p (leaf_node_to_event ln_tbs))
+  (requires fun t0 -> event_pred_at pr p (trace_len t0) (leaf_node_to_event ln_tbs))
   (ensures fun t0 () t1 ->
     leaf_node_has_event p (trace_len t1) ln_tbs /\
     trace_len t1 == trace_len t0 + 1

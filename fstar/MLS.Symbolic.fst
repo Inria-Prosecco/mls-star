@@ -169,6 +169,9 @@ let key_usages = LabeledCryptoAPI.key_usages
 val global_usage: Type u#1
 let global_usage = LabeledCryptoAPI.global_usage
 
+val preds: Type u#1
+let preds = LabeledRuntimeAPI.preds
+
 val label: Type0
 let label = SecrecyLabels.label
 
@@ -245,8 +248,11 @@ let is_verification_key_to_signkey_label gu usg sk_lab time vk =
 val event: Type0
 let event = CryptoEffect.event
 
-val did_event_occur_before: timestamp -> principal -> event -> prop
-let did_event_occur_before time prin e = GlobalRuntimeLib.did_event_occur_before time prin e
+val did_event_occur_before: principal -> timestamp -> event -> prop
+let did_event_occur_before prin time e = GlobalRuntimeLib.did_event_occur_before time prin e
+
+val event_pred_at: preds -> principal -> timestamp -> event -> prop
+let event_pred_at pr prin time e = LabeledRuntimeAPI.event_pred_at pr time prin e
 
 val hash_hash_inj: b1:dy_bytes -> b2:dy_bytes -> Lemma (
   length b1 < hash_max_input_length #dy_bytes /\
