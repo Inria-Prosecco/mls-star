@@ -425,3 +425,16 @@ let rec trigger_tree_list_event #tkt pr p now group_id tl event_tl_proof =
     ))
   )
 #pop-options
+
+val trigger_leaf_node_event:
+  #tkt:treekem_types dy_bytes ->
+  pr:preds -> p:principal ->
+  ln_tbs:leaf_node_tbs_nt dy_bytes tkt ->
+  LCrypto unit pr
+  (requires fun t0 -> LabeledRuntimeAPI.event_pred_at pr (trace_len t0) p (leaf_node_to_event ln_tbs))
+  (ensures fun t0 () t1 ->
+    leaf_node_has_event p (trace_len t1) ln_tbs /\
+    trace_len t1 == trace_len t0 + 1
+  )
+let trigger_leaf_node_event #tkt pr p ln_tbs =
+  trigger_event #pr p (leaf_node_to_event ln_tbs)
