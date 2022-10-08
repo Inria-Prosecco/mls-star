@@ -373,3 +373,55 @@ let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_i
   MLS.MiscLemmas.comparse_is_valid_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
   is_msg_sign_leaf_node_data_update pr.global_usage p SecrecyLabels.public now1 ln_data group_id leaf_index private_st.signature_key signature_nonce;
   sign_leaf_node_data_update ln_data group_id leaf_index private_st.signature_key signature_nonce
+
+(*** Trigger events ***)
+
+val tree_event_triggerable: #tkt:treekem_types dy_bytes -> pr:preds -> p:principal -> time:timestamp -> group_id:mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> prop
+let tree_event_triggerable pr p time group_id t =
+  LabeledRuntimeAPI.event_pred_at pr time p (tree_to_event group_id t)
+
+val trigger_one_tree_event:
+  #tkt:treekem_types dy_bytes ->
+  pr:preds -> p:principal -> now:timestamp ->
+  group_id:mls_bytes dy_bytes -> t:(l:nat & i:tree_index l & treesync dy_bytes tkt l i) ->
+  squash (tree_event_triggerable pr p now group_id t) ->
+  LCrypto unit pr
+  (requires fun t0 -> now == trace_len t0)
+  (ensures fun t0 () t1 ->
+    did_event_occur_before (trace_len t1) p (tree_to_event group_id t) /\
+    trace_len t1 == trace_len t0 + 1
+  )
+let trigger_one_tree_event #tkt pr p now group_id t proof =
+  trigger_event #pr p (tree_to_event group_id t)
+
+#push-options "--fuel 1 --ifuel 1"
+val trigger_tree_list_event:
+  #tkt:treekem_types dy_bytes ->
+  pr:preds -> p:principal -> now:timestamp ->
+  group_id:mls_bytes dy_bytes -> tl:tree_list dy_bytes tkt ->
+  proof_list:(i:nat{i < List.Tot.length tl} -> squash (tree_event_triggerable pr p (now+i) group_id (List.Tot.index tl i))) ->
+  LCrypto unit pr
+  (requires fun t0 -> now == trace_len t0)
+  (ensures fun t0 () t1 ->
+    tree_list_has_pred (trace_len t1) p group_id tl /\
+    trace_len t1 == trace_len t0 + (List.Tot.length tl)
+  )
+  (decreases tl)
+let rec trigger_tree_list_event #tkt pr p now group_id tl event_tl_proof =
+  match tl with
+  | [] -> (
+    normalize_term_spec (tree_list_has_pred now p group_id tl)
+  )
+  | h::t -> (
+    // I lost so much time finding that F* needs the following assert
+    // WTF??? There is definitely a problem in SMT encoding
+    assert(Cons?.tl tl == t);
+    trigger_one_tree_event pr p now group_id h (event_tl_proof 0);
+    trigger_tree_list_event pr p (now+1) group_id t (fun i -> event_tl_proof (i+1));
+    let now_end = now + List.Tot.length tl in
+    assert_norm(tree_list_has_pred now_end p group_id tl <==> (
+      tree_has_event p now_end group_id h /\
+      tree_list_has_pred now_end p group_id t
+    ))
+  )
+#pop-options
