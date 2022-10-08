@@ -105,8 +105,8 @@ val tree_has_equivalent_event: #l:nat -> #i:tree_index l -> tkt:treekem_types dy
 let tree_has_equivalent_event #l #i tkt prin time group_id t li =
   (exists (t':treesync dy_bytes tkt l i). equivalent t t' li /\ tree_has_event prin time group_id (|l, i, t'|))
 
-val tree_list_has_pred: #tkt:treekem_types dy_bytes -> timestamp -> principal -> mls_bytes dy_bytes -> tree_list dy_bytes tkt -> prop
-let tree_list_has_pred #tkt time prin group_id tl =
+val tree_list_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> tree_list dy_bytes tkt -> prop
+let tree_list_has_event #tkt prin time group_id tl =
   for_allP (tree_has_event prin time group_id) tl
 
 val leaf_node_label: string
@@ -126,7 +126,7 @@ let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
           tree_list_starts_with_tbs tl ln_tbs_bytes /\
           tree_list_is_parent_hash_linkedP tl /\
           tree_list_ends_at_root tl /\
-          tree_list_has_pred time prin ln_tbs.group_id tl
+          tree_list_has_event prin time ln_tbs.group_id tl
       )
       | LNS_update () -> (
         get_signkey_label ku vk == readers [p_id prin] /\
@@ -285,7 +285,7 @@ let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
         tree_list_starts_with_tbs leaf_tl ln_tbs_bytes /\
         tree_list_is_parent_hash_linkedP leaf_tl /\
         tree_list_ends_at_root leaf_tl /\
-        tree_list_has_pred time_sig prin ln_tbs.group_id leaf_tl
+        tree_list_has_event prin time_sig ln_tbs.group_id leaf_tl
       returns tree_has_equivalent_event tkt authentifier time group_id t authentifier_li
       with _. (
         let (b1, b2) = parent_hash_guarantee_theorem my_tl leaf_tl ln_tbs_bytes in
@@ -486,7 +486,7 @@ let external_path_has_pred #tkt #l #li prin time t p group_id =
   let auth_p = external_path_to_path_nosig t p group_id in
   let auth_ln = get_path_leaf auth_p in
   leaf_node_has_event prin time ({data = auth_ln.data; group_id; leaf_index = li;}) /\
-  tree_list_has_pred time prin group_id (path_to_tree_list t auth_p)
+  tree_list_has_event prin time group_id (path_to_tree_list t auth_p)
 
 // This theorem can be instantiated with various labels to prove more specific theorems.
 // With label = SecrecyLabels.public, we get a version with `is_publishable`.
@@ -537,7 +537,7 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
     tree_list_starts_with_tbs tl new_ln_tbs_bytes /\
     tree_list_is_parent_hash_linkedP tl /\
     tree_list_ends_at_root tl /\
-    tree_list_has_pred time prin new_ln_tbs.group_id tl /\
+    tree_list_has_event prin time new_ln_tbs.group_id tl /\
     leaf_node_has_event prin time new_ln_tbs
   with prin tl and (
     LabeledCryptoAPI.vk_lemma #gu #time #(readers [p_id prin]) sk

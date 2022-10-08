@@ -403,14 +403,14 @@ val trigger_tree_list_event:
   LCrypto unit pr
   (requires fun t0 -> now == trace_len t0)
   (ensures fun t0 () t1 ->
-    tree_list_has_pred (trace_len t1) p group_id tl /\
+    tree_list_has_event p (trace_len t1) group_id tl /\
     trace_len t1 == trace_len t0 + (List.Tot.length tl)
   )
   (decreases tl)
 let rec trigger_tree_list_event #tkt pr p now group_id tl event_tl_proof =
   match tl with
   | [] -> (
-    normalize_term_spec (tree_list_has_pred now p group_id tl)
+    normalize_term_spec (tree_list_has_event p now group_id tl)
   )
   | h::t -> (
     // I lost so much time finding that F* needs the following assert
@@ -419,9 +419,9 @@ let rec trigger_tree_list_event #tkt pr p now group_id tl event_tl_proof =
     trigger_one_tree_event pr p now group_id h (event_tl_proof 0);
     trigger_tree_list_event pr p (now+1) group_id t (fun i -> event_tl_proof (i+1));
     let now_end = now + List.Tot.length tl in
-    assert_norm(tree_list_has_pred now_end p group_id tl <==> (
+    assert_norm(tree_list_has_event p now_end group_id tl <==> (
       tree_has_event p now_end group_id h /\
-      tree_list_has_pred now_end p group_id t
+      tree_list_has_event p now_end group_id t
     ))
   )
 #pop-options
