@@ -15,7 +15,7 @@ open MLS.TreeSync.API.Types
 open MLS.Symbolic
 open MLS.Symbolic.Session
 open MLS.Symbolic.TypedSession
-open MLS.Symbolic.Parsers
+open MLS.TreeSync.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 

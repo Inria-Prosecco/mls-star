@@ -18,7 +18,7 @@ open MLS.TreeSync.Invariants.AuthService.Proofs
 open MLS.TreeSync.Proofs.ParentHashGuarantees
 open MLS.TreeSync.API.Types
 open MLS.TreeSync.Symbolic.IsWellFormed
-open MLS.Symbolic.Parsers
+open MLS.TreeSync.Symbolic.Parsers
 open MLS.Symbolic
 
 #set-options "--fuel 1 --ifuel 1"

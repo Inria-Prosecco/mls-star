@@ -11,7 +11,7 @@ open MLS.TreeCommon
 open MLS.TreeSync.Operations
 open MLS.TreeSync.TreeHash
 open MLS.TreeSync.ParentHash
-open MLS.Symbolic.Parsers
+open MLS.TreeSync.Symbolic.Parsers
 
 #set-options "--fuel 1 --ifuel 1"
 
