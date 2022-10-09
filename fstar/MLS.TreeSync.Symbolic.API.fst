@@ -20,7 +20,7 @@ open MLS.TreeSync.Symbolic.API.Sessions
 open MLS.TreeSync.Symbolic.API.HasPreInvariant
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 open MLS.TreeSync.Symbolic.AuthServiceCache
-open MLS.TreeSync.Symbolic.IsValid
+open MLS.TreeSync.Symbolic.IsWellFormed
 
 #set-options "--fuel 0 --ifuel 0"
 

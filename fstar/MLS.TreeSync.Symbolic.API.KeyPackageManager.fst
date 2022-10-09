@@ -5,7 +5,7 @@ open MLS.TreeSync.NetworkTypes
 open LabeledRuntimeAPI
 open MLS.Symbolic
 open MLS.Symbolic.MapSession
-open MLS.TreeSync.Symbolic.IsValid
+open MLS.TreeSync.Symbolic.IsWellFormed
 
 (*** KeyPackage manager types & invariants ***)
 

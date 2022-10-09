@@ -9,7 +9,7 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
 open MLS.TreeSync.Invariants.AuthService
-open MLS.TreeSync.Symbolic.IsValid
+open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.API.Types
 open MLS.TreeSync.API
 

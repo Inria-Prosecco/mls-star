@@ -16,7 +16,7 @@ open MLS.Symbolic
 open MLS.Symbolic.Session
 open MLS.Symbolic.TypedSession
 open MLS.Symbolic.Parsers
-open MLS.TreeSync.Symbolic.IsValid
+open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 
 #set-options "--fuel 1 --ifuel 1"
@@ -88,7 +88,6 @@ let treesync_public_state_pred tkt =
       (fun gu p time si vi st ->
         let pre = is_msg gu (readers [psv_id p si vi]) time in
         treesync_has_pre_weaken (is_publishable gu time) pre st.tree;
-        ps_treesync_is_well_formed tkt st.levels 0 pre st.tree;
         ps_dy_as_tokens_is_well_formed pre st.tokens
       )
   )

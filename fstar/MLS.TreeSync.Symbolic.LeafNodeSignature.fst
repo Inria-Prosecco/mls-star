@@ -17,7 +17,7 @@ open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Invariants.AuthService.Proofs
 open MLS.TreeSync.Proofs.ParentHashGuarantees
 open MLS.TreeSync.API.Types
-open MLS.TreeSync.Symbolic.IsValid
+open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.Symbolic.Parsers
 open MLS.Symbolic
 
