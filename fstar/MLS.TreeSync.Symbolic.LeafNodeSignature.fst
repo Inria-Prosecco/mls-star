@@ -220,15 +220,19 @@ let rec leaf_at_valid_leaves #bytes #cb #tkt #l #i group_id t li =
     let (child, _) = get_child_sibling t li in
     leaf_at_valid_leaves group_id child li
 
-val leaf_at_has_pre: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> pre:bytes_compatible_pre bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> Lemma
-  (requires treesync_has_pre pre t)
-  (ensures option_has_pre pre (leaf_at t li))
-let rec leaf_at_has_pre #bytes #bl #tkt #l #i pre t li =
+val is_well_formed_leaf_at: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> pre:bytes_compatible_pre bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> Lemma
+  (requires is_well_formed _ pre t)
+  (ensures (
+    match leaf_at t li with
+    | None -> True
+    | Some ln -> is_well_formed _ pre ln
+  ))
+let rec is_well_formed_leaf_at #bytes #bl #tkt #l #i pre t li =
   match t with
   | TLeaf _ -> ()
   | TNode _ _ _ ->
     let (child, _) = get_child_sibling t li in
-    leaf_at_has_pre pre child li
+    is_well_formed_leaf_at pre child li
 
 #push-options "--z3rlimit 100"
 val parent_hash_implies_event: #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_index l -> gu:global_usage -> time:timestamp -> group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i -> Lemma
@@ -237,7 +241,7 @@ val parent_hash_implies_event: #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_
     unmerged_leaves_ok t /\ parent_hash_invariant t /\ valid_leaves_invariant group_id t /\
     node_has_parent_hash t /\
     all_credentials_ok t ast /\
-    treesync_has_pre (is_valid gu time) t /\
+    is_well_formed _ (is_valid gu time) t /\
     is_valid gu time group_id
   )
   (ensures (
@@ -255,7 +259,7 @@ let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
   tree_list_head_subtree_tail my_tl;
   leaf_at_subtree_leaf leaf t;
   leaf_at_valid_leaves group_id t leaf_i;
-  leaf_at_has_pre (is_valid gu time) t leaf_i;
+  is_well_formed_leaf_at (is_valid gu time) t leaf_i;
   let TLeaf (Some ln) = leaf in
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = {
     data = ln.data;
@@ -321,17 +325,17 @@ let rec valid_leaves_invariant_subtree #bytes #cb #tkt #lp #ld #ip #id group_id 
     valid_leaves_invariant_subtree group_id d c
   )
 
-val treesync_has_pre_subtree:
+val is_well_formed_treesync_subtree:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #lp:nat -> #ld:nat -> #ip:tree_index lp -> #id:tree_index ld ->
   pre:bytes_compatible_pre bytes -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
-  (requires treesync_has_pre pre p /\ is_subtree_of d p)
-  (ensures treesync_has_pre pre d)
-let rec treesync_has_pre_subtree #bytes #cb #tkt #lp #ld #ip #id pre d p =
+  (requires is_well_formed _ pre p /\ is_subtree_of d p)
+  (ensures is_well_formed _ pre d)
+let rec is_well_formed_treesync_subtree #bytes #cb #tkt #lp #ld #ip #id pre d p =
   if ld = lp then ()
   else (
     let (c,  _) = get_child_sibling p id in
-    treesync_has_pre_subtree pre d c
+    is_well_formed_treesync_subtree pre d c
   )
 
 val all_credentials_ok_subtree:
@@ -360,7 +364,7 @@ val state_implies_event:
   (requires
     has_leaf_node_tbs_invariant tkt gu /\
     node_has_parent_hash t /\
-    treesync_has_pre (is_valid gu time) st.tree /\
+    is_well_formed _ (is_valid gu time) (st.tree <: treesync _ _ _ _) /\
     is_valid gu time st.group_id /\
     is_subtree_of t st.tree /\
     is_subtree_of ast st.tokens
@@ -381,7 +385,7 @@ let state_implies_event #tkt #l #i gu time st t ast =
   unmerged_leaves_ok_subtree t st.tree;
   parent_hash_invariant_subtree t st.tree;
   valid_leaves_invariant_subtree st.group_id t st.tree;
-  treesync_has_pre_subtree (is_valid gu time) t st.tree;
+  is_well_formed_treesync_subtree (is_valid gu time) t st.tree;
   all_credentials_ok_subtree t st.tree ast st.tokens;
   parent_hash_implies_event gu time st.group_id t ast
 
@@ -475,10 +479,10 @@ let path_is_filter_valid_external_path_to_path #bytes #cb #tkt #l #li t p group_
 #pop-options
 *)
 
-val external_path_has_pred: #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 -> prin:principal -> time:timestamp -> t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes -> Pure prop
+val external_path_has_event: #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 -> prin:principal -> time:timestamp -> t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes -> Pure prop
   (requires external_path_to_path_pre t p group_id)
   (ensures fun _ -> True)
-let external_path_has_pred #tkt #l #li prin time t p group_id =
+let external_path_has_event #tkt #l #li prin time t p group_id =
   //This lemma is useful to know that auth_ln.data.source == LNS_commit
   path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
   let auth_p = external_path_to_path_nosig t p group_id in
@@ -489,7 +493,7 @@ let external_path_has_pred #tkt #l #li prin time t p group_id =
 // This theorem can be instantiated with various labels to prove more specific theorems.
 // With label = SecrecyLabels.public, we get a version with `is_publishable`.
 // With label= SecrecyLabels.private_label, we get a version with `is_valid`.
-#push-options "--z3rlimit 50"
+#push-options "--z3rlimit 100"
 val is_msg_external_path_to_path:
   #tkt:treekem_types dy_bytes ->
   #l:nat -> #li:leaf_index l 0 ->
@@ -501,9 +505,9 @@ val is_msg_external_path_to_path:
     external_path_to_path_pre t p group_id /\
     path_is_filter_valid t p /\
     unmerged_leaves_ok t /\
-    external_path_has_pred prin time t p group_id /\
-    treesync_has_pre (is_msg gu label time) t /\
-    external_pathsync_has_pre (is_msg gu label time) p /\
+    external_path_has_event prin time t p group_id /\
+    is_well_formed _ (is_msg gu label time) t /\
+    is_well_formed _ (is_msg gu label time) p /\
     is_msg gu label time group_id /\
     is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
     is_valid gu time nonce /\
@@ -511,7 +515,7 @@ val is_msg_external_path_to_path:
     get_label gu nonce == readers [p_id prin] /\
     has_leaf_node_tbs_invariant tkt gu
   )
-  (ensures pathsync_has_pre (is_msg gu label time) (external_path_to_path t p group_id sk nonce))
+  (ensures is_well_formed _ (is_msg gu label time) (external_path_to_path t p group_id sk nonce))
 let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk nonce =
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
   let ln_data = get_path_leaf p in
@@ -526,7 +530,7 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
   path_is_filter_valid_external_path_to_path_nosig t p group_id;
   get_path_leaf_set_path_leaf p new_unsigned_ln;
   pre_compute_leaf_parent_hash_from_path (is_msg gu label time) t p root_parent_hash;
-  pre_get_path_leaf (is_msg gu label time) p;
+  is_well_formed_get_path_leaf (is_msg gu label time) p;
   serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ({data = new_ln_data; group_id; leaf_index = li;});
   let tl = path_to_tree_list t unsigned_path in
   path_to_tree_list_lemma t unsigned_path;
@@ -543,7 +547,7 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
   );
   parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs;
   sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" new_ln_tbs_bytes nonce;
-  pre_set_path_leaf (is_msg gu label time) p new_ln
+  is_well_formed_set_path_leaf (is_msg gu label time) p new_ln
 #pop-options
 
 (*** Proof of individual leaf signature ***)
@@ -565,7 +569,7 @@ val is_msg_sign_leaf_node_data_key_package:
     get_label gu nonce == readers [p_id prin] /\
     has_leaf_node_tbs_invariant tkt gu
   )
-  (ensures value_has_pre (is_msg gu label time) (sign_leaf_node_data_key_package ln_data sk nonce))
+  (ensures is_well_formed _ (is_msg gu label time) (sign_leaf_node_data_key_package ln_data sk nonce))
 let is_msg_sign_leaf_node_data_key_package #tkt gu prin label time ln_data sk nonce =
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id = (); leaf_index = ();}) in
   let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
@@ -593,7 +597,7 @@ val is_msg_sign_leaf_node_data_update:
     get_label gu nonce == readers [p_id prin] /\
     has_leaf_node_tbs_invariant tkt gu
   )
-  (ensures value_has_pre (is_msg gu label time) (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce))
+  (ensures is_well_formed _ (is_msg gu label time) (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce))
 let is_msg_sign_leaf_node_data_update #tkt gu prin label time ln_data group_id leaf_index sk nonce =
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id; leaf_index;}) in
   let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in

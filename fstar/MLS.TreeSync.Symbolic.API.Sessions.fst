@@ -70,7 +70,7 @@ let treesync_public_state_label = "MLS.TreeSync.PublicState"
 val bare_treesync_public_state_pred: tkt:treekem_types dy_bytes -> bare_typed_session_pred (bare_treesync_state tkt)
 let bare_treesync_public_state_pred tkt = fun gu p time si vi st ->
   is_publishable gu time st.group_id /\
-  treesync_has_pre (is_publishable gu time) st.tree /\
+  is_well_formed _ (is_publishable gu time) st.tree /\
   unmerged_leaves_ok st.tree /\
   parent_hash_invariant st.tree /\
   valid_leaves_invariant st.group_id st.tree /\
@@ -83,11 +83,11 @@ let treesync_public_state_pred tkt =
     mk_typed_session_pred (bare_treesync_public_state_pred tkt)
       (fun gu p time0 time1 si vi st ->
         // Prove publishability of treesync in the future
-        treesync_has_pre_weaken (is_publishable gu time0) (is_publishable gu time1) st.tree
+        wf_weaken_lemma _ (is_publishable gu time0) (is_publishable gu time1) st.tree
       )
       (fun gu p time si vi st ->
         let pre = is_msg gu (readers [psv_id p si vi]) time in
-        treesync_has_pre_weaken (is_publishable gu time) pre st.tree;
+        wf_weaken_lemma _ (is_publishable gu time) pre st.tree;
         ps_dy_as_tokens_is_well_formed pre st.tokens
       )
   )
@@ -106,7 +106,7 @@ val treesync_state_to_session_bytes:
   Pure dy_bytes
   (requires
     is_publishable pr.global_usage time st.group_id /\
-    treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
+    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun res -> treesync_public_state_pred tkt pr.global_usage p time si vi res)
@@ -128,7 +128,7 @@ val new_public_treesync_state:
   (requires fun t0 ->
     time == trace_len t0 /\
     is_publishable pr.global_usage time st.group_id /\
-    treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
+    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun t0 si t1 -> trace_len t1 == trace_len t0 + 1)
@@ -146,7 +146,7 @@ val set_public_treesync_state:
   (requires fun t0 ->
     time == trace_len t0 /\
     is_publishable pr.global_usage time st.group_id /\
-    treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
+    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
@@ -164,7 +164,7 @@ val get_public_treesync_state:
   )
   (ensures fun t0 st t1 ->
     is_publishable pr.global_usage time st.group_id /\
-    treesync_has_pre (is_publishable pr.global_usage time) st.tree /\
+    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     t1 == t0
   )
 let get_public_treesync_state #tkt pr p si time =

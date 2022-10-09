@@ -17,7 +17,7 @@ open MLS.Symbolic
 open MLS.TreeSync.Symbolic.API.GroupManager
 open MLS.TreeSync.Symbolic.API.KeyPackageManager
 open MLS.TreeSync.Symbolic.API.Sessions
-open MLS.TreeSync.Symbolic.API.HasPreInvariant
+open MLS.TreeSync.Symbolic.API.IsWellFormedInvariant
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 open MLS.TreeSync.Symbolic.AuthServiceCache
 open MLS.TreeSync.Symbolic.IsWellFormed
@@ -110,7 +110,7 @@ val create:
   LCrypto unit pr
   (requires fun t0 ->
     is_publishable pr.global_usage (trace_len t0) group_id /\
-    value_has_pre (is_publishable pr.global_usage (trace_len t0)) ln /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) ln /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 2)
@@ -120,7 +120,7 @@ let create #tkt pr p as_session gmgr_session group_id ln secret_session =
   let token = get_token_for pr p as_session create_pend.as_input in
   let token: as_token_for (dy_asp pr.global_usage now) create_pend.as_input = token in
   let st = finalize_create create_pend token in
-  finalize_create_has_pre (is_publishable pr.global_usage now) create_pend token;
+  is_well_formed_finalize_create (is_publishable pr.global_usage now) create_pend token;
   let si_public = new_public_treesync_state pr p now st in
   let group_sessions = { si_public; si_private = secret_session; } in
   add_new_group_sessions pr p gmgr_session group_id group_sessions
@@ -133,7 +133,7 @@ val welcome:
   LCrypto unit pr
   (requires fun t0 ->
     is_publishable pr.global_usage (trace_len t0) group_id /\
-    treesync_has_pre (is_publishable pr.global_usage (trace_len t0)) t /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) t /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 2)
@@ -144,7 +144,7 @@ let welcome #tkt pr p as_session gmgr_session kpmgr_session my_key_package group
   let tokens = get_tokens_for pr p as_session welcome_pend.as_inputs in
   let tokens: tokens_for_welcome (dy_asp pr.global_usage now) welcome_pend = tokens in
   let st = finalize_welcome welcome_pend tokens in
-  finalize_welcome_has_pre (is_publishable pr.global_usage now) welcome_pend tokens;
+  is_well_formed_finalize_welcome (is_publishable pr.global_usage now) welcome_pend tokens;
   let si_public = new_public_treesync_state pr p now st in
   let si_private = (find_key_package_secret_session tkt pr p kpmgr_session my_key_package).si_private in
   let group_sessions = { si_public; si_private; } in
@@ -156,7 +156,7 @@ val add:
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
   LCrypto nat pr
   (requires fun t0 ->
-    value_has_pre (is_publishable pr.global_usage (trace_len t0)) ln /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) ln /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 _ t1 -> trace_len t1 == trace_len t0 + 1)
@@ -168,7 +168,7 @@ let add #tkt pr p as_session gmgr_session group_id ln =
   let add_pend = extract_result pr (prepare_add st ln) in
   let token = get_token_for pr p as_session add_pend.as_input in
   let (new_st, new_leaf_index) = finalize_add add_pend token in
-  finalize_add_has_pre (is_publishable pr.global_usage now) add_pend token;
+  is_well_formed_finalize_add (is_publishable pr.global_usage now) add_pend token;
   set_public_treesync_state pr p group_session.si_public now new_st;
   new_leaf_index
 
@@ -178,7 +178,7 @@ val update:
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
   LCrypto unit pr
   (requires fun t0 ->
-    value_has_pre (is_publishable pr.global_usage (trace_len t0)) ln /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) ln /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 1)
@@ -190,7 +190,7 @@ let update #tkt pr p as_session gmgr_session group_id ln li =
   let update_pend = extract_result pr (prepare_update st ln li) in
   let token = get_token_for pr p as_session update_pend.as_input in
   let new_st = finalize_update update_pend token in
-  finalize_update_has_pre (is_publishable pr.global_usage now) update_pend token;
+  is_well_formed_finalize_update (is_publishable pr.global_usage now) update_pend token;
   set_public_treesync_state pr p group_session.si_public now new_st
 
 val remove:
@@ -209,7 +209,7 @@ let remove #tkt pr p as_session gmgr_session group_id li =
   guard pr (li < pow2 st.levels);
   let remove_pend = extract_result pr (prepare_remove st li) in
   let new_st = finalize_remove remove_pend in
-  finalize_remove_has_pre (is_publishable pr.global_usage now) remove_pend;
+  is_well_formed_finalize_remove (is_publishable pr.global_usage now) remove_pend;
   set_public_treesync_state pr p group_session.si_public now new_st
 
 #push-options "--z3rlimit 25"
@@ -219,7 +219,7 @@ val commit:
   group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
   LCrypto unit pr
   (requires fun t0 ->
-    pathsync_has_pre (is_publishable pr.global_usage (trace_len t0)) path /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) path /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 1)
@@ -231,7 +231,7 @@ let commit #tkt #l #li pr p as_session gmgr_session group_id path =
   let commit_pend = extract_result pr (prepare_commit st path) in
   let token = get_token_for pr p as_session commit_pend.as_input in
   let new_st = finalize_commit commit_pend token in
-  finalize_commit_has_pre (is_publishable pr.global_usage now) commit_pend token;
+  is_well_formed_finalize_commit (is_publishable pr.global_usage now) commit_pend token;
   set_public_treesync_state pr p group_session.si_public now new_st
 #pop-options
 
@@ -258,7 +258,7 @@ let create_signature_keypair pr p =
 
 (*** Sign stuff ***)
 
-val external_path_has_pred_later:
+val external_path_has_event_later:
   #tkt:treekem_types dy_bytes ->
   #l:nat -> #li:leaf_index l 0 ->
   prin:principal -> time0:timestamp -> time1:timestamp ->
@@ -266,11 +266,11 @@ val external_path_has_pred_later:
   Lemma
   (requires
     external_path_to_path_pre t p group_id /\
-    external_path_has_pred prin time0 t p group_id /\
+    external_path_has_event prin time0 t p group_id /\
     time0 <$ time1
   )
-  (ensures external_path_has_pred prin time1 t p group_id)
-let external_path_has_pred_later #tkt #l #li prin time0 time1 t p group_id =
+  (ensures external_path_has_event prin time1 t p group_id)
+let external_path_has_event_later #tkt #l #li prin time0 time1 t p group_id =
   let auth_p = external_path_to_path_nosig t p group_id in
   path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
   for_allP_eq (tree_has_event prin time0 group_id) (path_to_tree_list t auth_p);
@@ -284,12 +284,12 @@ val authenticate_path:
   LCrypto (pathsync dy_bytes tkt l 0 li) pr
   (requires fun t0 ->
     external_path_to_path_pre tree path group_id /\
-    external_path_has_pred p (trace_len t0) tree path group_id /\
-    external_pathsync_has_pre (is_publishable pr.global_usage (trace_len t0)) path /\
+    external_path_has_event p (trace_len t0) tree path group_id /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) path /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 auth_path t1 ->
-    pathsync_has_pre (is_publishable pr.global_usage (trace_len t1)) auth_path /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t1)) auth_path /\
     trace_len t1 == trace_len t0 + 1
   )
 let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
@@ -308,8 +308,8 @@ let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
     (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
   );
   let auth_path = external_path_to_path tree path group_id private_st.signature_key signature_nonce in
-  external_pathsync_has_pre_weaken (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) path;
-  external_path_has_pred_later p now0 now1 tree path group_id;
+  wf_weaken_lemma _ (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) path;
+  external_path_has_event_later p now0 now1 tree path group_id;
   is_msg_external_path_to_path pr.global_usage p SecrecyLabels.public now1 tree path group_id private_st.signature_key signature_nonce;
   auth_path
 #pop-options
@@ -327,7 +327,7 @@ val authenticate_leaf_node_data_from_key_package:
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 ln t1 ->
-    value_has_pre (is_publishable pr.global_usage (trace_len t1)) ln /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t1)) ln /\
     trace_len t1 == trace_len t0 + 1
   )
 let authenticate_leaf_node_data_from_key_package #tkt pr p si_private ln_data =
@@ -358,7 +358,7 @@ val authenticate_leaf_node_data_from_update:
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 ln t1 ->
-    value_has_pre (is_publishable pr.global_usage (trace_len t1)) ln /\
+    is_well_formed _ (is_publishable pr.global_usage (trace_len t1)) ln /\
     trace_len t1 == trace_len t0 + 1
   )
 let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_id leaf_index =
