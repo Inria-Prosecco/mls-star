@@ -22,19 +22,19 @@ open FStar.Mul
 
 (*** Tree equivalence definition ***)
 
-val remove_leaf_signature: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> leaf_index l i -> treesync bytes tkt l i
-let rec remove_leaf_signature #bytes #bl #tkt #l #i t li =
+val canonicalize_leaf_signature: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> leaf_index l i -> treesync bytes tkt l i
+let rec canonicalize_leaf_signature #bytes #bl #tkt #l #i t li =
   match t with
   | TLeaf None -> TLeaf None
   | TLeaf (Some ln) -> TLeaf (Some ({data = ln.data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))
   | TNode opn left right ->
     if is_left_leaf li then
-      TNode opn (remove_leaf_signature left li) right
+      TNode opn (canonicalize_leaf_signature left li) right
     else
-      TNode opn left (remove_leaf_signature right li)
+      TNode opn left (canonicalize_leaf_signature right li)
 
-val canonicalize_leaves: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> treesync bytes tkt l i
-let canonicalize_leaves #bytes #bl #tkt #l #i t =
+val canonicalize_unmerged_leaves: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> treesync bytes tkt l i
+let canonicalize_unmerged_leaves #bytes #bl #tkt #l #i t =
   match t with
   | TLeaf _ -> t
   | TNode None _ _ -> t
@@ -43,7 +43,7 @@ let canonicalize_leaves #bytes #bl #tkt #l #i t =
 
 val canonicalize: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> leaf_index l i -> treesync bytes tkt l i
 let canonicalize #bytes #bl #tkt #l #i t li =
-  remove_leaf_signature (canonicalize_leaves t) li
+  canonicalize_leaf_signature (canonicalize_unmerged_leaves t) li
 
 val equivalent: #bytes:eqtype -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l1:nat -> #l2:nat -> #i1:tree_index l1 -> #i2:tree_index l2 -> treesync bytes tkt l1 i1 -> treesync bytes tkt l2 i2 -> nat -> bool
 let equivalent #bytes #bl #tkt #l1 #l2 #i1 #i2 t1 t2 li =
@@ -211,7 +211,7 @@ val parent_hash_guarantee_theorem_step_for_d:
   d:treesync bytes tkt ld id{node_has_parent_hash d} -> p:treesync bytes tkt lp ip{node_not_blank p} ->
   li:leaf_index ld id -> Lemma
   (requires is_subtree_of d p /\ last_update_correct d p /\ unmerged_leaves_ok p)
-  (ensures canonicalize d li == remove_leaf_signature (un_add d (unmerged_leaves_of p)) li)
+  (ensures canonicalize d li == canonicalize_leaf_signature (un_add d (unmerged_leaves_of p)) li)
 let parent_hash_guarantee_theorem_step_for_d #bytes #bl #tkt #ld #lp #id #ip d p li =
   unmerged_leaves_ok_subtree d p;
   match d with
@@ -297,7 +297,7 @@ val is_subtree_with_blanks_between_d_p_aux:
   (requires is_subtree_of d c /\ (forall x. List.Tot.mem x (resolution c) ==> (x == (|ld, id|) \/ List.Tot.mem x (unmerged_resolution p_unmerged_leaves))) /\ unmerged_leaves_ok c)
   (ensures (
     leaf_index_inside_subtree ld lc id ic li;
-    is_subtree_with_blanks_between (remove_leaf_signature (un_add d p_unmerged_leaves) li) (remove_leaf_signature (un_add c p_unmerged_leaves) li)
+    is_subtree_with_blanks_between (canonicalize_leaf_signature (un_add d p_unmerged_leaves) li) (canonicalize_leaf_signature (un_add c p_unmerged_leaves) li)
   ))
 let rec is_subtree_with_blanks_between_d_p_aux #bytes #bl #tkt #ld #lc #id #ic d c p_unmerged_leaves li =
   if ld = lc then ()
@@ -337,7 +337,7 @@ val is_subtree_with_blanks_between_d_p:
     leaf_index_inside_subtree ld lp id ip li;
     leaf_index_same_side ld lp id ip li;
     let (c, _) = get_child_sibling p id in
-    is_subtree_with_blanks_between (remove_leaf_signature (un_add d (unmerged_leaves_of p)) li) (remove_leaf_signature (un_add c (unmerged_leaves_of p)) li)
+    is_subtree_with_blanks_between (canonicalize_leaf_signature (un_add d (unmerged_leaves_of p)) li) (canonicalize_leaf_signature (un_add c (unmerged_leaves_of p)) li)
   ))
 let is_subtree_with_blanks_between_d_p #bytes #bl #tkt #ld #lp #id #ip d p li =
   let (c, _) = get_child_sibling p id in
@@ -409,11 +409,11 @@ let parent_hash_guarantee_theorem_step #bytes #cb #tkt #ld1 #ld2 #lp1 #lp2 #id1 
     assert(un_add s1 p1_content.unmerged_leaves == un_add s2 p2_content.unmerged_leaves);
     parent_hash_guarantee_theorem_step_for_d d1 p1 li;
     parent_hash_guarantee_theorem_step_for_d d2 p2 li;
-    assert(remove_leaf_signature (un_add d1 p1_content.unmerged_leaves) li == remove_leaf_signature (un_add d2 p2_content.unmerged_leaves) li);
+    assert(canonicalize_leaf_signature (un_add d1 p1_content.unmerged_leaves) li == canonicalize_leaf_signature (un_add d2 p2_content.unmerged_leaves) li);
     is_subtree_with_blanks_between_d_p d1 p1 li;
     is_subtree_with_blanks_between_d_p d2 p2 li;
     leaf_index_same_side ld1 lp1 id1 ip1 li;
-    is_subtree_with_blanks_between_eq_lemma (remove_leaf_signature (un_add d1 p1_content.unmerged_leaves) li) (remove_leaf_signature (un_add c1 p1_content.unmerged_leaves) li) (remove_leaf_signature (un_add c2 p2_content.unmerged_leaves) li);
+    is_subtree_with_blanks_between_eq_lemma (canonicalize_leaf_signature (un_add d1 p1_content.unmerged_leaves) li) (canonicalize_leaf_signature (un_add c1 p1_content.unmerged_leaves) li) (canonicalize_leaf_signature (un_add c2 p2_content.unmerged_leaves) li);
     un_add_myself p1_content.unmerged_leaves;
     un_add_myself p2_content.unmerged_leaves;
     (empty, empty)
