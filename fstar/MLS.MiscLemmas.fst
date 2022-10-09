@@ -50,3 +50,10 @@ let rec index_map #a #b f l i =
   let h::t = l in
   if i = 0 then ()
   else index_map f t (i-1)
+
+val bytes_length_filter: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_unit bytes a -> pred:(a -> bool) -> l:list a -> Lemma
+  (bytes_length #bytes ps_a (List.Tot.filter pred l) <= bytes_length #bytes ps_a l)
+let rec bytes_length_filter #bytes #bl #a ps_a pred l =
+  match l with
+  | [] -> ()
+  | h::t -> bytes_length_filter ps_a pred t

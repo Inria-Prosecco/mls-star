@@ -230,14 +230,6 @@ val apply_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types byt
 let apply_path #bytes #cb #tkt #l #li t p =
   apply_path_aux t p root_parent_hash
 
-//TODO move
-val bytes_length_filter: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_unit bytes a -> pred:(a -> bool) -> l:list a -> Lemma
-  (bytes_length #bytes ps_a (List.Tot.filter pred l) <= bytes_length #bytes ps_a l)
-let rec bytes_length_filter #bytes #bl #a ps_a pred l =
-  match l with
-  | [] -> ()
-  | h::t -> bytes_length_filter ps_a pred t
-
 val un_addP: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> (nat -> bool) -> treesync bytes tkt  l i
 let rec un_addP #bytes #bl #tkt #l #i t pred =
   match t with
@@ -249,7 +241,7 @@ let rec un_addP #bytes #bl #tkt #l #i t pred =
   | TNode None left right ->
     TNode None (un_addP left pred) (un_addP right pred)
   | TNode (Some content) left right ->
-    bytes_length_filter #bytes (ps_nat_lbytes 4) pred content.unmerged_leaves;
+    MLS.MiscLemmas.bytes_length_filter #bytes (ps_nat_lbytes 4) pred content.unmerged_leaves;
     let new_content = { content with
       unmerged_leaves = List.Tot.filter pred content.unmerged_leaves;
     } in
