@@ -18,7 +18,7 @@ open MLS.TreeSync.ParentHash
 
 val value_has_pre: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> {|parseable_serializeable bytes a|} -> bytes_compatible_pre bytes -> a -> prop
 let value_has_pre #bytes #bl #a #psa pre x =
-  Comparse.is_valid a pre x
+  is_well_formed a pre x
 
 val option_has_pre: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> {|parseable_serializeable bytes a|} -> bytes_compatible_pre bytes -> option a -> prop
 let option_has_pre #bytes #bl #a #psa pre ox =
@@ -41,19 +41,19 @@ let rec pathsync_has_pre #bytes #bl #tkt #l #i #li pre p =
     let content_has_pre =
       match opt_content with
       | None -> True
-      | Some content -> tkt.ps_node_content.is_valid pre content
+      | Some content -> is_well_formed_partial tkt.ps_node_content pre content
     in
     content_has_pre /\ pathsync_has_pre pre p_next
 
 val external_pathsync_has_pre: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> bytes_compatible_pre bytes -> external_pathsync bytes tkt l i li -> prop
 let rec external_pathsync_has_pre #bytes #bl #tkt #l #i #li pre p =
   match p with
-  | PLeaf ln_data -> (ps_leaf_node_data_nt tkt).is_valid pre (ln_data <: leaf_node_data_nt bytes tkt)
+  | PLeaf ln_data -> is_well_formed_partial (ps_leaf_node_data_nt tkt) pre (ln_data <: leaf_node_data_nt bytes tkt)
   | PNode opt_content p_next ->
     let content_has_pre =
       match opt_content with
       | None -> True
-      | Some content -> tkt.ps_node_content.is_valid pre content
+      | Some content -> is_well_formed_partial tkt.ps_node_content pre content
     in
     content_has_pre /\ external_pathsync_has_pre pre p_next
 
@@ -70,9 +70,7 @@ val value_has_pre_weaken:
   (requires value_has_pre pre_strong x /\ (forall b. pre_strong b ==> pre_weak b))
   (ensures value_has_pre pre_weak x)
 let value_has_pre_weaken #bytes #bl #a #ps_a pre_strong pre_weak x =
-  parse_serialize_inv_lemma #bytes a x;
-  serialize_pre_lemma a pre_strong x;
-  parse_pre_lemma a pre_weak (serialize _ x)
+  ()
 
 val option_has_pre_weaken:
   #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> {|parseable_serializeable bytes a|} ->
@@ -84,7 +82,7 @@ let option_has_pre_weaken #bytes #bl #a #ps_a pre_strong pre_weak opt_x =
   match opt_x with
   | None -> ()
   | Some x ->
-    value_has_pre_weaken pre_strong pre_weak x
+    ()
 
 val treesync_has_pre_weaken:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
@@ -119,7 +117,7 @@ let rec pathsync_has_pre_weaken #bytes #bl #tkt #l #i pre_strong pre_weak p =
     match opt_content with
     | None -> ()
     | Some content -> (
-      MLS.MiscLemmas.comparse_is_valid_weaken tkt.ps_node_content pre_strong pre_weak content
+      is_well_formed_partial_weaken tkt.ps_node_content pre_strong pre_weak content
     )
 
 val external_pathsync_has_pre_weaken:
@@ -133,13 +131,13 @@ val external_pathsync_has_pre_weaken:
 let rec external_pathsync_has_pre_weaken #bytes #bl #tkt #l #i pre_strong pre_weak p =
   match p with
   | PLeaf ln_data ->
-    MLS.MiscLemmas.comparse_is_valid_weaken (ps_leaf_node_data_nt tkt) pre_strong pre_weak ln_data
+    is_well_formed_partial_weaken (ps_leaf_node_data_nt tkt) pre_strong pre_weak ln_data
   | PNode opt_content p_next ->
     external_pathsync_has_pre_weaken pre_strong pre_weak p_next;
     match opt_content with
     | None -> ()
     | Some content -> (
-      MLS.MiscLemmas.comparse_is_valid_weaken tkt.ps_node_content pre_strong pre_weak content
+      is_well_formed_partial_weaken tkt.ps_node_content pre_strong pre_weak content
     )
 
 (*** Invariant proofs ***)
@@ -198,7 +196,7 @@ let rec treesync_has_pre_tree_add #bytes #bl pre #tkt #l #i t li ln =
     treesync_has_pre_tree_add pre child li ln;
     match opn with
     | None -> ()
-    | Some pn -> for_allP_eq ((ps_nat_lbytes 4).is_valid pre) (insert_sorted li pn.unmerged_leaves)
+    | Some pn -> for_allP_eq (is_well_formed_partial (ps_nat_lbytes 4) pre) (insert_sorted li pn.unmerged_leaves)
 
 #push-options "--z3rlimit 25"
 val pre_tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> Lemma
@@ -207,7 +205,7 @@ val pre_tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatibl
 let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
   match t with
   | TLeaf oln -> (
-    serialize_pre_lemma (tree_hash_input_nt bytes tkt) pre (LeafTreeHashInput ({
+    serialize_wf_lemma (tree_hash_input_nt bytes tkt) pre (LeafTreeHashInput ({
       leaf_index = i;
       leaf_node = oln;
     }))
@@ -217,7 +215,7 @@ let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
     pre_tree_hash pre right;
     let left_hash = tree_hash left in
     let right_hash = tree_hash right in
-    serialize_pre_lemma (tree_hash_input_nt bytes tkt) pre (ParentTreeHashInput ({
+    serialize_wf_lemma (tree_hash_input_nt bytes tkt) pre (ParentTreeHashInput ({
       parent_node = opn;
       left_hash = left_hash;
       right_hash = right_hash;
@@ -227,7 +225,7 @@ let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
 
 val pre_compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i -> Lemma
   (requires
-    tkt.ps_node_content.is_valid pre content /\
+    is_well_formed_partial tkt.ps_node_content pre content /\
     pre parent_hash /\
     treesync_has_pre pre original_sibling /\
     compute_parent_hash_pre content (length #bytes parent_hash) original_sibling
@@ -236,7 +234,7 @@ val pre_compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes
 let pre_compute_parent_hash #bytes #cb pre #tkt #l #i content parent_hash original_sibling =
   pre_tree_hash pre original_sibling;
   let original_sibling_tree_hash = tree_hash original_sibling in
-  serialize_pre_lemma (parent_hash_input_nt bytes tkt) pre ({
+  serialize_wf_lemma (parent_hash_input_nt bytes tkt) pre ({
     content;
     parent_hash = parent_hash;
     original_sibling_tree_hash;
@@ -256,7 +254,7 @@ let rec treesync_has_pre_apply_path_aux #bytes #cb pre #tkt #l #i #li t p parent
     | None -> ()
     | Some ext_content -> pre_compute_parent_hash pre ext_content parent_parent_hash sibling
     );
-    for_allP_eq ((ps_nat_lbytes 4).is_valid pre) [];
+    for_allP_eq (is_well_formed_partial (ps_nat_lbytes 4) pre) [];
     treesync_has_pre_apply_path_aux pre child p_next new_parent_parent_hash
   )
 #pop-options
@@ -285,7 +283,7 @@ let rec pre_compute_leaf_parent_hash_from_path #bytes #cb pre #tkt #l #i #li t p
 
 val pre_get_path_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> p:external_pathsync bytes tkt l i li -> Lemma
   (requires external_pathsync_has_pre pre p)
-  (ensures (ps_leaf_node_data_nt tkt).is_valid pre (get_path_leaf p))
+  (ensures is_well_formed_partial (ps_leaf_node_data_nt tkt) pre (get_path_leaf p))
 let rec pre_get_path_leaf #bytes #bl pre #tkt #l #i #li p =
   match p with
   | PLeaf _ -> ()

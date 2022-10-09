@@ -322,7 +322,7 @@ val authenticate_leaf_node_data_from_key_package:
   LCrypto (leaf_node_nt dy_bytes tkt) pr
   (requires fun t0 ->
     ln_data.source == LNS_key_package () /\
-    (ps_leaf_node_data_nt tkt).is_valid (is_publishable pr.global_usage (trace_len t0)) ln_data /\
+    is_well_formed_partial (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage (trace_len t0)) ln_data /\
     leaf_node_has_event p (trace_len t0) ({data = ln_data; group_id = (); leaf_index = ();}) /\
     has_treesync_invariants tkt pr
   )
@@ -339,7 +339,7 @@ let authenticate_leaf_node_data_from_key_package #tkt pr p si_private ln_data =
     (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
     (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
   );
-  MLS.MiscLemmas.comparse_is_valid_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
+  is_well_formed_partial_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
   is_msg_sign_leaf_node_data_key_package pr.global_usage p SecrecyLabels.public now1 ln_data private_st.signature_key signature_nonce;
   sign_leaf_node_data_key_package ln_data private_st.signature_key signature_nonce
 
@@ -351,7 +351,7 @@ val authenticate_leaf_node_data_from_update:
   LCrypto (leaf_node_nt dy_bytes tkt) pr
   (requires fun t0 ->
     ln_data.source == LNS_update () /\
-    (ps_leaf_node_data_nt tkt).is_valid (is_publishable pr.global_usage (trace_len t0)) ln_data /\
+    is_well_formed_partial (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage (trace_len t0)) ln_data /\
     is_publishable pr.global_usage (trace_len t0) group_id /\
     leaf_node_has_event p (trace_len t0) ({data = ln_data; group_id; leaf_index;}) /\
     tree_has_event p (trace_len t0) group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
@@ -370,7 +370,7 @@ let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_i
     (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
     (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
   );
-  MLS.MiscLemmas.comparse_is_valid_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
+  is_well_formed_partial_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
   is_msg_sign_leaf_node_data_update pr.global_usage p SecrecyLabels.public now1 ln_data group_id leaf_index private_st.signature_key signature_nonce;
   sign_leaf_node_data_update ln_data group_id leaf_index private_st.signature_key signature_nonce
 

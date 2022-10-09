@@ -13,11 +13,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1659442808,
-        "narHash": "sha256-B+FPPL+TmRM03xBJWs7IthI9ZUu68cO1kV3BrZ9ToyA=",
+        "lastModified": 1665338931,
+        "narHash": "sha256-t+O2a2EZow6Wkc7eIHsdxvcNolqIwaRWOx+OqN44ZzI=",
         "ref": "refs/heads/main",
-        "rev": "a0853b182207e7d061fb9c15a2162f0b5fc802ab",
-        "revCount": 68,
+        "rev": "5aa13930f71062bc3be7232e032bb2db80132717",
+        "revCount": 69,
         "type": "git",
         "url": "ssh://git@github.com/TWal/comparse.git"
       },
@@ -29,11 +29,11 @@
     "dolev-yao-star-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1664461954,
-        "narHash": "sha256-F9d7VUJQRXR1jV3seXygW6C0U9TKFFzb3LJat1GrS3o=",
+        "lastModified": 1665339873,
+        "narHash": "sha256-Us73Xp4UJYVNhMXFAutdgOxGY1IWwQHShcZkqIttzIg=",
         "ref": "comparse",
-        "rev": "11319d23b58cff65a9e1093178541e461d1f700e",
-        "revCount": 1139,
+        "rev": "65c776b5e23f18b72b6b691e27aa597a69256b2f",
+        "revCount": 1140,
         "type": "git",
         "url": "ssh://git@github.com/prosecco/dolev-yao-star.git"
       },

@@ -18,7 +18,7 @@ type group_manager_value (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_group_manager_value] (gen_parser (`group_manager_value))
-%splice [ps_group_manager_value_is_valid] (gen_is_valid_lemma (`group_manager_value))
+%splice [ps_group_manager_value_is_well_formed] (gen_is_well_formed_lemma (`group_manager_value))
 
 val group_manager_types: map_types dy_bytes
 let group_manager_types = {

@@ -28,9 +28,9 @@ let ps_dy_as_tokens l i =
   ps_as_tokens ps_dy_as_token l i
 
 #push-options "--z3rlimit 25"
-val ps_dy_as_tokens_is_valid: #l:nat -> #i:tree_index l -> pre:bytes_compatible_pre dy_bytes -> tokens:as_tokens dy_bytes dy_as_token l i ->
-  Lemma ((ps_dy_as_tokens l i).is_valid pre tokens)
-let rec ps_dy_as_tokens_is_valid #l #i pre tokens =
+val ps_dy_as_tokens_is_well_formed: #l:nat -> #i:tree_index l -> pre:bytes_compatible_pre dy_bytes -> tokens:as_tokens dy_bytes dy_as_token l i ->
+  Lemma (is_well_formed_partial (ps_dy_as_tokens l i) pre tokens)
+let rec ps_dy_as_tokens_is_well_formed #l #i pre tokens =
   match tokens with
   | TLeaf x -> (
     match x with
@@ -38,8 +38,8 @@ let rec ps_dy_as_tokens_is_valid #l #i pre tokens =
     | Some y -> ()
   )
   | TNode _ left right ->
-    ps_dy_as_tokens_is_valid pre left;
-    ps_dy_as_tokens_is_valid pre right
+    ps_dy_as_tokens_is_well_formed pre left;
+    ps_dy_as_tokens_is_well_formed pre right
 #pop-options
 
 noeq
@@ -55,7 +55,7 @@ type bare_treesync_state_ (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types 
 
 %splice [ps_bare_treesync_state_] (gen_parser (`bare_treesync_state_))
 #push-options "--z3rlimit 20"
-%splice [ps_bare_treesync_state__is_valid] (gen_is_valid_lemma (`bare_treesync_state_))
+%splice [ps_bare_treesync_state__is_well_formed] (gen_is_well_formed_lemma (`bare_treesync_state_))
 #pop-options
 
 type bare_treesync_state (tkt:treekem_types dy_bytes) =
@@ -83,15 +83,13 @@ let treesync_public_state_pred tkt =
     mk_typed_session_pred (bare_treesync_public_state_pred tkt)
       (fun gu p time0 time1 si vi st ->
         // Prove publishability of treesync in the future
-        ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time0) st.tree;
-        ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time1) st.tree;
-        MLS.MiscLemmas.comparse_is_valid_weaken (ps_treesync tkt st.levels 0) (is_publishable gu time0) (is_publishable gu time1) st.tree
+        treesync_has_pre_weaken (is_publishable gu time0) (is_publishable gu time1) st.tree
       )
       (fun gu p time si vi st ->
         let pre = is_msg gu (readers [psv_id p si vi]) time in
-        ps_treesync_is_valid tkt st.levels 0 (is_publishable gu time) st.tree;
-        MLS.MiscLemmas.comparse_is_valid_weaken (ps_treesync tkt st.levels 0) (is_publishable gu time) pre st.tree;
-        ps_dy_as_tokens_is_valid pre st.tokens
+        treesync_has_pre_weaken (is_publishable gu time) pre st.tree;
+        ps_treesync_is_well_formed tkt st.levels 0 pre st.tree;
+        ps_dy_as_tokens_is_well_formed pre st.tokens
       )
   )
 #pop-options
@@ -187,7 +185,7 @@ type treesync_private_state_ (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_treesync_private_state_] (gen_parser (`treesync_private_state_))
-%splice [ps_treesync_private_state__is_valid] (gen_is_valid_lemma (`treesync_private_state_))
+%splice [ps_treesync_private_state__is_well_formed] (gen_is_well_formed_lemma (`treesync_private_state_))
 
 type treesync_private_state = treesync_private_state_ dy_bytes
 

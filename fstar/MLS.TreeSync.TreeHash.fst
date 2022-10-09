@@ -18,7 +18,7 @@ type leaf_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treeke
 
 %splice [ps_leaf_node_tree_hash_input_nt] (gen_parser (`leaf_node_tree_hash_input_nt))
 %splice [ps_leaf_node_tree_hash_input_nt_length] (gen_length_lemma (`leaf_node_tree_hash_input_nt))
-%splice [ps_leaf_node_tree_hash_input_nt_is_valid] (gen_is_valid_lemma (`leaf_node_tree_hash_input_nt))
+%splice [ps_leaf_node_tree_hash_input_nt_is_well_formed] (gen_is_well_formed_lemma (`leaf_node_tree_hash_input_nt))
 
 type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser #bytes (ps_option (ps_parent_node_nt tkt))]
@@ -29,7 +29,7 @@ type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:tree
 
 %splice [ps_parent_node_tree_hash_input_nt] (gen_parser (`parent_node_tree_hash_input_nt))
 %splice [ps_parent_node_tree_hash_input_nt_length] (gen_length_lemma (`parent_node_tree_hash_input_nt))
-%splice [ps_parent_node_tree_hash_input_nt_is_valid] (gen_is_valid_lemma (`parent_node_tree_hash_input_nt))
+%splice [ps_parent_node_tree_hash_input_nt_is_well_formed] (gen_is_well_formed_lemma (`parent_node_tree_hash_input_nt))
 
 type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
   | LeafTreeHashInput: [@@@ with_tag (NT_leaf ())] leaf_node: leaf_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
@@ -37,7 +37,7 @@ type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types by
 
 %splice [ps_tree_hash_input_nt] (gen_parser (`tree_hash_input_nt))
 %splice [ps_tree_hash_input_nt_length] (gen_length_lemma (`tree_hash_input_nt))
-%splice [ps_tree_hash_input_nt_is_valid] (gen_is_valid_lemma (`tree_hash_input_nt))
+%splice [ps_tree_hash_input_nt_is_well_formed] (gen_is_well_formed_lemma (`tree_hash_input_nt))
 
 instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (tree_hash_input_nt bytes tkt) =
   mk_parseable_serializeable (ps_tree_hash_input_nt tkt)

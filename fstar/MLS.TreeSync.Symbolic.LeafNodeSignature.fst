@@ -31,7 +31,7 @@ type dy_as_token_ (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_dy_as_token_] (gen_parser (`dy_as_token_))
-%splice [ps_dy_as_token__is_valid] (gen_is_valid_lemma (`dy_as_token_))
+%splice [ps_dy_as_token__is_well_formed] (gen_is_well_formed_lemma (`dy_as_token_))
 
 let dy_as_token = dy_as_token_ dy_bytes
 let ps_dy_as_token: parser_serializer dy_bytes dy_as_token = ps_dy_as_token_
@@ -267,7 +267,7 @@ let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
   let authentifier = leaf_token.who in
   let authentifier_li = leaf_i in
   let leaf_sk_label = readers [p_id leaf_token.who] in
-  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_valid gu time) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_valid gu time) ln_tbs;
   verify_with_label_is_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" leaf_sk_label time ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature;
 
   introduce (exists time_sig. time_sig <$ time /\ leaf_node_spred gu.key_usages tkt "MLS.LeafSignKey" time_sig ln.data.signature_key ln_tbs_bytes) ==> tree_has_event authentifier time group_id (|l, i, (canonicalize t authentifier_li)|)
@@ -527,7 +527,7 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
   get_path_leaf_set_path_leaf p new_unsigned_ln;
   pre_compute_leaf_parent_hash_from_path (is_msg gu label time) t p root_parent_hash;
   pre_get_path_leaf (is_msg gu label time) p;
-  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ({data = new_ln_data; group_id; leaf_index = li;});
+  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ({data = new_ln_data; group_id; leaf_index = li;});
   let tl = path_to_tree_list t unsigned_path in
   path_to_tree_list_lemma t unsigned_path;
   introduce exists prin tl.
@@ -558,7 +558,7 @@ val is_msg_sign_leaf_node_data_key_package:
     ln_data.source == LNS_key_package () /\
     sign_leaf_node_data_key_package_pre ln_data /\
     leaf_node_has_event prin time ({data = ln_data; group_id = (); leaf_index = ();}) /\
-    (ps_leaf_node_data_nt tkt).is_valid (is_msg gu label time) ln_data /\
+    is_well_formed_partial (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
     is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
     is_valid gu time nonce /\
     get_label gu sk == readers [p_id prin] /\
@@ -570,7 +570,7 @@ let is_msg_sign_leaf_node_data_key_package #tkt gu prin label time ln_data sk no
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id = (); leaf_index = ();}) in
   let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
   parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
-  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ln_tbs;
   sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" ln_tbs_bytes nonce
 
 #push-options "--z3rlimit 25"
@@ -585,7 +585,7 @@ val is_msg_sign_leaf_node_data_update:
     sign_leaf_node_data_update_pre ln_data group_id /\
     leaf_node_has_event prin time ({data = ln_data; group_id; leaf_index;}) /\
     tree_has_event prin time group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
-    (ps_leaf_node_data_nt tkt).is_valid (is_msg gu label time) ln_data /\
+    is_well_formed_partial (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
     is_msg gu label time group_id /\
     is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
     is_valid gu time nonce /\
@@ -598,7 +598,7 @@ let is_msg_sign_leaf_node_data_update #tkt gu prin label time ln_data group_id l
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id; leaf_index;}) in
   let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
   parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
-  serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ln_tbs;
   LabeledCryptoAPI.vk_lemma #gu #time #(readers [p_id prin]) sk;
   sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" ln_tbs_bytes nonce
 #pop-options

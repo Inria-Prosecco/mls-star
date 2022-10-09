@@ -50,12 +50,3 @@ let rec index_map #a #b f l i =
   let h::t = l in
   if i = 0 then ()
   else index_map f t (i-1)
-
-//TODO: move in Comparse?
-val comparse_is_valid_weaken: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_unit bytes a -> pre_strong:bytes_compatible_pre bytes -> pre_weak:bytes_compatible_pre bytes -> x:a -> Lemma
-  (requires (forall b. pre_strong b ==> pre_weak b) /\ ps_a.is_valid pre_strong x)
-  (ensures ps_a.is_valid pre_weak x)
-let comparse_is_valid_weaken #bytes #bl #a ps_a pre_strong pre_weak x =
-  (ps_to_pse ps_a).parse_serialize_inv_exact x;
-  (ps_to_pse ps_a).serialize_pre_exact pre_strong x;
-  (ps_to_pse ps_a).parse_pre_exact pre_weak ((ps_to_pse ps_a).serialize_exact x)

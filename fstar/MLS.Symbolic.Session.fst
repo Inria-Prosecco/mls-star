@@ -18,7 +18,7 @@ type labeled_session (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_labeled_session] (gen_parser (`labeled_session))
-%splice [ps_labeled_session_is_valid] (gen_is_valid_lemma (`labeled_session))
+%splice [ps_labeled_session_is_well_formed] (gen_is_well_formed_lemma (`labeled_session))
 
 instance parseable_serializeable_labeled_session (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (labeled_session bytes) = mk_parseable_serializeable (ps_labeled_session)
 
@@ -143,7 +143,7 @@ let rec mk_global_session_pred_is_msg lspred gu time p si vi st =
           // All that proof effort wasn't for nothing!!!
           serialize_parse_inv_lemma (labeled_session dy_bytes) st;
           LabeledCryptoAPI.string_to_bytes_lemma #gu #time current_label;
-          serialize_pre_lemma (labeled_session dy_bytes) (is_msg gu (readers [psv_id p si vi]) time) ({label; content})
+          serialize_wf_lemma (labeled_session dy_bytes) (is_msg gu (readers [psv_id p si vi]) time) ({label; content})
         )
       ) else ()
     )

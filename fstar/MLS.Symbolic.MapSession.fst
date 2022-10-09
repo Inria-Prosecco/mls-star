@@ -27,7 +27,7 @@ noeq type map_predicate (mt:map_types dy_bytes) = {
   ;
   pred_is_msg: gu:global_usage -> time:timestamp -> key:mt.key -> value:mt.value -> Lemma
     (requires pred gu time key value)
-    (ensures mt.ps_key.is_valid (is_publishable gu time) key /\ mt.ps_value.is_valid (is_publishable gu time) value)
+    (ensures is_well_formed_partial mt.ps_key (is_publishable gu time) key /\ is_well_formed_partial mt.ps_value (is_publishable gu time) value)
   ;
 }
 
@@ -39,7 +39,7 @@ noeq type map_elem_ (bytes:Type0) {|bytes_like bytes|} (mt:map_types bytes) = {
 }
 
 %splice [ps_map_elem_] (gen_parser (`map_elem_))
-%splice [ps_map_elem__is_valid] (gen_is_valid_lemma (`map_elem_))
+%splice [ps_map_elem__is_well_formed] (gen_is_well_formed_lemma (`map_elem_))
 
 type map_elem = map_elem_ dy_bytes
 
@@ -49,7 +49,7 @@ noeq type map_ (bytes:Type0) {|bytes_like bytes|} (mt:map_types bytes) = {
 }
 
 %splice [ps_map_] (gen_parser (`map_))
-%splice [ps_map__is_valid] (gen_is_valid_lemma (`map_))
+%splice [ps_map__is_well_formed] (gen_is_well_formed_lemma (`map_))
 
 type map = map_ dy_bytes
 
@@ -89,13 +89,13 @@ let map_session_invariant mt mpred =
       (fun gu p time si vi st ->
         let pre = is_msg gu (readers [psv_id p si vi]) time in
         map_invariant_eq mt mpred gu time st;
-        for_allP_eq ((ps_map_elem_ mt).is_valid pre) st.key_values;
-        introduce forall x. map_elem_invariant mt mpred gu time x ==> (ps_map_elem_ mt).is_valid pre x
+        for_allP_eq (is_well_formed_partial (ps_map_elem_ mt) pre) st.key_values;
+        introduce forall x. map_elem_invariant mt mpred gu time x ==> is_well_formed_partial (ps_map_elem_ mt) pre x
         with (
           introduce _ ==> _ with _. (
             mpred.pred_is_msg gu time x.key x.value;
-            MLS.MiscLemmas.comparse_is_valid_weaken mt.ps_key (is_publishable gu time) pre x.key;
-            MLS.MiscLemmas.comparse_is_valid_weaken mt.ps_value (is_publishable gu time) pre x.value
+            is_well_formed_partial_weaken mt.ps_key (is_publishable gu time) pre x.key;
+            is_well_formed_partial_weaken mt.ps_value (is_publishable gu time) pre x.value
           )
         )
       )

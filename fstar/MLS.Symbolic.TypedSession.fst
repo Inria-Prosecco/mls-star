@@ -19,7 +19,7 @@ let bare_typed_session_pred_is_msg #a #ps_a spred =
   forall gu p time si vi session.
     spred gu p time si vi session
     ==>
-    Comparse.is_valid _ (is_msg gu (readers [psv_id p si vi]) time) session
+    is_well_formed _ (is_msg gu (readers [psv_id p si vi]) time) session
 
 type typed_session_pred (a:Type) {|parseable_serializeable dy_bytes a|} = spred:bare_typed_session_pred a{bare_typed_session_pred_later spred /\ bare_typed_session_pred_is_msg spred}
 
@@ -36,7 +36,7 @@ let typed_session_pred_to_session_pred #a #ps_a tspred =
       let st = Some?.v (parse a session) in
       let pre = is_msg gu (readers [psv_id p si vi]) time in
       serialize_parse_inv_lemma a session;
-      serialize_pre_lemma a pre st
+      serialize_wf_lemma a pre st
     )
 
 val mk_typed_session_pred:
@@ -48,7 +48,7 @@ val mk_typed_session_pred:
   ) ->
   (gu:global_usage -> p:principal -> time:timestamp -> si:nat -> vi:nat -> session:a -> Lemma
     (requires tspred gu p time si vi session)
-    (ensures Comparse.is_valid _ (is_msg gu (readers [psv_id p si vi]) time) session)
+    (ensures is_well_formed _ (is_msg gu (readers [psv_id p si vi]) time) session)
   ) ->
   typed_session_pred a
 let mk_typed_session_pred #a #ps_a tspred later_lemma is_msg_lemma =
@@ -58,7 +58,7 @@ let mk_typed_session_pred #a #ps_a tspred later_lemma is_msg_lemma =
       later_lemma gu p time0 time1 si vi session
     )
   );
-  introduce forall gu p time si vi session. tspred gu p time si vi session ==> Comparse.is_valid _ (is_msg gu (readers [psv_id p si vi]) time) session
+  introduce forall gu p time si vi session. tspred gu p time si vi session ==> is_well_formed _ (is_msg gu (readers [psv_id p si vi]) time) session
   with (
     introduce _ ==> _ with _. (
       is_msg_lemma gu p time si vi session

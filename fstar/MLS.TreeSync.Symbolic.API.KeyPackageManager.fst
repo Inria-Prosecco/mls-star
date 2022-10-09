@@ -15,7 +15,7 @@ type key_package_manager_value (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_key_package_manager_value] (gen_parser (`key_package_manager_value))
-%splice [ps_key_package_manager_value_is_valid] (gen_is_valid_lemma (`key_package_manager_value))
+%splice [ps_key_package_manager_value_is_well_formed] (gen_is_well_formed_lemma (`key_package_manager_value))
 
 val key_package_manager_types: treekem_types dy_bytes -> map_types dy_bytes
 let key_package_manager_types tkt = {
@@ -30,9 +30,7 @@ let key_package_manager_pred tkt = {
   pred = (fun gu time (key_package:(key_package_manager_types tkt).key) value ->
     value_has_pre (is_publishable gu time) key_package
   );
-  pred_later = (fun gu time0 time1 key_package value ->
-    MLS.MiscLemmas.comparse_is_valid_weaken (ps_key_package_nt tkt) (is_publishable gu time0) (is_publishable gu time1) key_package
-  );
+  pred_later = (fun gu time0 time1 key_package value -> ());
   pred_is_msg = (fun gu time key_package value -> ());
 }
 

@@ -358,8 +358,8 @@ let sign_with_label_valid gu spred usg time sk lab msg nonce =
     label = get_mls_label #dy_bytes lab;
     content = msg;
   } in
-  serialize_pre_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
-  serialize_pre_lemma (sign_content_nt dy_bytes) (is_msg gu (get_label gu msg) time) sign_content;
+  serialize_wf_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
+  serialize_wf_lemma (sign_content_nt dy_bytes) (is_msg gu (get_label gu msg) time) sign_content;
   parse_serialize_inv_lemma #dy_bytes (sign_content_nt dy_bytes) sign_content;
   let sign_content_bytes: dy_bytes = serialize (sign_content_nt dy_bytes) sign_content in
   LabeledCryptoAPI.sign_lemma #gu #time #(get_label gu sk) #(get_label gu sign_content_bytes) sk nonce sign_content_bytes;
@@ -383,7 +383,7 @@ let verify_with_label_is_valid gu spred usg sk_label time vk lab content signatu
     label = get_mls_label #dy_bytes lab;
     content = content;
   } in
-  serialize_pre_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
+  serialize_wf_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
   parse_serialize_inv_lemma #dy_bytes (sign_content_nt dy_bytes) sign_content;
   let sign_content_bytes: dy_bytes = serialize (sign_content_nt dy_bytes) sign_content in
   LabeledCryptoAPI.verify_lemma #gu #time #SecrecyLabels.private_label #SecrecyLabels.private_label vk sign_content_bytes signature

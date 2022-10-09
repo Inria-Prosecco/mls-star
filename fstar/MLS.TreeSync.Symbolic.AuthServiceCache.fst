@@ -19,7 +19,7 @@ type as_cache_key (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_as_cache_key] (gen_parser (`as_cache_key))
-%splice [ps_as_cache_key_is_valid] (gen_is_valid_lemma (`as_cache_key))
+%splice [ps_as_cache_key_is_well_formed] (gen_is_well_formed_lemma (`as_cache_key))
 
 type as_cache_value (bytes:Type0) {|bytes_like bytes|} = {
   who: principal;
@@ -29,7 +29,7 @@ type as_cache_value (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_as_cache_value] (gen_parser (`as_cache_value))
-%splice [ps_as_cache_value_is_valid] (gen_is_valid_lemma (`as_cache_value))
+%splice [ps_as_cache_value_is_well_formed] (gen_is_well_formed_lemma (`as_cache_value))
 
 val as_cache_types: map_types dy_bytes
 let as_cache_types = {
@@ -44,11 +44,11 @@ let as_cache_pred = {
   pred = (fun gu time (key:as_cache_types.key) value ->
     value.time <$ time /\
     is_verification_key gu value.usg (readers [(p_id value.who)]) value.time key.verification_key /\
-    ps_credential_nt.is_valid (is_publishable gu value.time) key.credential
+    is_well_formed_exact (ps_to_pse ps_credential_nt) (is_publishable gu value.time) key.credential
   );
   pred_later = (fun gu time0 time1 key value -> ());
   pred_is_msg = (fun gu time key value ->
-    MLS.MiscLemmas.comparse_is_valid_weaken ps_credential_nt (is_publishable gu value.time) (is_publishable gu time) key.credential
+    assert(is_well_formed_exact (ps_to_pse ps_credential_nt) (is_publishable gu time) key.credential)
   );
 }
 

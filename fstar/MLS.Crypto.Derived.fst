@@ -48,7 +48,7 @@ type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_sign_content_nt] (gen_parser (`sign_content_nt))
 %splice [ps_sign_content_nt_length] (gen_length_lemma (`sign_content_nt))
-%splice [ps_sign_content_nt_is_valid] (gen_is_valid_lemma (`sign_content_nt))
+%splice [ps_sign_content_nt_is_well_formed] (gen_is_well_formed_lemma (`sign_content_nt))
 
 instance parseable_serializeable_sign_content_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (sign_content_nt bytes) = mk_parseable_serializeable ps_sign_content_nt
 
