@@ -9,6 +9,7 @@ open MLS.Tree
 open MLS.Tree.Lemmas
 open MLS.TreeCommon
 open MLS.TreeSync.Operations
+open MLS.TreeSync.Operations.Lemmas
 open MLS.TreeSync.ParentHash
 open MLS.TreeSync.ParentHash.Proofs
 open MLS.TreeSync.Invariants.UnmergedLeaves
@@ -48,6 +49,73 @@ let canonicalize #bytes #bl #tkt #l #i t li =
 val equivalent: #bytes:eqtype -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l1:nat -> #l2:nat -> #i1:tree_index l1 -> #i2:tree_index l2 -> treesync bytes tkt l1 i1 -> treesync bytes tkt l2 i2 -> nat -> bool
 let equivalent #bytes #bl #tkt #l1 #l2 #i1 #i2 t1 t2 li =
   l1 = l2 && i1 = i2 && leaf_index_inside l1 i1 li && (canonicalize t1 li) = (canonicalize t2 li)
+
+(*** Theorems about canonicalization ***)
+
+val is_unmerged_leaves_canonicalized:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  treesync bytes tkt l i -> bool
+let is_unmerged_leaves_canonicalized #bytes #bl #tkt #l #i t =
+  match t with
+  | TLeaf _ -> true
+  | TNode None _ _ -> true
+  | TNode (Some content) _ _ -> content.unmerged_leaves = []
+
+val is_leaf_signature_canonicalized:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  treesync bytes tkt l i -> leaf_index l i ->
+  bool
+let is_leaf_signature_canonicalized #bytes #bl #tkt #l #i t li =
+  match leaf_at t li with
+  | None -> true
+  | Some ln -> recognize_empty (ln.signature <: bytes)
+
+val is_canonicalized:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  treesync bytes tkt l i -> leaf_index l i ->
+  bool
+let is_canonicalized #bytes #bl #tkt #l #i t li =
+  is_unmerged_leaves_canonicalized t && is_leaf_signature_canonicalized t li
+
+val canonicalize_unmerged_leaves_idempotent:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i ->
+  Lemma
+  (requires is_unmerged_leaves_canonicalized t)
+  (ensures t == canonicalize_unmerged_leaves t)
+let canonicalize_unmerged_leaves_idempotent #bytes #bl #tkt #l #i t =
+  un_add_empty t
+
+val canonicalize_leaf_signature_idempotent:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i ->
+  Lemma
+  (requires is_leaf_signature_canonicalized t li)
+  (ensures t == canonicalize_leaf_signature t li)
+let rec canonicalize_leaf_signature_idempotent #bytes #bl #tkt #l #i t li =
+  match t with
+  | TLeaf _ -> ()
+  | TNode opn left right ->
+    if is_left_leaf li then
+      canonicalize_leaf_signature_idempotent left li
+    else
+      canonicalize_leaf_signature_idempotent right li
+
+val canonicalize_idempotent:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i ->
+  Lemma
+  (requires is_canonicalized t li)
+  (ensures t == canonicalize t li)
+let canonicalize_idempotent #bytes #bl #tkt #l #i t li =
+  canonicalize_unmerged_leaves_idempotent t;
+  canonicalize_leaf_signature_idempotent t li
 
 (*** Induction step ***)
 
@@ -516,6 +584,14 @@ let rec tree_list_equivalent_subset #bytes #bl #tkt tl1 tl2 li =
     tree_list_equivalent_subset tail1 tail2 li
   )
 
+val tree_is_canonicalized: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> nat -> (l:nat & i:tree_index l & treesync bytes tkt l i) -> prop
+let tree_is_canonicalized #bytes #bl #tkt li (|l, i, t|) =
+  leaf_index_inside l i li /\ is_canonicalized t li
+
+val tree_list_is_canonicalized: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> nat -> tree_list bytes tkt -> prop
+let tree_list_is_canonicalized #bytes #bl #tkt li tl =
+  for_allP (tree_is_canonicalized li) tl
+
 #push-options "--z3rlimit 25"
 val parent_hash_guarantee_theorem_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> tl1:tree_list bytes tkt -> tl2:tree_list bytes tkt -> li:nat -> Pure (bytes & bytes)
   (requires
@@ -636,6 +712,35 @@ val hd_tail_rev: #a:Type -> l:list a{Cons? l} -> Lemma (
   )
 let hd_tail_rev #a l =
   hd_tail_rev_acc l []
+
+val memP_rev_acc:
+  #a:Type ->
+  x:a -> l1:list a -> l2:list a ->
+  Lemma (List.Tot.memP x (List.Tot.rev_acc l1 l2) <==> List.Tot.memP x l1 \/ List.Tot.memP x l2)
+let rec memP_rev_acc #a x l1 l2 =
+  match l1 with
+  | [] -> ()
+  | h1::t1 -> memP_rev_acc x t1 (h1::l2)
+
+val memP_rev:
+  #a:Type ->
+  x:a -> l:list a ->
+  Lemma (List.Tot.memP x (List.Tot.rev l) <==> List.Tot.memP x l)
+let memP_rev #a x l =
+  memP_rev_acc x l []
+
+val tree_list_is_canonicalized_rev:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  li:nat -> tl:tree_list bytes tkt ->
+  Lemma
+  (requires tree_list_is_canonicalized li tl)
+  (ensures tree_list_is_canonicalized li (List.Tot.rev tl))
+let tree_list_is_canonicalized_rev #bytes #bl #tkt li tl =
+  for_allP_eq (tree_is_canonicalized li) tl;
+  for_allP_eq (tree_is_canonicalized li) (List.Tot.rev tl);
+  introduce forall x. List.Tot.memP x tl <==> List.Tot.memP x (List.Tot.rev tl) with (
+    memP_rev x tl
+  )
 
 (*** tree_list from parent hash invariant ***)
 
@@ -890,6 +995,19 @@ let rec path_to_tree_list_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
     (|l, i, apply_path_aux t p parent_parent_hash|)::tail_tl
   )
 
+val is_canonicalized_apply_path_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Lemma
+  (requires
+    apply_path_aux_pre t p (length #bytes parent_parent_hash) /\
+    (get_path_leaf p).signature == empty #bytes
+  )
+  (ensures is_canonicalized (apply_path_aux t p parent_parent_hash) li)
+let is_canonicalized_apply_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
+  leaf_at_apply_path_aux t p parent_parent_hash li
+
 #push-options "--z3rlimit 50"
 val path_to_tree_list_aux_lemma:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
@@ -901,11 +1019,13 @@ val path_to_tree_list_aux_lemma:
     path_is_parent_hash_valid_aux t p parent_parent_hash /\
     path_is_filter_valid t p /\
     path_node_not_blank p /\
-    unmerged_leaves_ok t
+    unmerged_leaves_ok t /\
+    (get_path_leaf p).signature == empty #bytes
   )
   (ensures (
     let tl = path_to_tree_list_aux t p parent_parent_hash in
     tree_list_is_parent_hash_linkedP_rev tl /\
+    tree_list_is_canonicalized li tl /\
     Cons? tl /\
     List.Tot.hd tl == (|l, i, apply_path_aux t p parent_parent_hash|) /\
     List.Tot.last tl == (|0, li, TLeaf (Some (get_path_leaf p))|)
@@ -915,7 +1035,8 @@ let rec path_to_tree_list_aux_lemma #bytes #cb #tkt #l #i #li t p parent_parent_
     let PLeaf ln = p in
     let tl = [(|l, i, TLeaf (Some ln)|)] in
     assert_norm(tree_list_is_parent_hash_linkedP_rev tl);
-    assert(tl == path_to_tree_list_aux t p parent_parent_hash)
+    assert(tl == path_to_tree_list_aux t p parent_parent_hash);
+    assert_norm(tree_list_is_canonicalized li tl)
   ) else (
     let (|ld, id, (td, pd, new_parent_parent_hash)|) = find_node_and_path_parent_hash_link t p parent_parent_hash in
     find_node_and_path_parent_hash_link_lemma t p parent_parent_hash;
@@ -924,7 +1045,8 @@ let rec path_to_tree_list_aux_lemma #bytes #cb #tkt #l #i #li t p parent_parent_
     find_parent_hash_link_last_update t p parent_parent_hash;
     unmerged_leaves_ok_subtree td t;
     unmerged_leaves_ok_apply_path_aux t p parent_parent_hash;
-    path_to_tree_list_aux_lemma td pd new_parent_parent_hash
+    path_to_tree_list_aux_lemma td pd new_parent_parent_hash;
+    is_canonicalized_apply_path_aux t p parent_parent_hash
   )
 #pop-options
 
@@ -966,12 +1088,14 @@ val path_to_tree_list_lemma:
     apply_path_pre t p /\
     path_is_parent_hash_valid t p /\
     path_is_filter_valid t p /\
-    unmerged_leaves_ok t
+    unmerged_leaves_ok t /\
+    (get_path_leaf p).signature == empty #bytes
   )
   (ensures (
     let tl = path_to_tree_list t p in
     tree_list_is_parent_hash_linkedP tl /\
     tree_list_ends_at_root tl /\
+    tree_list_is_canonicalized li tl /\
     Cons? tl /\
     List.Tot.hd tl == (|0, li, TLeaf (Some (get_path_leaf p))|)
   ))
@@ -983,5 +1107,7 @@ let path_to_tree_list_lemma #bytes #cb #tkt #l #li t p =
   path_to_tree_list_aux_lemma t' p' (root_parent_hash #bytes);
   hd_tail_rev rev_tl;
   tree_list_is_parent_hash_linkedP_rev_eq rev_tl;
+  tree_list_is_canonicalized_rev li rev_tl;
   last_to_tree_list_ends_at_root (List.Tot.rev rev_tl)
 #pop-options
+

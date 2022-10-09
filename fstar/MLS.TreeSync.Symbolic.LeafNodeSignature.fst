@@ -101,10 +101,6 @@ val tree_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> mls
 let tree_has_event #tkt prin time group_id (|l, i, t|) =
   did_event_occur_before prin time (tree_to_event group_id (|l, i, t|))
 
-val tree_has_equivalent_event: #l:nat -> #i:tree_index l -> tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> treesync dy_bytes tkt l i -> leaf_index l i -> prop
-let tree_has_equivalent_event #l #i tkt prin time group_id t li =
-  (exists (t':treesync dy_bytes tkt l i). equivalent t t' li /\ tree_has_event prin time group_id (|l, i, t'|))
-
 val tree_list_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> tree_list dy_bytes tkt -> prop
 let tree_list_has_event #tkt prin time group_id tl =
   for_allP (tree_has_event prin time group_id) tl
@@ -126,6 +122,7 @@ let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
           tree_list_starts_with_tbs tl ln_tbs_bytes /\
           tree_list_is_parent_hash_linkedP tl /\
           tree_list_ends_at_root tl /\
+          tree_list_is_canonicalized ln_tbs.leaf_index tl /\
           tree_list_has_event prin time ln_tbs.group_id tl
       )
       | LNS_update () -> (
@@ -247,7 +244,7 @@ val parent_hash_implies_event: #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_
     let authentifier_li = get_authentifier_index t in
     let authentifier = (Some?.v (leaf_at ast authentifier_li)).who in
     (
-      tree_has_equivalent_event tkt authentifier time group_id t authentifier_li
+      tree_has_event authentifier time group_id (|l, i, (canonicalize t authentifier_li)|)
     ) \/ (
       is_corrupt time (p_id authentifier)
     )
@@ -273,10 +270,10 @@ let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
   serialize_pre_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_valid gu time) ln_tbs;
   verify_with_label_is_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" leaf_sk_label time ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature;
 
-  introduce (exists time_sig. time_sig <$ time /\ leaf_node_spred gu.key_usages tkt "MLS.LeafSignKey" time_sig ln.data.signature_key ln_tbs_bytes) ==> tree_has_equivalent_event tkt authentifier time group_id t authentifier_li
+  introduce (exists time_sig. time_sig <$ time /\ leaf_node_spred gu.key_usages tkt "MLS.LeafSignKey" time_sig ln.data.signature_key ln_tbs_bytes) ==> tree_has_event authentifier time group_id (|l, i, (canonicalize t authentifier_li)|)
   with _. (
     eliminate exists time_sig. time_sig <$ time /\ leaf_node_spred gu.key_usages tkt "MLS.LeafSignKey" time_sig ln.data.signature_key ln_tbs_bytes
-    returns tree_has_equivalent_event tkt authentifier time group_id t authentifier_li
+    returns tree_has_event authentifier time group_id (|l, i, (canonicalize t authentifier_li)|)
     with _. (
       parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
 
@@ -285,8 +282,9 @@ let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
         tree_list_starts_with_tbs leaf_tl ln_tbs_bytes /\
         tree_list_is_parent_hash_linkedP leaf_tl /\
         tree_list_ends_at_root leaf_tl /\
+        tree_list_is_canonicalized authentifier_li leaf_tl /\
         tree_list_has_event prin time_sig ln_tbs.group_id leaf_tl
-      returns tree_has_equivalent_event tkt authentifier time group_id t authentifier_li
+      returns tree_has_event authentifier time group_id (|l, i, (canonicalize t authentifier_li)|)
       with _. (
         let (b1, b2) = parent_hash_guarantee_theorem my_tl leaf_tl ln_tbs_bytes in
         hash_hash_inj b1 b2;
@@ -295,9 +293,9 @@ let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
         is_verification_key_to_signkey_label gu "MLS.LeafSignKey" (readers [p_id authentifier]) time ln.data.signature_key;
         readers_is_injective prin authentifier;
         let (|_, _, original_t|) = List.Tot.index leaf_tl (List.Tot.length my_tl - 1) in
-        introduce exists (t':treesync dy_bytes tkt l i). equivalent t t' authentifier_li /\ tree_has_event authentifier time group_id (|l, i, t'|)
-        with original_t
-        and ()
+        List.Tot.lemma_index_memP leaf_tl (List.Tot.length my_tl - 1);
+        for_allP_eq (tree_is_canonicalized authentifier_li) leaf_tl;
+        canonicalize_idempotent original_t authentifier_li
       )
     )
   );
@@ -373,7 +371,7 @@ val state_implies_event:
       let authentifier_li = get_authentifier_index t in
       let authentifier = (Some?.v (leaf_at ast authentifier_li)).who in
       (
-        tree_has_equivalent_event tkt authentifier time st.group_id t authentifier_li
+        tree_has_event authentifier time st.group_id (|l, i, (canonicalize t authentifier_li)|)
       ) \/ (
         is_corrupt time (p_id authentifier)
       )
@@ -538,6 +536,7 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
     tree_list_is_parent_hash_linkedP tl /\
     tree_list_ends_at_root tl /\
     tree_list_has_event prin time new_ln_tbs.group_id tl /\
+    tree_list_is_canonicalized li tl /\
     leaf_node_has_event prin time new_ln_tbs
   with prin tl and (
     LabeledCryptoAPI.vk_lemma #gu #time #(readers [p_id prin]) sk
