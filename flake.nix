@@ -37,7 +37,16 @@
     mls-star = pkgs.callPackage ./default.nix {inherit fstar z3 comparse dolev-yao-star; ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_12;};
   in {
     packages.${system} = {
-      inherit fstar mls-star;
+      inherit mls-star;
+    };
+    devShells.${system}.default = pkgs.mkShell {
+      packages = [
+        fstar z3
+      ] ++ (with pkgs.ocaml-ng.ocamlPackages_4_12; [
+        ocaml dune_2 findlib
+        # fstarlib dependencies
+        batteries stdint zarith ppx_deriving_yojson
+      ]);
     };
     defaultPackage.${system} = mls-star;
     hydraJobs = {
