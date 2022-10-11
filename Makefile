@@ -97,13 +97,7 @@ check: copy_lib copy_tests
 release:
 	tar cjvf mls-js-$(shell date +%Y%m%d%H%M%z).tar.bz2 js/index.html js/index.js _build/default/js/MLS_JS.bc.js
 
-# Test vectors
-
-# test_vectors:
-# 	wget https://tmp.twal.org/test_vectors.zip
-# 	unzip test_vectors.zip
-
-# Interactive mode support...
+# Interactive mode support
 
 %.fst-in %.fsti-in:
-	@echo $(FSTAR_INCLUDE_DIRS) --include $(MLS_HOME)/obj
+	@echo $(FSTAR_INCLUDE_DIRS) --include $(MLS_HOME)/cache
