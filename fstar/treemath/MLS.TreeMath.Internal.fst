@@ -7,10 +7,10 @@ open FStar.List.Tot
 
 #set-options "--fuel 1 --ifuel 0 --z3rlimit 20"
 
-val level_aux: x:nat -> k:nat -> Pure nat
+val level_aux: x:nat -> k:nat{pow2 k <= x+x+1} -> Pure nat
   (requires forall (i:nat{i<k}). (x / (pow2 i)) % 2 == 1)
   (ensures fun res -> ((x / (pow2 res)) % 2 == 0) /\ (forall (i:nat{i<res}). (x / (pow2 i)) % 2 == 1))
-  (decreases x+x-(pow2 k))
+  (decreases ((x+x+1-(pow2 k)) <: nat))
 let rec level_aux x k =
   if (x / (pow2 k)) % 2 = 1 then (
     level_aux x (k+1)
@@ -366,7 +366,7 @@ let get_bit_lemma_inv x k b xm =
   get_bit_lemma x k;
   euclidean_div_uniqueness (pow2 k) ((x/(pow2 k))%2) b (x%(pow2 k)) xm
 
-#push-options "--quake 1/5 --z3rlimit 50"
+#push-options "--quake 1/5 --z3rlimit 100"
 val level_parent: x:nat -> Lemma (level (parent x) == (level x) + 1)
 let level_parent x =
   let k = level x in

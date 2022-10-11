@@ -288,7 +288,7 @@ let get_filename t =
   if Sys.file_exists f then
     f
   else
-    "../../../../fstar/" ^ f
+    "../../../../" ^ f
 
 let get_testsuite (typ:test_type): testsuite =
   let json = Yojson.Safe.from_channel (open_in (get_filename typ)) in
