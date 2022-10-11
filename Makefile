@@ -1,21 +1,14 @@
-ifndef FSTAR_HOME
-	FSTAR_HOME = $(dir $(shell which fstar.exe))/..
-endif
-ifndef Z3
-	Z3 = $(shell which z3)
-endif
-ifndef COMPARSE_HOME
-	COMPARSE_HOME = ../comparse
-endif
-ifndef DY_HOME
-	DY_HOME = ../dolev-yao-star
-endif
+MLS_HOME 	?= .
+FSTAR_HOME 	?= $(dir $(shell which fstar.exe))/..
+Z3 		?= $(shell which z3)
+COMPARSE_HOME 	?= $(MLS_HOME)/../comparse
+DY_HOME 	?= $(MLS_HOME)/../dolev-yao-star
 
 include $(FSTAR_HOME)/ulib/gmake/fstar.mk
 include $(FSTAR_HOME)/ulib/ml/Makefile.include
 
-HACL_SNAPSHOT_DIR = hacl-star-snapshot
-SOURCE_DIR = fstar
+HACL_SNAPSHOT_DIR = $(MLS_HOME)/hacl-star-snapshot
+SOURCE_DIR = $(MLS_HOME)/fstar
 
 INCLUDE_DIRS = $(SOURCE_DIR) $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)/src $(DY_HOME) $(DY_HOME)/symbolic
 FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
@@ -46,9 +39,10 @@ ifndef MAKE_RESTARTS
 .PHONY: .FORCE
 .FORCE:
 endif
-endif
 
 include .depend
+endif
+
 
 # Verification
 
@@ -112,4 +106,4 @@ release:
 # Interactive mode support...
 
 %.fst-in %.fsti-in:
-	@echo $(FSTAR_INCLUDE_DIRS) --include obj
+	@echo $(FSTAR_INCLUDE_DIRS) --include $(MLS_HOME)/obj
