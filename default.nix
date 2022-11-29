@@ -22,7 +22,7 @@ let
     buildInputs =
       [ which fstar z3 ]
       ++ (with ocamlPackages; [
-        ocaml dune_2 findlib
+        ocaml dune_3 findlib
         # fstarlib dependencies
         batteries stdint zarith ppx_deriving_yojson
       ]);
