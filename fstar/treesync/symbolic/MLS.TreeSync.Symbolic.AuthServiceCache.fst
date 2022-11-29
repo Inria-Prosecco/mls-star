@@ -44,11 +44,11 @@ let as_cache_pred = {
   pred = (fun gu time (key:as_cache_types.key) value ->
     value.time <$ time /\
     is_verification_key gu value.usg (readers [(p_id value.who)]) value.time key.verification_key /\
-    is_well_formed_exact (ps_to_pse ps_credential_nt) (is_publishable gu value.time) key.credential
+    is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable gu value.time) key.credential
   );
   pred_later = (fun gu time0 time1 key value -> ());
   pred_is_msg = (fun gu time key value ->
-    assert(is_well_formed_exact (ps_to_pse ps_credential_nt) (is_publishable gu time) key.credential)
+    assert(is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable gu time) key.credential)
   );
 }
 

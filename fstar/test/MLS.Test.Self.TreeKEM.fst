@@ -94,7 +94,7 @@ let update_leaf #bytes #cb rng st leaf_index =
   let leaf_secrets = get_secret st.secrets leaf_index in
   if not (leaf_index < pow2 st.public.levels) then failwith "" else
   let (rng, new_leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
-  let ad = (ps_to_pse ps_nat).serialize_exact st.epoch in
+  let ad = (ps_prefix_to_ps_whole ps_nat).serialize st.epoch in
   let rand_length = (update_path_entropy_lengths st.public.tree leaf_index) in
   let (rng, rand) = gen_rand_randomness rng rand_length in
   let (path_tk, _) = extract_result (update_path st.public.tree leaf_index new_leaf_secret ad rand) in

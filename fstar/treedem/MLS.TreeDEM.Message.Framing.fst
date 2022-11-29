@@ -31,7 +31,7 @@ let compute_tbs #bytes #bl wire_format content group_context =
 
 val compute_tbm: #bytes:Type0 -> {|bytes_like bytes|} -> content:mls_content_nt bytes -> mls_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> mls_content_tbm_nt bytes
 let compute_tbm #bytes #bl content auth group_context =
-  let content_tbs = compute_tbs (WF_mls_plaintext ()) content group_context in
+  let content_tbs = compute_tbs WF_mls_plaintext content group_context in
   ({
     content_tbs;
     auth;
@@ -70,7 +70,7 @@ let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key i
   else (
     let? signature = compute_message_signature sk rand msg.wire_format msg_network group_context in
     let? confirmation_tag = (
-      if msg.content_type = CT_commit () then (
+      if msg.content_type = CT_commit then (
         let? confirmed_transcript_hash = compute_confirmed_transcript_hash msg signature interim_transcript_hash in
         let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
         return (Some confirmation_tag <: option bytes)
@@ -90,12 +90,12 @@ let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key i
 val message_plaintext_to_message: #bytes:Type0 -> {|bytes_like bytes|} -> mls_plaintext_nt bytes -> mls_authenticated_content_nt bytes
 let message_plaintext_to_message #bytes #bl pt =
   {
-    wire_format = WF_mls_plaintext ();
+    wire_format = WF_mls_plaintext;
     content = pt.content;
     auth = pt.auth;
   }
 
-val message_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> membership_key:bytes -> auth_msg:mls_authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_plaintext ()} -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context auth_msg.content.sender} -> result (mls_plaintext_nt bytes)
+val message_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> membership_key:bytes -> auth_msg:mls_authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_plaintext} -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context auth_msg.content.sender} -> result (mls_plaintext_nt bytes)
 let message_to_message_plaintext #bytes #cb membership_key auth_msg group_context =
   let? membership_tag = (
     match auth_msg.content.sender with
@@ -205,7 +205,7 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
     let? leaf_tree_secret = leaf_kdf encryption_secret (sender_index <: MLS.Tree.leaf_index l 0) in
     let? init_ratchet = (
       match ct.content_type with
-      | CT_application () -> init_application_ratchet leaf_tree_secret
+      | CT_application -> init_application_ratchet leaf_tree_secret
       | _ -> init_handshake_ratchet leaf_tree_secret
     ) in
     ratchet_get_generation_key init_ratchet sender_data.generation
@@ -218,7 +218,7 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
     decrypt_ciphertext_content ciphertext_content_ad key patched_nonce ct.ciphertext
   ) in
   return ({
-    wire_format = WF_mls_ciphertext ();
+    wire_format = WF_mls_ciphertext;
     content = {
       group_id = ct.group_id;
       epoch = ct.epoch;
@@ -243,7 +243,7 @@ let get_serializeable_bytes #bytes #bl b =
     return b
   )
 
-val message_to_message_ciphertext: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:mls_authenticated_content_nt bytes{msg.wire_format == WF_mls_ciphertext ()} -> result (mls_ciphertext_nt bytes & ratchet_state bytes)
+val message_to_message_ciphertext: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:mls_authenticated_content_nt bytes{msg.wire_format == WF_mls_ciphertext} -> result (mls_ciphertext_nt bytes & ratchet_state bytes)
 let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_secret auth_msg =
   let? ciphertext = (
     let? key_nonce = ratchet_get_key ratchet in

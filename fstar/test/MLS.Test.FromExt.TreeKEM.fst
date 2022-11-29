@@ -43,13 +43,13 @@ let check_treesync #l #i #cb t group_id =
 val gen_treekem_output: {|crypto_bytes bytes|} -> treekem_test_input -> ML treekem_test_output
 let gen_treekem_output #cb t =
   let group_id: bytes = empty in (* TODO *)
-  let ratchet_tree = extract_option "bad ratchet tree" ((ps_to_pse (ps_ratchet_tree_nt _)).parse_exact (hex_string_to_bytes t.ratchet_tree_before)) in
+  let ratchet_tree = extract_option "bad ratchet tree" ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt _)).parse (hex_string_to_bytes t.ratchet_tree_before)) in
   let add_sender = FStar.UInt32.v t.add_sender in
   let my_leaf_secret = (hex_string_to_bytes t.my_leaf_secret) in
-  let my_key_package = extract_option "bad key package" ((ps_to_pse (ps_key_package_nt _)).parse_exact (hex_string_to_bytes t.my_key_package)) in
+  let my_key_package = extract_option "bad key package" ((ps_prefix_to_ps_whole (ps_key_package_nt _)).parse (hex_string_to_bytes t.my_key_package)) in
   let my_path_secret = (hex_string_to_bytes t.my_path_secret) in
   let update_sender = FStar.UInt32.v t.update_sender in
-  let update_path = extract_option "bad update path" ((ps_to_pse ps_update_path_nt).parse_exact (hex_string_to_bytes t.update_path)) in
+  let update_path = extract_option "bad update path" ((ps_prefix_to_ps_whole ps_update_path_nt).parse (hex_string_to_bytes t.update_path)) in
   let update_group_context = hex_string_to_bytes t.update_group_context in
   let l = extract_result (ratchet_tree_l ratchet_tree) in
   let ts0 = extract_result (ratchet_tree_to_treesync l 0 ratchet_tree) in
@@ -84,7 +84,7 @@ let gen_treekem_output #cb t =
 
     let ratchet_tree2 = extract_result (treesync_to_ratchet_tree ts2) in
     let byte_length_ratchet_tree2 = bytes_length (ps_option (ps_node_nt _)) ratchet_tree2 in
-    let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 30 then (ps_to_pse (ps_ratchet_tree_nt _)).serialize_exact ratchet_tree2 else empty in
+    let ratchet_tree_after = if 1 <= byte_length_ratchet_tree2 && byte_length_ratchet_tree2 < pow2 30 then (ps_prefix_to_ps_whole (ps_ratchet_tree_nt _)).serialize ratchet_tree2 else empty in
     let tree_hash_after = extract_result (if not (tree_hash_pre ts2) then error "invalid TH pre 2" else return (tree_hash ts2)) in
     {
       tree_hash_before = bytes_to_hex_string tree_hash_before;

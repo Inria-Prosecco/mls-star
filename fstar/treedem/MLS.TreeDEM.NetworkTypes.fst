@@ -8,21 +8,21 @@ open MLS.TreeKEM.NetworkTypes
 (*** PSKs ***)
 
 type psk_type_nt =
-  | PSKT_external: [@@@ with_num_tag 1 1] unit -> psk_type_nt
-  | PSKT_resumption: [@@@ with_num_tag 1 2] unit -> psk_type_nt
+  | [@@@ with_num_tag 1 1] PSKT_external: psk_type_nt
+  | [@@@ with_num_tag 1 2] PSKT_resumption: psk_type_nt
 
 %splice [ps_psk_type_nt] (gen_parser (`psk_type_nt))
 
 type resumption_psk_usage_nt =
-  | RPSKU_application: [@@@ with_num_tag 1 1] unit -> resumption_psk_usage_nt
-  | RPSKU_reinit: [@@@ with_num_tag 1 2] unit -> resumption_psk_usage_nt
-  | RPSKU_branch: [@@@ with_num_tag 1 3] unit -> resumption_psk_usage_nt
+  | [@@@ with_num_tag 1 1] RPSKU_application: resumption_psk_usage_nt
+  | [@@@ with_num_tag 1 2] RPSKU_reinit: resumption_psk_usage_nt
+  | [@@@ with_num_tag 1 3] RPSKU_branch: resumption_psk_usage_nt
 
 %splice [ps_resumption_psk_usage_nt] (gen_parser (`resumption_psk_usage_nt))
 
 type pre_shared_key_id_nt (bytes:Type0) {|bytes_like bytes|} =
-  | PSKI_external: [@@@ with_tag (PSKT_external ())] psk_id:mls_bytes bytes -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
-  | PSKI_resumption: [@@@ with_tag (PSKT_resumption ())] usage: resumption_psk_usage_nt -> psk_group_id:mls_bytes bytes -> psk_epoch:nat_lbytes 8 -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
+  | [@@@ with_tag PSKT_external] PSKI_external: psk_id:mls_bytes bytes -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
+  | [@@@ with_tag PSKT_resumption] PSKI_resumption: usage: resumption_psk_usage_nt -> psk_group_id:mls_bytes bytes -> psk_epoch:nat_lbytes 8 -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
 
 %splice [ps_pre_shared_key_id_nt] (gen_parser (`pre_shared_key_id_nt))
 
@@ -86,29 +86,27 @@ type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
 (*** Refs ***)
 
 type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-val ps_key_package_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (key_package_ref_nt bytes)
-let ps_key_package_ref_nt #bytes #bl = ps_mls_bytes
+%splice [ps_key_package_ref_nt] (gen_parser (`key_package_ref_nt))
 
 type proposal_ref_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-val ps_proposal_ref_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (proposal_ref_nt bytes)
-let ps_proposal_ref_nt #bytes #bl = ps_mls_bytes
+%splice [ps_proposal_ref_nt] (gen_parser (`proposal_ref_nt))
 
 (*** Message framing ***)
 
 type proposal_nt (bytes:Type0) {|bytes_like bytes|} =
-  | P_add: [@@@ with_tag (PT_add ())] add_nt bytes -> proposal_nt bytes
-  | P_update: [@@@ with_tag (PT_update ())] update_nt bytes -> proposal_nt bytes
-  | P_remove: [@@@ with_tag (PT_remove ())] remove_nt bytes -> proposal_nt bytes
-  | P_psk: [@@@ with_tag (PT_psk ())] pre_shared_key_nt bytes -> proposal_nt bytes
-  | P_reinit: [@@@ with_tag (PT_reinit ())] reinit_nt bytes -> proposal_nt bytes
-  | P_external_init: [@@@ with_tag (PT_external_init ())] external_init_nt bytes -> proposal_nt bytes
-  | P_group_context_extensions: [@@@ with_tag (PT_group_context_extensions ())] group_context_extensions_nt bytes -> proposal_nt bytes
+  | [@@@ with_tag PT_add] P_add: add_nt bytes -> proposal_nt bytes
+  | [@@@ with_tag PT_update] P_update: update_nt bytes -> proposal_nt bytes
+  | [@@@ with_tag PT_remove] P_remove: remove_nt bytes -> proposal_nt bytes
+  | [@@@ with_tag PT_psk] P_psk: pre_shared_key_nt bytes -> proposal_nt bytes
+  | [@@@ with_tag PT_reinit] P_reinit: reinit_nt bytes -> proposal_nt bytes
+  | [@@@ with_tag PT_external_init] P_external_init: external_init_nt bytes -> proposal_nt bytes
+  | [@@@ with_tag PT_group_context_extensions] P_group_context_extensions: group_context_extensions_nt bytes -> proposal_nt bytes
 
 %splice [ps_proposal_nt] (gen_parser (`proposal_nt))
 
 type proposal_or_ref_nt (bytes:Type0) {|bytes_like bytes|} =
-  | POR_proposal: [@@@ with_num_tag 1 1] proposal_nt bytes -> proposal_or_ref_nt bytes
-  | POR_reference: [@@@ with_num_tag 1 2] proposal_ref_nt bytes -> proposal_or_ref_nt bytes
+  | [@@@ with_num_tag 1 1] POR_proposal: proposal_nt bytes -> proposal_or_ref_nt bytes
+  | [@@@ with_num_tag 1 2] POR_reference: proposal_ref_nt bytes -> proposal_or_ref_nt bytes
 
 %splice [ps_proposal_or_ref_nt] (gen_parser (`proposal_or_ref_nt))
 
@@ -121,54 +119,48 @@ type commit_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_commit_nt] (gen_parser (`commit_nt))
 
 type sender_type_nt =
-  | ST_member: [@@@ with_num_tag 1 1] unit -> sender_type_nt
-  | ST_external: [@@@ with_num_tag 1 2] unit -> sender_type_nt
-  | ST_new_member_proposal: [@@@ with_num_tag 1 3] unit -> sender_type_nt
-  | ST_new_member_commit: [@@@ with_num_tag 1 4] unit -> sender_type_nt
+  | [@@@ with_num_tag 1 1] ST_member: sender_type_nt
+  | [@@@ with_num_tag 1 2] ST_external: sender_type_nt
+  | [@@@ with_num_tag 1 3] ST_new_member_proposal: sender_type_nt
+  | [@@@ with_num_tag 1 4] ST_new_member_commit: sender_type_nt
 
 %splice [ps_sender_type_nt] (gen_parser (`sender_type_nt))
 
 type sender_nt (bytes:Type0) {|bytes_like bytes|} =
-  | S_member: [@@@ with_tag (ST_member ())] leaf_index:nat_lbytes 4 -> sender_nt bytes
-  | S_external: [@@@ with_tag (ST_external ())] sender_index:nat_lbytes 4 -> sender_nt bytes
-  | S_new_member_proposal: [@@@ with_tag (ST_new_member_proposal ())] unit -> sender_nt bytes
-  | S_new_member_commit: [@@@ with_tag (ST_new_member_commit ())] unit -> sender_nt bytes
+  | [@@@ with_tag ST_member] S_member: leaf_index:nat_lbytes 4 -> sender_nt bytes
+  | [@@@ with_tag ST_external] S_external: sender_index:nat_lbytes 4 -> sender_nt bytes
+  | [@@@ with_tag ST_new_member_proposal] S_new_member_proposal: sender_nt bytes
+  | [@@@ with_tag ST_new_member_commit] S_new_member_commit: sender_nt bytes
 
 %splice [ps_sender_nt] (gen_parser (`sender_nt))
 
 type wire_format_nt =
-  | WF_mls_plaintext: [@@@ with_num_tag 1 1] unit -> wire_format_nt
-  | WF_mls_ciphertext: [@@@ with_num_tag 1 2] unit -> wire_format_nt
-  | WF_mls_welcome: [@@@ with_num_tag 1 3] unit -> wire_format_nt
-  | WF_mls_group_info: [@@@ with_num_tag 1 4] unit -> wire_format_nt
-  | WF_mls_key_package: [@@@ with_num_tag 1 5] unit -> wire_format_nt
+  | [@@@ with_num_tag 1 1] WF_mls_plaintext: wire_format_nt
+  | [@@@ with_num_tag 1 2] WF_mls_ciphertext: wire_format_nt
+  | [@@@ with_num_tag 1 3] WF_mls_welcome: wire_format_nt
+  | [@@@ with_num_tag 1 4] WF_mls_group_info: wire_format_nt
+  | [@@@ with_num_tag 1 5] WF_mls_key_package: wire_format_nt
 
 %splice [ps_wire_format_nt] (gen_parser (`wire_format_nt))
 
 type mac_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-val ps_mac_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (mac_nt bytes)
-let ps_mac_nt #bytes #bl = ps_mls_bytes
+%splice [ps_mac_nt] (gen_parser (`mac_nt))
 
 type content_type_nt =
-  | CT_application: [@@@ with_num_tag 1 1] unit -> content_type_nt
-  | CT_proposal: [@@@ with_num_tag 1 2] unit -> content_type_nt
-  | CT_commit: [@@@ with_num_tag 1 3] unit -> content_type_nt
+  | [@@@ with_num_tag 1 1] CT_application: content_type_nt
+  | [@@@ with_num_tag 1 2] CT_proposal: content_type_nt
+  | [@@@ with_num_tag 1 3] CT_commit: content_type_nt
 
 %splice [ps_content_type_nt] (gen_parser (`content_type_nt))
 
 val mls_untagged_content_nt: bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
 let mls_untagged_content_nt bytes #bl content_type =
   match content_type with
-  | CT_application () -> mls_bytes bytes
-  | CT_proposal () -> proposal_nt bytes
-  | CT_commit () -> commit_nt bytes
+  | CT_application -> mls_bytes bytes
+  | CT_proposal -> proposal_nt bytes
+  | CT_commit -> commit_nt bytes
 
-val ps_mls_untagged_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer bytes (mls_untagged_content_nt bytes content_type)
-let ps_mls_untagged_content_nt #bytes #bl content_type =
-  match content_type with
-  | CT_application () -> ps_mls_bytes
-  | CT_proposal () -> ps_proposal_nt
-  | CT_commit () -> ps_commit_nt
+%splice [ps_mls_untagged_content_nt] (gen_parser (`mls_untagged_content_nt))
 
 type mls_tagged_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   content_type: content_type_nt;
@@ -190,17 +182,11 @@ type mls_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 let mls_content_tbs_group_context_nt (bytes:Type0) {|bytes_like bytes|} (s:sender_nt bytes) =
   match s with
   | S_member _
-  | S_new_member_commit _ -> group_context_nt bytes
+  | S_new_member_commit -> group_context_nt bytes
   | S_external _
-  | S_new_member_proposal _ -> unit
+  | S_new_member_proposal -> unit
 
-val ps_mls_content_tbs_group_context_nt: #bytes:Type0 -> {|bytes_like bytes|} -> s:sender_nt bytes -> parser_serializer_unit bytes (mls_content_tbs_group_context_nt bytes s)
-let ps_mls_content_tbs_group_context_nt #bytes #bl s =
-  match s with
-  | S_member _
-  | S_new_member_commit _ -> ps_group_context_nt
-  | S_external _
-  | S_new_member_proposal _ -> ps_unit
+%splice [ps_mls_content_tbs_group_context_nt] (gen_parser_prefix (`mls_content_tbs_group_context_nt))
 
 type mls_content_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
@@ -215,14 +201,10 @@ instance parseable_serializeable_mls_content_tbs_nt (bytes:Type0) {|bytes_like b
 val confirmation_tag_nt: bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
 let confirmation_tag_nt bytes #bl content =
   match content with
-  | CT_commit () -> mac_nt bytes
+  | CT_commit -> mac_nt bytes
   | _ -> unit
 
-val ps_confirmation_tag_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer_unit bytes (confirmation_tag_nt bytes content_type)
-let ps_confirmation_tag_nt #bytes #bl content_type =
-  match content_type with
-  | CT_commit () -> ps_mac_nt
-  | _ -> ps_unit
+%splice [ps_confirmation_tag_nt] (gen_parser_prefix (`confirmation_tag_nt))
 
 type mls_content_auth_data_nt (bytes:Type0) {|bl:bytes_like bytes|} (content_type:content_type_nt) = {
   signature: mls_bytes bytes;
@@ -253,11 +235,7 @@ let membership_tag_nt (bytes:Type0) {|bytes_like bytes|} (s:sender_nt bytes) =
   | S_member _ -> mac_nt bytes
   | _ -> unit
 
-val ps_membership_tag_nt: #bytes:Type0 -> {|bytes_like bytes|} -> s:sender_nt bytes -> parser_serializer_unit bytes (membership_tag_nt bytes s)
-let ps_membership_tag_nt #bytes #bl s =
-  match s with
-  | S_member _ -> ps_mac_nt
-  | _ -> ps_unit
+%splice [ps_membership_tag_nt] (gen_parser_prefix (`membership_tag_nt))
 
 type mls_plaintext_nt (bytes:Type0) {|bytes_like bytes|} = {
   content: mls_content_nt bytes;
@@ -294,17 +272,17 @@ type mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type:
   padding: list zero_byte;
 }
 
-val pse_mls_ciphertext_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer_exact bytes (mls_ciphertext_content_nt bytes content_type)
+val pse_mls_ciphertext_content_nt: #bytes:Type0 -> {|bytes_like bytes|} -> content_type:content_type_nt -> parser_serializer_whole bytes (mls_ciphertext_content_nt bytes content_type)
 let pse_mls_ciphertext_content_nt #bytes #bl content_type =
   let iso = mk_isomorphism_between
     (fun (|data, padding|) -> {data; padding})
     (fun {data; padding} -> (|data, padding|))
   in
-  isomorphism_exact
-    (bind_exact (ps_mls_ciphertext_content_data_nt content_type) (fun _ -> pse_list ps_zero_byte))
+  isomorphism_whole
+    (bind_whole (ps_mls_ciphertext_content_data_nt content_type) (fun _ -> ps_whole_list ps_zero_byte))
     iso
 
-instance parseable_serializeable_mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt): parseable_serializeable bytes (mls_ciphertext_content_nt bytes content_type) = mk_parseable_serializeable_from_exact (pse_mls_ciphertext_content_nt content_type)
+instance parseable_serializeable_mls_ciphertext_content_nt (bytes:Type0) {|bytes_like bytes|} (content_type:content_type_nt): parseable_serializeable bytes (mls_ciphertext_content_nt bytes content_type) = mk_parseable_serializeable_from_whole (pse_mls_ciphertext_content_nt content_type)
 
 type mls_ciphertext_content_aad_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_id: mls_bytes bytes;
@@ -409,15 +387,15 @@ type welcome_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_welcome_nt] (gen_parser (`welcome_nt))
 
 type mls_10_message_nt (bytes:Type0) {|bytes_like bytes|} =
-  | M_plaintext: [@@@ with_tag (WF_mls_plaintext ())] mls_plaintext_nt bytes -> mls_10_message_nt bytes
-  | M_ciphertext: [@@@ with_tag (WF_mls_ciphertext ())] mls_ciphertext_nt bytes -> mls_10_message_nt bytes
-  | M_welcome: [@@@ with_tag (WF_mls_welcome ())] welcome_nt bytes -> mls_10_message_nt bytes
-  | M_group_info: [@@@ with_tag (WF_mls_group_info ())] group_info_nt bytes -> mls_10_message_nt bytes
-  | M_key_package: [@@@ with_tag (WF_mls_key_package ())] key_package_nt bytes tkt -> mls_10_message_nt bytes
+  | [@@@ with_tag WF_mls_plaintext] M_plaintext: mls_plaintext_nt bytes -> mls_10_message_nt bytes
+  | [@@@ with_tag WF_mls_ciphertext] M_ciphertext: mls_ciphertext_nt bytes -> mls_10_message_nt bytes
+  | [@@@ with_tag WF_mls_welcome] M_welcome: welcome_nt bytes -> mls_10_message_nt bytes
+  | [@@@ with_tag WF_mls_group_info] M_group_info: group_info_nt bytes -> mls_10_message_nt bytes
+  | [@@@ with_tag WF_mls_key_package] M_key_package: key_package_nt bytes tkt -> mls_10_message_nt bytes
 
 %splice [ps_mls_10_message_nt] (gen_parser (`mls_10_message_nt))
 
 type mls_message_nt (bytes:Type0) {|bytes_like bytes|} =
-  | M_mls10: [@@@ with_tag (PV_mls10 ())] mls_10_message_nt bytes -> mls_message_nt bytes
+  | [@@@ with_tag PV_mls10] M_mls10: mls_10_message_nt bytes -> mls_message_nt bytes
 
 %splice [ps_mls_message_nt] (gen_parser (`mls_message_nt))

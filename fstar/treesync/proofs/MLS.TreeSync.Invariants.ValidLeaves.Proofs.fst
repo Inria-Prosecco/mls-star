@@ -19,7 +19,7 @@ val valid_leaves_invariant_tree_create: #bytes:Type0 -> {|crypto_bytes bytes|} -
 let valid_leaves_invariant_tree_create #bytes #cb #tkt group_id ln = ()
 
 val valid_leaves_invariant_tree_add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
-  (requires ln.data.source == LNS_key_package () /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t /\ tree_add_pre t li)
+  (requires ln.data.source == LNS_key_package /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t /\ tree_add_pre t li)
   (ensures valid_leaves_invariant group_id (tree_add t li ln))
 let rec valid_leaves_invariant_tree_add #bytes #cb #tkt #l #i group_id t li ln =
   match t with
@@ -29,7 +29,7 @@ let rec valid_leaves_invariant_tree_add #bytes #cb #tkt #l #i group_id t li ln =
     valid_leaves_invariant_tree_add group_id c li ln
 
 val valid_leaves_invariant_tree_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
-  (requires ln.data.source == LNS_update () /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t)
+  (requires ln.data.source == LNS_update /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t)
   (ensures valid_leaves_invariant group_id (tree_update t li ln))
 let rec valid_leaves_invariant_tree_update #bytes #cb #tkt #l #i group_id t li ln =
   match t with

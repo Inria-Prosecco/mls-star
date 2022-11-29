@@ -27,7 +27,7 @@ noeq type map_predicate (mt:map_types dy_bytes) = {
   ;
   pred_is_msg: gu:global_usage -> time:timestamp -> key:mt.key -> value:mt.value -> Lemma
     (requires pred gu time key value)
-    (ensures is_well_formed_partial mt.ps_key (is_publishable gu time) key /\ is_well_formed_partial mt.ps_value (is_publishable gu time) value)
+    (ensures is_well_formed_prefix mt.ps_key (is_publishable gu time) key /\ is_well_formed_prefix mt.ps_value (is_publishable gu time) value)
   ;
 }
 
@@ -89,13 +89,13 @@ let map_session_invariant mt mpred =
       (fun gu p time si vi st ->
         let pre = is_msg gu (readers [psv_id p si vi]) time in
         map_invariant_eq mt mpred gu time st;
-        for_allP_eq (is_well_formed_partial (ps_map_elem_ mt) pre) st.key_values;
-        introduce forall x. map_elem_invariant mt mpred gu time x ==> is_well_formed_partial (ps_map_elem_ mt) pre x
+        for_allP_eq (is_well_formed_prefix (ps_map_elem_ mt) pre) st.key_values;
+        introduce forall x. map_elem_invariant mt mpred gu time x ==> is_well_formed_prefix (ps_map_elem_ mt) pre x
         with (
           introduce _ ==> _ with _. (
             mpred.pred_is_msg gu time x.key x.value;
-            is_well_formed_partial_weaken mt.ps_key (is_publishable gu time) pre x.key;
-            is_well_formed_partial_weaken mt.ps_value (is_publishable gu time) pre x.value
+            is_well_formed_prefix_weaken mt.ps_key (is_publishable gu time) pre x.key;
+            is_well_formed_prefix_weaken mt.ps_value (is_publishable gu time) pre x.value
           )
         )
       )

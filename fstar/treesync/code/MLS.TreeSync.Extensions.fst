@@ -62,11 +62,11 @@ let mk_get_extension #bytes #bl #a ext_type ps_a extensions =
   match get_extension ext_type extensions with
   | None -> None
   | Some res ->
-    (ps_to_pse ps_a).parse_exact res
+    (ps_prefix_to_ps_whole ps_a).parse res
 
 val mk_set_extension: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> extension_type_nt -> parser_serializer bytes a -> list (extension_nt bytes) -> a -> result (mls_list bytes ps_extension_nt)
 let mk_set_extension #a ext_type ps_a extensions ext_content =
-  set_extension ext_type extensions ((ps_to_pse ps_a).serialize_exact ext_content)
+  set_extension ext_type extensions ((ps_prefix_to_ps_whole ps_a).serialize ext_content)
 
 (*** Exposed functions ***)
 
@@ -81,6 +81,6 @@ let get_extension_list #bytes #bl extensions =
   (List.Tot.map (fun x -> x.extension_type) extensions)
 
 val get_application_id_extension: #bytes:Type0 -> {|bytes_like bytes|} -> list (extension_nt bytes) -> option (application_id_ext_nt bytes)
-let get_application_id_extension #bytes #bl = mk_get_extension (ET_application_id ()) ps_application_id_ext_nt
+let get_application_id_extension #bytes #bl = mk_get_extension ET_application_id ps_application_id_ext_nt
 val set_application_id_extension: #bytes:Type0 -> {|bytes_like bytes|} -> list (extension_nt bytes) -> application_id_ext_nt bytes -> result (mls_list bytes ps_extension_nt)
-let set_application_id_extension #bytes #bl = mk_set_extension (ET_application_id ()) ps_application_id_ext_nt
+let set_application_id_extension #bytes #bl = mk_set_extension ET_application_id ps_application_id_ext_nt

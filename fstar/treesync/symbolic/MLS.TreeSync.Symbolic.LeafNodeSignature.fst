@@ -116,7 +116,7 @@ let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
     exists prin.
       leaf_node_has_event prin time ln_tbs /\ (
       match ln_tbs.data.source with
-      | LNS_commit () -> (
+      | LNS_commit -> (
         exists (tl: tree_list dy_bytes tkt).
           get_signkey_label ku vk == readers [p_id prin] /\
           tree_list_starts_with_tbs tl ln_tbs_bytes /\
@@ -125,11 +125,11 @@ let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
           tree_list_is_canonicalized ln_tbs.leaf_index tl /\
           tree_list_has_event prin time ln_tbs.group_id tl
       )
-      | LNS_update () -> (
+      | LNS_update -> (
         get_signkey_label ku vk == readers [p_id prin] /\
         tree_has_event prin time ln_tbs.group_id (|0, ln_tbs.leaf_index, TLeaf (Some ({data = ln_tbs.data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|)
       )
-      | LNS_key_package () -> True
+      | LNS_key_package -> True
       )
   )
 
@@ -397,7 +397,7 @@ val external_path_to_path_aux_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #
 let external_path_to_path_aux_nosig #bytes #cb #tkt #l #i #li t p group_id =
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
   let lp = get_path_leaf p in
-  let new_lp_data = { lp with source = LNS_commit (); parent_hash = computed_parent_hash; } in
+  let new_lp_data = { lp with source = LNS_commit; parent_hash = computed_parent_hash; } in
   ({ data = new_lp_data; signature = empty #bytes } <: leaf_node_nt bytes tkt)
 
 val external_path_to_path_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> Pure (pathsync bytes tkt l i li)
@@ -519,7 +519,7 @@ val is_msg_external_path_to_path:
 let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk nonce =
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
   let ln_data = get_path_leaf p in
-  let new_ln_data = { ln_data with source = LNS_commit (); parent_hash = computed_parent_hash; } in
+  let new_ln_data = { ln_data with source = LNS_commit; parent_hash = computed_parent_hash; } in
   let new_ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = new_ln_data; group_id; leaf_index = li;}) in
   let new_ln_tbs_bytes: dy_bytes = serialize (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs in
   let new_signature = sign_with_label sk "LeafNodeTBS" new_ln_tbs_bytes nonce in
@@ -559,10 +559,10 @@ val is_msg_sign_leaf_node_data_key_package:
   sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
-    ln_data.source == LNS_key_package () /\
+    ln_data.source == LNS_key_package /\
     sign_leaf_node_data_key_package_pre ln_data /\
     leaf_node_has_event prin time ({data = ln_data; group_id = (); leaf_index = ();}) /\
-    is_well_formed_partial (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
+    is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
     is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
     is_valid gu time nonce /\
     get_label gu sk == readers [p_id prin] /\
@@ -585,11 +585,11 @@ val is_msg_sign_leaf_node_data_update:
   sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
-    ln_data.source == LNS_update () /\
+    ln_data.source == LNS_update /\
     sign_leaf_node_data_update_pre ln_data group_id /\
     leaf_node_has_event prin time ({data = ln_data; group_id; leaf_index;}) /\
     tree_has_event prin time group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
-    is_well_formed_partial (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
+    is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
     is_msg gu label time group_id /\
     is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
     is_valid gu time nonce /\

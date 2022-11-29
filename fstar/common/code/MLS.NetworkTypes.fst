@@ -31,8 +31,7 @@ let ps_mls_list (#bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_seria
 /// opaque HPKEPublicKey<V>;
 
 type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-val ps_hpke_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (hpke_public_key_nt bytes)
-let ps_hpke_public_key_nt #bytes #bl = ps_mls_bytes
+%splice [ps_hpke_public_key_nt] (gen_parser (`hpke_public_key_nt))
 
 /// enum {
 ///     reserved(0),
@@ -41,20 +40,24 @@ let ps_hpke_public_key_nt #bytes #bl = ps_mls_bytes
 /// } ProtocolVersion;
 
 type protocol_version_nt =
-  | PV_mls10: [@@@ with_num_tag 1 1] unit -> protocol_version_nt
+  | [@@@ with_num_tag 1 0] PV_mls_reserved: protocol_version_nt
+  | [@@@ with_num_tag 1 1] PV_mls10: protocol_version_nt
+  | [@@@ open_tag] PV_unknown: n:nat_lbytes 1{~(n <= 1)} -> protocol_version_nt
 
 %splice [ps_protocol_version_nt] (gen_parser (`protocol_version_nt))
 
 /// uint16 CipherSuite;
 
 type cipher_suite_nt =
-  | CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519: [@@@ with_num_tag 2 1] unit -> cipher_suite_nt
-  | CS_mls_128_dhkemp256_aes128gcm_sha256_p256: [@@@ with_num_tag 2 2] unit -> cipher_suite_nt
-  | CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519: [@@@ with_num_tag 2 3] unit -> cipher_suite_nt
-  | CS_mls_256_dhkemx448_aes256gcm_sha512_ed448: [@@@ with_num_tag 2 4] unit -> cipher_suite_nt
-  | CS_mls_256_dhkemp521_aes256gcm_sha512_p521: [@@@ with_num_tag 2 5] unit -> cipher_suite_nt
-  | CS_mls_256_dhkemx448_chacha20poly1305_sha512_ed448: [@@@ with_num_tag 2 6] unit -> cipher_suite_nt
-  | CS_mls_256_dhkemp384_aes256gcm_sha384_p384: [@@@ with_num_tag 2 7] unit -> cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0000] CS_reserved: cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0001] CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519: cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0002] CS_mls_128_dhkemp256_aes128gcm_sha256_p256: cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0003] CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519: cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0004] CS_mls_256_dhkemx448_aes256gcm_sha512_ed448: cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0005] CS_mls_256_dhkemp521_aes256gcm_sha512_p521: cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0006] CS_mls_256_dhkemx448_chacha20poly1305_sha512_ed448: cipher_suite_nt
+  | [@@@ with_num_tag 2 0x0007] CS_mls_256_dhkemp384_aes256gcm_sha384_p384: cipher_suite_nt
+  | [@@@ open_tag] CS_unknown: n:nat_lbytes 2{~(n <= 7)} -> cipher_suite_nt
 
 %splice [ps_cipher_suite_nt] (gen_parser (`cipher_suite_nt))
 
@@ -63,11 +66,13 @@ type cipher_suite_nt =
 
 //TODO extension belong here??
 type extension_type_nt: eqtype =
-  | ET_application_id: [@@@ with_num_tag 2 0x0001] unit -> extension_type_nt
-  | ET_ratchet_tree: [@@@ with_num_tag 2 0x0002] unit -> extension_type_nt
-  | ET_required_capabilities: [@@@ with_num_tag 2 0x0003] unit -> extension_type_nt
-  | ET_external_pub: [@@@ with_num_tag 2 0x0004] unit -> extension_type_nt
-  | ET_external_senders: [@@@ with_num_tag 2 0x0005] unit -> extension_type_nt
+  | [@@@ with_num_tag 2 0x0000] ET_reserved: extension_type_nt
+  | [@@@ with_num_tag 2 0x0001] ET_application_id: extension_type_nt
+  | [@@@ with_num_tag 2 0x0002] ET_ratchet_tree: extension_type_nt
+  | [@@@ with_num_tag 2 0x0003] ET_required_capabilities: extension_type_nt
+  | [@@@ with_num_tag 2 0x0004] ET_external_pub: extension_type_nt
+  | [@@@ with_num_tag 2 0x0005] ET_external_senders: extension_type_nt
+  | [@@@ open_tag] ET_unknown: n:nat_lbytes 2{~(n <= 5)} -> extension_type_nt
 
 %splice [ps_extension_type_nt] (gen_parser (`extension_type_nt))
 
@@ -127,12 +132,12 @@ let ps_option_length #bytes #bl #a ps_a x =
   reveal_opaque (`%ps_option) (ps_option ps_a)
 
 val ps_option_is_well_formed: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> ps_a:parser_serializer bytes a -> pre:bytes_compatible_pre bytes -> x:option a -> Lemma (
-  is_well_formed_partial (ps_option ps_a) pre x <==> (
+  is_well_formed_prefix (ps_option ps_a) pre x <==> (
     match x with
     | None -> True
-    | Some y -> is_well_formed_partial ps_a pre y
+    | Some y -> is_well_formed_prefix ps_a pre y
   ))
-  [SMTPat (is_well_formed_partial (ps_option ps_a) pre x)]
+  [SMTPat (is_well_formed_prefix (ps_option ps_a) pre x)]
 let ps_option_is_well_formed #bytes #bl #a ps_a pre x =
   reveal_opaque (`%ps_option) (ps_option ps_a)
 
@@ -167,13 +172,14 @@ type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
 // Defined here because needed in TreeSync's proposal list in leaf node capabilities
 // Actual sum type defined in TreeDEM.NetworkTypes
 type proposal_type_nt =
-  | PT_add: [@@@ with_num_tag 2 1] unit -> proposal_type_nt
-  | PT_update: [@@@ with_num_tag 2 2] unit -> proposal_type_nt
-  | PT_remove: [@@@ with_num_tag 2 3] unit -> proposal_type_nt
-  | PT_psk: [@@@ with_num_tag 2 4] unit -> proposal_type_nt
-  | PT_reinit: [@@@ with_num_tag 2 5] unit -> proposal_type_nt
-  | PT_external_init: [@@@ with_num_tag 2 6] unit -> proposal_type_nt
-  | PT_group_context_extensions: [@@@ with_num_tag 2 7] unit -> proposal_type_nt
+  | [@@@ with_num_tag 2 0x0000] PT_reserved: proposal_type_nt
+  | [@@@ with_num_tag 2 0x0001] PT_add: proposal_type_nt
+  | [@@@ with_num_tag 2 0x0002] PT_update: proposal_type_nt
+  | [@@@ with_num_tag 2 0x0003] PT_remove: proposal_type_nt
+  | [@@@ with_num_tag 2 0x0004] PT_psk: proposal_type_nt
+  | [@@@ with_num_tag 2 0x0005] PT_reinit: proposal_type_nt
+  | [@@@ with_num_tag 2 0x0006] PT_external_init: proposal_type_nt
+  | [@@@ with_num_tag 2 0x0007] PT_group_context_extensions: proposal_type_nt
+  | [@@@ open_tag] PT_unknown: n:nat_lbytes 2{~(n <= 7)} -> proposal_type_nt
 
 %splice [ps_proposal_type_nt] (gen_parser (`proposal_type_nt))
-

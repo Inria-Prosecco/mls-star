@@ -120,7 +120,7 @@ let hacl_string_to_bytes s =
   let open FStar.String in
   let open FStar.Char in
   let open FStar.List.Tot in
-  let rec aux (l:list char{for_all (fun x -> int_of_char x < 256) l}): lbytes hacl_star_bytes #seq_u8_bytes_like (length l) =
+  let rec aux (l:list char{for_all char_is_ascii l}): lbytes hacl_star_bytes #seq_u8_bytes_like (length l) =
     match l with
     | [] -> empty #hacl_star_bytes #bytes_like_hacl_star_bytes
     | h::t -> FStar.Seq.append (Seq.create 1 (u8 (int_of_char h))) (aux t)

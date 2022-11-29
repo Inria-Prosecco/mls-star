@@ -116,8 +116,8 @@ val get_leaf_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types byt
 let get_leaf_tbs #bytes #bl #tkt ln group_id leaf_index =
   serialize (leaf_node_tbs_nt bytes tkt) ({
     data = ln.data;
-    group_id = if ln.data.source = LNS_key_package () then () else group_id;
-    leaf_index = if ln.data.source = LNS_key_package () then () else leaf_index;
+    group_id = if ln.data.source = LNS_key_package then () else group_id;
+    leaf_index = if ln.data.source = LNS_key_package then () else leaf_index;
   })
 
 // TODO: other checks described in
@@ -143,7 +143,7 @@ let path_is_parent_hash_valid #bytes #cb #tkt #l #li t p =
   let new_lp = get_path_leaf p in
   compute_leaf_parent_hash_from_path_pre t p (length #bytes (root_parent_hash #bytes)) && (
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
-  (new_lp.data.source = LNS_commit () && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
+  (new_lp.data.source = LNS_commit && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
   )
 
 val path_is_filter_valid: #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_t:Type -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> treesync bytes tkt l i -> path leaf_t (option tkt.node_content) l i li -> bool
@@ -169,14 +169,14 @@ let path_is_valid #bytes #cb #tkt #l #li group_id t p =
   let parent_hash_ok = path_is_parent_hash_valid t p in
   //The next one could be proved in MLS.NetworkTypes
   let filter_ok = path_is_filter_valid t p in
-  let source_ok = new_lp.data.source = LNS_commit() in
+  let source_ok = new_lp.data.source = LNS_commit in
   (signature_ok && parent_hash_ok && filter_ok && source_ok)
 
 val external_path_to_path_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> external_pathsync bytes tkt l i li -> mls_bytes bytes -> bool
 let external_path_to_path_pre #bytes #cb #tkt #l #i #li t p group_id =
   let lp = get_path_leaf p in
   compute_leaf_parent_hash_from_path_pre t p (length #bytes (root_parent_hash #bytes)) &&
-  lp.source = LNS_update () && li < pow2 32 && (
+  lp.source = LNS_update && li < pow2 32 && (
     let tbs_length = ((prefixes_length #bytes ((ps_leaf_node_tbs_nt tkt).serialize ({data = lp; group_id; leaf_index = li;}))) + 2 + (hash_length #bytes)) in
     tbs_length < pow2 30 &&
     sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
@@ -190,7 +190,7 @@ val external_path_to_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:tr
 let external_path_to_path_aux #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
   let lp = get_path_leaf p in
-  let new_lp_data = { lp with source = LNS_commit (); parent_hash = computed_parent_hash; } in
+  let new_lp_data = { lp with source = LNS_commit; parent_hash = computed_parent_hash; } in
   let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id; leaf_index = li;}) in
   let new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
   ({ data = new_lp_data; signature = new_signature } <: leaf_node_nt bytes tkt)
@@ -261,7 +261,7 @@ val sign_leaf_node_data_key_package:
   ln_data:leaf_node_data_nt bytes tkt ->
   sign_private_key bytes -> sign_nonce bytes ->
   Pure (leaf_node_nt bytes tkt)
-  (requires ln_data.source = LNS_key_package() /\ sign_leaf_node_data_key_package_pre ln_data)
+  (requires ln_data.source = LNS_key_package /\ sign_leaf_node_data_key_package_pre ln_data)
   (ensures fun _ -> True)
 let sign_leaf_node_data_key_package #bytes #cb #tkt ln_data sign_key nonce =
   let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id = (); leaf_index = ();}) in
@@ -282,7 +282,7 @@ val sign_leaf_node_data_update:
   ln_data:leaf_node_data_nt bytes tkt -> group_id:mls_bytes bytes -> leaf_index:nat_lbytes 4 ->
   sign_private_key bytes -> sign_nonce bytes ->
   Pure (leaf_node_nt bytes tkt)
-  (requires ln_data.source = LNS_update() /\ sign_leaf_node_data_update_pre ln_data group_id)
+  (requires ln_data.source = LNS_update /\ sign_leaf_node_data_update_pre ln_data group_id)
   (ensures fun _ -> True)
 let sign_leaf_node_data_update #bytes #cb #tkt ln_data group_id leaf_index sign_key nonce =
   let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id; leaf_index;}) in

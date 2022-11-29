@@ -36,8 +36,8 @@ let network_to_sender #bytes #bl s =
   match s with
   | NT.S_member kp_ref -> return (S_member kp_ref)
   | NT.S_external sender_index -> return (S_external sender_index)
-  | NT.S_new_member_proposal () -> return S_new_member_proposal
-  | NT.S_new_member_commit () -> return S_new_member_commit
+  | NT.S_new_member_proposal -> return S_new_member_proposal
+  | NT.S_new_member_commit -> return S_new_member_commit
   | _ -> error "network_to_sender: invalid sender type"
 
 val sender_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> sender bytes -> result (sender_nt bytes)
@@ -56,8 +56,8 @@ let sender_to_network #bytes #bl s =
       return (NT.S_external sender_index)
     )
   )
-  | S_new_member_proposal -> return (NT.S_new_member_proposal ())
-  | S_new_member_commit -> return (NT.S_new_member_commit ())
+  | S_new_member_proposal -> return NT.S_new_member_proposal
+  | S_new_member_commit -> return NT.S_new_member_commit
 
 
 val message_content_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> message_content bytes -> result (mls_content_nt bytes)
@@ -99,21 +99,21 @@ val message_auth_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> #content_ty
 let message_auth_to_network #bytes #bl #content_type msg_auth =
   if not (length msg_auth.signature < pow2 30) then
     internal_failure "message_auth_to_network: signature too long"
-  else if not ((content_type = CT_commit ()) = (Some? msg_auth.confirmation_tag)) then
+  else if not ((content_type = CT_commit) = (Some? msg_auth.confirmation_tag)) then
     internal_failure "message_auth_to_network: confirmation_tag must be present iff content_type = Commit"
-  else if not (content_type <> CT_commit () || length (Some?.v msg_auth.confirmation_tag <: bytes) < pow2 30) then
+  else if not (content_type <> CT_commit || length (Some?.v msg_auth.confirmation_tag <: bytes) < pow2 30) then
     internal_failure "message_auth_to_network: confirmation_tag too long"
   else (
     return ({
       signature = msg_auth.signature;
-      confirmation_tag = if content_type = CT_commit () then (Some?.v msg_auth.confirmation_tag) else ();
+      confirmation_tag = if content_type = CT_commit then (Some?.v msg_auth.confirmation_tag) else ();
     } <: mls_content_auth_data_nt bytes content_type)
   )
 
 val network_to_message_auth: #bytes:Type0 -> {|bytes_like bytes|} -> #content_type:content_type_nt -> mls_content_auth_data_nt bytes content_type -> result (message_auth bytes)
 let network_to_message_auth #bytes #bl #content_type msg_auth =
   let confirmation_tag: option bytes =
-    if content_type = CT_commit() then (
+    if content_type = CT_commit then (
       Some msg_auth.confirmation_tag
     ) else None
   in

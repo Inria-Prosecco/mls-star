@@ -256,7 +256,7 @@ let rec node_has_parent_hash_link_bool2prop #bytes #cb #tkt #ld #lp #id #ip d p 
   | TLeaf None -> ()
   | TLeaf (Some lp) -> (
     match lp.data.source with
-    | LNS_commit () -> ()
+    | LNS_commit -> ()
     | _ -> ()
   )
   | TNode (Some kp) _ _ -> ()
@@ -735,7 +735,7 @@ let path_is_parent_hash_valid_aux #bytes #cb #tkt #l #i #li t p parent_parent_ha
   let new_lp = get_path_leaf p in
   compute_leaf_parent_hash_from_path_pre t p (length #bytes parent_parent_hash) && (
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p parent_parent_hash in
-  (new_lp.data.source = LNS_commit () && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
+  (new_lp.data.source = LNS_commit && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
   )
 
 val is_tree_empty_implies_empty_resolution: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> Lemma

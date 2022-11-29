@@ -203,7 +203,7 @@ let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
 
 let pending_add_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) =
   squash (
-    ln.data.source == LNS_key_package () /\ ( //TODO: check key package signature
+    ln.data.source == LNS_key_package /\ ( //TODO: check key package signature
       match find_empty_leaf st.tree with
       | Some li ->
         tree_add_pre st.tree li /\
@@ -233,7 +233,7 @@ val prepare_add:
   st:treesync_state bytes tkt asp -> ln:leaf_node_nt bytes tkt ->
   result (pending_add st ln)
 let prepare_add #bytes #cb #tkt #asp st ln =
-  if not (ln.data.source = LNS_key_package ()) then
+  if not (ln.data.source = LNS_key_package) then
     error "prepare_add: source is not key_package"
   else (
     match find_empty_leaf st.tree with
@@ -290,7 +290,7 @@ let finalize_add #bytes #cb #tkt #asp #st #ln pend token =
 
 let pending_update_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) (li:treesync_index st) =
   squash (
-    ln.data.source == LNS_update () /\
+    ln.data.source == LNS_update /\
     leaf_is_valid ln st.group_id li /\
     Some? (leaf_at st.tree li)
   )
@@ -312,7 +312,7 @@ val prepare_update:
   st:treesync_state bytes tkt asp -> ln:leaf_node_nt bytes tkt -> li:treesync_index st ->
   result (pending_update st ln li)
 let prepare_update #bytes #cb #tkt #asp st ln li =
-  if not (ln.data.source = LNS_update()) then
+  if not (ln.data.source = LNS_update) then
     error "prepare_update: leaf node has invalid source"
   else if not (leaf_is_valid ln st.group_id li) then
     error "prepare_update: leaf node is not valid"

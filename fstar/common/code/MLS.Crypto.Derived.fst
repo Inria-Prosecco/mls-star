@@ -1,8 +1,8 @@
 module MLS.Crypto.Derived
 
+open Comparse
 open MLS.Crypto.Builtins
 open MLS.NetworkTypes
-open Comparse
 open MLS.Result
 
 
@@ -12,22 +12,24 @@ open MLS.Result
 val available_ciphersuite_from_network: cipher_suite_nt -> result available_ciphersuite
 let available_ciphersuite_from_network cs =
   match cs with
-  | CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 () -> return AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | CS_mls_128_dhkemp256_aes128gcm_sha256_p256 () -> return AC_mls_128_dhkemp256_aes128gcm_sha256_p256
-  | CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 () -> return AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
-  | CS_mls_256_dhkemx448_aes256gcm_sha512_ed448 () -> error "available_ciphersuite_from_network: ciphersuite not available"
-  | CS_mls_256_dhkemp521_aes256gcm_sha512_p521 () -> error "available_ciphersuite_from_network: ciphersuite not available"
-  | CS_mls_256_dhkemx448_chacha20poly1305_sha512_ed448 () -> error "available_ciphersuite_from_network: ciphersuite not available"
-  | CS_mls_256_dhkemp384_aes256gcm_sha384_p384 () -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_reserved -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> return AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
+  | CS_mls_128_dhkemp256_aes128gcm_sha256_p256 -> return AC_mls_128_dhkemp256_aes128gcm_sha256_p256
+  | CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> return AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+  | CS_mls_256_dhkemx448_aes256gcm_sha512_ed448 -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls_256_dhkemp521_aes256gcm_sha512_p521 -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls_256_dhkemx448_chacha20poly1305_sha512_ed448 -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_mls_256_dhkemp384_aes256gcm_sha384_p384 -> error "available_ciphersuite_from_network: ciphersuite not available"
+  | CS_unknown _ -> error "available_ciphersuite_from_network: ciphersuite not available"
 #pop-options
 
 #push-options "--ifuel 1"
 val available_ciphersuite_to_network: available_ciphersuite -> cipher_suite_nt
 let available_ciphersuite_to_network cs =
   match cs with
-  | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 ()
-  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> CS_mls_128_dhkemp256_aes128gcm_sha256_p256 ()
-  | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()
+  | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
+  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> CS_mls_128_dhkemp256_aes128gcm_sha256_p256
+  | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
 #pop-options
 
 #push-options "--ifuel 1"
@@ -73,7 +75,7 @@ val get_sign_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> label:valid_labe
   (requires sign_with_label_pre #bytes label (length #bytes content))
   (ensures fun res -> length #bytes res < sign_max_input_length #bytes)
 let get_sign_content #bytes #cb label content =
-  ((ps_to_pse ps_sign_content_nt).serialize_exact ({
+  ((ps_prefix_to_ps_whole ps_sign_content_nt).serialize ({
     label = get_mls_label #bytes label;
     content = content;
   }))
@@ -107,7 +109,7 @@ let expand_with_label #bytes #cb secret label context len =
     internal_failure "expand_with_label: context too long"
   else (
     concat_length (string_to_bytes #bytes "MLS 1.0 ") label;
-    let kdf_label = (ps_to_pse ps_kdf_label_nt).serialize_exact ({
+    let kdf_label = (ps_prefix_to_ps_whole ps_kdf_label_nt).serialize ({
       length = len;
       label = concat #bytes (string_to_bytes #bytes "MLS 1.0 ") label;
       context = context;

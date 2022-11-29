@@ -32,8 +32,8 @@ type parent_node_tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:tree
 %splice [ps_parent_node_tree_hash_input_nt_is_well_formed] (gen_is_well_formed_lemma (`parent_node_tree_hash_input_nt))
 
 type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
-  | LeafTreeHashInput: [@@@ with_tag (NT_leaf ())] leaf_node: leaf_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
-  | ParentTreeHashInput: [@@@ with_tag (NT_parent ())] parent_node: parent_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
+  | [@@@ with_tag NT_leaf] LeafTreeHashInput: leaf_node: leaf_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
+  | [@@@ with_tag NT_parent] ParentTreeHashInput: parent_node: parent_node_tree_hash_input_nt bytes tkt -> tree_hash_input_nt bytes tkt
 
 %splice [ps_tree_hash_input_nt] (gen_parser (`tree_hash_input_nt))
 %splice [ps_tree_hash_input_nt_length] (gen_length_lemma (`tree_hash_input_nt))

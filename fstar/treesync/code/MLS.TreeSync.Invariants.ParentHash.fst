@@ -22,7 +22,7 @@ let node_not_blank #bytes #bl #tkt #l #i t =
 val node_has_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> bool
 let node_has_parent_hash #bytes #bl #tkt #l #i t =
   match t with
-  | TLeaf (Some ln) -> ln.data.source = LNS_commit ()
+  | TLeaf (Some ln) -> ln.data.source = LNS_commit
   | TNode (Some _) _ _ -> true
   | _ -> false
 
@@ -111,7 +111,7 @@ let rec node_has_parent_hash_link_aux #bytes #cb #tkt #ld #lp #id #ip d p =
   | TLeaf None -> false
   | TLeaf (Some lp) -> (
     match lp.data.source with
-    | LNS_commit () -> parent_hash_linked d p
+    | LNS_commit -> parent_hash_linked d p
     | _ -> false
   )
   | TNode (Some kp) _ _ ->

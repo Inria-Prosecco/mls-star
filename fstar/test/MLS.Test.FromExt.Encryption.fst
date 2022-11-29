@@ -31,11 +31,11 @@ let test_leaf_generation #cb l i encryption_secret sender_data_secret r_state te
   let nonce_ok = check_equal "nonce" bytes_to_hex_string (hex_string_to_bytes test.nonce) r_output.nonce in
   let plaintext_string = normalize_text test.plaintext in
   let ciphertext_string = normalize_text test.ciphertext in
-  let message_plaintext = extract_option "bad plaintext" ((ps_to_pse ps_mls_plaintext_nt).parse_exact (hex_string_to_bytes plaintext_string)) in
-  let message_ciphertext = extract_option "bad ciphertext" ((ps_to_pse ps_mls_ciphertext_nt).parse_exact (hex_string_to_bytes ciphertext_string)) in
+  let message_plaintext = extract_option "bad plaintext" ((ps_prefix_to_ps_whole ps_mls_plaintext_nt).parse (hex_string_to_bytes plaintext_string)) in
+  let message_ciphertext = extract_option "bad ciphertext" ((ps_prefix_to_ps_whole ps_mls_ciphertext_nt).parse (hex_string_to_bytes ciphertext_string)) in
   let message_1 = message_plaintext_to_message message_plaintext in
   let message_2 = extract_result (message_ciphertext_to_message l encryption_secret sender_data_secret message_ciphertext) in
-  let message_2 = ({ message_2 with wire_format = WF_mls_plaintext ()}) in
+  let message_2 = ({ message_2 with wire_format = WF_mls_plaintext}) in
   let plaintext_eq_ciphertext_ok = message_1 = message_2 in
   let sender_ok = S_member? message_1.content.sender in
   (key_ok && nonce_ok && plaintext_eq_ciphertext_ok && sender_ok, r_next_state)

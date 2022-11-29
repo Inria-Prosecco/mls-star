@@ -256,6 +256,7 @@ val non_blank_resolution_eq_unmerged_leaves_of: #bytes:Type0 -> {|bytes_like byt
 let non_blank_resolution_eq_unmerged_leaves_of #bytes #bl #tkt #l #i t x =
   mem_unmerged_resolution_eq (unmerged_leaves_of t) (|0, x|)
 
+#push-options "--z3rlimit 25"
 val last_update_unmerged_leaves_eq:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp ->
@@ -272,6 +273,7 @@ let last_update_unmerged_leaves_eq #bytes #bl #tkt #ld #lp #id #ip d p x =
   set_eq_to_set_eqP (last_update_lhs d p) (last_update_rhs d p);
   resolution_cap_subtree d c (|0, x|);
   non_blank_resolution_eq_unmerged_leaves_of d x
+#pop-options
 
 val parent_hash_guarantee_theorem_step_for_d:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
@@ -503,13 +505,13 @@ let equal_tbs_implies_equivalence #bytes #bl #tkt #i1 #i2 t1 t2 group_id1 group_
   let TLeaf (Some ln2) = t2 in
   parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ({
     data = ln1.data;
-    group_id = if ln1.data.source = LNS_key_package () then () else group_id1;
-    leaf_index = if ln1.data.source = LNS_key_package () then () else i1;
+    group_id = if ln1.data.source = LNS_key_package then () else group_id1;
+    leaf_index = if ln1.data.source = LNS_key_package then () else i1;
   });
   parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ({
     data = ln2.data;
-    group_id = if ln2.data.source = LNS_key_package () then () else group_id2;
-    leaf_index = if ln2.data.source = LNS_key_package () then () else i2;
+    group_id = if ln2.data.source = LNS_key_package then () else group_id2;
+    leaf_index = if ln2.data.source = LNS_key_package then () else i2;
   })
 
 (*** Induction ***)
@@ -759,7 +761,7 @@ let rec compute_parent_hash_link_aux #bytes #cb #tkt #ld #lp #id #ip d p =
   | TLeaf None -> false_elim ()
   | TLeaf (Some lp) -> (
     match lp.data.source with
-    | LNS_commit () -> (|ld, id, d|)
+    | LNS_commit -> (|ld, id, d|)
     | _ -> false_elim ()
   )
   | TNode (Some kp) _ _ -> (|ld, id, d|)

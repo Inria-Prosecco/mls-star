@@ -13,15 +13,16 @@ noeq type treekem_types (bytes:Type0) {|bytes_like bytes|} = {
 /// opaque SignaturePublicKey<V>;
 
 type signature_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-val ps_signature_public_key_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (signature_public_key_nt bytes)
-let ps_signature_public_key_nt #bytes #bl = ps_mls_bytes
+%splice [ps_signature_public_key_nt] (gen_parser (`signature_public_key_nt))
 
 /// // See IANA registry for registered values
 /// uint16 CredentialType;
 
 type credential_type_nt =
-  | CT_basic: [@@@ with_num_tag 2 1] unit -> credential_type_nt
-  | CT_x509:  [@@@ with_num_tag 2 2] unit -> credential_type_nt
+  | [@@@ with_num_tag 2 0x0000] CT_reserved: credential_type_nt
+  | [@@@ with_num_tag 2 0x0001] CT_basic: credential_type_nt
+  | [@@@ with_num_tag 2 0x0002] CT_x509: credential_type_nt
+  | [@@@ open_tag] CT_unknown: n:nat_lbytes 2{~(n <= 2)} -> credential_type_nt
 
 %splice [ps_credential_type_nt] (gen_parser (`credential_type_nt))
 
@@ -30,9 +31,7 @@ type credential_type_nt =
 /// } Certificate;
 
 type certificate_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-
-val ps_certificate_nt: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes (certificate_nt bytes)
-let ps_certificate_nt #bytes #bl = ps_mls_bytes
+%splice [ps_certificate_nt] (gen_parser (`certificate_nt))
 
 /// struct {
 ///     CredentialType credential_type;
@@ -46,8 +45,8 @@ let ps_certificate_nt #bytes #bl = ps_mls_bytes
 /// } Credential;
 
 type credential_nt (bytes:Type0) {|bytes_like bytes|} =
-  | C_basic: [@@@ with_tag (CT_basic ())] identity: mls_bytes bytes -> credential_nt bytes
-  | C_x509: [@@@ with_tag (CT_x509 ())] chain: mls_list bytes ps_certificate_nt -> credential_nt bytes
+  | [@@@ with_tag CT_basic] C_basic: identity: mls_bytes bytes -> credential_nt bytes
+  | [@@@ with_tag CT_x509] C_x509: chain: mls_list bytes ps_certificate_nt -> credential_nt bytes
 
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
 
@@ -60,9 +59,9 @@ type credential_nt (bytes:Type0) {|bytes_like bytes|} =
 /// } LeafNodeSource;
 
 type leaf_node_source_nt =
-  | LNS_key_package: [@@@ with_num_tag 1 1] unit -> leaf_node_source_nt
-  | LNS_update:      [@@@ with_num_tag 1 2] unit -> leaf_node_source_nt
-  | LNS_commit:      [@@@ with_num_tag 1 3] unit -> leaf_node_source_nt
+  | [@@@ with_num_tag 1 1] LNS_key_package: leaf_node_source_nt
+  | [@@@ with_num_tag 1 2] LNS_update:      leaf_node_source_nt
+  | [@@@ with_num_tag 1 3] LNS_commit:      leaf_node_source_nt
 
 %splice [ps_leaf_node_source_nt] (gen_parser (`leaf_node_source_nt))
 %splice [ps_leaf_node_source_nt_length] (gen_length_lemma (`leaf_node_source_nt))
@@ -124,26 +123,18 @@ type lifetime_nt = {
 val leaf_node_lifetime_nt: leaf_node_source_nt -> Type0
 let leaf_node_lifetime_nt source =
   match source with
-  | LNS_key_package () -> lifetime_nt
+  | LNS_key_package -> lifetime_nt
   | _ -> unit
 
-val ps_leaf_node_lifetime_nt: #bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_lifetime_nt source)
-let ps_leaf_node_lifetime_nt #bytes #bl source =
-  match source with
-  | LNS_key_package () -> ps_lifetime_nt
-  | _ -> ps_unit
+%splice [ps_leaf_node_lifetime_nt] (gen_parser_prefix (`leaf_node_lifetime_nt))
 
 val leaf_node_parent_hash_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
 let leaf_node_parent_hash_nt bytes #bl source =
   match source with
-  | LNS_commit () -> mls_bytes bytes
+  | LNS_commit -> mls_bytes bytes
   | _ -> unit
 
-val ps_leaf_node_parent_hash_nt: #bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_parent_hash_nt bytes source)
-let ps_leaf_node_parent_hash_nt #bytes #bl source =
-  match source with
-  | LNS_commit () -> ps_mls_bytes
-  | _ -> ps_unit
+%splice [ps_leaf_node_parent_hash_nt] (gen_parser_prefix (`leaf_node_parent_hash_nt))
 
 type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_leaf_content]
@@ -206,31 +197,20 @@ instance parseable_serializeable_leaf_node_nt (bytes:Type0) {|bytes_like bytes|}
 val leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
 let leaf_node_tbs_group_id_nt bytes #bl source =
   match source with
-  | LNS_update ()
-  | LNS_commit () -> mls_bytes bytes
+  | LNS_update
+  | LNS_commit -> mls_bytes bytes
   | _ -> unit
 
-val ps_leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_tbs_group_id_nt bytes source)
-let ps_leaf_node_tbs_group_id_nt bytes #bl source =
-  match source with
-  | LNS_update ()
-  | LNS_commit () -> ps_mls_bytes
-  | _ -> ps_unit
+%splice [ps_leaf_node_tbs_group_id_nt] (gen_parser_prefix (`leaf_node_tbs_group_id_nt))
 
 val leaf_node_tbs_leaf_index_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
 let leaf_node_tbs_leaf_index_nt bytes #bl source =
   match source with
-  | LNS_update ()
-  | LNS_commit () -> nat_lbytes 4
+  | LNS_update
+  | LNS_commit -> nat_lbytes 4
   | _ -> unit
 
-val ps_leaf_node_tbs_leaf_index_nt: bytes:Type0 -> {|bytes_like bytes|} -> source:leaf_node_source_nt -> parser_serializer_unit bytes (leaf_node_tbs_leaf_index_nt bytes source)
-let ps_leaf_node_tbs_leaf_index_nt bytes #bl source =
-  match source with
-  | LNS_update ()
-  | LNS_commit () -> ps_nat_lbytes 4
-  | _ -> ps_unit
-
+%splice [ps_leaf_node_tbs_leaf_index_nt] (gen_parser_prefix (`leaf_node_tbs_leaf_index_nt))
 
 type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   data: leaf_node_data_nt bytes tkt;
@@ -310,8 +290,8 @@ instance parseable_serializeable_parent_node_nt (bytes:Type0) {|bytes_like bytes
 /// } NodeType;
 
 type node_type_nt =
-  | NT_leaf: [@@@ with_num_tag 1 1] unit -> node_type_nt
-  | NT_parent: [@@@ with_num_tag 1 2] unit -> node_type_nt
+  | [@@@ with_num_tag 1 1] NT_leaf: node_type_nt
+  | [@@@ with_num_tag 1 2] NT_parent: node_type_nt
 
 %splice [ps_node_type_nt] (gen_parser (`node_type_nt))
 %splice [ps_node_type_nt_length] (gen_length_lemma (`node_type_nt))
@@ -326,8 +306,8 @@ type node_type_nt =
 /// } Node;
 
 type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
-  | N_leaf: [@@@ with_tag (NT_leaf ())] leaf_node_nt bytes tkt -> node_nt bytes tkt
-  | N_parent: [@@@ with_tag (NT_parent ())] parent_node_nt bytes tkt -> node_nt bytes tkt
+  | [@@@ with_tag NT_leaf] N_leaf: leaf_node_nt bytes tkt -> node_nt bytes tkt
+  | [@@@ with_tag NT_parent] N_parent: parent_node_nt bytes tkt -> node_nt bytes tkt
 
 %splice [ps_node_nt] (gen_parser (`node_nt))
 
@@ -335,5 +315,4 @@ type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
 
 type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = mls_list bytes (ps_option (ps_node_nt tkt))
 
-val ps_ratchet_tree_nt: #bytes:Type0 -> {|bytes_like bytes|} -> tkt:treekem_types bytes -> parser_serializer bytes (ratchet_tree_nt bytes tkt)
-let ps_ratchet_tree_nt #bytes #bl tkt = ps_mls_list (ps_option (ps_node_nt tkt))
+%splice [ps_ratchet_tree_nt] (gen_parser (`ratchet_tree_nt))

@@ -11,7 +11,7 @@ val compute_confirmed_transcript_hash: #bytes:Type0 -> {|crypto_bytes bytes|} ->
 let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcript_hash =
   if not (length signature < pow2 30) then
     internal_failure "compute_confirmed_transcript_hash: signature too long"
-  else if not (msg.content_type = CT_commit ()) then
+  else if not (msg.content_type = CT_commit) then
     internal_failure "compute_confirmed_transcript_hash: should only be used on a commit message"
   else (
     let? msg_network = message_content_to_network msg in

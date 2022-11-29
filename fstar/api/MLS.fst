@@ -76,8 +76,8 @@ let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
     internal_failure "state_to_group_context: confirmed_transcript_hash too long"
   else (
     return ({
-      version = PV_mls10 ();
-      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
+      version = PV_mls10;
+      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
       group_id = group_id;
       epoch = epoch;
       tree_hash = tree_hash;
@@ -93,7 +93,7 @@ let state_to_group_context st =
 
 val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
-  let leaf_package = (ps_to_pse (ps_leaf_node_nt _)).serialize_exact leaf_package in
+  let leaf_package = (ps_prefix_to_ps_whole (ps_leaf_node_nt _)).serialize leaf_package in
   if not (length leaf_package < hash_max_input_length #bytes) then error "hash_leaf_package: leaf_package too long"
   else return (hash_hash leaf_package)
 
@@ -164,7 +164,7 @@ let proposal_or_ref_to_proposal st prop_or_ref =
   | Reference ref -> error "proposal_or_ref_to_proposal: don't handle references for now (TODO)"
 #pop-options
 
-val process_commit: state -> msg:message_content bytes{msg.content_type = CT_commit ()} -> message_auth bytes -> result (state & bytes)
+val process_commit: state -> msg:message_content bytes{msg.content_type = CT_commit} -> message_auth bytes -> result (state & bytes)
 let process_commit state message message_auth =
   let message: MLS.TreeDEM.Message.Types.message_content bytes = message in
   let message_content: commit bytes = message.content in
@@ -184,7 +184,7 @@ let process_commit state message message_auth =
     | None -> return state
     | Some path ->
       let? group_context = state_to_group_context state in
-      let group_context_bytes = (ps_to_pse ps_group_context_nt).serialize_exact group_context in
+      let group_context_bytes = (ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context in
       //It is not possible to move this `if` inside the definition of `update_pathkem`, because we need the information it gives to write the type of `update_pathkem`
       if not (sender_id < pow2 state.treesync_state.levels) then
         error "process_commit: sender_id is greater than treesize"
@@ -215,7 +215,7 @@ let process_commit state message message_auth =
   let? init_secret = MLS.TreeDEM.Keys.secret_epoch_to_init state.epoch_secret in
   let? leaf_secret = (
     if state.leaf_index = sender_id && (Some? message_content.c_path) then (
-      match List.Tot.assoc ((ps_to_pse (ps_leaf_node_nt _)).serialize_exact (Some?.v message_content.c_path).leaf_node) state.pending_updatepath with
+      match List.Tot.assoc ((ps_prefix_to_ps_whole (ps_leaf_node_nt _)).serialize (Some?.v message_content.c_path).leaf_node) state.pending_updatepath with
       | Some leaf_secret -> return leaf_secret
       | None -> internal_failure "Can't retrieve my own leaf secret"
     ) else (
@@ -234,7 +234,7 @@ let process_commit state message message_auth =
         return (Some commit_secret)
       )
   ) in
-  let serialized_group_context = (ps_to_pse ps_group_context_nt).serialize_exact group_context in
+  let serialized_group_context = (ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context in
   let? joiner_secret = MLS.TreeDEM.Keys.secret_init_to_joiner init_secret opt_commit_secret serialized_group_context in
   let? epoch_secret = MLS.TreeDEM.Keys.secret_joiner_to_epoch joiner_secret None serialized_group_context in
   let state = { state with epoch_secret; leaf_secret; pending_updatepath = [];} in
@@ -258,11 +258,11 @@ let chop_entropy (e: bytes) (l: nat): (result ((fresh:bytes{Seq.length fresh == 
 
 val default_capabilities: result (capabilities_nt bytes)
 let default_capabilities =
-  let versions = [PV_mls10 ()] in
-  let ciphersuites = [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ()] in
+  let versions = [PV_mls10] in
+  let ciphersuites = [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519] in
   let extensions = [] in
   let proposals = [] in
-  let credentials = [CT_basic ()] in
+  let credentials = [CT_basic] in
   if not (bytes_length #bytes ps_protocol_version_nt versions < pow2 30) then
     internal_failure "fresh_key_package: initial protocol versions too long"
   else if not (bytes_length #bytes ps_extension_type_nt extensions < pow2 30) then
@@ -291,13 +291,13 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     signature_key;
     credential = C_basic identity;
     capabilities;
-    source = LNS_key_package ();
+    source = LNS_key_package;
     lifetime = {not_before = 0; not_after = 0;};
     parent_hash = ();
     extensions;
   } in
   let? signature = (
-    let tbs = (ps_to_pse (ps_leaf_node_tbs_nt _)).serialize_exact ({
+    let tbs = (ps_prefix_to_ps_whole (ps_leaf_node_tbs_nt _)).serialize ({
       data = leaf_data;
       group_id = ();
       leaf_index = ();
@@ -314,14 +314,14 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     signature;
   } in
   let kp_tbs = ({
-    version = PV_mls10 ();
-    cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
+    version = PV_mls10;
+    cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
     init_key = encryption_key;
     leaf_node;
     extensions = [];
   } <: key_package_tbs_nt bytes tkt) in
   let? nonce = universal_sign_nonce in
-  let tbs: bytes = (ps_to_pse (ps_key_package_tbs_nt _)).serialize_exact kp_tbs in
+  let tbs: bytes = (ps_prefix_to_ps_whole (ps_key_package_tbs_nt _)).serialize kp_tbs in
   if not (length tbs < pow2 30 && sign_with_label_pre #bytes "KeyPackageTBS" (length #bytes tbs)) then error "fresh_key_package: tbs too long"
   else (
     let signature: bytes = sign_with_label private_sign_key "KeyPackageTBS" tbs nonce in
@@ -333,7 +333,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
 
 let fresh_key_package e cred private_sign_key =
   let? key_package, leaf_secret = fresh_key_package_internal e cred private_sign_key in
-  let key_package_bytes = (ps_to_pse (ps_key_package_nt _)).serialize_exact key_package in
+  let key_package_bytes = (ps_prefix_to_ps_whole (ps_key_package_nt _)).serialize key_package in
   let? hash = hash_leaf_package key_package.tbs.leaf_node in
   return (key_package_bytes, hash, leaf_secret)
 
@@ -377,7 +377,7 @@ let create e cred private_sign_key group_id =
   })
 #pop-options
 
-val send_helper: state -> msg:message_content bytes{msg.wire_format == WF_mls_ciphertext ()} → e:entropy { Seq.length e == 4 } → result (state & message_auth bytes & group_message)
+val send_helper: state -> msg:message_content bytes{msg.wire_format == WF_mls_ciphertext} → e:entropy { Seq.length e == 4 } → result (state & message_auth bytes & group_message)
 let send_helper st msg e =
   //FIXME
   assume (sign_nonce_length #bytes == 0);
@@ -392,15 +392,15 @@ let send_helper st msg e =
   let? msg_network = message_content_to_network msg in
   let? auth_network = message_auth_to_network auth in
   let auth_msg: mls_authenticated_content_nt bytes = {
-    wire_format = WF_mls_ciphertext();
+    wire_format = WF_mls_ciphertext;
     content = msg_network;
     auth = auth_network;
   } in
-  let ratchet = if msg.content_type = CT_application () then st.application_state else st.handshake_state in
+  let ratchet = if msg.content_type = CT_application then st.application_state else st.handshake_state in
   let? ct_new_ratchet_state = message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret auth_msg in
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
-  let msg_bytes = (ps_to_pse ps_mls_message_nt).serialize_exact (M_mls10 (M_ciphertext ct)) in
-  let new_st = if msg.content_type = CT_application () then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
+  let msg_bytes = (ps_prefix_to_ps_whole ps_mls_message_nt).serialize (M_mls10 (M_ciphertext ct)) in
+  let new_st = if msg.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
   let g:group_message = (st.treesync_state.group_id, msg_bytes) in
   return (new_st, auth, g)
 
@@ -419,7 +419,7 @@ let rec unsafe_mk_randomness #l e =
 // Have to factor out this function otherwise F* typecheck goes mad in `generate_welcome_message`
 // (Error 54) bytes_like bytes is not a subtype of the expected type bytes
 // Yeah thanks, but I don't see where it's relevant?
-val generate_key_package_and_path_secret: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> key_package_nt bytes tkt -> result (key_package_nt bytes tkt & option bytes)
+val generate_key_package_and_path_secret: state -> msg:message_content bytes{msg.content_type == CT_commit} -> key_package_nt bytes tkt -> result (key_package_nt bytes tkt & option bytes)
 let generate_key_package_and_path_secret future_state msg new_key_package =
   let x: option (update_path_nt bytes) = msg.content.c_path in
   let new_leaf_package = new_key_package.tbs.leaf_node in
@@ -443,7 +443,7 @@ let generate_key_package_and_path_secret future_state msg new_key_package =
     return (new_key_package, None)
   )
 
-val generate_welcome_message: state -> msg:message_content bytes{msg.content_type == CT_commit ()} -> message_auth bytes -> bool -> new_key_packages:list (key_package_nt bytes tkt) -> bytes -> result (welcome bytes)
+val generate_welcome_message: state -> msg:message_content bytes{msg.content_type == CT_commit} -> message_auth bytes -> bool -> new_key_packages:list (key_package_nt bytes tkt) -> bytes -> result (welcome bytes)
 let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packages e =
   let? (future_state, joiner_secret) = process_commit st msg msg_auth in
   let? confirmation_tag = from_option "generate_welcome_message: confirmation tag is missing" msg_auth.confirmation_tag in
@@ -457,14 +457,14 @@ let generate_welcome_message st msg msg_auth include_path_secrets new_leaf_packa
   let? ratchet_tree_bytes = (
     let l = bytes_length (ps_option (ps_node_nt tkt)) ratchet_tree in
     if l < pow2 30 then
-      return #bytes ((ps_to_pse (ps_ratchet_tree_nt tkt)).serialize_exact ratchet_tree)
+      return #bytes ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree)
     else
       internal_failure "generate_welcome_message: ratchet_tree too big"
   ) in
   let group_info: welcome_group_info bytes = {
     group_context = {
-      version = PV_mls10 ();
-      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 ();
+      version = PV_mls10;
+      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
       group_id = future_state.treesync_state.group_id;
       epoch = future_state.epoch;
       tree_hash = tree_hash;
@@ -508,7 +508,7 @@ let generate_update_path st e proposals =
     let sign_nonce = fresh in
     assume(length #bytes sign_nonce == Seq.length sign_nonce);
     let? group_context = state_to_group_context st in
-    let group_context_bytes = (ps_to_pse ps_group_context_nt).serialize_exact group_context in
+    let group_context_bytes = (ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context in
     let new_leaf_secret = Seq.create (hpke_private_key_length #bytes) (Lib.IntTypes.u8 0)  in
     assume(length new_leaf_secret == Seq.length new_leaf_secret);
     let? (update_path_kem, _) = update_path st.treekem_state.tree st.leaf_index new_leaf_secret group_context_bytes update_path_rand in
@@ -516,7 +516,7 @@ let generate_update_path st e proposals =
     let? my_leaf_package = (from_option "generate_update_path: my leaf is blanked" opt_my_leaf_package) in
     let my_new_leaf_package_data = ({
       my_leaf_package.data with
-      source = LNS_update ();
+      source = LNS_update;
       lifetime = ();
       parent_hash = ();
     }) in
@@ -529,30 +529,30 @@ let generate_update_path st e proposals =
     ) in
     let? uncompressed_update_path = mls_star_paths_to_update_path update_path_sync update_path_kem in
     let? update_path = compress_update_path uncompressed_update_path in
-    let new_key_package_bytes = (ps_to_pse (ps_leaf_node_nt tkt)).serialize_exact update_path.leaf_node in
+    let new_key_package_bytes = (ps_prefix_to_ps_whole (ps_leaf_node_nt tkt)).serialize update_path.leaf_node in
     return (update_path, (new_key_package_bytes, new_leaf_secret), e)
   )
 #pop-options
 
-let message_commit = m:message_content bytes{m.wire_format == WF_mls_ciphertext () /\ m.content_type == CT_commit ()}
+let message_commit = m:message_content bytes{m.wire_format == WF_mls_ciphertext /\ m.content_type == CT_commit}
 
 val generate_commit: state -> entropy -> list (proposal bytes) -> result (message_commit & state & entropy)
 let generate_commit state e proposals =
   let? (update_path, pending, e) = generate_update_path state e proposals in
   let state = { state with pending_updatepath = pending::state.pending_updatepath} in
   let msg: message_content bytes = {
-    wire_format = WF_mls_ciphertext ();
+    wire_format = WF_mls_ciphertext;
     group_id = state.treesync_state.group_id;
     epoch = state.epoch;
     sender = S_member (state.leaf_index);
     authenticated_data = Seq.empty; //TODO?
-    content_type = CT_commit ();
+    content_type = CT_commit;
     content = { c_proposals = (List.Tot.map Proposal proposals); c_path = Some update_path };
   } in
   return ((msg <: message_commit), state, e)
 
 let add state key_package e =
-  let? kp = from_option "error message if it is malformed" ((ps_to_pse (ps_key_package_nt tkt)).parse_exact key_package) in
+  let? kp = from_option "error message if it is malformed" ((ps_prefix_to_ps_whole (ps_key_package_nt tkt)).parse key_package) in
   let proposals = [ (Add kp) ] in
   let? (msg, state, e) = generate_commit state e proposals in
   let? fresh, e = chop_entropy e 4 in
@@ -563,7 +563,7 @@ let add state key_package e =
   assert_norm (List.Tot.length [kp] == 1);
   let? welcome_msg = generate_welcome_message state msg msg_auth false [kp] rand in
   let? welcome_msg_network = welcome_to_network welcome_msg in
-  let w:welcome_message = (empty #bytes, (ps_to_pse ps_welcome_nt).serialize_exact welcome_msg_network) in
+  let w:welcome_message = (empty #bytes, (ps_prefix_to_ps_whole ps_welcome_nt).serialize welcome_msg_network) in
   return (state, (g,w))
 
 let remove state p e =
@@ -586,12 +586,12 @@ let update state e =
 
 let send state e data =
   let msg: message_content bytes = {
-    wire_format = WF_mls_ciphertext ();
+    wire_format = WF_mls_ciphertext;
     group_id = state.treesync_state.group_id;
     epoch = state.epoch;
     sender = S_member state.leaf_index;
     authenticated_data = Seq.empty; //TODO?
-    content_type = CT_application ();
+    content_type = CT_application;
     content = data;
   } in
   let? (new_state, msg_auth, g) = send_helper state msg e in
@@ -611,7 +611,7 @@ let find_my_index #l t sign_pk =
 #push-options "--z3rlimit 50"
 let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
-  let? welcome_network = from_option "process_welcome_message: can't parse welcome message" ((ps_to_pse ps_welcome_nt).parse_exact welcome_bytes) in
+  let? welcome_network = from_option "process_welcome_message: can't parse welcome message" ((ps_prefix_to_ps_whole ps_welcome_nt).parse welcome_bytes) in
   let welcome = network_to_welcome welcome_network in
   let? (group_info, secrets) = decrypt_welcome welcome (fun kp_hash ->
     match lookup kp_hash with
@@ -629,7 +629,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     else
       return #(mls_bytes bytes) group_info.group_context.group_id
   ) in
-  let? ratchet_tree = from_option "bad ratchet tree" ((ps_to_pse #bytes (ps_ratchet_tree_nt tkt)).parse_exact group_info.extensions) in
+  let? ratchet_tree = from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse group_info.extensions) in
   let? l = ratchet_tree_l ratchet_tree in
   let? treesync_state = (
     let? treesync = ratchet_tree_to_treesync l 0 ratchet_tree in
@@ -677,7 +677,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   ) in
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.group_context.confirmed_transcript_hash in
   let? group_context = compute_group_context group_info.group_context.group_id group_info.group_context.epoch treesync group_info.group_context.confirmed_transcript_hash in
-  let? epoch_secret = MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_to_pse ps_group_context_nt).serialize_exact group_context) in
+  let? epoch_secret = MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context) in
   let? leaf_secret = (
     let opt_my_leaf_package = leaf_at treesync leaf_index in
     match opt_my_leaf_package with
@@ -716,7 +716,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
 
 let process_group_message state msg =
   let? msg = from_option "process_group_message: can't parse group message"
-    ((ps_to_pse ps_mls_message_nt).parse_exact msg) in
+    ((ps_prefix_to_ps_whole ps_mls_message_nt).parse msg) in
   let? message, message_auth = (
     match msg with
     | M_mls10 (M_plaintext msg) ->
@@ -737,13 +737,13 @@ let process_group_message state msg =
   // Note: can't do a dependent pair pattern matching, have to nest matches +
   // annotations because of the dependency
   match message.content_type with
-  | CT_proposal () ->
+  | CT_proposal  ->
       let message_content: proposal bytes = message.content in
       begin match message_content with
       | Add _ -> internal_failure "TODO: proposal (add)"
       | _ -> internal_failure "TODO: proposal (other)"
       end
-  | CT_commit () ->
+  | CT_commit ->
       let message_content: commit bytes = message.content in
       begin match message_content with
       | { c_proposals = [ Proposal (Add key_package) ]; c_path = _ } ->
@@ -757,7 +757,7 @@ let process_group_message state msg =
           return (state, MsgAdd identity)
       | _ -> internal_failure "TODO: commit (general case)"
       end
-  | CT_application () ->
+  | CT_application ->
       let data: bytes = message.content in
       return (state, MsgData data)
   | _ ->

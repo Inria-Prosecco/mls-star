@@ -28,7 +28,7 @@ let is_signature_ok #cb signature_key commit_message commit_auth group_context =
   let signature_signature = to_lbytes (sign_signature_length #bytes) commit_auth.signature in
   let commit_message_network = extract_result (message_content_to_network commit_message) in
   if not (S_member? commit_message_network.sender) then failwith "is_signature_ok: bad sender type" else
-  extract_result (check_message_signature signature_key signature_signature (WF_mls_plaintext ()) commit_message_network (Some group_context))
+  extract_result (check_message_signature signature_key signature_signature WF_mls_plaintext commit_message_network (Some group_context))
 
 #push-options "--ifuel 2 --z3rlimit 50"
 val test_commit_transcript_one: commit_transcript_test -> ML bool
@@ -44,9 +44,9 @@ let test_commit_transcript_one t =
   end
   | Success cs -> begin
     let cb = mk_concrete_crypto_bytes cs in
-    let group_context = extract_option "malformed group context" ((ps_to_pse ps_group_context_nt).parse_exact (hex_string_to_bytes t.group_context)) in
-    let credential_network = extract_option "malformed credential" ((ps_to_pse ps_credential_nt).parse_exact (hex_string_to_bytes t.credential)) in
-    let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_to_pse ps_mls_message_nt).parse_exact (hex_string_to_bytes t.commit)) in
+    let group_context = extract_option "malformed group context" ((ps_prefix_to_ps_whole ps_group_context_nt).parse (hex_string_to_bytes t.group_context)) in
+    let credential_network = extract_option "malformed credential" ((ps_prefix_to_ps_whole ps_credential_nt).parse (hex_string_to_bytes t.credential)) in
+    let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_prefix_to_ps_whole ps_mls_message_nt).parse (hex_string_to_bytes t.commit)) in
     let commit_plaintext_network =
       match commit_message_network with
       | M_mls10 (M_plaintext p) -> p
@@ -64,7 +64,7 @@ let test_commit_transcript_one t =
     let interim_transcript_hash_ok = check_equal "interim_transcript_hash" bytes_to_hex_string (hex_string_to_bytes t.interim_transcript_hash_after) computed_interim_transcript_hash in
     let confirmation_tag_ok =
       match commit_auth_msg.content.content.content_type with
-      | CT_commit () ->
+      | CT_commit ->
         check_equal "confirmation_tag" bytes_to_hex_string commit_auth_msg.auth.confirmation_tag computed_confirmation_tag
       | _ ->
         IO.print_string "Missing confirmation tag\n";

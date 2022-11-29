@@ -20,7 +20,7 @@ let rec mem_filter #a p l x =
   | h::t -> mem_filter p t x
 
 #push-options "--fuel 2"
-val bytes_length_unsnoc: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_unit bytes a -> l:list a{List.Tot.length l > 0} -> Lemma
+val bytes_length_unsnoc: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_prefix bytes a -> l:list a{List.Tot.length l > 0} -> Lemma
   (let (tl, hd) = List.Tot.unsnoc l in bytes_length ps_a l == bytes_length ps_a tl + (prefixes_length (ps_a.serialize hd)))
 let rec bytes_length_unsnoc #bytes #bl #a ps_a l =
   match l with
@@ -51,7 +51,7 @@ let rec index_map #a #b f l i =
   if i = 0 then ()
   else index_map f t (i-1)
 
-val bytes_length_filter: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_unit bytes a -> pred:(a -> bool) -> l:list a -> Lemma
+val bytes_length_filter: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type -> ps_a:parser_serializer_prefix bytes a -> pred:(a -> bool) -> l:list a -> Lemma
   (bytes_length #bytes ps_a (List.Tot.filter pred l) <= bytes_length #bytes ps_a l)
 let rec bytes_length_filter #bytes #bl #a ps_a pred l =
   match l with

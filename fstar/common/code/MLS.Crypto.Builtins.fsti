@@ -3,8 +3,6 @@ module MLS.Crypto.Builtins
 open Comparse
 open MLS.Result
 
-let string_is_ascii (s:string) = List.Tot.for_all (fun x -> FStar.Char.int_of_char x < 256) (FStar.String.list_of_string s)
-
 (*** Typeclass definition ***)
 
 type available_ciphersuite =

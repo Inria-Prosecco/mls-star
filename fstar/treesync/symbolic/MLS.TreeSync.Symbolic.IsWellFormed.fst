@@ -78,7 +78,7 @@ let rec is_well_formed_tree_add #bytes #bl pre #tkt #l #i t li ln =
     is_well_formed_tree_add pre child li ln;
     match opn with
     | None -> ()
-    | Some pn -> for_allP_eq (is_well_formed_partial (ps_nat_lbytes 4) pre) (insert_sorted li pn.unmerged_leaves)
+    | Some pn -> for_allP_eq (is_well_formed_prefix (ps_nat_lbytes 4) pre) (insert_sorted li pn.unmerged_leaves)
 #pop-options
 
 #push-options "--z3rlimit 25"
@@ -108,7 +108,7 @@ let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
 
 val pre_compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i -> Lemma
   (requires
-    is_well_formed_partial tkt.ps_node_content pre content /\
+    is_well_formed_prefix tkt.ps_node_content pre content /\
     pre parent_hash /\
     is_well_formed _ pre original_sibling /\
     compute_parent_hash_pre content (length #bytes parent_hash) original_sibling
@@ -137,7 +137,7 @@ let rec is_well_formed_apply_path_aux #bytes #cb pre #tkt #l #i #li t p parent_p
     | None -> ()
     | Some ext_content -> pre_compute_parent_hash pre ext_content parent_parent_hash sibling
     );
-    for_allP_eq (is_well_formed_partial (ps_nat_lbytes 4) pre) [];
+    for_allP_eq (is_well_formed_prefix (ps_nat_lbytes 4) pre) [];
     is_well_formed_apply_path_aux pre child p_next new_parent_parent_hash
   )
 #pop-options
@@ -168,7 +168,7 @@ let rec pre_compute_leaf_parent_hash_from_path #bytes #cb pre #tkt #l #i #li t p
 
 val is_well_formed_get_path_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> p:external_pathsync bytes tkt l i li -> Lemma
   (requires is_well_formed _ pre p)
-  (ensures is_well_formed_partial (ps_leaf_node_data_nt tkt) pre (get_path_leaf p))
+  (ensures is_well_formed_prefix (ps_leaf_node_data_nt tkt) pre (get_path_leaf p))
 let rec is_well_formed_get_path_leaf #bytes #bl pre #tkt #l #i #li p =
   match p with
   | PLeaf _ -> ()

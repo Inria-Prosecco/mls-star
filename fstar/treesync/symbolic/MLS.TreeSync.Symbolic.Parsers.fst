@@ -1,7 +1,5 @@
 module MLS.TreeSync.Symbolic.Parsers
 
-open MLS.Symbolic.Parsers
-
 open Comparse
 open MLS.Tree
 open MLS.NetworkTypes
