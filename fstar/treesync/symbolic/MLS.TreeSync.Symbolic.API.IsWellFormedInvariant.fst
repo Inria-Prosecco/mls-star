@@ -30,15 +30,15 @@ let is_well_formed_finalize_create #bytes #cb #tkt #asp #group_id #ln pre pend t
 
 val is_well_formed_finalize_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
-  #group_id:mls_bytes bytes -> #t:treesync bytes tkt l 0 ->
+  #group_id:mls_bytes bytes -> #epoch:nat_lbytes 8 -> #t:treesync bytes tkt l 0 ->
   pre:bytes_compatible_pre bytes ->
-  pend:pending_welcome group_id t -> tokens:tokens_for_welcome asp pend -> Lemma
+  pend:pending_welcome group_id epoch t -> tokens:tokens_for_welcome asp pend -> Lemma
   (requires is_well_formed _ pre t)
   (ensures (
     let new_state = finalize_welcome pend tokens in
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
-let is_well_formed_finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pre pend tokens =
+let is_well_formed_finalize_welcome #bytes #cb #tkt #asp #l #group_id #epoch #t pre pend tokens =
   ()
 
 val is_well_formed_finalize_add:
@@ -54,14 +54,14 @@ val is_well_formed_finalize_add:
 let is_well_formed_finalize_add #bytes #cb #tkt #asp #st #ln pre pend token =
   match find_empty_leaf st.tree with
   | Some li -> (
-    is_well_formed_tree_add pre st.tree li ln
+    is_well_formed_tree_add pre st.epoch st.tree li ln
   )
   | None -> (
     find_empty_leaf_tree_extend st.tree;
     let extended_tree = tree_extend st.tree in
     let li = Some?.v (find_empty_leaf extended_tree) in
     is_well_formed_tree_extend pre st.tree;
-    is_well_formed_tree_add pre extended_tree li ln
+    is_well_formed_tree_add pre st.epoch extended_tree li ln
   )
 
 val is_well_formed_finalize_update:

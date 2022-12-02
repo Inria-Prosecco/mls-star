@@ -9,7 +9,7 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
 open MLS.TreeSync.Operations
-open MLS.TreeSync.Invariants.UnmergedLeaves
+open MLS.TreeSync.Invariants.Epoch
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Proofs.ParentHashGuarantees
 open MLS.TreeSync.API
@@ -129,7 +129,7 @@ val welcome:
   #tkt:treekem_types dy_bytes ->
   pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat -> kpmgr_session:nat ->
   my_key_package:key_package_nt dy_bytes tkt ->
-  group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
+  group_id:mls_bytes dy_bytes -> epoch:nat_lbytes 8 -> l:nat -> t:treesync dy_bytes tkt l 0 ->
   LCrypto unit pr
   (requires fun t0 ->
     is_publishable pr.global_usage (trace_len t0) group_id /\
@@ -137,9 +137,9 @@ val welcome:
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 2)
-let welcome #tkt pr p as_session gmgr_session kpmgr_session my_key_package group_id l t =
+let welcome #tkt pr p as_session gmgr_session kpmgr_session my_key_package group_id epoch l t =
   let now = global_timestamp () in
-  let welcome_pend = extract_result pr (prepare_welcome group_id t) in
+  let welcome_pend = extract_result pr (prepare_welcome group_id epoch t) in
   welcome_pend.as_inputs_proof;
   let tokens = get_tokens_for pr p as_session welcome_pend.as_inputs in
   let tokens: tokens_for_welcome (dy_asp pr.global_usage now) welcome_pend = tokens in
@@ -304,6 +304,9 @@ let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
     (tree = st.tree) &&
     (external_path_to_path_pre tree path group_id) &&
     (path_is_filter_valid tree path) &&
+    (get_path_leaf path).source = LNS_update &&
+    1 <= (get_path_leaf path).update_epoch &&
+    epoch_invariant ((get_path_leaf path).update_epoch - 1) tree &&
     (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
     (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
   );
@@ -354,7 +357,7 @@ val authenticate_leaf_node_data_from_update:
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage (trace_len t0)) ln_data /\
     is_publishable pr.global_usage (trace_len t0) group_id /\
     leaf_node_has_event p (trace_len t0) ({data = ln_data; group_id; leaf_index;}) /\
-    tree_has_event p (trace_len t0) group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
+    tree_has_event p (trace_len t0) group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes; add_epoch = ();} <: leaf_node_nt dy_bytes tkt))|) /\
     has_treesync_invariants tkt pr
   )
   (ensures fun t0 ln t1 ->

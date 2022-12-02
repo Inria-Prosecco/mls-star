@@ -109,15 +109,24 @@ type lifetime_nt = {
 ///             Lifetime lifetime;
 ///
 ///         case update:
-///             struct{};
+///             uint64 update_epoch;
 ///
 ///         case commit:
+///             uint64 commit_epoch;
 ///             opaque parent_hash<V>;
 ///     }
 ///
 ///     Extension extensions<V>;
 ///     // SignWithLabel(., "LeafNodeTBS", LeafNodeTBS)
 ///     opaque signature<V>;
+///     /* add_epoch is not authenticated */
+///     select (LeafNode.leaf_node_source) {
+///         case key_package:
+///             uint64 add_epoch;
+///         case update:
+///         case commit:
+///             struct{};
+///     };
 /// } LeafNode;
 
 val leaf_node_lifetime_nt: leaf_node_source_nt -> Type0
@@ -128,6 +137,22 @@ let leaf_node_lifetime_nt source =
 
 %splice [ps_leaf_node_lifetime_nt] (gen_parser_prefix (`leaf_node_lifetime_nt))
 
+val leaf_node_update_epoch_nt: leaf_node_source_nt -> Type0
+let leaf_node_update_epoch_nt source =
+  match source with
+  | LNS_update -> nat_lbytes 8
+  | _ -> unit
+
+%splice [ps_leaf_node_update_epoch_nt] (gen_parser_prefix (`leaf_node_update_epoch_nt))
+
+val leaf_node_commit_epoch_nt: leaf_node_source_nt -> Type0
+let leaf_node_commit_epoch_nt source =
+  match source with
+  | LNS_commit -> nat_lbytes 8
+  | _ -> unit
+
+%splice [ps_leaf_node_commit_epoch_nt] (gen_parser_prefix (`leaf_node_commit_epoch_nt))
+
 val leaf_node_parent_hash_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
 let leaf_node_parent_hash_nt bytes #bl source =
   match source with
@@ -135,6 +160,14 @@ let leaf_node_parent_hash_nt bytes #bl source =
   | _ -> unit
 
 %splice [ps_leaf_node_parent_hash_nt] (gen_parser_prefix (`leaf_node_parent_hash_nt))
+
+val leaf_node_add_epoch_nt: leaf_node_source_nt -> Type0
+let leaf_node_add_epoch_nt source =
+  match source with
+  | LNS_key_package -> nat_lbytes 8
+  | _ -> unit
+
+%splice [ps_leaf_node_add_epoch_nt] (gen_parser_prefix (`leaf_node_add_epoch_nt))
 
 type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_leaf_content]
@@ -144,6 +177,8 @@ type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byt
   capabilities: capabilities_nt bytes;
   source: leaf_node_source_nt;
   lifetime: leaf_node_lifetime_nt source;
+  update_epoch: leaf_node_update_epoch_nt source;
+  commit_epoch: leaf_node_commit_epoch_nt source;
   parent_hash: leaf_node_parent_hash_nt bytes source;
   extensions: mls_list bytes ps_extension_nt;
 }
@@ -155,6 +190,7 @@ type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byt
 type leaf_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   data: leaf_node_data_nt bytes tkt;
   signature: mls_bytes bytes;
+  add_epoch: leaf_node_add_epoch_nt data.source;
 }
 
 %splice [ps_leaf_node_nt] (gen_parser (`leaf_node_nt))
@@ -174,9 +210,10 @@ instance parseable_serializeable_leaf_node_nt (bytes:Type0) {|bytes_like bytes|}
 ///             Lifetime lifetime;
 ///
 ///         case update:
-///             struct{};
+///             uint64 update_epoch;
 ///
 ///         case commit:
+///             uint64 commit_epoch;
 ///             opaque parent_hash<V>;
 ///     }
 ///
@@ -267,14 +304,12 @@ instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes
 /// struct {
 ///     HPKEPublicKey encryption_key;
 ///     opaque parent_hash<V>;
-///     uint32 unmerged_leaves<V>;
 /// } ParentNode;
 
 type parent_node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_node_content]
   content: tkt.node_content; //encryption_key
   parent_hash: mls_bytes bytes;
-  unmerged_leaves: mls_list bytes (ps_nat_lbytes #bytes 4);
 }
 
 %splice [ps_parent_node_nt] (gen_parser (`parent_node_nt))

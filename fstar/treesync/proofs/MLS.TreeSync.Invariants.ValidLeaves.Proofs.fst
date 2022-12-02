@@ -18,15 +18,15 @@ val valid_leaves_invariant_tree_create: #bytes:Type0 -> {|crypto_bytes bytes|} -
   (ensures valid_leaves_invariant group_id (tree_create (Some ln)))
 let valid_leaves_invariant_tree_create #bytes #cb #tkt group_id ln = ()
 
-val valid_leaves_invariant_tree_add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
-  (requires ln.data.source == LNS_key_package /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t /\ tree_add_pre t li)
-  (ensures valid_leaves_invariant group_id (tree_add t li ln))
-let rec valid_leaves_invariant_tree_add #bytes #cb #tkt #l #i group_id t li ln =
+val valid_leaves_invariant_tree_add: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> epoch:nat_lbytes 8 -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
+  (requires ln.data.source == LNS_key_package /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t)
+  (ensures valid_leaves_invariant group_id (tree_add epoch t li ln))
+let rec valid_leaves_invariant_tree_add #bytes #cb #tkt #l #i group_id epoch t li ln =
   match t with
   | TLeaf _ -> ()
   | TNode _ _ _ ->
     let (c, _) = get_child_sibling t li in
-    valid_leaves_invariant_tree_add group_id c li ln
+    valid_leaves_invariant_tree_add group_id epoch c li ln
 
 val valid_leaves_invariant_tree_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
   (requires ln.data.source == LNS_update /\ leaf_is_valid ln group_id li /\ valid_leaves_invariant group_id t)

@@ -14,7 +14,7 @@ open MLS.TreeSync.Operations
 open MLS.TreeSync.Refined.Types
 open MLS.TreeSync.Refined.Operations
 open MLS.TreeSync.API.Types
-open MLS.TreeSync.Invariants.UnmergedLeaves
+open MLS.TreeSync.Invariants.Epoch
 open MLS.TreeSync.Invariants.ParentHash
 open MLS.TreeSync.Invariants.ValidLeaves
 open MLS.TreeSync.Invariants.AuthService
@@ -34,11 +34,12 @@ let state_leaf_at #bytes #cb #tkt #asp st li =
   Some?.v (leaf_at st.tree li)
 
 val state_update_tree:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
-  st:treesync_state bytes tkt asp -> new_tree:treesync_valid bytes tkt l 0 st.group_id -> new_tokens:as_tokens bytes asp.token_t l 0{all_credentials_ok new_tree new_tokens} ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat -> #epoch:nat_lbytes 8 ->
+  st:treesync_state bytes tkt asp -> new_tree:treesync_valid bytes tkt l 0 epoch st.group_id -> new_tokens:as_tokens bytes asp.token_t l 0{all_credentials_ok new_tree new_tokens} ->
   treesync_state bytes tkt asp
-let state_update_tree #bytes #cb #tkt #asp #l st new_tree new_tokens =
+let state_update_tree #bytes #cb #tkt #asp #l #epoch st new_tree new_tokens =
   ({ st with
+    epoch;
     levels = l;
     tree = new_tree;
     tokens = new_tokens;
@@ -48,6 +49,7 @@ let state_update_tree #bytes #cb #tkt #asp #l st new_tree new_tokens =
 
 let pending_create_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (group_id:mls_bytes bytes) (ln:leaf_node_nt bytes tkt) =
   squash (
+    leaf_node_epoch ln == 0 /\
     leaf_is_valid ln group_id 0
   )
 
@@ -67,7 +69,9 @@ val prepare_create:
   group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt ->
   result (pending_create group_id ln)
 let prepare_create #bytes #cb #tkt group_id ln =
-  if not (leaf_is_valid ln group_id 0) then
+  if not (leaf_node_epoch ln = 0) then
+    error "prepare_create: leaf node has wrong epoch"
+  else if not (leaf_is_valid ln group_id 0) then
     error "prepare_create: leaf node is not valid"
   else (
     return ({
@@ -86,6 +90,7 @@ let finalize_create #bytes #cb #tkt #asp #group_id #ln pend token =
   all_credentials_ok_tree_create ln token;
   ({
     group_id;
+    epoch = 0;
     levels = 0;
     tree = tree_create ln;
     tokens = MLS.TreeCommon.tree_create (Some token);
@@ -93,16 +98,16 @@ let finalize_create #bytes #cb #tkt #asp #group_id #ln pend token =
 
 (*** Welcome ***)
 
-let pending_welcome_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) =
+let pending_welcome_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (epoch:nat_lbytes 8) (t:treesync bytes tkt l 0) =
   squash (
-    unmerged_leaves_ok t /\
+    epoch_invariant epoch t /\
     parent_hash_invariant t /\
     valid_leaves_invariant group_id t
   )
 
 #push-options "--fuel 0 --ifuel 1"
-type pending_welcome (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) = {
-  can_welcome_proof: pending_welcome_proof group_id t;
+type pending_welcome (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (epoch:nat_lbytes 8) (t:treesync bytes tkt l 0) = {
+  can_welcome_proof: pending_welcome_proof group_id epoch t;
   as_inputs: list (option (as_input bytes));
   as_inputs_proof: squash (
     List.Tot.length as_inputs == pow2 l /\ (
@@ -114,8 +119,8 @@ type pending_welcome (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types b
 
 type tokens_for_welcome
   (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat)
-  (#group_id:mls_bytes bytes) (#t:treesync bytes tkt l 0)
-  (asp:as_parameters bytes) (pend:pending_welcome group_id t) =
+  (#group_id:mls_bytes bytes) (#epoch:nat_lbytes 8) (#t:treesync bytes tkt l 0)
+  (asp:as_parameters bytes) (pend:pending_welcome group_id epoch t) =
   tokens:list (option asp.token_t){
     List.Tot.length tokens == pow2 l /\ (
       forall li. match List.Tot.index pend.as_inputs li, List.Tot.index tokens li with
@@ -127,11 +132,11 @@ type tokens_for_welcome
 
 val prepare_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat ->
-  group_id:mls_bytes bytes -> t:treesync bytes tkt l 0 ->
-  result (pending_welcome group_id t)
-let prepare_welcome #bytes #cb #tkt #l group_id t =
-  if not (unmerged_leaves_ok t) then
-    error "prepare_welcome: malformed unmerged leaves"
+  group_id:mls_bytes bytes -> epoch:nat_lbytes 8 -> t:treesync bytes tkt l 0 ->
+  result (pending_welcome group_id epoch t)
+let prepare_welcome #bytes #cb #tkt #l group_id epoch t =
+  if not (epoch_invariant epoch t) then
+    error "prepare_welcome: wrong epoch"
   else if not (parent_hash_invariant t) then
     error "prepare_welcome: bad parent hash"
   else if not (valid_leaves_invariant group_id t) then
@@ -182,10 +187,10 @@ let rec leaf_at_token_from_list #bytes #bl asp l i tokens li =
 
 val finalize_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
-  #group_id:mls_bytes bytes -> #t:treesync bytes tkt l 0 ->
-  pend:pending_welcome group_id t -> tokens:tokens_for_welcome asp pend ->
+  #group_id:mls_bytes bytes -> #epoch:nat_lbytes 8 -> #t:treesync bytes tkt l 0 ->
+  pend:pending_welcome group_id epoch t -> tokens:tokens_for_welcome asp pend ->
   treesync_state bytes tkt asp
-let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
+let finalize_welcome #bytes #cb #tkt #asp #l #group_id #epoch #t pend tokens =
   pend.can_welcome_proof;
   let tokens_tree = tokens_from_list asp l 0 tokens in
   intro_all_credentials_ok t tokens_tree (fun li ->
@@ -194,6 +199,7 @@ let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
   );
   ({
     group_id;
+    epoch;
     levels = l;
     tree = t;
     tokens = tokens_tree;
@@ -203,16 +209,15 @@ let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
 
 let pending_add_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) =
   squash (
-    ln.data.source == LNS_key_package /\ ( //TODO: check key package signature
+    ln.data.source == LNS_key_package /\
+    ln.add_epoch <= st.epoch /\ ( //TODO: check key package signature
       match find_empty_leaf st.tree with
       | Some li ->
-        tree_add_pre st.tree li /\
         leaf_is_valid ln st.group_id li
       | None ->
         find_empty_leaf_tree_extend st.tree;
         let extended_tree = tree_extend st.tree in
         let li = Some?.v (find_empty_leaf extended_tree) in
-        tree_add_pre extended_tree li /\
         leaf_is_valid ln st.group_id li
     )
   )
@@ -235,12 +240,12 @@ val prepare_add:
 let prepare_add #bytes #cb #tkt #asp st ln =
   if not (ln.data.source = LNS_key_package) then
     error "prepare_add: source is not key_package"
+  else if not (ln.add_epoch <= st.epoch) then
+    error "prepare_add: bad epoch"
   else (
     match find_empty_leaf st.tree with
     | Some li ->
-      if not (tree_add_pre st.tree li) then
-        error "prepare_add: tree_add_pre is false"
-      else if not (leaf_is_valid ln st.group_id li) then
+      if not (leaf_is_valid ln st.group_id li) then
         error "prepare_add: invalid leaf node"
       else (
         return ({
@@ -252,9 +257,7 @@ let prepare_add #bytes #cb #tkt #asp st ln =
       find_empty_leaf_tree_extend st.tree;
       let extended_tree = tree_extend st.tree in
       let li = Some?.v (find_empty_leaf extended_tree) in
-      if not (tree_add_pre extended_tree li) then
-        error "prepare_add: tree_add_pre is false (after extension)"
-      else if not (leaf_is_valid ln st.group_id li) then
+      if not (leaf_is_valid ln st.group_id li) then
         error "prepare_add: invalid leaf node"
       else (
         return ({
@@ -273,7 +276,7 @@ let finalize_add #bytes #cb #tkt #asp #st #ln pend token =
   pend.can_add_proof;
   match find_empty_leaf st.tree with
   | Some li -> (
-    all_credentials_ok_tree_add st.tree st.tokens li ln token;
+    all_credentials_ok_tree_add st.epoch st.tree st.tokens li ln token;
     (state_update_tree st (tree_add st.tree li ln) (as_add_update st.tokens li token), (li <: nat))
   )
   | None -> (
@@ -282,7 +285,7 @@ let finalize_add #bytes #cb #tkt #asp #st #ln pend token =
     let extended_tokens = as_extend st.tokens in
     let li = Some?.v (find_empty_leaf extended_tree) in
     all_credentials_ok_tree_extend st.tree st.tokens;
-    all_credentials_ok_tree_add extended_tree extended_tokens li ln token;
+    all_credentials_ok_tree_add st.epoch extended_tree extended_tokens li ln token;
     (state_update_tree st (tree_add extended_tree li ln) (as_add_update extended_tokens li token), (li <: nat))
 )
 
@@ -291,6 +294,7 @@ let finalize_add #bytes #cb #tkt #asp #st #ln pend token =
 let pending_update_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) (li:treesync_index st) =
   squash (
     ln.data.source == LNS_update /\
+    ln.data.update_epoch == st.epoch /\
     leaf_is_valid ln st.group_id li /\
     Some? (leaf_at st.tree li)
   )
@@ -314,6 +318,8 @@ val prepare_update:
 let prepare_update #bytes #cb #tkt #asp st ln li =
   if not (ln.data.source = LNS_update) then
     error "prepare_update: leaf node has invalid source"
+  else if not (ln.data.update_epoch = st.epoch) then
+    error "prepare_update: leaf node has invalid epoch"
   else if not (leaf_is_valid ln st.group_id li) then
     error "prepare_update: leaf node is not valid"
   else if not (Some? (leaf_at st.tree li)) then
@@ -384,10 +390,12 @@ let pending_commit_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_typ
   squash (
     apply_path_pre st.tree p /\
     path_is_valid st.group_id st.tree p /\
-    Some? (leaf_at st.tree li)
+    Some? (leaf_at st.tree li) /\
+    (get_path_leaf p).data.source == LNS_commit /\
+    (get_path_leaf p).data.commit_epoch == st.epoch+1
   )
 
-#push-options "--fuel 0 --ifuel 1"
+#push-options "--fuel 0 --ifuel 1 --z3rlimit 25"
 type pending_commit (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (#li:treesync_index st) (p:pathsync bytes tkt st.levels 0 li) = {
   can_commit_proof: pending_commit_proof st p;
   as_input_before: (can_commit_proof; as_input_for (state_leaf_at st li));
@@ -411,7 +419,11 @@ let prepare_commit #bytes #cb #tkt #asp st #li p =
   else if not (path_is_valid st.group_id st.tree p) then
     error "prepare_commit: invalid path"
   else if not (Some? (leaf_at st.tree li)) then
-    error "prepare_commit: comitter is blank"
+    error "prepare_commit: committer is blank"
+  else if not ((get_path_leaf p).data.source = LNS_commit) then
+    error "prepare_commit: leaf node source is not commit"
+  else if not ((get_path_leaf p).data.commit_epoch = st.epoch+1) then
+    error "prepare_commit: bad epoch"
   else (
     return ({
       can_commit_proof = ();

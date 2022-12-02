@@ -67,18 +67,15 @@ val is_well_formed_tree_truncate: #bytes:Type0 -> {|bytes_like bytes|} -> pre:by
 let is_well_formed_tree_truncate #bytes #bl pre #tkt #l t = ()
 
 #push-options "--z3rlimit 25"
-val is_well_formed_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
-  (requires is_well_formed _ pre t /\ is_well_formed _ pre ln /\ tree_add_pre t li)
-  (ensures is_well_formed _ pre (tree_add t li ln))
-let rec is_well_formed_tree_add #bytes #bl pre #tkt #l #i t li ln =
+val is_well_formed_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> epoch:nat_lbytes 8 -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt{ln.data.source == LNS_key_package} -> Lemma
+  (requires is_well_formed _ pre t /\ is_well_formed _ pre (ln <: leaf_node_nt bytes tkt))
+  (ensures is_well_formed _ pre (tree_add epoch t li ln))
+let rec is_well_formed_tree_add #bytes #bl pre #tkt #l #i epoch t li ln =
   match t with
   | TLeaf _ -> ()
   | TNode opn _ _ ->
     let (child, _) = get_child_sibling t li in
-    is_well_formed_tree_add pre child li ln;
-    match opn with
-    | None -> ()
-    | Some pn -> for_allP_eq (is_well_formed_prefix (ps_nat_lbytes 4) pre) (insert_sorted li pn.unmerged_leaves)
+    is_well_formed_tree_add pre epoch child li ln
 #pop-options
 
 #push-options "--z3rlimit 25"
@@ -174,6 +171,7 @@ let rec is_well_formed_get_path_leaf #bytes #bl pre #tkt #l #i #li p =
   | PLeaf _ -> ()
   | PNode _ p_next -> is_well_formed_get_path_leaf pre p_next
 
+#push-options "--z3rlimit 10"
 val is_well_formed_set_path_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt -> Lemma
   (requires is_well_formed _ pre p /\ is_well_formed _ pre ln)
   (ensures is_well_formed _ pre (set_path_leaf p ln))
@@ -181,6 +179,7 @@ let rec is_well_formed_set_path_leaf #bytes #bl pre #tkt #l #i #li p ln =
   match p with
   | PLeaf _ -> ()
   | PNode _ p_next -> is_well_formed_set_path_leaf pre p_next ln
+#pop-options
 
 open MLS.Symbolic
 

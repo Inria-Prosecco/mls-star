@@ -11,8 +11,9 @@ open MLS.TreeSync.Invariants.AuthService
 noeq
 type treesync_state (bytes:Type0) {|crypto_bytes bytes|} (tkt:treekem_types bytes) (asp:as_parameters bytes) = {
   group_id: mls_bytes bytes;
+  epoch:nat_lbytes 8;
   levels: nat;
-  tree: treesync_valid bytes tkt levels 0 group_id;
+  tree: treesync_valid bytes tkt levels 0 epoch group_id;
   tokens: tokens:as_tokens bytes asp.token_t levels 0{all_credentials_ok tree tokens};
 }
 

@@ -25,16 +25,15 @@ val all_credentials_ok_tree_create: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt
   (ensures all_credentials_ok (tree_create (Some ln)) (tree_create (Some token)))
 let all_credentials_ok_tree_create #bytes #bl #tkt ln token = ()
 
-val all_credentials_ok_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat -> #i:tree_index l -> ts:treesync bytes tkt l i -> ast:as_tokens bytes asp.token_t l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> token:asp.token_t -> Lemma
+val all_credentials_ok_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat -> #i:tree_index l -> epoch:nat_lbytes 8 -> ts:treesync bytes tkt l i -> ast:as_tokens bytes asp.token_t l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt{ln.data.source == LNS_key_package} -> token:asp.token_t -> Lemma
   (requires
     asp.credential_ok (ln.data.signature_key, ln.data.credential) token /\
-    all_credentials_ok ts ast /\
-    tree_add_pre ts li
+    all_credentials_ok ts ast
   )
-  (ensures all_credentials_ok (tree_add ts li ln) (as_add_update ast li token))
-let all_credentials_ok_tree_add #bytes #bl #tkt #asp #l #i ts ast li ln token =
-  intro_all_credentials_ok (tree_add ts li ln) (as_add_update ast li token) (fun li' ->
-    leaf_at_tree_add ts li ln li';
+  (ensures all_credentials_ok (tree_add epoch ts li ln) (as_add_update ast li token))
+let all_credentials_ok_tree_add #bytes #bl #tkt #asp #l #i epoch ts ast li ln token =
+  intro_all_credentials_ok (tree_add epoch ts li ln) (as_add_update ast li token) (fun li' ->
+    leaf_at_tree_add epoch ts li ln li';
     leaf_at_tree_change_path ast li (Some token) () li'
   )
 

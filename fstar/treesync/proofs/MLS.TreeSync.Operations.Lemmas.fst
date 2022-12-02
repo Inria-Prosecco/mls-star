@@ -11,16 +11,18 @@ open MLS.TreeSync.Operations
 
 #set-options "--fuel 1 --ifuel 1"
 
-val leaf_at_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> li':leaf_index l i -> Lemma
-  (requires tree_add_pre t li)
-  (ensures leaf_at (tree_add t li ln) li' == (if li = li' then Some ln else leaf_at t li'))
-let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li ln li' =
+val leaf_at_tree_add:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  epoch:nat_lbytes 8 -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt{ln.data.source == LNS_key_package} -> li':leaf_index l i ->
+  Lemma (leaf_at (tree_add epoch t li ln) li' == (if li = li' then Some {ln with add_epoch = epoch;} else leaf_at t li'))
+let rec leaf_at_tree_add #bytes #bl #tkt #l #i epoch t li ln li' =
   match t with
   | TLeaf _ -> ()
   | TNode _ left right -> (
     match is_left_leaf li, is_left_leaf li' with
-    | true, true -> leaf_at_tree_add left li ln li'
-    | false, false -> leaf_at_tree_add right li ln li'
+    | true, true -> leaf_at_tree_add epoch left li ln li'
+    | false, false -> leaf_at_tree_add epoch right li ln li'
     | _, _ -> ()
   )
 

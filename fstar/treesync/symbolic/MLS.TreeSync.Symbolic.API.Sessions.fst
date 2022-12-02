@@ -7,7 +7,7 @@ open MLS.Tree
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
-open MLS.TreeSync.Invariants.UnmergedLeaves
+open MLS.TreeSync.Invariants.Epoch
 open MLS.TreeSync.Invariants.ParentHash
 open MLS.TreeSync.Invariants.ValidLeaves
 open MLS.TreeSync.Invariants.AuthService
@@ -45,6 +45,7 @@ let rec ps_dy_as_tokens_is_well_formed #l #i pre tokens =
 noeq
 type bare_treesync_state_ (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) (as_token:Type0) (ps_token:parser_serializer bytes as_token) = {
   group_id: mls_bytes bytes;
+  epoch: nat_lbytes 8;
   [@@@ with_parser #bytes ps_nat]
   levels: nat;
   [@@@ with_parser #bytes (ps_treesync tkt levels 0)]
@@ -71,7 +72,7 @@ val bare_treesync_public_state_pred: tkt:treekem_types dy_bytes -> bare_typed_se
 let bare_treesync_public_state_pred tkt = fun gu p time si vi st ->
   is_publishable gu time st.group_id /\
   is_well_formed _ (is_publishable gu time) st.tree /\
-  unmerged_leaves_ok st.tree /\
+  epoch_invariant st.epoch st.tree /\
   parent_hash_invariant st.tree /\
   valid_leaves_invariant st.group_id st.tree /\
   all_credentials_ok st.tree (st.tokens <: as_tokens dy_bytes (dy_asp gu time).token_t st.levels 0)
@@ -113,6 +114,7 @@ val treesync_state_to_session_bytes:
 let treesync_state_to_session_bytes #tkt pr p time si vi st =
   let bare_st: bare_treesync_state tkt = {
     group_id = st.group_id;
+    epoch = st.epoch;
     levels = st.levels;
     tree = st.tree;
     tokens = st.tokens;
@@ -172,6 +174,7 @@ let get_public_treesync_state #tkt pr p si time =
   let st = Some?.v (parse (bare_treesync_state tkt) st_bytes) in
   {
     group_id = st.group_id;
+    epoch = st.epoch;
     levels = st.levels;
     tree = st.tree;
     tokens = st.tokens;

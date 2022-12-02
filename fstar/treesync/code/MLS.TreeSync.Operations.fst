@@ -12,32 +12,15 @@ open MLS.TreeSync.ParentHash
 
 (*** Tree operations ***)
 
-val tree_add_pre: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> li:leaf_index l i -> bool
-let rec tree_add_pre #bytes #bl #tkt #l #i t li =
+val tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> epoch:nat_lbytes 8 -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt{ln.data.source = LNS_key_package} -> treesync bytes tkt l i
+let rec tree_add #bytes #bl #tkt #l #i epoch t li lp =
   match t with
-  | TLeaf _ -> true
-  | TNode opt_content left right ->
-    (if is_left_leaf li then tree_add_pre left li else tree_add_pre right li) && (
-    match opt_content with
-    | None -> true
-    | Some content -> li < pow2 32 && bytes_length #bytes (ps_nat_lbytes 4) (insert_sorted li content.unmerged_leaves) < pow2 30
-    )
-
-val tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> leaf_node_nt bytes tkt -> Pure (treesync bytes tkt l i)
-  (requires tree_add_pre t li) (ensures fun _ -> True)
-let rec tree_add #bytes #bl #tkt #l #i t li lp =
-  match t with
-  | TLeaf _ -> TLeaf (Some lp)
+  | TLeaf _ -> TLeaf (Some {lp with add_epoch = epoch;})
   | TNode opt_content left right -> (
-    let new_opt_content = (
-      match opt_content with
-      | None -> None
-      | Some content -> Some ({content with unmerged_leaves = insert_sorted li content.unmerged_leaves})
-    ) in
     if is_left_leaf li then (
-      TNode new_opt_content (tree_add left li lp) right
+      TNode opt_content (tree_add epoch left li lp) right
     ) else (
-      TNode new_opt_content left (tree_add right li lp)
+      TNode opt_content left (tree_add epoch right li lp)
     )
   )
 
@@ -56,7 +39,6 @@ let compute_new_np_and_ph #bytes #cb #tkt #l #i opt_ext_content sibling parent_p
     | Some ext_content -> Some ({
       content = ext_content;
       parent_hash = parent_parent_hash;
-      unmerged_leaves = [];
     } <: parent_node_nt bytes tkt)
     | None -> None
   in
@@ -190,10 +172,10 @@ val external_path_to_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:tr
 let external_path_to_path_aux #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
   let computed_parent_hash = compute_leaf_parent_hash_from_path t p root_parent_hash in
   let lp = get_path_leaf p in
-  let new_lp_data = { lp with source = LNS_commit; parent_hash = computed_parent_hash; } in
+  let new_lp_data = { lp with source = LNS_commit; parent_hash = computed_parent_hash; update_epoch = (); commit_epoch = lp.update_epoch;} in
   let new_lp_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id; leaf_index = li;}) in
   let new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
-  ({ data = new_lp_data; signature = new_signature } <: leaf_node_nt bytes tkt)
+  ({ data = new_lp_data; signature = new_signature; add_epoch = (); } <: leaf_node_nt bytes tkt)
 #pop-options
 
 val external_path_to_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> sign_private_key bytes -> sign_nonce bytes -> Pure (pathsync bytes tkt l i li)
@@ -230,22 +212,26 @@ val apply_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types byt
 let apply_path #bytes #cb #tkt #l #li t p =
   apply_path_aux t p root_parent_hash
 
-val un_addP: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> (nat -> bool) -> treesync bytes tkt  l i
-let rec un_addP #bytes #bl #tkt #l #i t pred =
+val is_unmerged_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> epoch:nat -> option (leaf_node_nt bytes tkt) -> bool
+let is_unmerged_leaf #bytes #bl #tkt epoch oln =
+  match oln with
+  | None -> false
+  | Some ln ->
+    ln.data.source = LNS_key_package && epoch <= ln.add_epoch
+
+val un_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> epoch:nat -> treesync bytes tkt  l i
+let rec un_add #bytes #bl #tkt #l #i t epoch =
   match t with
-  | TLeaf _ ->
-    if pred i then
-      t
-    else
+  | TLeaf None -> TLeaf None
+  | TLeaf oln ->
+    if is_unmerged_leaf epoch oln then
       TLeaf None
+    else
+      TLeaf oln
   | TNode None left right ->
-    TNode None (un_addP left pred) (un_addP right pred)
+    TNode None (un_add left epoch) (un_add right epoch)
   | TNode (Some content) left right ->
-    MLS.MiscLemmas.bytes_length_filter #bytes (ps_nat_lbytes 4) pred content.unmerged_leaves;
-    let new_content = { content with
-      unmerged_leaves = List.Tot.filter pred content.unmerged_leaves;
-    } in
-    TNode (Some new_content) (un_addP left pred) (un_addP right pred)
+    TNode (Some content) (un_add left epoch) (un_add right epoch)
 
 val sign_leaf_node_data_key_package_pre:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
@@ -266,7 +252,7 @@ val sign_leaf_node_data_key_package:
 let sign_leaf_node_data_key_package #bytes #cb #tkt ln_data sign_key nonce =
   let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id = (); leaf_index = ();}) in
   let signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
-  ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)
+  ({ data = ln_data; signature = signature; add_epoch = 0; } <: leaf_node_nt bytes tkt)
 
 val sign_leaf_node_data_update_pre:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
@@ -287,4 +273,4 @@ val sign_leaf_node_data_update:
 let sign_leaf_node_data_update #bytes #cb #tkt ln_data group_id leaf_index sign_key nonce =
   let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id; leaf_index;}) in
   let signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
-  ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)
+  ({ data = ln_data; signature = signature; add_epoch = (); } <: leaf_node_nt bytes tkt)
