@@ -99,6 +99,60 @@ let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li content li' =
       leaf_at_tree_add right li content li'
     else ()
 
+val unmerged_leaf_consistent_not_in_tree:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:nat_lbytes 4{~(leaf_index_inside l i li)} ->
+  Lemma (unmerged_leaf_consistent t li)
+let rec unmerged_leaf_consistent_not_in_tree #bytes #bl #tkt #l #i t li =
+  match t with
+  | TLeaf _ -> ()
+  | TNode _ left right ->
+    unmerged_leaf_consistent_not_in_tree left li;
+    unmerged_leaf_consistent_not_in_tree right li
+
+val unmerged_leaf_consistent_tree_add_self:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i{li < pow2 32} -> content:leaf_node_nt bytes tkt ->
+  Lemma
+  (requires tree_add_pre t li)
+  (ensures unmerged_leaf_consistent (tree_add t li content) li)
+let rec unmerged_leaf_consistent_tree_add_self #bytes #bl #tkt #l #i t li content =
+  match t with
+  | TLeaf _ -> ()
+  | TNode opt_content left right ->
+    if is_left_leaf li then (
+      unmerged_leaf_consistent_tree_add_self left li content;
+      unmerged_leaf_consistent_not_in_tree right li
+    ) else (
+      unmerged_leaf_consistent_not_in_tree left li;
+      unmerged_leaf_consistent_tree_add_self right li content
+    );
+    match opt_content with
+    | None -> ()
+    | Some content -> mem_insert_sorted li content.unmerged_leaves li
+
+val unmerged_leaf_consistent_tree_add_other:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> li':nat_lbytes 4 ->
+  Lemma
+  (requires tree_add_pre t li /\ unmerged_leaf_consistent t li')
+  (ensures unmerged_leaf_consistent (tree_add t li content) li')
+let rec unmerged_leaf_consistent_tree_add_other #bytes #bl #tkt #l #i t li content li' =
+  match t with
+  | TLeaf _ -> ()
+  | TNode opt_content left right ->
+    if is_left_leaf li then (
+      unmerged_leaf_consistent_tree_add_other left li content li'
+    ) else (
+      unmerged_leaf_consistent_tree_add_other right li content li'
+    );
+    match opt_content with
+    | None -> ()
+    | Some content -> mem_insert_sorted li content.unmerged_leaves li'
+
 val unmerged_leaves_ok_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> Lemma
   (requires tree_add_pre t li /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_add t li content))
@@ -110,6 +164,10 @@ let rec unmerged_leaves_ok_tree_add #bytes #bl #tkt #l #i t li content =
     match opt_content with
     | None -> ()
     | Some cont -> (
+      unmerged_leaf_consistent_tree_add_self t li content;
+      FStar.Classical.forall_intro (FStar.Classical.move_requires (unmerged_leaf_consistent_tree_add_other t li content));
+      list_for_all_eq (unmerged_leaf_consistent t) cont.unmerged_leaves;
+      list_for_all_eq (unmerged_leaf_consistent (tree_add t li content)) (insert_sorted li cont.unmerged_leaves);
       list_for_all_eq (unmerged_leaf_exists t) cont.unmerged_leaves;
       list_for_all_eq (unmerged_leaf_exists (tree_add t li content)) (insert_sorted li cont.unmerged_leaves);
       FStar.Classical.forall_intro (mem_insert_sorted li cont.unmerged_leaves);
