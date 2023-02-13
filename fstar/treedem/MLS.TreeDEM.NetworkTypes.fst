@@ -135,11 +135,13 @@ type sender_nt (bytes:Type0) {|bytes_like bytes|} =
 %splice [ps_sender_nt] (gen_parser (`sender_nt))
 
 type wire_format_nt =
-  | [@@@ with_num_tag 1 1] WF_mls_plaintext: wire_format_nt
-  | [@@@ with_num_tag 1 2] WF_mls_ciphertext: wire_format_nt
-  | [@@@ with_num_tag 1 3] WF_mls_welcome: wire_format_nt
-  | [@@@ with_num_tag 1 4] WF_mls_group_info: wire_format_nt
-  | [@@@ with_num_tag 1 5] WF_mls_key_package: wire_format_nt
+  | [@@@ with_num_tag 2 0] WF_reserved: wire_format_nt
+  | [@@@ with_num_tag 2 1] WF_mls_plaintext: wire_format_nt
+  | [@@@ with_num_tag 2 2] WF_mls_ciphertext: wire_format_nt
+  | [@@@ with_num_tag 2 3] WF_mls_welcome: wire_format_nt
+  | [@@@ with_num_tag 2 4] WF_mls_group_info: wire_format_nt
+  | [@@@ with_num_tag 2 5] WF_mls_key_package: wire_format_nt
+  | [@@@ open_tag] WF_unknown: n:nat_lbytes 2{~(n <= 5)} -> wire_format_nt
 
 %splice [ps_wire_format_nt] (gen_parser (`wire_format_nt))
 

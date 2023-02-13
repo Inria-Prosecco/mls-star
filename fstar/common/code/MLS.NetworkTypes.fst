@@ -40,9 +40,9 @@ type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 /// } ProtocolVersion;
 
 type protocol_version_nt =
-  | [@@@ with_num_tag 1 0] PV_mls_reserved: protocol_version_nt
-  | [@@@ with_num_tag 1 1] PV_mls10: protocol_version_nt
-  | [@@@ open_tag] PV_unknown: n:nat_lbytes 1{~(n <= 1)} -> protocol_version_nt
+  | [@@@ with_num_tag 2 0] PV_mls_reserved: protocol_version_nt
+  | [@@@ with_num_tag 2 1] PV_mls10: protocol_version_nt
+  | [@@@ open_tag] PV_unknown: n:nat_lbytes 2{~(n <= 1)} -> protocol_version_nt
 
 %splice [ps_protocol_version_nt] (gen_parser (`protocol_version_nt))
 
