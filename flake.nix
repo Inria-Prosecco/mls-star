@@ -2,22 +2,15 @@
   inputs = {
     nixpkgs.url = "nixpkgs";
 
-    fstar-src = {
+    fstar-flake = {
       url = "github:FStarLang/FStar";
-      flake = false;
-    };
-
-    everest = {
-      url = github:project-everest/everest-nix?dir=projects;
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.fstar-src.follows = "fstar-src";
     };
 
     comparse-flake = {
       url = "git+ssh://git@github.com/TWal/comparse.git";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.fstar-src.follows = "fstar-src";
-      inputs.everest.follows = "everest";
+      inputs.fstar-flake.follows = "fstar-flake";
     };
 
     dolev-yao-star-src = {
@@ -26,15 +19,15 @@
     };
   };
 
-  outputs = {self, nixpkgs, fstar-src, everest, comparse-flake, dolev-yao-star-src}:
+  outputs = {self, nixpkgs, fstar-flake, comparse-flake, dolev-yao-star-src}:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
-    z3 = everest.packages.${system}.z3;
-    fstar = everest.packages.${system}.fstar;
+    z3 = fstar-flake.packages.${system}.z3;
+    fstar = fstar-flake.packages.${system}.fstar;
     comparse = comparse-flake.packages.${system}.comparse;
     dolev-yao-star = dolev-yao-star-src;
-    mls-star = pkgs.callPackage ./default.nix {inherit fstar z3 comparse dolev-yao-star; ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_12;};
+    mls-star = pkgs.callPackage ./default.nix {inherit fstar z3 comparse dolev-yao-star; ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_14;};
   in {
     packages.${system} = {
       inherit mls-star;
@@ -42,11 +35,10 @@
     devShells.${system}.default = pkgs.mkShell {
       packages = [
         fstar z3
-      ] ++ (with pkgs.ocaml-ng.ocamlPackages_4_12; [
-        ocaml dune_2 findlib
-        # fstarlib dependencies
-        batteries stdint zarith ppx_deriving_yojson
-      ]);
+      ] ++ (with pkgs.ocaml-ng.ocamlPackages_4_14; [
+        ocaml dune_3 findlib yojson
+      ])
+      ++ (fstar.buildInputs);
     };
     defaultPackage.${system} = mls-star;
     hydraJobs = {

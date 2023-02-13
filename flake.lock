@@ -2,22 +2,19 @@
   "nodes": {
     "comparse-flake": {
       "inputs": {
-        "everest": [
-          "everest"
-        ],
-        "fstar-src": [
-          "fstar-src"
+        "fstar-flake": [
+          "fstar-flake"
         ],
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1668694068,
-        "narHash": "sha256-OA9dsvfmoHtat1jDLe8+aYwBGEeX0J0AWuh4OzNKEUk=",
+        "lastModified": 1676286073,
+        "narHash": "sha256-zo5AXe3KuT49SrEK4YjC7nLPyrEIp2q3ZVJWS9kgOeU=",
         "ref": "refs/heads/main",
-        "rev": "b80a742badbb4c9c4df11298352c77543c4bbc9f",
-        "revCount": 95,
+        "rev": "4845a354b5c694d5c1f993f873b012c9d21a6201",
+        "revCount": 99,
         "type": "git",
         "url": "ssh://git@github.com/TWal/comparse.git"
       },
@@ -29,11 +26,11 @@
     "dolev-yao-star-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1669732268,
-        "narHash": "sha256-yALXfiBdvqi7HM5t2ageZvQNKWxxf87Lw2Nk0btvstU=",
+        "lastModified": 1676284961,
+        "narHash": "sha256-1MlJEbsMYt9QS7aFfU65CyiuRIxi7p2qNnbJDpiI22E=",
         "ref": "comparse",
-        "rev": "527dc9570fb5010bb823f1d14255ae4d41eb9464",
-        "revCount": 1141,
+        "rev": "4b7865617be266653eafe8c916e62ca2b50ac4e5",
+        "revCount": 1144,
         "type": "git",
         "url": "ssh://git@github.com/prosecco/dolev-yao-star.git"
       },
@@ -41,43 +38,15 @@
         "ref": "comparse",
         "type": "git",
         "url": "ssh://git@github.com/prosecco/dolev-yao-star.git"
-      }
-    },
-    "everest": {
-      "inputs": {
-        "flake-utils": "flake-utils",
-        "fstar-src": [
-          "fstar-src"
-        ],
-        "hacl-src": "hacl-src",
-        "karamel-src": "karamel-src",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "dir": "projects",
-        "lastModified": 1663740000,
-        "narHash": "sha256-h9q9tFR5h6m06mTtN/f00Ljq6+TxDcsN89bsDnFt5j0=",
-        "owner": "project-everest",
-        "repo": "everest-nix",
-        "rev": "6f4ff6c44aaf0203c2c2f3f528ef37bb3a7a6bb9",
-        "type": "github"
-      },
-      "original": {
-        "dir": "projects",
-        "owner": "project-everest",
-        "repo": "everest-nix",
-        "type": "github"
       }
     },
     "flake-utils": {
       "locked": {
-        "lastModified": 1656928814,
-        "narHash": "sha256-RIFfgBuKz6Hp89yRr7+NR5tzIAbn52h8vT6vXkYjZoM=",
+        "lastModified": 1667395993,
+        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "7e2a3b3dfd9af950a856d66b0a7d01e3c18aa249",
+        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
         "type": "github"
       },
       "original": {
@@ -85,61 +54,34 @@
         "type": "indirect"
       }
     },
-    "fstar-src": {
-      "flake": false,
+    "fstar-flake": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
       "locked": {
-        "lastModified": 1669391621,
-        "narHash": "sha256-6atbDcXyjQc+KAbdBlmpmItU48v7FFXPx219PK+7osg=",
+        "lastModified": 1675983559,
+        "narHash": "sha256-rm4LRqlUclOlGwto1LHukEEQL2PSOsgT7xZxKHI+Nbw=",
         "owner": "FStarLang",
         "repo": "FStar",
-        "rev": "13dbe4866835037a0721f6aa9521bb13fbda5c16",
+        "rev": "7ae4850a7e24f011a572ab4097fe1045babab48c",
         "type": "github"
       },
       "original": {
         "owner": "FStarLang",
         "repo": "FStar",
-        "type": "github"
-      }
-    },
-    "hacl-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1663360027,
-        "narHash": "sha256-uCLEBxJb5R7JRL/aHMN+6Ug1uzEcWjMMR3dMVWV7BYM=",
-        "owner": "project-everest",
-        "repo": "hacl-star",
-        "rev": "eb4ce1c16458babc0217e4313c138e9bae539f6f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "project-everest",
-        "repo": "hacl-star",
-        "type": "github"
-      }
-    },
-    "karamel-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1663359727,
-        "narHash": "sha256-rnIShjQrawSABs545CPQFn076dABipFST3on1oWYuas=",
-        "owner": "fstarlang",
-        "repo": "karamel",
-        "rev": "9760cc3315d75cd4181db82275f79bfdf0a37b0f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "fstarlang",
-        "repo": "karamel",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1669597967,
-        "narHash": "sha256-R+2NaDkXsYkOpFOhmVR8jBZ77Pq55Z6ilaqwFLLn000=",
+        "lastModified": 1676060830,
+        "narHash": "sha256-OZJKL08qbLW2xMPNPTgidbC25MrkllUonoFs/JOX4y8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "be9e3762e719211368d186f547f847737baad720",
+        "rev": "9943fcc75d4e43c3116b408b0f93e682927ffbb4",
         "type": "github"
       },
       "original": {
@@ -151,8 +93,7 @@
       "inputs": {
         "comparse-flake": "comparse-flake",
         "dolev-yao-star-src": "dolev-yao-star-src",
-        "everest": "everest",
-        "fstar-src": "fstar-src",
+        "fstar-flake": "fstar-flake",
         "nixpkgs": "nixpkgs"
       }
     }

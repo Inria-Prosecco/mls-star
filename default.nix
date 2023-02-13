@@ -22,10 +22,9 @@ let
     buildInputs =
       [ which fstar z3 ]
       ++ (with ocamlPackages; [
-        ocaml dune_3 findlib
-        # fstarlib dependencies
-        batteries stdint zarith ppx_deriving_yojson
-      ]);
+        ocaml dune_3 findlib yojson
+      ])
+      ++ (fstar.buildInputs);
     FSTAR_HOME = fstar;
     COMPARSE_HOME = comparse;
     DY_HOME = dolev-yao-star;
