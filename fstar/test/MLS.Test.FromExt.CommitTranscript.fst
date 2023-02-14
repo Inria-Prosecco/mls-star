@@ -28,7 +28,7 @@ let is_signature_ok #cb signature_key commit_message commit_auth group_context =
   let signature_signature = to_lbytes (sign_signature_length #bytes) commit_auth.signature in
   let commit_message_network = extract_result (message_content_to_network commit_message) in
   if not (S_member? commit_message_network.sender) then failwith "is_signature_ok: bad sender type" else
-  extract_result (check_message_signature signature_key signature_signature WF_mls_plaintext commit_message_network (Some group_context))
+  extract_result (check_message_signature signature_key signature_signature WF_mls_public_message commit_message_network (Some group_context))
 
 #push-options "--ifuel 2 --z3rlimit 50"
 val test_commit_transcript_one: commit_transcript_test -> ML bool
@@ -49,7 +49,7 @@ let test_commit_transcript_one t =
     let commit_message_network = extract_option "malformed MLSPlaintext(Commit)" ((ps_prefix_to_ps_whole ps_mls_message_nt).parse (hex_string_to_bytes t.commit)) in
     let commit_plaintext_network =
       match commit_message_network with
-      | M_mls10 (M_plaintext p) -> p
+      | M_mls10 (M_public_message p) -> p
       | _ -> failwith "commit is not in a plaintext"
     in
     let commit_auth_msg = message_plaintext_to_message commit_plaintext_network in

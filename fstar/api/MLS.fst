@@ -377,7 +377,7 @@ let create e cred private_sign_key group_id =
   })
 #pop-options
 
-val send_helper: state -> msg:message_content bytes{msg.wire_format == WF_mls_ciphertext} → e:entropy { Seq.length e == 4 } → result (state & message_auth bytes & group_message)
+val send_helper: state -> msg:message_content bytes{msg.wire_format == WF_mls_private_message} → e:entropy { Seq.length e == 4 } → result (state & message_auth bytes & group_message)
 let send_helper st msg e =
   //FIXME
   assume (sign_nonce_length #bytes == 0);
@@ -391,15 +391,15 @@ let send_helper st msg e =
   let? auth = message_compute_auth msg st.sign_private_key rand_nonce (Some group_context) confirmation_secret st.interim_transcript_hash in
   let? msg_network = message_content_to_network msg in
   let? auth_network = message_auth_to_network auth in
-  let auth_msg: mls_authenticated_content_nt bytes = {
-    wire_format = WF_mls_ciphertext;
+  let auth_msg: authenticated_content_nt bytes = {
+    wire_format = WF_mls_private_message;
     content = msg_network;
     auth = auth_network;
   } in
   let ratchet = if msg.content_type = CT_application then st.application_state else st.handshake_state in
   let? ct_new_ratchet_state = message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret auth_msg in
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
-  let msg_bytes = (ps_prefix_to_ps_whole ps_mls_message_nt).serialize (M_mls10 (M_ciphertext ct)) in
+  let msg_bytes = (ps_prefix_to_ps_whole ps_mls_message_nt).serialize (M_mls10 (M_private_message ct)) in
   let new_st = if msg.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
   let g:group_message = (st.treesync_state.group_id, msg_bytes) in
   return (new_st, auth, g)
@@ -534,14 +534,14 @@ let generate_update_path st e proposals =
   )
 #pop-options
 
-let message_commit = m:message_content bytes{m.wire_format == WF_mls_ciphertext /\ m.content_type == CT_commit}
+let message_commit = m:message_content bytes{m.wire_format == WF_mls_private_message /\ m.content_type == CT_commit}
 
 val generate_commit: state -> entropy -> list (proposal bytes) -> result (message_commit & state & entropy)
 let generate_commit state e proposals =
   let? (update_path, pending, e) = generate_update_path state e proposals in
   let state = { state with pending_updatepath = pending::state.pending_updatepath} in
   let msg: message_content bytes = {
-    wire_format = WF_mls_ciphertext;
+    wire_format = WF_mls_private_message;
     group_id = state.treesync_state.group_id;
     epoch = state.epoch;
     sender = S_member (state.leaf_index);
@@ -586,7 +586,7 @@ let update state e =
 
 let send state e data =
   let msg: message_content bytes = {
-    wire_format = WF_mls_ciphertext;
+    wire_format = WF_mls_private_message;
     group_id = state.treesync_state.group_id;
     epoch = state.epoch;
     sender = S_member state.leaf_index;
@@ -719,12 +719,12 @@ let process_group_message state msg =
     ((ps_prefix_to_ps_whole ps_mls_message_nt).parse msg) in
   let? message, message_auth = (
     match msg with
-    | M_mls10 (M_plaintext msg) ->
+    | M_mls10 (M_public_message msg) ->
         let auth_msg = message_plaintext_to_message msg in
         let? content = network_to_message_content auth_msg.wire_format auth_msg.content in
         let? auth = network_to_message_auth auth_msg.auth in
         return (content, auth)
-    | M_mls10  (M_ciphertext msg) ->
+    | M_mls10  (M_private_message msg) ->
         let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption state.epoch_secret in
         let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret in
         let? auth_msg = message_ciphertext_to_message state.treesync_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) msg in
