@@ -43,6 +43,8 @@ private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
 ) = ()
 #pop-options
 
+(*** SignWithLabel / VerifyWithLabel ***)
+
 type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   label: mls_bytes bytes;
   content: mls_bytes bytes;
@@ -90,6 +92,8 @@ let verify_with_label #bytes #cb verification_key label content signature =
   let sign_content = get_sign_content label content in
   sign_verify verification_key sign_content signature
 
+(*** ExpandWithLabel / DeriveSecret ***)
+
 type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
   label: mls_bytes bytes;
@@ -121,6 +125,51 @@ val derive_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> secret:bytes -> lab
 let derive_secret #bytes #cb secret label =
   expand_with_label secret label (empty #bytes) (kdf_length #bytes)
 
+(*** EncryptWithLabel / DecryptWithLabel ***)
+
+type encrypt_context_nt (bytes:Type0) {|bytes_like bytes|} = {
+  label: mls_bytes bytes;
+  context: mls_bytes bytes;
+}
+
+%splice[ps_encrypt_context_nt] (gen_parser (`encrypt_context_nt))
+
+instance parseable_serializeable_encrypt_context_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (encrypt_context_nt bytes) = mk_parseable_serializeable ps_encrypt_context_nt
+
+val compute_encryption_context:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  label:valid_label -> context:bytes ->
+  result bytes
+let compute_encryption_context #bytes #cb label context =
+  if not (length context < pow2 30) then
+    internal_failure "compute_encryption_context: context too long"
+  else (
+    let label_bytes = get_mls_label label in
+    let context = {
+      label = label_bytes;
+      context;
+    } in
+    return (serialize (encrypt_context_nt bytes) context)
+  )
+
+val encrypt_with_label:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pkR:lbytes bytes (hpke_public_key_length #bytes) -> label:valid_label -> context:bytes -> plaintext:bytes -> entropy:lbytes bytes (hpke_private_key_length #bytes) ->
+  result (lbytes bytes (hpke_kem_output_length #bytes) & bytes)
+let encrypt_with_label #bytes #cb pkR label context plaintext entropy =
+  let? context_bytes = compute_encryption_context label context in
+  hpke_encrypt pkR context_bytes empty plaintext entropy
+
+val decrypt_with_label:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  skR:lbytes bytes (hpke_private_key_length #bytes) -> label:valid_label -> context:bytes -> kem_output:lbytes bytes (hpke_kem_output_length #bytes) -> ciphertext:bytes ->
+  result bytes
+let decrypt_with_label #bytes #cb skR label context kem_output ciphertext =
+  let? context_bytes = compute_encryption_context label context in
+  hpke_decrypt kem_output skR context_bytes empty ciphertext
+
+(*** Ref hash ***)
+
 type ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   label: mls_bytes bytes;
   value: mls_bytes bytes;
@@ -149,6 +198,8 @@ let make_keypackage_ref #bytes #cb buf =
 val make_proposal_ref: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (lbytes bytes (hash_length #bytes))
 let make_proposal_ref #bytes #cb buf =
   ref_hash (string_to_bytes #bytes "MLS 1.0 Proposal Reference") buf
+
+(*** Utility functions ***)
 
 #push-options "--fuel 1 --ifuel 1"
 val split_randomness: #bytes:Type0 -> {|bytes_like bytes|} -> #l1:list nat -> #l2:list nat -> randomness bytes (List.Tot.append l1 l2) -> (randomness bytes l1 & randomness bytes l2)

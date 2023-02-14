@@ -132,20 +132,22 @@ val original_resolution_index: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat 
 let original_resolution_index #bytes #cb #l forbidden_leaves t leaf_index =
   resolution_index (un_addP t (forbidden_pre forbidden_leaves)) leaf_index
 
-val hpke_multirecipient_encrypt_entropy_lengths: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (hpke_public_key bytes) -> list nat
-let rec hpke_multirecipient_encrypt_entropy_lengths #bytes #cb pks =
+val multi_encrypt_with_label_entropy_lengths: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (hpke_public_key bytes) -> list nat
+let rec multi_encrypt_with_label_entropy_lengths #bytes #cb pks =
   match pks with
   | [] -> []
-  | h::t -> (hpke_private_key_length #bytes)::(hpke_multirecipient_encrypt_entropy_lengths t)
+  | h::t -> (hpke_private_key_length #bytes)::(multi_encrypt_with_label_entropy_lengths t)
 
-val hpke_multirecipient_encrypt: #bytes:Type0 -> {|crypto_bytes bytes|} -> pks:list (hpke_public_key bytes) -> info:bytes -> ad:bytes -> plaintext:bytes -> randomness bytes (hpke_multirecipient_encrypt_entropy_lengths pks) -> result (list (path_secret_ciphertext bytes))
-let rec hpke_multirecipient_encrypt #bytes #cb public_keys info ad plaintext rand =
+val multi_encrypt_with_label:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pks:list (hpke_public_key bytes) -> label:valid_label -> context:bytes -> plaintext:bytes -> randomness bytes (multi_encrypt_with_label_entropy_lengths pks) -> result (list (path_secret_ciphertext bytes))
+let rec multi_encrypt_with_label #bytes #cb public_keys label context plaintext rand =
   match public_keys with
   | [] -> return []
   | pk::pks ->
     let (rand_cur, rand_next) = dest_randomness rand in
-    let? res_hd = hpke_encrypt pk info ad plaintext rand_cur in
-    let? res_tl = hpke_multirecipient_encrypt pks info ad plaintext rand_next in
+    let? res_hd = encrypt_with_label pk label context plaintext rand_cur in
+    let? res_tl = multi_encrypt_with_label pks label context plaintext rand_next in
     return (({kem_output = fst res_hd; ciphertext = snd res_hd} <: path_secret_ciphertext bytes)::res_tl)
 
 val derive_keypair_from_path_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> result (hpke_private_key bytes & hpke_public_key bytes)
@@ -158,11 +160,11 @@ let derive_next_path_secret #bytes #cb path_secret =
   let? res = derive_secret path_secret (string_to_bytes #bytes "path") in
   return (res <: bytes)
 
-val node_encap: #bytes:Type0 -> {|crypto_bytes bytes|} -> child_secret:bytes -> hpke_info:bytes -> direction -> pks:list (hpke_public_key bytes) -> randomness bytes (hpke_multirecipient_encrypt_entropy_lengths pks) -> result (key_package bytes & bytes)
+val node_encap: #bytes:Type0 -> {|crypto_bytes bytes|} -> child_secret:bytes -> hpke_info:bytes -> direction -> pks:list (hpke_public_key bytes) -> randomness bytes (multi_encrypt_with_label_entropy_lengths pks) -> result (key_package bytes & bytes)
 let node_encap #bytes #cb child_secret hpke_info dir pks rand =
   let? node_secret = derive_next_path_secret child_secret in
   let? node_keys = derive_keypair_from_path_secret node_secret in
-  let? ciphertext = hpke_multirecipient_encrypt pks hpke_info empty node_secret rand in
+  let? ciphertext = multi_encrypt_with_label pks "UpdatePathNode" hpke_info node_secret rand in
   return (
     {
       public_key = snd node_keys;
@@ -185,7 +187,7 @@ let node_decap #bytes #cb child_secret i dir kp =
     let ciphertext = List.Tot.index kp.path_secret_ciphertext i in
     let? child_keys = derive_keypair_from_path_secret child_secret in
     let child_sk = fst child_keys in
-    hpke_decrypt ciphertext.kem_output child_sk (kp.last_group_context) empty ciphertext.ciphertext
+    decrypt_with_label child_sk "UpdatePathNode" (kp.last_group_context) ciphertext.kem_output ciphertext.ciphertext
   )
 
 val update_path_entropy_lengths: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> treekem bytes l i -> leaf_index l i -> list nat
@@ -197,7 +199,7 @@ let rec update_path_entropy_lengths #bytes #cb #l #i t leaf_index =
     if tree_resolution sibling = [] then
       update_path_entropy_lengths child leaf_index
     else
-      hpke_multirecipient_encrypt_entropy_lengths (tree_resolution sibling) @ update_path_entropy_lengths child leaf_index
+      multi_encrypt_with_label_entropy_lengths (tree_resolution sibling) @ update_path_entropy_lengths child leaf_index
 
 val update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> t:treekem bytes l i -> leaf_index:leaf_index l i -> leaf_secret:bytes -> ad:bytes -> randomness bytes (update_path_entropy_lengths t leaf_index) -> Pure (result (pathkem bytes l i leaf_index & bytes))
   (requires length leaf_secret >= hpke_private_key_length #bytes)
@@ -323,7 +325,7 @@ let rec mk_init_path #bytes #cb #l t my_index update_index path_secret hpke_info
         let resol_index = original_resolution_index [] sibling my_index in
         let fake_randomness = mk_zero_vector (hpke_private_key_length #bytes) in
         let? my_pk = from_option "leaf at my_index is empty!" (leaf_public_key t my_index) in
-        let? my_path_secret_ciphertext = hpke_encrypt my_pk hpke_info empty path_secret fake_randomness in
+        let? my_path_secret_ciphertext = encrypt_with_label my_pk "UpdatePathNode" hpke_info path_secret fake_randomness in
         let new_kp = { kp with
           path_secret_from = update_dir;
           last_group_context = hpke_info;

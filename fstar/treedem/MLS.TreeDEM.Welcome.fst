@@ -256,7 +256,7 @@ let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
   let? group_secrets = (
     let? (my_hpke_sk, my_hpke_ciphertext) = from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_ref_to_hpke_sk w.secrets) in
     let? kem_output = bytes_to_kem_output my_hpke_ciphertext.kem_output in
-    let? group_secrets_bytes = hpke_decrypt kem_output my_hpke_sk empty empty my_hpke_ciphertext.ciphertext in
+    let? group_secrets_bytes = decrypt_with_label my_hpke_sk "Welcome" w.encrypted_group_info kem_output my_hpke_ciphertext.ciphertext in
     let? group_secrets_network = from_option "decrypt_welcome: malformed group secrets" (parse (group_secrets_nt bytes) group_secrets_bytes) in
     network_to_group_secrets group_secrets_network
   ) in
@@ -273,8 +273,8 @@ let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
 
 (*** Encrypting a welcome ***)
 
-val encrypt_one_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes tkt -> group_secrets bytes -> lbytes bytes (hpke_private_key_length #bytes) -> result (encrypted_group_secrets bytes)
-let encrypt_one_group_secrets #bytes #cb kp gs rand =
+val encrypt_one_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> key_package_nt bytes tkt -> bytes -> group_secrets bytes -> lbytes bytes (hpke_private_key_length #bytes) -> result (encrypted_group_secrets bytes)
+let encrypt_one_group_secrets #bytes #cb kp encrypted_group_info gs rand =
   let? kp_ref = compute_key_package_ref kp in
   let? gs_network = group_secrets_to_network gs in
   let gs_bytes = serialize #bytes (group_secrets_nt bytes) gs_network in
@@ -285,7 +285,7 @@ let encrypt_one_group_secrets #bytes #cb kp gs rand =
     else
       return (leaf_hpke_pk <: hpke_public_key bytes)
   ) in
-  let? (kem_output, ciphertext) = hpke_encrypt leaf_hpke_pk empty empty gs_bytes rand in
+  let? (kem_output, ciphertext) = encrypt_with_label leaf_hpke_pk "Welcome" encrypted_group_info gs_bytes rand in
   return ({
     new_member = kp_ref;
     enc_group_secrets = {
@@ -303,8 +303,8 @@ let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
 #pop-options
 
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
-val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> list (pre_shared_key_nt bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (list (encrypted_group_secrets bytes))
-let rec encrypt_group_secrets #bytes #cb joiner_secret key_packages psks rand =
+val encrypt_group_secrets: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> list (pre_shared_key_nt bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) -> result (list (encrypted_group_secrets bytes))
+let rec encrypt_group_secrets #bytes #cb encrypted_group_info joiner_secret key_packages psks rand =
   match key_packages with
   | [] -> return []
   | (kp, path_secret)::tail -> (
@@ -314,8 +314,8 @@ let rec encrypt_group_secrets #bytes #cb joiner_secret key_packages psks rand =
       path_secret = path_secret;
       psks = psks;
     } in
-    let? res_head = encrypt_one_group_secrets kp group_secrets cur_rand in
-    let? res_tail = encrypt_group_secrets joiner_secret tail psks rand_next in
+    let? res_head = encrypt_one_group_secrets kp encrypted_group_info group_secrets cur_rand in
+    let? res_tail = encrypt_group_secrets encrypted_group_info joiner_secret tail psks rand_next in
     return (res_head::res_tail)
   )
 #pop-options
@@ -331,7 +331,7 @@ let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
     let group_info_bytes = serialize (group_info_nt bytes) group_info_network in
     aead_encrypt welcome_key welcome_nonce empty group_info_bytes
   ) in
-  let? group_secrets = encrypt_group_secrets joiner_secret key_packages [] (*TODO psks*) rand in
+  let? group_secrets = encrypt_group_secrets encrypted_group_info joiner_secret key_packages [] (*TODO psks*) rand in
   return ({
     secrets = group_secrets;
     encrypted_group_info = encrypted_group_info;
