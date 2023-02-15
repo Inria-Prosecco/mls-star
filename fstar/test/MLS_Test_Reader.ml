@@ -40,6 +40,8 @@ let parse_optional_uint32 (json:Yojson.Safe.t): FStar_UInt32.t option =
   | `Null -> None
   | _ -> failwith "parse_optional_uint32: not an int or null"
 
+(*** Tree Math ***)
+
 let parse_treemath_test (json:Yojson.Safe.t): treemath_test =
   match json with
   | `Assoc [
@@ -62,6 +64,129 @@ let parse_treemath_test (json:Yojson.Safe.t): treemath_test =
     })
   | _ -> failwith "parse_treemath_test: incorrect test vector format"
 
+(*** Crypto Basics ***)
+
+let parse_crypto_basics_ref_hash (json:Yojson.Safe.t): crypto_basics_ref_hash =
+  match json with
+  | `Assoc [
+    ("label", `String label);
+    ("out", `String out);
+    ("value", `String value);
+  ] ->
+    ({
+      label = label;
+      out = out;
+      value = value;
+    })
+
+let parse_crypto_basics_expand_with_label (json:Yojson.Safe.t): crypto_basics_expand_with_label =
+  match json with
+  | `Assoc [
+    ("context", `String context);
+    ("label", `String label);
+    ("length", `Int length);
+    ("out", `String out);
+    ("secret", `String secret);
+  ] ->
+    ({
+      secret = secret;
+      label1 = label;
+      context = context;
+      length = int_to_uint16 length;
+      out1 = out;
+    })
+
+let parse_crypto_basics_derive_secret (json:Yojson.Safe.t): crypto_basics_derive_secret =
+  match json with
+  | `Assoc [
+    ("label", `String label);
+    ("out", `String out);
+    ("secret", `String secret);
+  ] ->
+    ({
+      secret1 = secret;
+      label2 = label;
+      out2 = out;
+    })
+
+let parse_crypto_basics_derive_tree_secret (json:Yojson.Safe.t): crypto_basics_derive_tree_secret =
+  match json with
+  | `Assoc [
+    ("generation", `Int generation);
+    ("label", `String label);
+    ("length", `Int length);
+    ("out", `String out);
+    ("secret", `String secret);
+  ] ->
+    ({
+      secret2 = secret;
+      label3 = label;
+      generation = int_to_uint32 generation;
+      length1 = int_to_uint16 length;
+      out3 = out;
+    })
+
+let parse_crypto_basics_sign_with_label (json:Yojson.Safe.t): crypto_basics_sign_with_label =
+  match json with
+  | `Assoc [
+    ("content", `String content);
+    ("label", `String label);
+    ("priv", `String priv);
+    ("pub", `String pub);
+    ("signature", `String signature);
+  ] ->
+    ({
+      priv = priv;
+      pub = pub;
+      content = content;
+      label4 = label;
+      signature = signature;
+    })
+
+let parse_crypto_basics_encrypt_with_label (json:Yojson.Safe.t): crypto_basics_encrypt_with_label =
+  match json with
+  | `Assoc [
+    ("ciphertext", `String ciphertext);
+    ("context", `String context);
+    ("kem_output", `String kem_output);
+    ("label", `String label);
+    ("plaintext", `String plaintext);
+    ("priv", `String priv);
+    ("pub", `String pub);
+  ] ->
+    ({
+      priv1 = priv;
+      pub1 = pub;
+      label5 = label;
+      context1 = context;
+      plaintext = plaintext;
+      kem_output = kem_output;
+      ciphertext = ciphertext;
+    })
+
+let parse_crypto_basics_test (json:Yojson.Safe.t): crypto_basics_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("derive_secret", derive_secret);
+    ("derive_tree_secret", derive_tree_secret);
+    ("encrypt_with_label", encrypt_with_label);
+    ("expand_with_label", expand_with_label);
+    ("ref_hash", ref_hash);
+    ("sign_with_label", sign_with_label);
+  ] ->
+    ({
+      cipher_suite = int_to_uint16 cipher_suite;
+      ref_hash = parse_crypto_basics_ref_hash ref_hash;
+      expand_with_label = parse_crypto_basics_expand_with_label expand_with_label;
+      derive_secret = parse_crypto_basics_derive_secret derive_secret;
+      derive_tree_secret = parse_crypto_basics_derive_tree_secret derive_tree_secret;
+      sign_with_label = parse_crypto_basics_sign_with_label sign_with_label;
+      encrypt_with_label = parse_crypto_basics_encrypt_with_label encrypt_with_label;
+    })
+
+(*** Old ***)
+
 let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_sender_data_info_test =
   match json with
   | `Assoc [
@@ -70,7 +195,7 @@ let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_send
     ("nonce", `String nonce);
   ] ->
     ({
-      ciphertext = ciphertext;
+      ciphertext1 = ciphertext;
       key = key;
       nonce = nonce;
     })
@@ -86,8 +211,8 @@ let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_
     ({
       key1 = key;
       nonce1 = nonce;
-      plaintext = plaintext;
-      ciphertext1 = ciphertext;
+      plaintext1 = plaintext;
+      ciphertext2 = ciphertext;
     })
 
 let parse_encryption_leaf_test (json:Yojson.Safe.t): encryption_leaf_test =
@@ -115,7 +240,7 @@ let parse_encryption_test (json:Yojson.Safe.t): encryption_test =
     ("tree", _)
   ] ->
     ({
-      cipher_suite = int_to_uint16 cipher_suite;
+      cipher_suite1 = int_to_uint16 cipher_suite;
       n_leaves1 = int_to_uint32 (List.length leaves); (*n_leaves;*)
       encryption_secret = encryption_secret;
       sender_data_secret = sender_data_secret;
@@ -133,7 +258,7 @@ let parse_keyschedule_test_epoch_psk (json:Yojson.Safe.t): keyschedule_test_epoc
     ({
       id = id;
       nonce2 = nonce;
-      secret = secret;
+      secret3 = secret;
     })
 
 let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_input * keyschedule_test_epoch_output =
@@ -193,7 +318,7 @@ let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
     ("initial_init_secret", `String initial_init_secret);
   ] ->
     {
-      cipher_suite1 = int_to_uint16 cipher_suite;
+      cipher_suite2 = int_to_uint16 cipher_suite;
       group_id = group_id;
       initial_init_secret = initial_init_secret;
       epochs = List.map parse_keyschedule_test_epoch epochs;
@@ -218,7 +343,7 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
     ("tree_hash_before", `String tree_hash_before);
   ] ->
     ({
-      cipher_suite2 = int_to_uint16 cipher_suite;
+      cipher_suite3 = int_to_uint16 cipher_suite;
       group_id1 = group_id;
       epoch = parse_uint64 epoch;
       tree_hash_before = tree_hash_before;
@@ -253,7 +378,7 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
     ("update_sender", `Int update_sender);
   ] ->
     ({
-      cipher_suite3 = int_to_uint16 cipher_suite;
+      cipher_suite4 = int_to_uint16 cipher_suite;
       input = {
         ratchet_tree_before = ratchet_tree_before;
         add_sender = int_to_uint32 add_sender;
@@ -274,10 +399,12 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
     })
   | _ -> failwith "parse_treekem_test: incorrect test vector format"
 
+(*** Final functions ***)
 
 let get_filename (typ:test_type): string =
   match typ with
   | TreeMath -> "test_vectors/data/tree-math.json"
+  | CryptoBasics -> "test_vectors/data/crypto-basics.json"
   | Encryption -> "test_vectors/data/encryption.json"
   | KeySchedule -> "test_vectors/data/key_schedule.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
@@ -298,6 +425,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (TreeMath_test (List.map parse_treemath_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | CryptoBasics -> begin
+    match json with
+    | `List l ->
+      (CryptoBasics_test (List.map parse_crypto_basics_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | Encryption -> begin

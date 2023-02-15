@@ -5,6 +5,7 @@ open FStar.All
 open MLS.Test.Types
 open MLS.Test.Reader
 open MLS.Test.FromExt.TreeMath
+open MLS.Test.FromExt.CryptoBasics
 open MLS.Test.FromExt.Encryption
 open MLS.Test.FromExt.KeySchedule
 open MLS.Test.FromExt.CommitTranscript
@@ -23,6 +24,17 @@ let run_treemath_tests () =
     )
   end
   | _ -> IO.print_string "TreeMath: got the wrong type of testsuite (internal error)\n"
+
+let run_crypto_basics_tests () =
+  match get_testsuite CryptoBasics with
+  | CryptoBasics_test l -> begin
+    if test_crypto_basics l then (
+      IO.print_string ("Crypto Basics: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
+    ) else (
+      IO.print_string "Crypto Basics: failure\n"
+    )
+  end
+  | _ -> IO.print_string "Crypto Basics: got the wrong type of testsuite (internal error)\n"
 
 let run_encryption_tests () =
   match get_testsuite Encryption with
@@ -75,6 +87,7 @@ let run_treekem_tests () =
 let main =
   MLS.Test.Internal.test ();
   run_treemath_tests ();
+  run_crypto_basics_tests ();
   //run_encryption_tests();
   //run_keyschedule_tests ();
   //run_treekem_tests ();

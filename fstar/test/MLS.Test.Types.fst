@@ -4,6 +4,8 @@ module U16 = FStar.UInt16
 module U32 = FStar.UInt32
 module U64 = FStar.UInt64
 
+(*** Tree Math ***)
+
 type treemath_test = {
   n_leaves: U32.t;
   n_nodes: U32.t;
@@ -13,6 +15,66 @@ type treemath_test = {
   parent: list (option U32.t);
   sibling: list (option U32.t);
 }
+
+(*** Crypto Basics ***)
+
+type crypto_basics_ref_hash = {
+  label: string;
+  value: string;
+  out: string;
+}
+
+type crypto_basics_expand_with_label = {
+  secret: string;
+  label: string;
+  context: string;
+  length: U16.t;
+  out: string;
+}
+
+type crypto_basics_derive_secret = {
+  secret: string;
+  label: string;
+  out: string;
+}
+
+type crypto_basics_derive_tree_secret = {
+  secret: string;
+  label: string;
+  generation: U32.t;
+  length: U16.t;
+  out: string;
+}
+
+type crypto_basics_sign_with_label = {
+  priv: string;
+  pub: string;
+  content: string;
+  label: string;
+  signature: string;
+}
+
+type crypto_basics_encrypt_with_label = {
+  priv: string;
+  pub: string;
+  label: string;
+  context: string;
+  plaintext: string;
+  kem_output: string;
+  ciphertext: string;
+}
+
+type crypto_basics_test = {
+  cipher_suite: U16.t;
+  ref_hash: crypto_basics_ref_hash;
+  expand_with_label: crypto_basics_expand_with_label;
+  derive_secret: crypto_basics_derive_secret;
+  derive_tree_secret: crypto_basics_derive_tree_secret;
+  sign_with_label: crypto_basics_sign_with_label;
+  encrypt_with_label: crypto_basics_encrypt_with_label;
+}
+
+(*** Old ***)
 
 type encryption_sender_data_info_test = {
   ciphertext: string;
@@ -130,6 +192,7 @@ type treekem_test = {
 
 type test_type =
   | TreeMath
+  | CryptoBasics
   | Encryption
   | KeySchedule
   | CommitTranscript
@@ -137,6 +200,7 @@ type test_type =
 
 type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
+  | CryptoBasics_test: list crypto_basics_test -> testsuite
   | Encryption_test: list encryption_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
