@@ -6,3 +6,4 @@ ml/lib/src/
 ml/tests/src/
 _build/
 result
+test_vectors/data/

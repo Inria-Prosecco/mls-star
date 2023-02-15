@@ -48,13 +48,13 @@ let parse_treemath_test (json:Yojson.Safe.t): treemath_test =
     ("n_nodes", `Int n_nodes);
     ("parent", `List parent);
     ("right", `List right);
-    ("root", `List root);
+    ("root", `Int root);
     ("sibling", `List sibling);
   ] ->
     ({
       n_leaves=int_to_uint32 n_leaves;
       n_nodes=int_to_uint32 n_nodes;
-      root=List.map parse_uint32 root;
+      root=int_to_uint32 root;
       left=List.map parse_optional_uint32 left;
       right=List.map parse_optional_uint32 right;
       parent=List.map parse_optional_uint32 parent;
@@ -277,11 +277,11 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
 
 let get_filename (typ:test_type): string =
   match typ with
-  | TreeMath -> "test_vectors/treemath.json"
-  | Encryption -> "test_vectors/encryption.json"
-  | KeySchedule -> "test_vectors/key_schedule.json"
-  | CommitTranscript -> "test_vectors/commit_transcript.json"
-  | TreeKEM -> "test_vectors/treekem.json"
+  | TreeMath -> "test_vectors/data/tree-math.json"
+  | Encryption -> "test_vectors/data/encryption.json"
+  | KeySchedule -> "test_vectors/data/key_schedule.json"
+  | CommitTranscript -> "test_vectors/data/commit_transcript.json"
+  | TreeKEM -> "test_vectors/data/treekem.json"
 
 let get_filename t =
   let f = get_filename t in

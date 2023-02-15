@@ -86,6 +86,18 @@ copy_tests: extract_tests
 	cp $(MLS_HOME)/fstar/test/MLS_Test_*.ml ml/tests/src
 	cp $(ALL_TEST_ML_FILES) ml/tests/src
 
+# Test vectors
+
+ALL_TEST_VECTORS = tree-math
+ALL_TEST_VECTORS_JSON = $(addprefix test_vectors/data/, $(addsuffix .json, $(ALL_TEST_VECTORS)))
+
+test_vectors/data:
+	mkdir -p test_vectors/data
+
+.PRECIOUS: test_vectors/data/%.json
+test_vectors/data/%.json: test_vectors/git_commit | test_vectors/data
+	wget https://raw.githubusercontent.com/mlswg/mls-implementations/$(shell cat test_vectors/git_commit)/test-vectors/$*.json -O $@
+
 # Final binary
 
 .PHONY: build check release
@@ -94,7 +106,7 @@ build: copy_lib
 	$(MAKE) -C fstar extract
 	OCAMLPATH=$(FSTAR_HOME)/bin:$(OCAMLPATH) dune build --profile=release
 
-check: copy_lib copy_tests
+check: copy_lib copy_tests $(ALL_TEST_VECTORS_JSON)
 	OCAMLPATH=$(FSTAR_HOME)/bin:$(OCAMLPATH) dune runtest --no-buffer --profile=release
 
 release:
@@ -104,3 +116,4 @@ release:
 
 %.fst-in %.fsti-in:
 	@echo $(FSTAR_INCLUDE_DIRS) --include $(MLS_HOME)/cache
+

@@ -7,7 +7,7 @@ module U64 = FStar.UInt64
 type treemath_test = {
   n_leaves: U32.t;
   n_nodes: U32.t;
-  root: list U32.t;
+  root: U32.t;
   left: list (option U32.t);
   right: list (option U32.t);
   parent: list (option U32.t);

@@ -19,21 +19,10 @@ let real_left n x =
   else
     None
 
-val go_left: nat -> x:nat -> Tot (option nat) (decreases level x)
-let rec go_left n x =
-  if x < n then (
-    Some x
-  ) else if level x <> 0 then (
-      level_left_right x;
-      go_left n (left x)
-  ) else (
-    None
-  )
-
 val real_right: nat -> nat -> option nat
 let real_right n x =
   if level x <> 0 then
-    go_left n (right x)
+    Some (right x)
   else
     None
 
@@ -82,12 +71,6 @@ val gen_list: #a:Type -> nat -> (nat -> a) -> list a
 let gen_list #a n f =
   gen_list_aux n 0 f
 
-val gen_root: nat -> list nat
-let gen_root sz =
-  gen_list sz (fun i ->
-    root (log2 (gen_nnodes (i+1)))
-  )
-
 val gen_from_real: (pos -> nat -> option nat) -> pos -> nat -> list (option nat)
 let gen_from_real f n_leaves sz =
   gen_list sz (fun i -> f n_leaves i)
@@ -125,9 +108,9 @@ let test_treemath_one t =
   ) else (
     let n_nodes = gen_nnodes n_leaves in
     let n_nodes_ok = (u32_to_nat t.n_nodes) = n_nodes in
-    let root_ok = check_equal "root" (list_to_string nat_to_string)
-      (List.Tot.map u32_to_nat t.root)
-      (gen_root (List.Tot.length t.root))
+    let root_ok = check_equal "root" (nat_to_string)
+      (u32_to_nat t.root)
+      (root (log2 n_nodes))
     in
     let left_ok = check_equal "left" (list_to_string (option_to_string nat_to_string))
       (List.Tot.map ou32_to_onat t.left)
