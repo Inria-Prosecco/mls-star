@@ -9,6 +9,7 @@ open MLS.Test.FromExt.CryptoBasics
 open MLS.Test.FromExt.SecretTree
 open MLS.Test.FromExt.Encryption
 open MLS.Test.FromExt.KeySchedule
+open MLS.Test.FromExt.PreSharedKeys
 open MLS.Test.FromExt.CommitTranscript
 open MLS.Test.FromExt.TreeKEM
 open MLS.Test.Self.TreeKEM
@@ -71,6 +72,17 @@ let run_keyschedule_tests () =
   end
   | _ -> IO.print_string "Key Schedule: got the wrong type of testsuite (internal error)\n"
 
+let run_psk_tests () =
+  match get_testsuite PreSharedKeys with
+  | PreSharedKeys_test l -> begin
+    if test_psk l then (
+      IO.print_string ("Pre-Shared Keys: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
+    ) else (
+      IO.print_string "Pre-Shared Keys: failure\n"
+    )
+  end
+  | _ -> IO.print_string "Pre-Shared Keys: got the wrong type of testsuite (internal error)\n"
+
 let run_commit_transcript_tests () =
   IO.print_string "Starting commit / transcript\n";
   match get_testsuite CommitTranscript with
@@ -103,6 +115,7 @@ let main =
   run_secret_tree_tests ();
   // TODO: message protection
   run_keyschedule_tests ();
+  run_psk_tests ();
   //run_encryption_tests();
   //run_treekem_tests ();
   //run_commit_transcript_tests ();

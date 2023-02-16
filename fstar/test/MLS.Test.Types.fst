@@ -139,6 +139,20 @@ type keyschedule_test = {
   epochs: list (keyschedule_test_epoch_input & keyschedule_test_epoch_output);
 }
 
+(*** Pre-Shared Keys ***)
+
+type psk_test_psk = {
+  psk_id: string;
+  psk: string;
+  psk_nonce: string;
+}
+
+type psk_test = {
+  cipher_suite: U16.t;
+  psks: list psk_test_psk;
+  psk_secret: string;
+}
+
 (*** Old ***)
 
 type encryption_sender_data_info_test = {
@@ -220,6 +234,7 @@ type test_type =
   | SecretTree
   | Encryption
   | KeySchedule
+  | PreSharedKeys
   | CommitTranscript
   | TreeKEM
 
@@ -229,5 +244,6 @@ type testsuite =
   | SecretTree_test: list secret_tree_test -> testsuite
   | Encryption_test: list encryption_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
+  | PreSharedKeys_test: list psk_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite

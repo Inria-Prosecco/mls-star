@@ -11,7 +11,6 @@ open MLS.Result
 open MLS.NetworkTypes
 open MLS.Crypto
 open MLS.TreeDEM.Keys
-open MLS.TreeDEM.PSK
 
 val gen_group_context: {|crypto_bytes bytes|} -> string -> nat -> keyschedule_test_epoch_input -> ML bytes
 let gen_group_context #cb group_id epoch inp =

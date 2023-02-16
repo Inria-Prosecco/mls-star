@@ -308,6 +308,35 @@ let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
     }
   | _ -> failwith "parse_keyschedule_test: incorrect test vector format"
 
+(*** Pre-Shared Keys ***)
+
+let parse_psk_test_psk (json:Yojson.Safe.t): psk_test_psk =
+  match json with
+  | `Assoc [
+    ("psk", `String psk);
+    ("psk_id", `String psk_id);
+    ("psk_nonce", `String psk_nonce);
+  ] ->
+    {
+      psk_id = psk_id;
+      psk = psk;
+      psk_nonce = psk_nonce;
+    }
+  | _ -> failwith "parse_psk_test_psk: incorrect test vector format"
+
+let parse_psk_test (json:Yojson.Safe.t): psk_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("psk_secret", `String psk_secret);
+    ("psks", `List psks);
+  ] ->
+    {
+      cipher_suite3 = int_to_uint16 cipher_suite;
+      psks = List.map parse_psk_test_psk psks;
+      psk_secret = psk_secret;
+    }
+  | _ -> failwith "parse_psk_test: incorrect test vector format"
 
 (*** Old ***)
 
@@ -364,7 +393,7 @@ let parse_encryption_test (json:Yojson.Safe.t): encryption_test =
     ("tree", _)
   ] ->
     ({
-      cipher_suite3 = int_to_uint16 cipher_suite;
+      cipher_suite4 = int_to_uint16 cipher_suite;
       n_leaves1 = int_to_uint32 (List.length leaves); (*n_leaves;*)
       encryption_secret2 = encryption_secret;
       sender_data_secret2 = sender_data_secret;
@@ -390,7 +419,7 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
     ("tree_hash_before", `String tree_hash_before);
   ] ->
     ({
-      cipher_suite4 = int_to_uint16 cipher_suite;
+      cipher_suite5 = int_to_uint16 cipher_suite;
       group_id1 = group_id;
       epoch = parse_uint64 epoch;
       tree_hash_before = tree_hash_before;
@@ -425,7 +454,7 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
     ("update_sender", `Int update_sender);
   ] ->
     ({
-      cipher_suite5 = int_to_uint16 cipher_suite;
+      cipher_suite6 = int_to_uint16 cipher_suite;
       input = {
         ratchet_tree_before = ratchet_tree_before;
         add_sender = int_to_uint32 add_sender;
@@ -455,6 +484,7 @@ let get_filename (typ:test_type): string =
   | SecretTree -> "test_vectors/data/secret-tree.json"
   | Encryption -> "test_vectors/data/encryption.json"
   | KeySchedule -> "test_vectors/data/key-schedule.json"
+  | PreSharedKeys -> "test_vectors/data/psk_secret.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
   | TreeKEM -> "test_vectors/data/treekem.json"
 
@@ -497,6 +527,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (KeySchedule_test (List.map parse_keyschedule_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | PreSharedKeys -> begin
+    match json with
+    | `List l ->
+      (PreSharedKeys_test (List.map parse_psk_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | CommitTranscript -> begin
