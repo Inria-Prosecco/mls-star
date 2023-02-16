@@ -35,32 +35,27 @@ let gen_group_context #cb group_id epoch inp =
 val gen_epoch_output: {|crypto_bytes bytes|} -> string -> string -> nat -> keyschedule_test_epoch_input -> ML keyschedule_test_epoch_output
 let gen_epoch_output #cb group_id last_init_secret epoch inp =
   let commit_secret = hex_string_to_bytes inp.commit_secret in
-  let psk_secret = hex_string_to_bytes inp.psk_secret in
+
   let group_context = gen_group_context group_id epoch inp in
   let last_init_secret = hex_string_to_bytes last_init_secret in
   let joiner_secret = extract_result (secret_init_to_joiner last_init_secret (Some commit_secret) group_context) in
-  let welcome_secret = extract_result (secret_joiner_to_welcome joiner_secret (Some psk_secret)) in
-  let epoch_secret: bytes = extract_result (secret_joiner_to_epoch joiner_secret (Some psk_secret) group_context) in
+  let welcome_secret = extract_result (secret_joiner_to_welcome #bytes joiner_secret None) in
+  let epoch_secret: bytes = extract_result (secret_joiner_to_epoch joiner_secret None group_context) in
   let init_secret = extract_result (secret_epoch_to_init epoch_secret) in
   let sender_data_secret = extract_result (secret_epoch_to_sender_data epoch_secret) in
   let encryption_secret = extract_result (secret_epoch_to_encryption epoch_secret) in
   let exporter_secret = extract_result (secret_epoch_to_exporter epoch_secret) in
-  let authentication_secret = extract_result (secret_epoch_to_authentication epoch_secret) in
+  let epoch_authenticator = extract_result (secret_epoch_to_authentication epoch_secret) in
   let external_secret = extract_result (secret_epoch_to_external epoch_secret) in
   let confirmation_key = extract_result (secret_epoch_to_confirmation epoch_secret) in
   let membership_key = extract_result (secret_epoch_to_membership epoch_secret) in
-  let resumption_secret = extract_result (secret_epoch_to_resumption epoch_secret) in
-  let external_pub = (ps_prefix_to_ps_whole ps_hpke_public_key_nt).serialize (snd (extract_result (secret_external_to_keypair external_secret))) in
-
-  //TODO (when this is standardized in the test vectors) move it in a more sensible place
-  let my_psk_secret = extract_result (compute_psk_secret (List.map (fun (psk:keyschedule_test_epoch_psk) -> ({id = PSKI_external (hex_string_to_bytes psk.id); nonce = hex_string_to_bytes psk.nonce;}, hex_string_to_bytes psk.secret)) inp.external_psks)) in
-  let _ =
-    if inp.branch_psk_nonce = "" then (
-      if check_equal "psk_secret" (bytes_to_hex_string) (hex_string_to_bytes inp.psk_secret) my_psk_secret then
-        ()
-      else
-        failwith "bad psk secret"
-    ) else FStar.IO.print_string "skipping psk_secret because of branch psk nonce (TODO)\n"
+  let resumption_psk = extract_result (secret_epoch_to_resumption epoch_secret) in
+  let external_pub = (snd (extract_result (secret_external_to_keypair external_secret))) in
+  let exported_secret =
+    if not (string_is_ascii inp.exporter_label) then
+      failwith "gen_epoch_output: exporter label is not ascii"
+    else
+      extract_result (mls_exporter exporter_secret inp.exporter_label group_context (UInt32.v inp.exporter_length))
   in
 
   {
@@ -71,12 +66,13 @@ let gen_epoch_output #cb group_id last_init_secret epoch inp =
     sender_data_secret = bytes_to_hex_string sender_data_secret;
     encryption_secret = bytes_to_hex_string encryption_secret;
     exporter_secret = bytes_to_hex_string exporter_secret;
-    authentication_secret = bytes_to_hex_string authentication_secret;
+    epoch_authenticator = bytes_to_hex_string epoch_authenticator;
     external_secret = bytes_to_hex_string external_secret;
     confirmation_key = bytes_to_hex_string confirmation_key;
     membership_key = bytes_to_hex_string membership_key;
-    resumption_secret = bytes_to_hex_string resumption_secret;
+    resumption_psk = bytes_to_hex_string resumption_psk;
     external_pub = bytes_to_hex_string external_pub;
+    exported_secret = bytes_to_hex_string exported_secret;
   }
 
 val gen_list_epoch_output_aux: {|crypto_bytes bytes|} -> string -> string -> nat -> list keyschedule_test_epoch_input -> ML (list keyschedule_test_epoch_output)
@@ -115,13 +111,14 @@ let test_keyschedule_one t =
       let sender_data_secret_ok = check_equal "sender_data_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.sender_data_secret) (hex_string_to_bytes o_out.sender_data_secret) in
       let encryption_secret_ok = check_equal "encryption_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.encryption_secret) (hex_string_to_bytes o_out.encryption_secret) in
       let exporter_secret_ok = check_equal "exporter_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.exporter_secret) (hex_string_to_bytes o_out.exporter_secret) in
-      let authentication_secret_ok = check_equal "authentication_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.authentication_secret) (hex_string_to_bytes o_out.authentication_secret) in
+      let epoch_authenticator_ok = check_equal "epoch_authenticator" (bytes_to_hex_string) (hex_string_to_bytes e_out.epoch_authenticator) (hex_string_to_bytes o_out.epoch_authenticator) in
       let external_secret_ok = check_equal "external_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_secret) (hex_string_to_bytes o_out.external_secret) in
       let confirmation_key_ok = check_equal "confirmation_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.confirmation_key) (hex_string_to_bytes o_out.confirmation_key) in
       let membership_key_ok = check_equal "membership_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.membership_key) (hex_string_to_bytes o_out.membership_key) in
-      let resumption_secret_ok = check_equal "resumption_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.resumption_secret) (hex_string_to_bytes o_out.resumption_secret) in
+      let resumption_psk_ok = check_equal "resumption_psk" (bytes_to_hex_string) (hex_string_to_bytes e_out.resumption_psk) (hex_string_to_bytes o_out.resumption_psk) in
       let external_pub_ok = check_equal "external_pub" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_pub) (hex_string_to_bytes o_out.external_pub) in
-      group_context_ok && joiner_secret_ok && welcome_secret_ok && init_secret_ok && sender_data_secret_ok && encryption_secret_ok && exporter_secret_ok && authentication_secret_ok && external_secret_ok && confirmation_key_ok && membership_key_ok && resumption_secret_ok && external_pub_ok
+      let exported_secret_ok = check_equal "exported_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.exported_secret) (hex_string_to_bytes o_out.exported_secret) in
+      group_context_ok && joiner_secret_ok && welcome_secret_ok && init_secret_ok && sender_data_secret_ok && encryption_secret_ok && exporter_secret_ok && epoch_authenticator_ok && external_secret_ok && confirmation_key_ok && membership_key_ok && resumption_psk_ok && external_pub_ok && exported_secret_ok
     ) expected_outputs our_outputs
   end
 

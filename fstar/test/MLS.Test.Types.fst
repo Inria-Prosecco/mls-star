@@ -98,6 +98,47 @@ type secret_tree_test = {
   leaves: list (list (secret_tree_leaf));
 }
 
+(*** Message protection ***)
+
+// TODO
+
+(*** Key Schedule ***)
+
+type keyschedule_test_epoch_input = {
+  tree_hash: string;
+  commit_secret: string;
+  confirmed_transcript_hash: string;
+  exporter_label: string;
+  exporter_length: U32.t;
+}
+
+type keyschedule_test_epoch_output = {
+  group_context: string;
+
+  joiner_secret: string;
+  welcome_secret: string;
+  init_secret: string;
+
+  sender_data_secret: string;
+  encryption_secret: string;
+  exporter_secret: string;
+  epoch_authenticator: string;
+  external_secret: string;
+  confirmation_key: string;
+  membership_key: string;
+  resumption_psk: string;
+
+  external_pub: string;
+  exported_secret: string;
+}
+
+type keyschedule_test = {
+  cipher_suite: U16.t;
+  group_id: string;
+  initial_init_secret: string;
+  epochs: list (keyschedule_test_epoch_input & keyschedule_test_epoch_output);
+}
+
 (*** Old ***)
 
 type encryption_sender_data_info_test = {
@@ -126,47 +167,6 @@ type encryption_test = {
   sender_data_secret: string;
   sender_data_info: encryption_sender_data_info_test;
   leaves: list encryption_leaf_test;
-}
-
-type keyschedule_test_epoch_psk = {
-  id: string;
-  nonce: string;
-  secret: string;
-}
-
-type keyschedule_test_epoch_input = {
-  tree_hash: string;
-  commit_secret: string;
-  psk_secret: string;
-  confirmed_transcript_hash: string;
-  external_psks: list keyschedule_test_epoch_psk;
-  branch_psk_nonce: string;
-}
-
-type keyschedule_test_epoch_output = {
-  group_context: string;
-
-  joiner_secret: string;
-  welcome_secret: string;
-  init_secret: string;
-
-  sender_data_secret: string;
-  encryption_secret: string;
-  exporter_secret: string;
-  authentication_secret: string;
-  external_secret: string;
-  confirmation_key: string;
-  membership_key: string;
-  resumption_secret: string;
-
-  external_pub: string;
-}
-
-type keyschedule_test = {
-  cipher_suite: U16.t;
-  group_id: string;
-  initial_init_secret: string;
-  epochs: list (keyschedule_test_epoch_input & keyschedule_test_epoch_output);
 }
 
 type commit_transcript_test = {

@@ -64,12 +64,12 @@ let run_keyschedule_tests () =
   match get_testsuite KeySchedule with
   | KeySchedule_test l -> begin
     if test_keyschedule l then (
-      IO.print_string ("KeySchedule: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
+      IO.print_string ("Key Schedule: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
     ) else (
-      IO.print_string "KeySchedule: failure\n"
+      IO.print_string "Key Schedule: failure\n"
     )
   end
-  | _ -> IO.print_string "KeySchedule: got the wrong type of testsuite (internal error)\n"
+  | _ -> IO.print_string "Key Schedule: got the wrong type of testsuite (internal error)\n"
 
 let run_commit_transcript_tests () =
   IO.print_string "Starting commit / transcript\n";
@@ -101,8 +101,9 @@ let main =
   run_treemath_tests ();
   run_crypto_basics_tests ();
   run_secret_tree_tests ();
+  // TODO: message protection
+  run_keyschedule_tests ();
   //run_encryption_tests();
-  //run_keyschedule_tests ();
   //run_treekem_tests ();
   //run_commit_transcript_tests ();
   run_self_treekem_test ();

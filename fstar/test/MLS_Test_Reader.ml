@@ -236,6 +236,79 @@ let parse_secret_tree_test (json:Yojson.Safe.t): secret_tree_test =
     leaves = map_json (map_json parse_secret_tree_leaf) leaves;
   })
 
+(*** Message Protection ***)
+
+(* TODO *)
+
+(*** Key Schedule ***)
+
+let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_input * keyschedule_test_epoch_output =
+  match json with
+  | `Assoc [
+    ("commit_secret", `String commit_secret);
+    ("confirmation_key", `String confirmation_key);
+    ("confirmed_transcript_hash", `String confirmed_transcript_hash);
+    ("encryption_secret", `String encryption_secret);
+    ("epoch_authenticator", `String epoch_authenticator);
+    ("exporter", `Assoc [
+      ("label", `String exporter_label);
+      ("length", `Int exporter_length);
+      ("secret", `String exported_secret);
+    ]);
+    ("exporter_secret", `String exporter_secret);
+    ("external_pub", `String external_pub);
+    ("external_secret", `String external_secret);
+    ("group_context", `String group_context);
+    ("init_secret", `String init_secret);
+    ("joiner_secret", `String joiner_secret);
+    ("membership_key", `String membership_key);
+    ("resumption_psk", `String resumption_psk);
+    ("sender_data_secret", `String sender_data_secret);
+    ("tree_hash", `String tree_hash);
+    ("welcome_secret", `String welcome_secret);
+  ] ->
+    ({
+      tree_hash = tree_hash;
+      commit_secret = commit_secret;
+      confirmed_transcript_hash = confirmed_transcript_hash;
+      exporter_label = exporter_label;
+      exporter_length = int_to_uint32 exporter_length;
+    }, {
+      group_context = group_context;
+      joiner_secret = joiner_secret;
+      welcome_secret = welcome_secret;
+      init_secret = init_secret;
+      sender_data_secret1 = sender_data_secret;
+      encryption_secret1 = encryption_secret;
+      exporter_secret = exporter_secret;
+      epoch_authenticator = epoch_authenticator;
+      external_secret = external_secret;
+      confirmation_key = confirmation_key;
+      membership_key = membership_key;
+      resumption_psk = resumption_psk;
+      external_pub = external_pub;
+      exported_secret = exported_secret;
+    })
+  | _ -> failwith "parse_keyschedule_test_epoch: incorrect test vector format"
+
+
+let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("epochs", `List epochs);
+    ("group_id", `String group_id);
+    ("initial_init_secret", `String initial_init_secret);
+  ] ->
+    {
+      cipher_suite2 = int_to_uint16 cipher_suite;
+      group_id = group_id;
+      initial_init_secret = initial_init_secret;
+      epochs = List.map parse_keyschedule_test_epoch epochs;
+    }
+  | _ -> failwith "parse_keyschedule_test: incorrect test vector format"
+
+
 (*** Old ***)
 
 let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_sender_data_info_test =
@@ -291,90 +364,13 @@ let parse_encryption_test (json:Yojson.Safe.t): encryption_test =
     ("tree", _)
   ] ->
     ({
-      cipher_suite2 = int_to_uint16 cipher_suite;
+      cipher_suite3 = int_to_uint16 cipher_suite;
       n_leaves1 = int_to_uint32 (List.length leaves); (*n_leaves;*)
-      encryption_secret1 = encryption_secret;
-      sender_data_secret1 = sender_data_secret;
+      encryption_secret2 = encryption_secret;
+      sender_data_secret2 = sender_data_secret;
       sender_data_info = parse_encryption_sender_data_info_test sender_data_info;
       leaves1 = List.map parse_encryption_leaf_test leaves;
     })
-
-let parse_keyschedule_test_epoch_psk (json:Yojson.Safe.t): keyschedule_test_epoch_psk =
-  match json with
-  | `Assoc [
-    ("id", `String id);
-    ("nonce", `String nonce);
-    ("secret", `String secret);
-  ] ->
-    ({
-      id = id;
-      nonce3 = nonce;
-      secret3 = secret;
-    })
-
-let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_input * keyschedule_test_epoch_output =
-  match json with
-  | `Assoc [
-    ("authentication_secret", `String authentication_secret);
-    ("branch_psk_nonce", `String branch_psk_nonce);
-    ("commit_secret", `String commit_secret);
-    ("confirmation_key", `String confirmation_key);
-    ("confirmed_transcript_hash", `String confirmed_transcript_hash);
-    ("encryption_secret", `String encryption_secret);
-    ("exporter_secret", `String exporter_secret);
-    ("external_psks", `List external_psks);
-    ("external_pub", `String external_pub);
-    ("external_secret", `String external_secret);
-    ("group_context", `String group_context);
-    ("init_secret", `String init_secret);
-    ("joiner_secret", `String joiner_secret);
-    ("membership_key", `String membership_key);
-    ("psk_secret", `String psk_secret);
-    ("resumption_secret", `String resumption_secret);
-    ("sender_data_secret", `String sender_data_secret);
-    ("tree_hash", `String tree_hash);
-    ("welcome_secret", `String welcome_secret);
-  ] ->
-    ({
-      tree_hash = tree_hash;
-      commit_secret = commit_secret;
-      psk_secret = psk_secret;
-      confirmed_transcript_hash = confirmed_transcript_hash;
-      external_psks = List.map parse_keyschedule_test_epoch_psk external_psks;
-      branch_psk_nonce = branch_psk_nonce;
-    }, {
-      group_context = group_context;
-      joiner_secret = joiner_secret;
-      welcome_secret = welcome_secret;
-      init_secret = init_secret;
-      sender_data_secret2 = sender_data_secret;
-      encryption_secret2 = encryption_secret;
-      exporter_secret = exporter_secret;
-      authentication_secret = authentication_secret;
-      external_secret = external_secret;
-      confirmation_key = confirmation_key;
-      membership_key = membership_key;
-      resumption_secret = resumption_secret;
-      external_pub = external_pub;
-    })
-  | _ -> failwith "parse_keyschedule_test_epoch: incorrect test vector format"
-
-
-let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
-  match json with
-  | `Assoc [
-    ("cipher_suite", `Int cipher_suite);
-    ("epochs", `List epochs);
-    ("group_id", `String group_id);
-    ("initial_init_secret", `String initial_init_secret);
-  ] ->
-    {
-      cipher_suite3 = int_to_uint16 cipher_suite;
-      group_id = group_id;
-      initial_init_secret = initial_init_secret;
-      epochs = List.map parse_keyschedule_test_epoch epochs;
-    }
-  | _ -> failwith "parse_keyschedule_test: incorrect test vector format"
 
 let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
   match json with
@@ -458,7 +454,7 @@ let get_filename (typ:test_type): string =
   | CryptoBasics -> "test_vectors/data/crypto-basics.json"
   | SecretTree -> "test_vectors/data/secret-tree.json"
   | Encryption -> "test_vectors/data/encryption.json"
-  | KeySchedule -> "test_vectors/data/key_schedule.json"
+  | KeySchedule -> "test_vectors/data/key-schedule.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
   | TreeKEM -> "test_vectors/data/treekem.json"
 

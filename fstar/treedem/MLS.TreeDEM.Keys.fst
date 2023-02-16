@@ -96,6 +96,14 @@ val secret_external_to_keypair: #bytes:Type0 -> {|crypto_bytes bytes|} -> lbytes
 let secret_external_to_keypair #bytes #cb external_secret =
   hpke_gen_keypair external_secret
 
+val mls_exporter: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> ascii_string -> bytes -> len:nat -> result (lbytes bytes len)
+let mls_exporter #bytes #cb exporter_secret label context len =
+  let? derived_secret: bytes = derive_secret exporter_secret (string_to_bytes #bytes label) in
+  if not (length context < hash_max_input_length #bytes) then
+    internal_failure "mls_exporter: context too long"
+  else
+    expand_with_label #bytes derived_secret (string_to_bytes #bytes "exporter") (hash_hash context) len
+
 type ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = {
   secret: lbytes bytes (kdf_length #bytes);
   generation: nat;
