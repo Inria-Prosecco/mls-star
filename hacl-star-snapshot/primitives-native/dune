@@ -1,0 +1,5 @@
+(library
+ (public_name mls.primitive_native)
+ (name primitives_native)
+ (libraries hacl-star)
+ (implements haclml))

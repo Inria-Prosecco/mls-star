@@ -26,6 +26,15 @@ let (extract :
   Spec_Hash_Definitions.hash_alg ->
     Spec_Hash_Definitions.bytes -> Spec_Hash_Definitions.bytes -> unit lbytes)
   = Spec_Agile_HMAC.hmac
+
+let extract a salt ikm =
+  let open Spec_Hash_Definitions in
+  match a with
+  | SHA2_256 ->
+      Primitives.hkdf_sha2_256_extract ~salt ~ikm
+  | _ ->
+      extract a salt ikm
+
 let (expand_info_length_pred :
   Spec_Hash_Definitions.hash_alg -> Prims.int -> Prims.bool) =
   fun a ->
@@ -109,3 +118,12 @@ let (expand :
                 FStar_Seq_Base.op_At_Bar output
                   (Lib_Sequence.sub tlen t Prims.int_zero (len - (n * tlen)))
               else output
+
+let expand a prk info size =
+  let open Spec_Hash_Definitions in
+  match a with
+  | SHA2_256 ->
+      Primitives.hkdf_sha2_256_expand ~prk ~info ~size
+  | _ ->
+      expand a prk info size
+

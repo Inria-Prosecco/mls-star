@@ -1,3 +1,4 @@
+let (++) = (+)
 open Prims
 type alg =
   | AES128_GCM 
@@ -85,6 +86,7 @@ let (cipher_length : supported_alg -> unit plain -> Prims.int) =
   fun a -> fun p -> (FStar_Seq_Base.length p) + (tag_length a)
 type ('a, 'p) encrypted = unit cipher
 type ('a, 'c) decrypted = unit plain
+
 let (encrypt :
   supported_alg ->
     unit kv -> unit iv -> unit ad -> unit plain -> (unit, unit) encrypted)
@@ -96,7 +98,12 @@ let (encrypt :
           fun plain1 ->
             match a with
             | CHACHA20_POLY1305 ->
-                Spec_Chacha20Poly1305.aead_encrypt kv1 iv1 plain1 ad1
+                (* Spec_Chacha20Poly1305.aead_encrypt kv1 iv1 plain1 ad1 *)
+                let key = kv1 in
+                let iv = iv1 in
+                let pt = plain1 in
+                let ad = ad1 in
+                Primitives.chacha20_poly1305_encrypt ~key ~iv ~pt ~ad
             | AES128_GCM -> Spec_AES_GCM.aes128gcm_encrypt kv1 iv1 plain1 ad1
             | AES256_GCM -> Spec_AES_GCM.aes256gcm_encrypt kv1 iv1 plain1 ad1
 let (decrypt :
@@ -121,7 +128,13 @@ let (decrypt :
                 ((FStar_Seq_Base.length cipher1) - (tag_length a)) in
             match a with
             | CHACHA20_POLY1305 ->
-                Spec_Chacha20Poly1305.aead_decrypt kv1 iv1 cipher2 tag ad1
+                (* Spec_Chacha20Poly1305.aead_decrypt kv1 iv1 cipher2 tag ad1 *)
+                let key = kv1 in
+                let iv = iv1 in
+                let ct = cipher2 in
+                let ad = ad1 in
+                let tag = tag in
+                Primitives.chacha20_poly1305_decrypt ~key ~iv ~ad ~ct ~tag
             | AES128_GCM ->
                 Spec_AES_GCM.aes128gcm_decrypt kv1 iv1 ad1 cipher2 tag
             | AES256_GCM ->

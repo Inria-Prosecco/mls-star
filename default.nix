@@ -6,7 +6,9 @@ let
     src =
       lib.sources.sourceByRegex ./. [
         "Makefile"
-        "hacl-star-snapshot(/.*)?"
+        "hacl-star-snapshot"
+        "hacl-star-snapshot/lib(/.*)?"
+        "hacl-star-snapshot/specs(/.*)?"
         # Include all the F* files, except the ones in fstar/test
         # The directory fstar/test has to be created though, as it is hardcoded in the makefile
         "fstar"
@@ -44,7 +46,7 @@ let
     buildInputs =
       [ which fstar z3 ]
       ++ (with ocamlPackages; [
-        ocaml dune_3 findlib yojson
+        ocaml dune_3 findlib yojson hacl-star
       ])
       ++ (fstar.buildInputs);
     FSTAR_HOME = fstar;

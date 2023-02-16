@@ -254,8 +254,10 @@ let (secret_to_public :
     (FStar_UInt8.t, unit) Lib_Sequence.lseq)
   =
   fun secret ->
-    let uu___ = secret_expand secret in
-    match uu___ with | (a, dummy) -> point_compress (point_mul a g)
+    (* let uu___ = secret_expand secret in *)
+    (* match uu___ with | (a, dummy) -> point_compress (point_mul a g) *)
+    Primitives.ed25519_secret_to_public ~sk:secret
+
 let (point_equal : ext_point -> ext_point -> Prims.bool) =
   fun p ->
     fun q1 ->
@@ -329,8 +331,10 @@ let (sign :
   =
   fun secret ->
     fun msg ->
-      let uu___ = expand_keys secret in
-      match uu___ with | (pub, s, prefix) -> sign_expanded pub s prefix msg
+      (* let uu___ = expand_keys secret in *)
+      (* match uu___ with | (pub, s, prefix) -> sign_expanded pub s prefix msg *)
+      Primitives.ed25519_sign ~sk:secret ~msg
+
 let (verify :
   (FStar_UInt8.t, unit) Lib_Sequence.lseq ->
     FStar_UInt8.t Lib_Sequence.seq ->
@@ -339,43 +343,44 @@ let (verify :
   fun public ->
     fun msg ->
       fun signature ->
-        let len = Lib_Sequence.length msg in
-        let a' = point_decompress public in
-        match a' with
-        | FStar_Pervasives_Native.None -> false
-        | FStar_Pervasives_Native.Some a'1 ->
-            let rs =
-              Lib_Sequence.slice (Prims.of_int (64)) signature Prims.int_zero
-                (Prims.of_int (32)) in
-            let r' = point_decompress rs in
-            (match r' with
-             | FStar_Pervasives_Native.None -> false
-             | FStar_Pervasives_Native.Some r'1 ->
-                 let s =
-                   Lib_ByteSequence.nat_from_intseq_le_ Lib_IntTypes.U8
-                     Lib_IntTypes.SEC
-                     (Obj.magic
-                        (Lib_Sequence.slice (Prims.of_int (64)) signature
-                           (Prims.of_int (32)) (Prims.of_int (64)))) in
-                 if s >= q
-                 then false
-                 else
-                   (let h =
-                      sha512_modq ((Prims.of_int (64)) + len)
-                        (Lib_Sequence.concat (Prims.of_int (64))
-                           (Lib_Sequence.length msg)
-                           (Lib_Sequence.concat (Prims.of_int (32))
-                              (Prims.of_int (32)) rs public) msg) in
-                    let sB =
-                      point_mul
-                        (Obj.magic
-                           (Lib_ByteSequence.nat_to_intseq_le_
-                              Lib_IntTypes.U8 Lib_IntTypes.SEC
-                              (Prims.of_int (32)) s)) g in
-                    let hA =
-                      point_mul
-                        (Obj.magic
-                           (Lib_ByteSequence.nat_to_intseq_le_
-                              Lib_IntTypes.U8 Lib_IntTypes.SEC
-                              (Prims.of_int (32)) h)) a'1 in
-                    point_equal sB (point_add r'1 hA)))
+        Primitives.ed25519_verify ~pk:public ~msg ~signature
+        (* let len = Lib_Sequence.length msg in *)
+        (* let a' = point_decompress public in *)
+        (* match a' with *)
+        (* | FStar_Pervasives_Native.None -> false *)
+        (* | FStar_Pervasives_Native.Some a'1 -> *)
+        (*     let rs = *)
+        (*       Lib_Sequence.slice (Prims.of_int (64)) signature Prims.int_zero *)
+        (*         (Prims.of_int (32)) in *)
+        (*     let r' = point_decompress rs in *)
+        (*     (match r' with *)
+        (*      | FStar_Pervasives_Native.None -> false *)
+        (*      | FStar_Pervasives_Native.Some r'1 -> *)
+        (*          let s = *)
+        (*            Lib_ByteSequence.nat_from_intseq_le_ Lib_IntTypes.U8 *)
+        (*              Lib_IntTypes.SEC *)
+        (*              (Obj.magic *)
+        (*                 (Lib_Sequence.slice (Prims.of_int (64)) signature *)
+        (*                    (Prims.of_int (32)) (Prims.of_int (64)))) in *)
+        (*          if s >= q *)
+        (*          then false *)
+        (*          else *)
+        (*            (let h = *)
+        (*               sha512_modq ((Prims.of_int (64)) + len) *)
+        (*                 (Lib_Sequence.concat (Prims.of_int (64)) *)
+        (*                    (Lib_Sequence.length msg) *)
+        (*                    (Lib_Sequence.concat (Prims.of_int (32)) *)
+        (*                       (Prims.of_int (32)) rs public) msg) in *)
+        (*             let sB = *)
+        (*               point_mul *)
+        (*                 (Obj.magic *)
+        (*                    (Lib_ByteSequence.nat_to_intseq_le_ *)
+        (*                       Lib_IntTypes.U8 Lib_IntTypes.SEC *)
+        (*                       (Prims.of_int (32)) s)) g in *)
+        (*             let hA = *)
+        (*               point_mul *)
+        (*                 (Obj.magic *)
+        (*                    (Lib_ByteSequence.nat_to_intseq_le_ *)
+        (*                       Lib_IntTypes.U8 Lib_IntTypes.SEC *)
+        (*                       (Prims.of_int (32)) h)) a'1 in *)
+        (*             point_equal sB (point_add r'1 hA))) *)

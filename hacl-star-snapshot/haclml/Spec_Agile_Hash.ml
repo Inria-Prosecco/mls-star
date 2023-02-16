@@ -110,12 +110,9 @@ let (hash :
   =
   fun a ->
     fun input ->
-      if
-        match a with
-        | Spec_Hash_Definitions.Blake2S -> true
-        | Spec_Hash_Definitions.Blake2B -> true
-        | uu___ -> false
-      then
+      match a with
+      | Spec_Hash_Definitions.Blake2S
+      | Spec_Hash_Definitions.Blake2B ->
         Spec_Blake2.blake2
           (match a with
            | Spec_Hash_Definitions.Blake2S -> Spec_Blake2.Blake2S
@@ -127,7 +124,11 @@ let (hash :
            with
            | Spec_Blake2.Blake2S -> (Prims.of_int (32))
            | Spec_Blake2.Blake2B -> (Prims.of_int (64)))
-      else
+      | Spec_Hash_Definitions.SHA2_256 ->
+          Primitives.sha2_256_hash input
+      | Spec_Hash_Definitions.SHA2_512 ->
+          Primitives.sha2_512_hash input
+      | _ ->
         (let padding =
            Spec_Hash_PadFinish.pad a (FStar_Seq_Base.length input) in
          Spec_Hash_PadFinish.finish a
