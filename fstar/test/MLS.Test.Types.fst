@@ -155,34 +155,6 @@ type psk_test = {
 
 (*** Old ***)
 
-type encryption_sender_data_info_test = {
-  ciphertext: string;
-  key: string;
-  nonce: string;
-}
-
-type encryption_leaf_generation_test = {
-  key: string;
-  nonce: string;
-  plaintext: string;
-  ciphertext: string;
-}
-
-type encryption_leaf_test = {
-  generations: U32.t;
-  handshake: list encryption_leaf_generation_test;
-  application: list encryption_leaf_generation_test;
-}
-
-type encryption_test = {
-  cipher_suite: U16.t;
-  n_leaves: U32.t;
-  encryption_secret: string;
-  sender_data_secret: string;
-  sender_data_info: encryption_sender_data_info_test;
-  leaves: list encryption_leaf_test;
-}
-
 type commit_transcript_test = {
   cipher_suite: U16.t;
   group_id: string;
@@ -232,7 +204,6 @@ type test_type =
   | TreeMath
   | CryptoBasics
   | SecretTree
-  | Encryption
   | KeySchedule
   | PreSharedKeys
   | CommitTranscript
@@ -242,7 +213,6 @@ type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
   | CryptoBasics_test: list crypto_basics_test -> testsuite
   | SecretTree_test: list secret_tree_test -> testsuite
-  | Encryption_test: list encryption_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
   | PreSharedKeys_test: list psk_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
