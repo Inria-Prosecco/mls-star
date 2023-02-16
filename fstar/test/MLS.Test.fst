@@ -6,6 +6,7 @@ open MLS.Test.Types
 open MLS.Test.Reader
 open MLS.Test.FromExt.TreeMath
 open MLS.Test.FromExt.CryptoBasics
+open MLS.Test.FromExt.SecretTree
 open MLS.Test.FromExt.Encryption
 open MLS.Test.FromExt.KeySchedule
 open MLS.Test.FromExt.CommitTranscript
@@ -35,6 +36,17 @@ let run_crypto_basics_tests () =
     )
   end
   | _ -> IO.print_string "Crypto Basics: got the wrong type of testsuite (internal error)\n"
+
+let run_secret_tree_tests () =
+  match get_testsuite SecretTree with
+  | SecretTree_test l -> begin
+    if test_secret_tree l then (
+      IO.print_string ("Secret Tree: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
+    ) else (
+      IO.print_string "Secret Tree: failure\n"
+    )
+  end
+  | _ -> IO.print_string "Secret Tree: got the wrong type of testsuite (internal error)\n"
 
 let run_encryption_tests () =
   match get_testsuite Encryption with
@@ -88,6 +100,7 @@ let main =
   MLS.Test.Internal.test ();
   run_treemath_tests ();
   run_crypto_basics_tests ();
+  run_secret_tree_tests ();
   //run_encryption_tests();
   //run_keyschedule_tests ();
   //run_treekem_tests ();

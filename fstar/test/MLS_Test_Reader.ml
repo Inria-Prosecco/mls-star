@@ -40,6 +40,11 @@ let parse_optional_uint32 (json:Yojson.Safe.t): FStar_UInt32.t option =
   | `Null -> None
   | _ -> failwith "parse_optional_uint32: not an int or null"
 
+let map_json (f:Yojson.Safe.t -> 'b) (json:Yojson.Safe.t): 'b list =
+  match json with
+  | `List l -> List.map f l
+  | _ -> failwith "map_json: not a list"
+
 (*** Tree Math ***)
 
 let parse_treemath_test (json:Yojson.Safe.t): treemath_test =
@@ -185,6 +190,52 @@ let parse_crypto_basics_test (json:Yojson.Safe.t): crypto_basics_test =
       encrypt_with_label = parse_crypto_basics_encrypt_with_label encrypt_with_label;
     })
 
+(*** Secret Tree ***)
+
+let parse_secret_tree_sender_data (json:Yojson.Safe.t): secret_tree_sender_data =
+  match json with
+  | `Assoc [
+    ("ciphertext", `String ciphertext);
+    ("key", `String key);
+    ("nonce", `String nonce);
+    ("sender_data_secret", `String sender_data_secret);
+  ] -> ({
+    sender_data_secret = sender_data_secret;
+    ciphertext1 = ciphertext;
+    key = key;
+    nonce = nonce;
+  })
+
+let parse_secret_tree_leaf (json:Yojson.Safe.t): secret_tree_leaf =
+  match json with
+  | `Assoc [
+    ("application_key", `String application_key);
+    ("application_nonce", `String application_nonce);
+    ("generation", `Int generation);
+    ("handshake_key", `String handshake_key);
+    ("handshake_nonce", `String handshake_nonce);
+  ] -> ({
+    generation1 = int_to_uint32 generation;
+    handshake_key = handshake_key;
+    handshake_nonce = handshake_nonce;
+    application_key = application_key;
+    application_nonce = application_nonce;
+  })
+
+let parse_secret_tree_test (json:Yojson.Safe.t): secret_tree_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("encryption_secret", `String encryption_secret);
+    ("leaves", leaves);
+    ("sender_data", sender_data);
+  ] -> ({
+    cipher_suite1 = int_to_uint16 cipher_suite;
+    sender_data = parse_secret_tree_sender_data sender_data;
+    encryption_secret = encryption_secret;
+    leaves = map_json (map_json parse_secret_tree_leaf) leaves;
+  })
+
 (*** Old ***)
 
 let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_sender_data_info_test =
@@ -195,9 +246,9 @@ let parse_encryption_sender_data_info_test (json:Yojson.Safe.t): encryption_send
     ("nonce", `String nonce);
   ] ->
     ({
-      ciphertext1 = ciphertext;
-      key = key;
-      nonce = nonce;
+      ciphertext2 = ciphertext;
+      key1 = key;
+      nonce1 = nonce;
     })
 
 let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_generation_test =
@@ -209,10 +260,10 @@ let parse_encryption_leaf_generation_test (json:Yojson.Safe.t): encryption_leaf_
     ("plaintext", `String plaintext);
   ] ->
     ({
-      key1 = key;
-      nonce1 = nonce;
+      key2 = key;
+      nonce2 = nonce;
       plaintext1 = plaintext;
-      ciphertext2 = ciphertext;
+      ciphertext3 = ciphertext;
     })
 
 let parse_encryption_leaf_test (json:Yojson.Safe.t): encryption_leaf_test =
@@ -240,12 +291,12 @@ let parse_encryption_test (json:Yojson.Safe.t): encryption_test =
     ("tree", _)
   ] ->
     ({
-      cipher_suite1 = int_to_uint16 cipher_suite;
+      cipher_suite2 = int_to_uint16 cipher_suite;
       n_leaves1 = int_to_uint32 (List.length leaves); (*n_leaves;*)
-      encryption_secret = encryption_secret;
-      sender_data_secret = sender_data_secret;
+      encryption_secret1 = encryption_secret;
+      sender_data_secret1 = sender_data_secret;
       sender_data_info = parse_encryption_sender_data_info_test sender_data_info;
-      leaves = List.map parse_encryption_leaf_test leaves;
+      leaves1 = List.map parse_encryption_leaf_test leaves;
     })
 
 let parse_keyschedule_test_epoch_psk (json:Yojson.Safe.t): keyschedule_test_epoch_psk =
@@ -257,7 +308,7 @@ let parse_keyschedule_test_epoch_psk (json:Yojson.Safe.t): keyschedule_test_epoc
   ] ->
     ({
       id = id;
-      nonce2 = nonce;
+      nonce3 = nonce;
       secret3 = secret;
     })
 
@@ -296,8 +347,8 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
       joiner_secret = joiner_secret;
       welcome_secret = welcome_secret;
       init_secret = init_secret;
-      sender_data_secret1 = sender_data_secret;
-      encryption_secret1 = encryption_secret;
+      sender_data_secret2 = sender_data_secret;
+      encryption_secret2 = encryption_secret;
       exporter_secret = exporter_secret;
       authentication_secret = authentication_secret;
       external_secret = external_secret;
@@ -318,7 +369,7 @@ let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
     ("initial_init_secret", `String initial_init_secret);
   ] ->
     {
-      cipher_suite2 = int_to_uint16 cipher_suite;
+      cipher_suite3 = int_to_uint16 cipher_suite;
       group_id = group_id;
       initial_init_secret = initial_init_secret;
       epochs = List.map parse_keyschedule_test_epoch epochs;
@@ -343,7 +394,7 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
     ("tree_hash_before", `String tree_hash_before);
   ] ->
     ({
-      cipher_suite3 = int_to_uint16 cipher_suite;
+      cipher_suite4 = int_to_uint16 cipher_suite;
       group_id1 = group_id;
       epoch = parse_uint64 epoch;
       tree_hash_before = tree_hash_before;
@@ -378,7 +429,7 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
     ("update_sender", `Int update_sender);
   ] ->
     ({
-      cipher_suite4 = int_to_uint16 cipher_suite;
+      cipher_suite5 = int_to_uint16 cipher_suite;
       input = {
         ratchet_tree_before = ratchet_tree_before;
         add_sender = int_to_uint32 add_sender;
@@ -405,6 +456,7 @@ let get_filename (typ:test_type): string =
   match typ with
   | TreeMath -> "test_vectors/data/tree-math.json"
   | CryptoBasics -> "test_vectors/data/crypto-basics.json"
+  | SecretTree -> "test_vectors/data/secret-tree.json"
   | Encryption -> "test_vectors/data/encryption.json"
   | KeySchedule -> "test_vectors/data/key_schedule.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
@@ -431,6 +483,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (CryptoBasics_test (List.map parse_crypto_basics_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | SecretTree -> begin
+    match json with
+    | `List l ->
+      (SecretTree_test (List.map parse_secret_tree_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | Encryption -> begin

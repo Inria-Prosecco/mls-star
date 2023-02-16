@@ -74,6 +74,30 @@ type crypto_basics_test = {
   encrypt_with_label: crypto_basics_encrypt_with_label;
 }
 
+(*** Secret Tree ***)
+
+type secret_tree_sender_data = {
+  sender_data_secret: string;
+  ciphertext: string;
+  key: string;
+  nonce: string;
+}
+
+type secret_tree_leaf = {
+  generation: U32.t;
+  handshake_key: string;
+  handshake_nonce: string;
+  application_key: string;
+  application_nonce: string;
+}
+
+type secret_tree_test = {
+  cipher_suite: U16.t;
+  sender_data: secret_tree_sender_data;
+  encryption_secret: string;
+  leaves: list (list (secret_tree_leaf));
+}
+
 (*** Old ***)
 
 type encryption_sender_data_info_test = {
@@ -193,6 +217,7 @@ type treekem_test = {
 type test_type =
   | TreeMath
   | CryptoBasics
+  | SecretTree
   | Encryption
   | KeySchedule
   | CommitTranscript
@@ -201,6 +226,7 @@ type test_type =
 type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
   | CryptoBasics_test: list crypto_basics_test -> testsuite
+  | SecretTree_test: list secret_tree_test -> testsuite
   | Encryption_test: list encryption_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
