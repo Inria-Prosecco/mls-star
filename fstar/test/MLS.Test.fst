@@ -7,6 +7,7 @@ open MLS.Test.Reader
 open MLS.Test.FromExt.TreeMath
 open MLS.Test.FromExt.CryptoBasics
 open MLS.Test.FromExt.SecretTree
+open MLS.Test.FromExt.MessageProtection
 open MLS.Test.FromExt.KeySchedule
 open MLS.Test.FromExt.PreSharedKeys
 open MLS.Test.FromExt.CommitTranscript
@@ -47,6 +48,17 @@ let run_secret_tree_tests () =
     )
   end
   | _ -> IO.print_string "Secret Tree: got the wrong type of testsuite (internal error)\n"
+
+let run_message_protection_tests () =
+  match get_testsuite MessageProtection with
+  | MessageProtection_test l -> begin
+    if test_message_protection l then (
+      IO.print_string ("Message Protection: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
+    ) else (
+      IO.print_string "Message Protection: failure\n"
+    )
+  end
+  | _ -> IO.print_string "Message Protection: got the wrong type of testsuite (internal error)\n"
 
 let run_keyschedule_tests () =
   match get_testsuite KeySchedule with
@@ -100,7 +112,7 @@ let main =
   run_treemath_tests ();
   run_crypto_basics_tests ();
   run_secret_tree_tests ();
-  // TODO: message protection
+  run_message_protection_tests ();
   run_keyschedule_tests ();
   run_psk_tests ();
   //run_treekem_tests ();

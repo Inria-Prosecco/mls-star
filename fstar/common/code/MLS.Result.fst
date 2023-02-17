@@ -29,8 +29,8 @@ let (let?) #a #b rx f =
 val from_option: #a:Type -> string -> option a -> result a
 let from_option #a s x =
   match x with
-  | None -> ProtocolError s
-  | Some x -> Success x
+  | None -> error s
+  | Some x -> return x
 
 #push-options "--ifuel 1 --fuel 1"
 val mapM: #a:Type -> #b:Type -> (a -> result b) -> l:list a -> result (res:list b{List.Tot.length res == List.Tot.length l})

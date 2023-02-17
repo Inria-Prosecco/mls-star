@@ -401,3 +401,5 @@ type mls_message_nt (bytes:Type0) {|bytes_like bytes|} =
   | [@@@ with_tag PV_mls10] M_mls10: mls_10_message_nt bytes -> mls_message_nt bytes
 
 %splice [ps_mls_message_nt] (gen_parser (`mls_message_nt))
+
+instance parseable_serializeable_mls_message_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (mls_message_nt bytes) = mk_parseable_serializeable ps_mls_message_nt

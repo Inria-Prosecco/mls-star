@@ -147,13 +147,13 @@ let sender_data_key_nonce #bytes #cb ciphertext_sample sender_data_secret =
 
 val decrypt_sender_data: #bytes:Type0 -> {|crypto_bytes bytes|} -> sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> encrypted_sender_data:bytes -> result (sender_data_nt bytes)
 let decrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret encrypted_sender_data =
-  let? (sender_data_key, sender_data_nonce) = sender_data_key_nonce sender_data_secret  ciphertext_sample in
+  let? (sender_data_key, sender_data_nonce) = sender_data_key_nonce ciphertext_sample sender_data_secret in
   let? sender_data = aead_decrypt sender_data_key sender_data_nonce (serialize (sender_data_aad_nt bytes) ad) encrypted_sender_data in
   from_option "decrypt_sender_data: malformed sender data" (parse (sender_data_nt bytes) sender_data)
 
 val encrypt_sender_data: #bytes:Type0 -> {|crypto_bytes bytes|} -> sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> sender_data_nt bytes -> result bytes
 let encrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret sender_data =
-  let? (sender_data_key, sender_data_nonce) = sender_data_key_nonce sender_data_secret  ciphertext_sample in
+  let? (sender_data_key, sender_data_nonce) = sender_data_key_nonce ciphertext_sample sender_data_secret in
   aead_encrypt sender_data_key sender_data_nonce (serialize (sender_data_aad_nt bytes) ad) (serialize (sender_data_nt bytes) sender_data)
 
 // Used in decryption

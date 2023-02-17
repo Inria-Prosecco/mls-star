@@ -238,7 +238,51 @@ let parse_secret_tree_test (json:Yojson.Safe.t): secret_tree_test =
 
 (*** Message Protection ***)
 
-(* TODO *)
+let parse_message_protection_test (json:Yojson.Safe.t): message_protection_test =
+  match json with
+  | `Assoc [
+    ("application", `String application);
+    ("application_priv", `String application_priv);
+    ("cipher_suite", `Int cipher_suite);
+    ("commit", `String commit);
+    ("commit_priv", `String commit_priv);
+    ("commit_pub", `String commit_pub);
+    ("confirmation_tag", `String confirmation_tag);
+    ("confirmed_transcript_hash", `String confirmed_transcript_hash);
+    ("encryption_secret", `String encryption_secret);
+    ("epoch", `Int epoch);
+    ("group_id", `String group_id);
+    ("membership_key", `String membership_key);
+    ("proposal", `String proposal);
+    ("proposal_priv", `String proposal_priv);
+    ("proposal_pub", `String proposal_pub);
+    ("sender_data_secret", `String sender_data_secret);
+    ("signature_priv", `String signature_priv);
+    ("signature_pub", `String signature_pub);
+    ("tree_hash", `String tree_hash);
+  ] ->
+    ({
+      cipher_suite2 = int_to_uint16 cipher_suite;
+      group_id = group_id;
+      epoch = int_to_uint64 epoch;
+      tree_hash = tree_hash;
+      confirmed_transcript_hash = confirmed_transcript_hash;
+      signature_priv = signature_priv;
+      signature_pub = signature_pub;
+      encryption_secret1 = encryption_secret;
+      sender_data_secret1 = sender_data_secret;
+      membership_key = membership_key;
+      confirmation_tag = confirmation_tag;
+      proposal = proposal;
+      proposal_pub = proposal_pub;
+      proposal_priv = proposal_priv;
+      commit = commit;
+      commit_pub = commit_pub;
+      commit_priv = commit_priv;
+      application = application;
+      application_priv = application_priv;
+    })
+  | _ -> failwith "parse_message_protection_test: incorrect test vector format"
 
 (*** Key Schedule ***)
 
@@ -268,9 +312,9 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
     ("welcome_secret", `String welcome_secret);
   ] ->
     ({
-      tree_hash = tree_hash;
+      tree_hash1 = tree_hash;
       commit_secret = commit_secret;
-      confirmed_transcript_hash = confirmed_transcript_hash;
+      confirmed_transcript_hash1 = confirmed_transcript_hash;
       exporter_label = exporter_label;
       exporter_length = int_to_uint32 exporter_length;
     }, {
@@ -278,13 +322,13 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
       joiner_secret = joiner_secret;
       welcome_secret = welcome_secret;
       init_secret = init_secret;
-      sender_data_secret1 = sender_data_secret;
-      encryption_secret1 = encryption_secret;
+      sender_data_secret2 = sender_data_secret;
+      encryption_secret2 = encryption_secret;
       exporter_secret = exporter_secret;
       epoch_authenticator = epoch_authenticator;
       external_secret = external_secret;
       confirmation_key = confirmation_key;
-      membership_key = membership_key;
+      membership_key1 = membership_key;
       resumption_psk = resumption_psk;
       external_pub = external_pub;
       exported_secret = exported_secret;
@@ -301,8 +345,8 @@ let parse_keyschedule_test (json:Yojson.Safe.t): keyschedule_test =
     ("initial_init_secret", `String initial_init_secret);
   ] ->
     {
-      cipher_suite2 = int_to_uint16 cipher_suite;
-      group_id = group_id;
+      cipher_suite3 = int_to_uint16 cipher_suite;
+      group_id1 = group_id;
       initial_init_secret = initial_init_secret;
       epochs = List.map parse_keyschedule_test_epoch epochs;
     }
@@ -332,7 +376,7 @@ let parse_psk_test (json:Yojson.Safe.t): psk_test =
     ("psks", `List psks);
   ] ->
     {
-      cipher_suite3 = int_to_uint16 cipher_suite;
+      cipher_suite4 = int_to_uint16 cipher_suite;
       psks = List.map parse_psk_test_psk psks;
       psk_secret = psk_secret;
     }
@@ -358,16 +402,16 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
     ("tree_hash_before", `String tree_hash_before);
   ] ->
     ({
-      cipher_suite4 = int_to_uint16 cipher_suite;
-      group_id1 = group_id;
-      epoch = parse_uint64 epoch;
+      cipher_suite5 = int_to_uint16 cipher_suite;
+      group_id2 = group_id;
+      epoch1 = parse_uint64 epoch;
       tree_hash_before = tree_hash_before;
       confirmed_transcript_hash_before = confirmed_transcript_hash_before;
       interim_transcript_hash_before = interim_transcript_hash_before;
       credential = credential;
-      membership_key1 = membership_key;
+      membership_key2 = membership_key;
       confirmation_key1 = confirmation_key;
-      commit = commit;
+      commit1 = commit;
       group_context1 = group_context;
       confirmed_transcript_hash_after = confirmed_transcript_hash_after;
       interim_transcript_hash_after = interim_transcript_hash_after;
@@ -393,7 +437,7 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
     ("update_sender", `Int update_sender);
   ] ->
     ({
-      cipher_suite5 = int_to_uint16 cipher_suite;
+      cipher_suite6 = int_to_uint16 cipher_suite;
       input = {
         ratchet_tree_before = ratchet_tree_before;
         add_sender = int_to_uint32 add_sender;
@@ -421,6 +465,7 @@ let get_filename (typ:test_type): string =
   | TreeMath -> "test_vectors/data/tree-math.json"
   | CryptoBasics -> "test_vectors/data/crypto-basics.json"
   | SecretTree -> "test_vectors/data/secret-tree.json"
+  | MessageProtection -> "test_vectors/data/message-protection.json"
   | KeySchedule -> "test_vectors/data/key-schedule.json"
   | PreSharedKeys -> "test_vectors/data/psk_secret.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
@@ -453,6 +498,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (SecretTree_test (List.map parse_secret_tree_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | MessageProtection -> begin
+    match json with
+    | `List l ->
+      (MessageProtection_test (List.map parse_message_protection_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | KeySchedule -> begin

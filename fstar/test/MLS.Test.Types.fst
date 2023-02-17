@@ -100,7 +100,33 @@ type secret_tree_test = {
 
 (*** Message protection ***)
 
-// TODO
+type message_protection_test = {
+  cipher_suite: U16.t;
+
+  group_id: string;
+  epoch: U64.t;
+  tree_hash: string;
+  confirmed_transcript_hash: string;
+
+  signature_priv: string;
+  signature_pub: string;
+
+  encryption_secret: string;
+  sender_data_secret: string;
+  membership_key: string;
+  confirmation_tag: string;
+
+  proposal: string;
+  proposal_pub: string;
+  proposal_priv: string;
+
+  commit: string;
+  commit_pub: string;
+  commit_priv: string;
+
+  application: string;
+  application_priv: string;
+}
 
 (*** Key Schedule ***)
 
@@ -204,6 +230,7 @@ type test_type =
   | TreeMath
   | CryptoBasics
   | SecretTree
+  | MessageProtection
   | KeySchedule
   | PreSharedKeys
   | CommitTranscript
@@ -213,6 +240,7 @@ type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
   | CryptoBasics_test: list crypto_basics_test -> testsuite
   | SecretTree_test: list secret_tree_test -> testsuite
+  | MessageProtection_test: list message_protection_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
   | PreSharedKeys_test: list psk_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
