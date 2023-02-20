@@ -34,12 +34,13 @@ let gen_group_context #cb group_id epoch inp =
 val gen_epoch_output: {|crypto_bytes bytes|} -> string -> string -> nat -> keyschedule_test_epoch_input -> ML keyschedule_test_epoch_output
 let gen_epoch_output #cb group_id last_init_secret epoch inp =
   let commit_secret = hex_string_to_bytes inp.commit_secret in
+  let psk_secret = hex_string_to_bytes inp.psk_secret in
 
   let group_context = gen_group_context group_id epoch inp in
   let last_init_secret = hex_string_to_bytes last_init_secret in
   let joiner_secret = extract_result (secret_init_to_joiner last_init_secret (Some commit_secret) group_context) in
-  let welcome_secret = extract_result (secret_joiner_to_welcome #bytes joiner_secret None) in
-  let epoch_secret: bytes = extract_result (secret_joiner_to_epoch joiner_secret None group_context) in
+  let welcome_secret = extract_result (secret_joiner_to_welcome #bytes joiner_secret (Some psk_secret)) in
+  let epoch_secret: bytes = extract_result (secret_joiner_to_epoch joiner_secret (Some psk_secret) group_context) in
   let init_secret = extract_result (secret_epoch_to_init epoch_secret) in
   let sender_data_secret = extract_result (secret_epoch_to_sender_data epoch_secret) in
   let encryption_secret = extract_result (secret_epoch_to_encryption epoch_secret) in
@@ -54,7 +55,7 @@ let gen_epoch_output #cb group_id last_init_secret epoch inp =
     if not (string_is_ascii inp.exporter_label) then
       failwith "gen_epoch_output: exporter label is not ascii"
     else
-      extract_result (mls_exporter exporter_secret inp.exporter_label group_context (UInt32.v inp.exporter_length))
+      extract_result (mls_exporter exporter_secret inp.exporter_label (hex_string_to_bytes inp.exporter_context) (UInt32.v inp.exporter_length))
   in
 
   {

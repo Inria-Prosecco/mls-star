@@ -295,6 +295,7 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
     ("encryption_secret", `String encryption_secret);
     ("epoch_authenticator", `String epoch_authenticator);
     ("exporter", `Assoc [
+      ("context", `String exporter_context);
       ("label", `String exporter_label);
       ("length", `Int exporter_length);
       ("secret", `String exported_secret);
@@ -306,6 +307,7 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
     ("init_secret", `String init_secret);
     ("joiner_secret", `String joiner_secret);
     ("membership_key", `String membership_key);
+    ("psk_secret", `String psk_secret);
     ("resumption_psk", `String resumption_psk);
     ("sender_data_secret", `String sender_data_secret);
     ("tree_hash", `String tree_hash);
@@ -314,8 +316,10 @@ let parse_keyschedule_test_epoch (json:Yojson.Safe.t): keyschedule_test_epoch_in
     ({
       tree_hash1 = tree_hash;
       commit_secret = commit_secret;
+      psk_secret = psk_secret;
       confirmed_transcript_hash1 = confirmed_transcript_hash;
       exporter_label = exporter_label;
+      exporter_context = exporter_context;
       exporter_length = int_to_uint32 exporter_length;
     }, {
       group_context = group_context;
@@ -378,7 +382,7 @@ let parse_psk_test (json:Yojson.Safe.t): psk_test =
     {
       cipher_suite4 = int_to_uint16 cipher_suite;
       psks = List.map parse_psk_test_psk psks;
-      psk_secret = psk_secret;
+      psk_secret1 = psk_secret;
     }
   | _ -> failwith "parse_psk_test: incorrect test vector format"
 

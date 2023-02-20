@@ -133,8 +133,10 @@ type message_protection_test = {
 type keyschedule_test_epoch_input = {
   tree_hash: string;
   commit_secret: string;
+  psk_secret: string;
   confirmed_transcript_hash: string;
   exporter_label: string;
+  exporter_context: string;
   exporter_length: U32.t;
 }
 
