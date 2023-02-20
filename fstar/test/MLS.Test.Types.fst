@@ -191,6 +191,32 @@ type welcome_test = {
   welcome: string;
 }
 
+(*** Messages ***)
+
+type messages_test = {
+  mls_welcome: string;
+  mls_group_info: string;
+  mls_key_package: string;
+
+  ratchet_tree: string;
+  group_secrets: string;
+
+  add_proposal: string;
+  update_proposal: string;
+  remove_proposal: string;
+  pre_shared_key_proposal: string;
+  re_init_proposal: string;
+  external_init_proposal: string;
+  group_context_extensions_proposal: string;
+
+  commit: string;
+
+  public_message_application: string;
+  public_message_proposal: string;
+  public_message_commit: string;
+  private_message: string;
+}
+
 (*** Old ***)
 
 type commit_transcript_test = {
@@ -246,6 +272,7 @@ type test_type =
   | KeySchedule
   | PreSharedKeys
   | Welcome
+  | Messages
   | CommitTranscript
   | TreeKEM
 
@@ -257,5 +284,6 @@ type testsuite =
   | KeySchedule_test: list keyschedule_test -> testsuite
   | PreSharedKeys_test: list psk_test -> testsuite
   | Welcome_test: list welcome_test -> testsuite
+  | Messages_test: list messages_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite

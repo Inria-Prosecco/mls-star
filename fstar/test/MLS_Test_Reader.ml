@@ -406,6 +406,50 @@ let parse_welcome_test (json:Yojson.Safe.t): welcome_test =
     }
   | _ -> failwith "parse_welcome_test: incorrect test vector format"
 
+(*** Messages ***)
+
+let parse_messages_test (json:Yojson.Safe.t): messages_test =
+  match json with
+  | `Assoc [
+    ("add_proposal", `String add_proposal);
+    ("commit", `String commit);
+    ("external_init_proposal", `String external_init_proposal);
+    ("group_context_extensions_proposal", `String group_context_extensions_proposal);
+    ("group_secrets", `String group_secrets);
+    ("mls_group_info", `String mls_group_info);
+    ("mls_key_package", `String mls_key_package);
+    ("mls_welcome", `String mls_welcome);
+    ("pre_shared_key_proposal", `String pre_shared_key_proposal);
+    ("private_message", `String private_message);
+    ("public_message_application", `String public_message_application);
+    ("public_message_commit", `String public_message_commit);
+    ("public_message_proposal", `String public_message_proposal);
+    ("ratchet_tree", `String ratchet_tree);
+    ("re_init_proposal", `String re_init_proposal);
+    ("remove_proposal", `String remove_proposal);
+    ("update_proposal", `String update_proposal);
+  ] ->
+    {
+      mls_welcome = mls_welcome;
+      mls_group_info = mls_group_info;
+      mls_key_package = mls_key_package;
+      ratchet_tree = ratchet_tree;
+      group_secrets = group_secrets;
+      add_proposal = add_proposal;
+      update_proposal = update_proposal;
+      remove_proposal = remove_proposal;
+      pre_shared_key_proposal = pre_shared_key_proposal;
+      re_init_proposal = re_init_proposal;
+      external_init_proposal = external_init_proposal;
+      group_context_extensions_proposal = group_context_extensions_proposal;
+      commit1 = commit;
+      public_message_application = public_message_application;
+      public_message_proposal = public_message_proposal;
+      public_message_commit = public_message_commit;
+      private_message = private_message;
+    }
+  | _ -> failwith "parse_messages_test: incorrect test vector format"
+
 (*** Old ***)
 
 let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
@@ -435,7 +479,7 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
       credential = credential;
       membership_key2 = membership_key;
       confirmation_key1 = confirmation_key;
-      commit1 = commit;
+      commit2 = commit;
       group_context1 = group_context;
       confirmed_transcript_hash_after = confirmed_transcript_hash_after;
       interim_transcript_hash_after = interim_transcript_hash_after;
@@ -493,6 +537,7 @@ let get_filename (typ:test_type): string =
   | KeySchedule -> "test_vectors/data/key-schedule.json"
   | PreSharedKeys -> "test_vectors/data/psk_secret.json"
   | Welcome -> "test_vectors/data/welcome.json"
+  | Messages -> "test_vectors/data/messages.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
   | TreeKEM -> "test_vectors/data/treekem.json"
 
@@ -547,6 +592,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (Welcome_test (List.map parse_welcome_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | Messages -> begin
+    match json with
+    | `List l ->
+      (Messages_test (List.map parse_messages_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | CommitTranscript -> begin
