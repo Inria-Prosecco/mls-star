@@ -386,6 +386,26 @@ let parse_psk_test (json:Yojson.Safe.t): psk_test =
     }
   | _ -> failwith "parse_psk_test: incorrect test vector format"
 
+(*** Welcome ***)
+
+let parse_welcome_test (json:Yojson.Safe.t): welcome_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("init_priv", `String init_priv);
+    ("key_package", `String key_package);
+    ("signer_pub", `String signer_pub);
+    ("welcome", `String welcome);
+  ] ->
+    {
+      cipher_suite5 = int_to_uint16 cipher_suite;
+      init_priv = init_priv;
+      signer_pub = signer_pub;
+      key_package = key_package;
+      welcome = welcome;
+    }
+  | _ -> failwith "parse_welcome_test: incorrect test vector format"
+
 (*** Old ***)
 
 let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
@@ -406,7 +426,7 @@ let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
     ("tree_hash_before", `String tree_hash_before);
   ] ->
     ({
-      cipher_suite5 = int_to_uint16 cipher_suite;
+      cipher_suite6 = int_to_uint16 cipher_suite;
       group_id2 = group_id;
       epoch1 = parse_uint64 epoch;
       tree_hash_before = tree_hash_before;
@@ -441,7 +461,7 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
     ("update_sender", `Int update_sender);
   ] ->
     ({
-      cipher_suite6 = int_to_uint16 cipher_suite;
+      cipher_suite7 = int_to_uint16 cipher_suite;
       input = {
         ratchet_tree_before = ratchet_tree_before;
         add_sender = int_to_uint32 add_sender;
@@ -472,6 +492,7 @@ let get_filename (typ:test_type): string =
   | MessageProtection -> "test_vectors/data/message-protection.json"
   | KeySchedule -> "test_vectors/data/key-schedule.json"
   | PreSharedKeys -> "test_vectors/data/psk_secret.json"
+  | Welcome -> "test_vectors/data/welcome.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
   | TreeKEM -> "test_vectors/data/treekem.json"
 
@@ -520,6 +541,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (PreSharedKeys_test (List.map parse_psk_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | Welcome -> begin
+    match json with
+    | `List l ->
+      (Welcome_test (List.map parse_welcome_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | CommitTranscript -> begin

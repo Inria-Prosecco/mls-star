@@ -8,6 +8,8 @@ open MLS.Result
 open FStar.String
 open MLS.Crypto
 open MLS.StringUtils
+open Comparse
+open MLS.NetworkTypes
 
 let bytes = hacl_star_bytes
 // Not an instance, otherwise F* is a bit annoyed that it can't prove some_crypto_bytes.base == bytes_like_bytes
@@ -117,6 +119,23 @@ let uint16_to_ciphersuite x =
   match o_cs_nt with
   | None -> failwith "couldn't parse ciphersuite"
   | Some cs_nt -> available_ciphersuite_from_network cs_nt
+
+val gen_group_context: {|bytes_like bytes|} -> available_ciphersuite -> bytes -> nat -> bytes -> bytes -> ML bytes
+let gen_group_context cipher_suite group_id epoch tree_hash confirmed_transcript_hash =
+  let cipher_suite = available_ciphersuite_to_network cipher_suite in
+  if length group_id < pow2 30 && epoch < (pow2 64) && length tree_hash < pow2 30 && length confirmed_transcript_hash < pow2 30 then (
+    (ps_prefix_to_ps_whole ps_group_context_nt).serialize ({
+      version = PV_mls10;
+      cipher_suite;
+      group_id;
+      epoch;
+      tree_hash;
+      confirmed_transcript_hash;
+      extensions = [];
+    })
+  ) else (
+    failwith "gen_group_context: bad data"
+  )
 
 type rand_state = {
   internal_state: (x:nat{x < pow2 64});

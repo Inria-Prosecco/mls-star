@@ -12,31 +12,12 @@ open MLS.NetworkTypes
 open MLS.Crypto
 open MLS.TreeDEM.Keys
 
-val gen_group_context: {|crypto_bytes bytes|} -> string -> nat -> keyschedule_test_epoch_input -> ML bytes
-let gen_group_context #cb group_id epoch inp =
-  let group_id = hex_string_to_bytes group_id in
-  let tree_hash = hex_string_to_bytes inp.tree_hash in
-  let confirmed_transcript_hash = hex_string_to_bytes inp.confirmed_transcript_hash in
-  if length group_id < pow2 30 && epoch < (pow2 64) && length tree_hash < pow2 30 && length confirmed_transcript_hash < pow2 30 then (
-    (ps_prefix_to_ps_whole ps_group_context_nt).serialize ({
-      version = PV_mls10;
-      cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);
-      group_id = group_id;
-      epoch = epoch;
-      tree_hash = tree_hash;
-      confirmed_transcript_hash = confirmed_transcript_hash;
-      extensions = [];
-    })
-  ) else (
-    failwith ""
-  )
-
 val gen_epoch_output: {|crypto_bytes bytes|} -> string -> string -> nat -> keyschedule_test_epoch_input -> ML keyschedule_test_epoch_output
 let gen_epoch_output #cb group_id last_init_secret epoch inp =
   let commit_secret = hex_string_to_bytes inp.commit_secret in
   let psk_secret = hex_string_to_bytes inp.psk_secret in
 
-  let group_context = gen_group_context group_id epoch inp in
+  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes group_id) epoch (hex_string_to_bytes inp.tree_hash) (hex_string_to_bytes inp.confirmed_transcript_hash) in
   let last_init_secret = hex_string_to_bytes last_init_secret in
   let joiner_secret = extract_result (secret_init_to_joiner last_init_secret (Some commit_secret) group_context) in
   let welcome_secret = extract_result (secret_joiner_to_welcome #bytes joiner_secret (Some psk_secret)) in

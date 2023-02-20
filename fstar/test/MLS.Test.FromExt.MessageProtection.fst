@@ -14,27 +14,6 @@ open MLS.Crypto
 open MLS.TreeDEM.NetworkTypes
 open MLS.TreeDEM.Message.Framing
 
-val gen_group_context: {|bytes_like bytes|} -> message_protection_test -> ML bytes
-let gen_group_context t =
-  let cipher_suite = available_ciphersuite_to_network (extract_result (uint16_to_ciphersuite t.cipher_suite)) in
-  let group_id = hex_string_to_bytes t.group_id in
-  let epoch = FStar.UInt64.v t.epoch in
-  let tree_hash = hex_string_to_bytes t.tree_hash in
-  let confirmed_transcript_hash = hex_string_to_bytes t.confirmed_transcript_hash in
-  if length group_id < pow2 30 && epoch < (pow2 64) && length tree_hash < pow2 30 && length confirmed_transcript_hash < pow2 30 then (
-    (ps_prefix_to_ps_whole ps_group_context_nt).serialize ({
-      version = PV_mls10;
-      cipher_suite;
-      group_id;
-      epoch;
-      tree_hash;
-      confirmed_transcript_hash;
-      extensions = [];
-    })
-  ) else (
-    failwith "gen_group_context: bad data"
-  )
-
 val extract_public_message: {|bytes_like bytes|} -> string -> ML (public_message_nt bytes)
 let extract_public_message #bl s =
   match parse (mls_message_nt bytes) (hex_string_to_bytes s) with

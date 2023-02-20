@@ -181,6 +181,16 @@ type psk_test = {
   psk_secret: string;
 }
 
+(*** Welcome ***)
+
+type welcome_test = {
+  cipher_suite: U16.t;
+  init_priv: string;
+  signer_pub: string;
+  key_package: string;
+  welcome: string;
+}
+
 (*** Old ***)
 
 type commit_transcript_test = {
@@ -235,6 +245,7 @@ type test_type =
   | MessageProtection
   | KeySchedule
   | PreSharedKeys
+  | Welcome
   | CommitTranscript
   | TreeKEM
 
@@ -245,5 +256,6 @@ type testsuite =
   | MessageProtection_test: list message_protection_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
   | PreSharedKeys_test: list psk_test -> testsuite
+  | Welcome_test: list welcome_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite
