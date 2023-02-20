@@ -28,9 +28,8 @@ let test_welcome_one t =
   end
   | Success cs -> begin
     match cs with
-    | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
     | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> (
-      // Unsupported ciphersuite
+      // Unsupported ciphersuite (because of P256)
       false
     )
     | _ -> (

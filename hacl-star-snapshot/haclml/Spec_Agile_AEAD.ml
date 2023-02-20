@@ -104,7 +104,12 @@ let (encrypt :
                 let pt = plain1 in
                 let ad = ad1 in
                 Primitives.chacha20_poly1305_encrypt ~key ~iv ~pt ~ad
-            | AES128_GCM -> Spec_AES_GCM.aes128gcm_encrypt kv1 iv1 plain1 ad1
+            | AES128_GCM ->
+                let key = kv1 in
+                let iv = iv1 in
+                let pt = plain1 in
+                let ad = ad1 in
+                Primitives.aes128gcm_encrypt ~key ~iv ~ad ~pt
             | AES256_GCM -> Spec_AES_GCM.aes256gcm_encrypt kv1 iv1 plain1 ad1
 let (decrypt :
   supported_alg ->
@@ -128,7 +133,6 @@ let (decrypt :
                 ((FStar_Seq_Base.length cipher1) - (tag_length a)) in
             match a with
             | CHACHA20_POLY1305 ->
-                (* Spec_Chacha20Poly1305.aead_decrypt kv1 iv1 cipher2 tag ad1 *)
                 let key = kv1 in
                 let iv = iv1 in
                 let ct = cipher2 in
@@ -136,6 +140,11 @@ let (decrypt :
                 let tag = tag in
                 Primitives.chacha20_poly1305_decrypt ~key ~iv ~ad ~ct ~tag
             | AES128_GCM ->
-                Spec_AES_GCM.aes128gcm_decrypt kv1 iv1 ad1 cipher2 tag
+                let key = kv1 in
+                let iv = iv1 in
+                let ct = cipher2 in
+                let ad = ad1 in
+                let tag = tag in
+                Primitives.aes128gcm_decrypt ~key ~iv ~ad ~ct ~tag
             | AES256_GCM ->
                 Spec_AES_GCM.aes256gcm_decrypt kv1 iv1 ad1 cipher2 tag

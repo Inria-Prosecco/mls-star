@@ -100,37 +100,30 @@ let test_sign_with_label t =
 
 val test_encrypt_with_label: {|crypto_bytes bytes|} -> crypto_basics_encrypt_with_label -> ML unit
 let test_encrypt_with_label t =
-  match ciphersuite #bytes with
-  | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> (
-    IO.print_string "(crypto basics: skipping one encryption test because AES-GCM is unavailable)\n"
-  )
-  | _ -> (
-    let priv = hex_string_to_bytes t.priv in
-    let pub = hex_string_to_bytes t.pub in
-    let label = t.label in
-    let context = hex_string_to_bytes t.context in
-    let plaintext = hex_string_to_bytes t.plaintext in
-    let kem_output = hex_string_to_bytes t.kem_output in
-    let ciphertext = hex_string_to_bytes t.ciphertext in
-    if not (length priv = hpke_private_key_length #bytes) then (
-      failwith "Error: hpke private key has wrong length\n"
-    ) else if not (length pub = hpke_public_key_length #bytes) then (
-      failwith "Error: hpke public key has wrong length\n"
-    ) else if not (length kem_output = hpke_kem_output_length #bytes) then (
-      failwith "Error: hpke kem output has wrong length\n"
-    ) else if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
-      failwith "Error: label is malformed\n"
-    ) else (
-      let my_plaintext = extract_result (decrypt_with_label priv label context kem_output ciphertext) in
-      let my_plaintext_roundtrip =
-        let (_, nonce) = gen_rand_bytes #bytes (init_rand_state 0xC0FFEE) (hpke_private_key_length #bytes) in
-        let (kem_output, ciphertext) = extract_result (encrypt_with_label pub label context plaintext nonce) in
-        extract_result (decrypt_with_label priv label context kem_output ciphertext)
-      in
-      check_equal "encrypt with label plaintext" (bytes_to_hex_string) (plaintext) (my_plaintext);
-      check_equal "encrypt with label plaintext" (bytes_to_hex_string) (plaintext) (my_plaintext_roundtrip)
-    )
+  let priv = hex_string_to_bytes t.priv in
+  let pub = hex_string_to_bytes t.pub in
+  let label = t.label in
+  let context = hex_string_to_bytes t.context in
+  let plaintext = hex_string_to_bytes t.plaintext in
+  let kem_output = hex_string_to_bytes t.kem_output in
+  let ciphertext = hex_string_to_bytes t.ciphertext in
+  if not (length priv = hpke_private_key_length #bytes) then (
+    failwith "Error: hpke private key has wrong length\n"
+  ) else if not (length pub = hpke_public_key_length #bytes) then (
+    failwith "Error: hpke public key has wrong length\n"
+  ) else if not (length kem_output = hpke_kem_output_length #bytes) then (
+    failwith "Error: hpke kem output has wrong length\n"
+  ) else if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
+    failwith "Error: label is malformed\n"
+  ) else (
+    let my_plaintext = extract_result (decrypt_with_label priv label context kem_output ciphertext) in
+    let my_plaintext_roundtrip =
+      let (_, nonce) = gen_rand_bytes #bytes (init_rand_state 0xC0FFEE) (hpke_private_key_length #bytes) in
+      let (kem_output, ciphertext) = extract_result (encrypt_with_label pub label context plaintext nonce) in
+      extract_result (decrypt_with_label priv label context kem_output ciphertext)
+    in
+    check_equal "encrypt with label plaintext" (bytes_to_hex_string) (plaintext) (my_plaintext);
+    check_equal "encrypt with label plaintext" (bytes_to_hex_string) (plaintext) (my_plaintext_roundtrip)
   )
 
 val test_crypto_basics_one: crypto_basics_test -> ML bool

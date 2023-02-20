@@ -16,3 +16,5 @@ val ed25519_sign: sk:bytes -> msg:bytes -> bytes
 val ed25519_verify: pk:bytes -> msg:bytes -> signature:bytes -> bool
 val chacha20_poly1305_encrypt: key:bytes -> iv:bytes -> ad:bytes -> pt:bytes -> bytes
 val chacha20_poly1305_decrypt: key:bytes -> iv:bytes -> ad:bytes -> ct:bytes -> tag:bytes -> bytes option
+val aes128gcm_encrypt: key:bytes -> iv:bytes -> ad:bytes -> pt:bytes -> bytes
+val aes128gcm_decrypt: key:bytes -> iv:bytes -> ad:bytes -> ct:bytes -> tag:bytes -> bytes option

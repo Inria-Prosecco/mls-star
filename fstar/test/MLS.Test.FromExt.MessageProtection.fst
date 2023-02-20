@@ -96,19 +96,11 @@ let test_message_protection_one t =
     failwith ("Internal error! '" ^ s ^ "'\n")
   end
   | Success cs -> begin
-    match cs with
-    | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
-    | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> (
-      // Unsupported ciphersuite
-      false
-    )
-    | _ -> (
-      let cb = mk_concrete_crypto_bytes cs in
-      test_proposal_protection t;
-      test_commit_protection t;
-      test_application_protection t;
-      true
-    )
+    let cb = mk_concrete_crypto_bytes cs in
+    test_proposal_protection t;
+    test_commit_protection t;
+    test_application_protection t;
+    true
   end
 
 val test_message_protection: list message_protection_test -> ML nat
