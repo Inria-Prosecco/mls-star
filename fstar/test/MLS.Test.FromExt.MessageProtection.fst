@@ -55,7 +55,7 @@ let extract_proposal #bl content =
   | CT_proposal -> content.content.content.content
   | _ -> failwith "extract_proposal: not a proposal"
 
-val test_proposal_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML bool
+val test_proposal_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_proposal_protection #cb t =
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
@@ -66,10 +66,8 @@ let test_proposal_protection #cb t =
   let the_proposal_pub = extract_proposal (message_plaintext_to_message proposal_pub) in
   let the_proposal_priv = extract_proposal (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret proposal_priv)) in
 
-  let the_proposal_pub_ok = check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_pub) in
-  let the_proposal_priv_ok = check_equal "proposal_priv" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_priv) in
-
-  the_proposal_pub_ok && the_proposal_priv_ok
+  check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_pub);
+  check_equal "proposal_priv" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_priv)
 
 val extract_commit: {|bytes_like bytes|} -> authenticated_content_nt bytes -> ML (commit_nt bytes)
 let extract_commit #bl content =
@@ -77,7 +75,7 @@ let extract_commit #bl content =
   | CT_commit -> content.content.content.content
   | _ -> failwith "extract_commit: not a commit"
 
-val test_commit_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML bool
+val test_commit_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_commit_protection #cb t =
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
@@ -88,10 +86,8 @@ let test_commit_protection #cb t =
   let the_commit_pub = extract_commit (message_plaintext_to_message commit_pub) in
   let the_commit_priv = extract_commit (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret commit_priv)) in
 
-  let the_commit_pub_ok = check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_pub) in
-  let the_commit_priv_ok = check_equal "commit_priv" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_priv) in
-
-  the_commit_pub_ok && the_commit_priv_ok
+  check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_pub);
+  check_equal "commit_priv" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_priv)
 
 val extract_application: {|bytes_like bytes|} -> authenticated_content_nt bytes -> ML bytes
 let extract_application #bl content =
@@ -99,7 +95,7 @@ let extract_application #bl content =
   | CT_application -> content.content.content.content
   | _ -> failwith "extract_application: not a application"
 
-val test_application_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML bool
+val test_application_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_application_protection #cb t =
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
@@ -108,37 +104,34 @@ let test_application_protection #cb t =
 
   let the_application_priv = extract_application (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret application_priv)) in
 
-  let the_application_priv_ok = check_equal "application_priv" (bytes_to_hex_string) (application) the_application_priv in
-
-  the_application_priv_ok
+  check_equal "application_priv" (bytes_to_hex_string) (application) the_application_priv
 
 val test_message_protection_one: message_protection_test -> ML bool
 let test_message_protection_one t =
   match uint16_to_ciphersuite t.cipher_suite with
   | ProtocolError s -> begin
-    IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
-    true
+    // Unsupported ciphersuite
+    false
   end
   | InternalError s -> begin
-    IO.print_string ("Internal error! '" ^ s ^ "'\n");
-    false
+    failwith ("Internal error! '" ^ s ^ "'\n")
   end
   | Success cs -> begin
     match cs with
     | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
     | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> (
-      IO.print_string "(message protection: skipping one message protection test because AES-GCM is unavailable)\n";
-      true
+      // Unsupported ciphersuite
+      false
     )
     | _ -> (
       let cb = mk_concrete_crypto_bytes cs in
-      let proposal_ok = test_proposal_protection t in
-      let commit_ok = test_commit_protection t in
-      let application_ok = test_application_protection t in
-      proposal_ok && commit_ok && application_ok
+      test_proposal_protection t;
+      test_commit_protection t;
+      test_application_protection t;
+      true
     )
   end
 
-val test_message_protection: list message_protection_test -> ML bool
+val test_message_protection: list message_protection_test -> ML nat
 let test_message_protection =
   test_list "Message Protection" test_message_protection_one

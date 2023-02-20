@@ -103,34 +103,32 @@ val test_treemath_one: treemath_test -> ML bool
 let test_treemath_one t =
   let n_leaves = U32.v t.n_leaves in
   if n_leaves = 0 then (
-    IO.print_string "test_treemath_one: n_leaves is equal to 0!";
-    false
+    failwith "test_treemath_one: n_leaves is equal to 0!"
   ) else (
     let n_nodes = gen_nnodes n_leaves in
     let n_nodes_ok = (u32_to_nat t.n_nodes) = n_nodes in
-    let root_ok = check_equal "root" (nat_to_string)
+    check_equal "root" (nat_to_string)
       (u32_to_nat t.root)
       (root (log2 n_nodes))
-    in
-    let left_ok = check_equal "left" (list_to_string (option_to_string nat_to_string))
+    ;
+    check_equal "left" (list_to_string (option_to_string nat_to_string))
       (List.Tot.map ou32_to_onat t.left)
       (gen_left n_nodes (List.Tot.length t.left))
-    in
-    let right_ok = check_equal "right" (list_to_string (option_to_string nat_to_string))
+    ;
+    check_equal "right" (list_to_string (option_to_string nat_to_string))
       (List.Tot.map ou32_to_onat t.right)
       (gen_right n_nodes (List.Tot.length t.right))
-    in
-    let parent_ok = check_equal "parent" (list_to_string (option_to_string nat_to_string))
+    ;
+    check_equal "parent" (list_to_string (option_to_string nat_to_string))
       (List.Tot.map ou32_to_onat t.parent)
       (gen_parent n_nodes (List.Tot.length t.parent))
-    in
-    let sibling_ok = check_equal "sibling" (list_to_string (option_to_string nat_to_string))
+    ;
+    check_equal "sibling" (list_to_string (option_to_string nat_to_string))
       (List.Tot.map ou32_to_onat t.sibling)
-      (gen_sibling n_nodes (List.Tot.length t.sibling))
-    in
-    n_nodes_ok && root_ok && left_ok && right_ok && parent_ok && sibling_ok
+      (gen_sibling n_nodes (List.Tot.length t.sibling));
+    true
   )
 
-val test_treemath: list treemath_test -> ML bool
+val test_treemath: list treemath_test -> ML nat
 let test_treemath =
   test_list "TreeMath" test_treemath_one

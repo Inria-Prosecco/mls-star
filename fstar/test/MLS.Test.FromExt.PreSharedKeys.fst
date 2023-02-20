@@ -15,12 +15,11 @@ val test_psk_one: psk_test -> ML bool
 let test_psk_one t =
   match uint16_to_ciphersuite t.cipher_suite with
   | ProtocolError s -> begin
-    IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
-    true
+    // Unsupported ciphersuite
+    false
   end
   | InternalError s -> begin
-    IO.print_string ("Internal error! '" ^ s ^ "'\n");
-    false
+    failwith ("Internal error! '" ^ s ^ "'\n")
   end
   | Success cs -> begin
     let cb = mk_concrete_crypto_bytes cs in
@@ -33,9 +32,10 @@ let test_psk_one t =
         t.psks
     in
     let psk_secret = extract_result (compute_psk_secret psk_data) in
-    check_equal "psk_secret" (bytes_to_hex_string) (hex_string_to_bytes t.psk_secret) (psk_secret)
+    check_equal "psk_secret" (bytes_to_hex_string) (hex_string_to_bytes t.psk_secret) (psk_secret);
+    true
   end
 
-val test_psk: list psk_test -> ML bool
+val test_psk: list psk_test -> ML nat
 let test_psk =
   test_list "Pre-Shared Keys" test_psk_one

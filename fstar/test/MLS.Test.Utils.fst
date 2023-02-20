@@ -13,37 +13,34 @@ let bytes = hacl_star_bytes
 // Not an instance, otherwise F* is a bit annoyed that it can't prove some_crypto_bytes.base == bytes_like_bytes
 let bytes_like_bytes = bytes_like_hacl_star_bytes
 
-val check_equal: #a:eqtype -> string -> (a -> string) -> a -> a -> ML bool
+val check_equal: #a:eqtype -> string -> (a -> string) -> a -> a -> ML unit
 let check_equal #a name to_str x y =
-  if x = y then (
-    true
-  ) else (
-    IO.print_string "check_equal ";
-    IO.print_string name;
-    IO.print_string ": expected '";
-    IO.print_string (to_str x);
-    IO.print_string "', got '";
-    IO.print_string (to_str y);
-    IO.print_string "'\n";
-    false
+  if x <> y then (
+    failwith ("check_equal " ^ name ^ ": expected '" ^ (to_str x) ^ "', got '" ^ (to_str y) ^ "'")
   )
 
-val test_list_aux: #a:Type -> string -> (a -> ML bool) -> nat -> list a -> ML bool
+val add_exn_context: #a:Type -> string -> (unit -> ML a) -> ML a
+let add_exn_context #a context f =
+  try_with f (fun ex ->
+    FStar.Exn.raise (
+      match ex with
+      | Failure s -> Failure (context ^ "\n" ^ s)
+      | _ -> ex
+    )
+  )
+
+val test_list_aux: #a:Type -> string -> (a -> ML bool) -> nat -> list a -> ML nat
 let rec test_list_aux #a test_name test n l =
   match l with
-  | [] -> true
+  | [] -> 0
   | h::t ->
-    if test h then (
-      test_list_aux test_name test (n+1) t
-    ) else (
-      IO.print_string test_name;
-      IO.print_string ": failed test ";
-      IO.print_string (nat_to_string n);
-      IO.print_newline ();
-      false
-    )
+    let b = add_exn_context
+      (test_name ^ ": failed test " ^ nat_to_string n)
+      (fun () -> test h)
+    in
+    (if b then 1 else 0) + test_list_aux test_name test (n+1) t
 
-val test_list: #a:Type -> string -> (a -> ML bool) -> list a -> ML bool
+val test_list: #a:Type -> string -> (a -> ML bool) -> list a -> ML nat
 let test_list #a test_name test l =
   test_list_aux test_name test 0 l
 

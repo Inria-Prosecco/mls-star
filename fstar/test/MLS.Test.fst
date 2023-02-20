@@ -16,96 +16,35 @@ open MLS.Test.Self.TreeKEM
 open MLS.Test.Utils
 open MLS.StringUtils
 
+val run_tests: #a:Type -> string -> test_type -> ts_pre:(testsuite -> bool) -> (ts:testsuite{ts_pre ts} -> list a) -> (list a -> ML nat) -> ML unit
+let run_tests #a name ty ts_pre extract_testsuite run_test =
+  let testsuite = get_testsuite ty in
+  if not (ts_pre testsuite) then
+    failwith (name ^ ": failed to read tests")
+  else (
+    let testsuite = extract_testsuite testsuite in
+    IO.print_string (name ^ ": running tests...\n");
+    let n_run = run_test testsuite in
+    IO.print_string (name ^ ": success! (" ^ nat_to_string n_run ^ "/" ^ nat_to_string (List.Tot.length testsuite) ^ ")\n")
+  )
+
 let run_treemath_tests () =
-  match get_testsuite TreeMath with
-  | TreeMath_test l -> begin
-    if test_treemath l then (
-      IO.print_string ("TreeMath: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "TreeMath: failure\n"
-    )
-  end
-  | _ -> IO.print_string "TreeMath: got the wrong type of testsuite (internal error)\n"
+  run_tests "Tree Math" TreeMath TreeMath_test? TreeMath_test?._0 test_treemath
 
 let run_crypto_basics_tests () =
-  match get_testsuite CryptoBasics with
-  | CryptoBasics_test l -> begin
-    if test_crypto_basics l then (
-      IO.print_string ("Crypto Basics: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "Crypto Basics: failure\n"
-    )
-  end
-  | _ -> IO.print_string "Crypto Basics: got the wrong type of testsuite (internal error)\n"
+  run_tests "Crypto Basics" CryptoBasics CryptoBasics_test? CryptoBasics_test?._0 test_crypto_basics
 
 let run_secret_tree_tests () =
-  match get_testsuite SecretTree with
-  | SecretTree_test l -> begin
-    if test_secret_tree l then (
-      IO.print_string ("Secret Tree: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "Secret Tree: failure\n"
-    )
-  end
-  | _ -> IO.print_string "Secret Tree: got the wrong type of testsuite (internal error)\n"
+  run_tests "Secret Tree" SecretTree SecretTree_test? SecretTree_test?._0 test_secret_tree
 
 let run_message_protection_tests () =
-  match get_testsuite MessageProtection with
-  | MessageProtection_test l -> begin
-    if test_message_protection l then (
-      IO.print_string ("Message Protection: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "Message Protection: failure\n"
-    )
-  end
-  | _ -> IO.print_string "Message Protection: got the wrong type of testsuite (internal error)\n"
+  run_tests "Message Protection" MessageProtection MessageProtection_test? MessageProtection_test?._0 test_message_protection
 
 let run_keyschedule_tests () =
-  match get_testsuite KeySchedule with
-  | KeySchedule_test l -> begin
-    if test_keyschedule l then (
-      IO.print_string ("Key Schedule: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "Key Schedule: failure\n"
-    )
-  end
-  | _ -> IO.print_string "Key Schedule: got the wrong type of testsuite (internal error)\n"
+  run_tests "Key Schedule" KeySchedule KeySchedule_test? KeySchedule_test?._0 test_keyschedule
 
 let run_psk_tests () =
-  match get_testsuite PreSharedKeys with
-  | PreSharedKeys_test l -> begin
-    if test_psk l then (
-      IO.print_string ("Pre-Shared Keys: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "Pre-Shared Keys: failure\n"
-    )
-  end
-  | _ -> IO.print_string "Pre-Shared Keys: got the wrong type of testsuite (internal error)\n"
-
-let run_commit_transcript_tests () =
-  IO.print_string "Starting commit / transcript\n";
-  match get_testsuite CommitTranscript with
-  | CommitTranscript_test l -> begin
-    if test_commit_transcript l then (
-      IO.print_string ("Commit / Transcript: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "Commit / Transcript: failure\n"
-    )
-  end
-  | _ -> IO.print_string "Commit / Transcript: got the wrong type of testsuite (internal error)\n"
-
-
-let run_treekem_tests () =
-  IO.print_string "Starting treekem\n";
-  match get_testsuite TreeKEM with
-  | TreeKEM_test l -> begin
-    if test_treekem l then (
-      IO.print_string ("TreeKEM: success (" ^ (nat_to_string (List.Tot.length l)) ^ " tests)\n")
-    ) else (
-      IO.print_string "TreeKEM: failure\n"
-    )
-  end
-  | _ -> IO.print_string "TreeKEM: got the wrong type of testsuite (internal error)\n"
+  run_tests "Pre-Shared Keys" PreSharedKeys PreSharedKeys_test? PreSharedKeys_test?._0 test_psk
 
 let main =
   MLS.Test.Internal.test ();
@@ -115,7 +54,5 @@ let main =
   run_message_protection_tests ();
   run_keyschedule_tests ();
   run_psk_tests ();
-  //run_treekem_tests ();
-  //run_commit_transcript_tests ();
   run_self_treekem_test ();
   ()

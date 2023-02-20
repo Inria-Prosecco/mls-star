@@ -91,36 +91,35 @@ val test_keyschedule_one: keyschedule_test -> ML bool
 let test_keyschedule_one t =
   match uint16_to_ciphersuite t.cipher_suite with
   | ProtocolError s -> begin
-    IO.print_string ("Skipping one test because of missing ciphersuite: '" ^ s ^ "'\n");
-    true
+    // Unsupported ciphersuite
+    false
   end
   | InternalError s -> begin
-    IO.print_string ("Internal error! '" ^ s ^ "'\n");
-    false
+    failwith ("Internal error! '" ^ s ^ "'\n")
   end
   | Success cs -> begin
     let cb = mk_concrete_crypto_bytes cs in
     let (inputs, expected_outputs) = List.Tot.unzip t.epochs in
     let our_outputs = gen_list_epoch_output t.group_id t.initial_init_secret inputs in
-    List.forall2 (fun (e_out:keyschedule_test_epoch_output) (o_out:keyschedule_test_epoch_output) ->
-      let group_context_ok = check_equal "group_context" (bytes_to_hex_string) (hex_string_to_bytes e_out.group_context) (hex_string_to_bytes o_out.group_context) in
-      let joiner_secret_ok = check_equal "joiner_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.joiner_secret) (hex_string_to_bytes o_out.joiner_secret) in
-      let welcome_secret_ok = check_equal "welcome_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.welcome_secret) (hex_string_to_bytes o_out.welcome_secret) in
-      let init_secret_ok = check_equal "init_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.init_secret) (hex_string_to_bytes o_out.init_secret) in
-      let sender_data_secret_ok = check_equal "sender_data_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.sender_data_secret) (hex_string_to_bytes o_out.sender_data_secret) in
-      let encryption_secret_ok = check_equal "encryption_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.encryption_secret) (hex_string_to_bytes o_out.encryption_secret) in
-      let exporter_secret_ok = check_equal "exporter_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.exporter_secret) (hex_string_to_bytes o_out.exporter_secret) in
-      let epoch_authenticator_ok = check_equal "epoch_authenticator" (bytes_to_hex_string) (hex_string_to_bytes e_out.epoch_authenticator) (hex_string_to_bytes o_out.epoch_authenticator) in
-      let external_secret_ok = check_equal "external_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_secret) (hex_string_to_bytes o_out.external_secret) in
-      let confirmation_key_ok = check_equal "confirmation_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.confirmation_key) (hex_string_to_bytes o_out.confirmation_key) in
-      let membership_key_ok = check_equal "membership_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.membership_key) (hex_string_to_bytes o_out.membership_key) in
-      let resumption_psk_ok = check_equal "resumption_psk" (bytes_to_hex_string) (hex_string_to_bytes e_out.resumption_psk) (hex_string_to_bytes o_out.resumption_psk) in
-      let external_pub_ok = check_equal "external_pub" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_pub) (hex_string_to_bytes o_out.external_pub) in
-      let exported_secret_ok = check_equal "exported_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.exported_secret) (hex_string_to_bytes o_out.exported_secret) in
-      group_context_ok && joiner_secret_ok && welcome_secret_ok && init_secret_ok && sender_data_secret_ok && encryption_secret_ok && exporter_secret_ok && epoch_authenticator_ok && external_secret_ok && confirmation_key_ok && membership_key_ok && resumption_psk_ok && external_pub_ok && exported_secret_ok
-    ) expected_outputs our_outputs
+    List.iter (fun ((e_out, o_out): (keyschedule_test_epoch_output & keyschedule_test_epoch_output)) ->
+      check_equal "group_context" (bytes_to_hex_string) (hex_string_to_bytes e_out.group_context) (hex_string_to_bytes o_out.group_context);
+      check_equal "joiner_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.joiner_secret) (hex_string_to_bytes o_out.joiner_secret);
+      check_equal "welcome_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.welcome_secret) (hex_string_to_bytes o_out.welcome_secret);
+      check_equal "init_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.init_secret) (hex_string_to_bytes o_out.init_secret);
+      check_equal "sender_data_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.sender_data_secret) (hex_string_to_bytes o_out.sender_data_secret);
+      check_equal "encryption_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.encryption_secret) (hex_string_to_bytes o_out.encryption_secret);
+      check_equal "exporter_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.exporter_secret) (hex_string_to_bytes o_out.exporter_secret);
+      check_equal "epoch_authenticator" (bytes_to_hex_string) (hex_string_to_bytes e_out.epoch_authenticator) (hex_string_to_bytes o_out.epoch_authenticator);
+      check_equal "external_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_secret) (hex_string_to_bytes o_out.external_secret);
+      check_equal "confirmation_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.confirmation_key) (hex_string_to_bytes o_out.confirmation_key);
+      check_equal "membership_key" (bytes_to_hex_string) (hex_string_to_bytes e_out.membership_key) (hex_string_to_bytes o_out.membership_key);
+      check_equal "resumption_psk" (bytes_to_hex_string) (hex_string_to_bytes e_out.resumption_psk) (hex_string_to_bytes o_out.resumption_psk);
+      check_equal "external_pub" (bytes_to_hex_string) (hex_string_to_bytes e_out.external_pub) (hex_string_to_bytes o_out.external_pub);
+      check_equal "exported_secret" (bytes_to_hex_string) (hex_string_to_bytes e_out.exported_secret) (hex_string_to_bytes o_out.exported_secret)
+    ) (List.zip expected_outputs our_outputs);
+    true
   end
 
-val test_keyschedule: list keyschedule_test -> ML bool
+val test_keyschedule: list keyschedule_test -> ML nat
 let test_keyschedule =
   test_list "KeySchedule" test_keyschedule_one
