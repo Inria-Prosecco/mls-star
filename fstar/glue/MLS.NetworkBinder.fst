@@ -229,8 +229,8 @@ let ratchet_tree_to_treesync #bytes #bl #tkt nodes =
   let? res = ratchet_tree_to_treesync_aux l 0 new_nodes in
   return #((l:nat & TS.treesync bytes tkt l 0)) (|l, res|)
 
-val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> TS.treesync bytes tkt l i -> result (list (option (node_nt bytes tkt)))
-let rec treesync_to_ratchet_tree #bytes #bl #tkt #l #i t =
+val treesync_to_ratchet_tree_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> TS.treesync bytes tkt l i -> result (list (option (node_nt bytes tkt)))
+let rec treesync_to_ratchet_tree_aux #bytes #bl #tkt #l #i t =
   match t with
   | TLeaf None ->
     return [None]
@@ -243,6 +243,34 @@ let rec treesync_to_ratchet_tree #bytes #bl #tkt #l #i t =
       | Some np ->
         return (Some (N_parent np))
     ) in
-    let? left_ratchet = treesync_to_ratchet_tree left in
-    let? right_ratchet = treesync_to_ratchet_tree right in
+    let? left_ratchet = treesync_to_ratchet_tree_aux left in
+    let? right_ratchet = treesync_to_ratchet_tree_aux right in
     return (left_ratchet @ [parent_node] @ right_ratchet)
+
+val shrink_ratchet_tree_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> list (option (node_nt bytes tkt)) -> option (list (option (node_nt bytes tkt)))
+let rec shrink_ratchet_tree_aux #bytes #bl #tkt l =
+  match l with
+  | [] -> None
+  | opt_h::t -> (
+    let opt_shrinked_t = shrink_ratchet_tree_aux t in
+    match opt_h, opt_shrinked_t with
+    | None, None -> None
+    | Some _, None -> Some ([opt_h])
+    | _, Some shrinked_t -> Some (opt_h::shrinked_t)
+  )
+
+val shrink_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> list (option (node_nt bytes tkt)) -> result (ratchet_tree_nt bytes tkt)
+let shrink_ratchet_tree #bytes #bl #tkt l =
+  match shrink_ratchet_tree_aux l with
+  | None -> return []
+  | Some res -> (
+    if not (bytes_length (ps_option (ps_node_nt tkt)) res < pow2 30) then
+      internal_failure "shrink_ratchet_tree: ratchet_tree too long"
+    else
+      return res
+  )
+
+val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> TS.treesync bytes tkt l i -> result (ratchet_tree_nt bytes tkt)
+let treesync_to_ratchet_tree #bytes #bl #tkt #l #i t =
+  let? pre_ratchet_tree = treesync_to_ratchet_tree_aux t in
+  shrink_ratchet_tree pre_ratchet_tree
