@@ -191,6 +191,16 @@ type welcome_test = {
   welcome: string;
 }
 
+(*** Tree Validation ***)
+
+type tree_validation_test = {
+  cipher_suite: U16.t;
+  tree: string;
+  group_id: string;
+  resolutions: list (list U32.t);
+  tree_hashes: list string;
+}
+
 (*** Messages ***)
 
 type messages_test = {
@@ -272,6 +282,7 @@ type test_type =
   | KeySchedule
   | PreSharedKeys
   | Welcome
+  | TreeValidation
   | Messages
   | CommitTranscript
   | TreeKEM
@@ -284,6 +295,7 @@ type testsuite =
   | KeySchedule_test: list keyschedule_test -> testsuite
   | PreSharedKeys_test: list psk_test -> testsuite
   | Welcome_test: list welcome_test -> testsuite
+  | TreeValidation_test: list tree_validation_test -> testsuite
   | Messages_test: list messages_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite

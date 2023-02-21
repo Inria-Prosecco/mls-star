@@ -630,9 +630,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       return #(mls_bytes bytes) group_info.group_context.group_id
   ) in
   let? ratchet_tree = from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse group_info.extensions) in
-  let? l = ratchet_tree_l ratchet_tree in
   let? treesync_state = (
-    let? treesync = ratchet_tree_to_treesync l 0 ratchet_tree in
+    let? (|l, treesync|) = ratchet_tree_to_treesync ratchet_tree in
     let? welcome_pend = MLS.TreeSync.API.prepare_welcome group_id treesync in
     // TODO AS check
     let const_unit _ = () in

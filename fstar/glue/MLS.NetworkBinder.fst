@@ -1,5 +1,6 @@
 module MLS.NetworkBinder
 
+open FStar.List.Tot
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
@@ -183,22 +184,23 @@ let rec mls_star_paths_to_update_path #bytes #cb #l #i #li psync pkem =
 
 (*** ratchet_tree extension (13.4.3.3) ***)
 
-val ratchet_tree_l: #bytes:Type0 -> {|bytes_like bytes|} -> nodes:ratchet_tree_nt bytes tkt -> result (l:nat{List.length nodes == (pow2 (l+1))-1})
-let ratchet_tree_l #bytes #bl nodes =
+val ratchet_tree_l: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> nodes:ratchet_tree_nt bytes tkt -> result (new_nodes:list (option (node_nt bytes tkt)) & l:nat{List.length new_nodes == (pow2 (l+1))-1})
+let ratchet_tree_l #bytes #bl #tkt nodes =
   let n_nodes = List.length nodes in
   if n_nodes%2 = 0 then
     error "ratchet_tree_l: length must be odd"
   else
     let n = (n_nodes+1)/2 in
     let l = (TreeMath.Internal.log2 n) in
-    if not (n_nodes = (pow2 (l+1))-1) then
-      error "ratchet_tree_l: length must is not a power of two minus one"
+    if n_nodes = (pow2 (l+1))-1 then
+      return (|nodes, l|)
     else
-      return l
+      let new_nodes = nodes @ (FStar.Seq.seq_to_list (Seq.create ((pow2 (l+2))-1-n_nodes) None)) in
+      return (|new_nodes, l+1|)
 
 #push-options "--ifuel 1 --fuel 2"
-val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> nodes:list (option (node_nt bytes tkt)){List.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes tkt l i)
-let rec ratchet_tree_to_treesync #bytes #bl #tkt l i nodes =
+val ratchet_tree_to_treesync_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> nodes:list (option (node_nt bytes tkt)){List.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes tkt l i)
+let rec ratchet_tree_to_treesync_aux #bytes #bl #tkt l i nodes =
   if l = 0 then (
     assert(List.length nodes = 1);
     match nodes with
@@ -210,8 +212,8 @@ let rec ratchet_tree_to_treesync #bytes #bl #tkt l i nodes =
   ) else (
     let (left_nodes, my_node, right_nodes) = List.Tot.split3 nodes ((pow2 l) - 1) in
     List.Pure.lemma_split3_length nodes ((pow2 l) - 1);
-    let? left_res = ratchet_tree_to_treesync (l-1) _ left_nodes in
-    let? right_res = ratchet_tree_to_treesync (l-1) _ right_nodes in
+    let? left_res = ratchet_tree_to_treesync_aux (l-1) _ left_nodes in
+    let? right_res = ratchet_tree_to_treesync_aux (l-1) _ right_nodes in
     match my_node with
     | Some (N_parent pn) ->
       return (TNode (Some pn) left_res right_res)
@@ -220,6 +222,12 @@ let rec ratchet_tree_to_treesync #bytes #bl #tkt l i nodes =
       return (TNode None left_res right_res)
   )
 #pop-options
+
+val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> ratchet_tree_nt bytes tkt -> result (l:nat & TS.treesync bytes tkt l 0)
+let ratchet_tree_to_treesync #bytes #bl #tkt nodes =
+  let? (|new_nodes, l|) = ratchet_tree_l nodes in
+  let? res = ratchet_tree_to_treesync_aux l 0 new_nodes in
+  return #((l:nat & TS.treesync bytes tkt l 0)) (|l, res|)
 
 val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> TS.treesync bytes tkt l i -> result (list (option (node_nt bytes tkt)))
 let rec treesync_to_ratchet_tree #bytes #bl #tkt #l #i t =
