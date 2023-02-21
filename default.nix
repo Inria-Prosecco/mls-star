@@ -73,7 +73,7 @@ let
       owner = "mlswg";
       repo = "mls-implementations";
       rev = test-rev;
-      sha256 = "sha256-1QmaD5KVlxA6bJ0WHO1FDhykLHe3keVhtQUP1dH3Mgk=";
+      sha256 = "sha256-d0W0Q7CUHCn2tNP6qNJtQf+7LiGCkFWugBS8eFMipRQ=";
     }
   ;
 in
