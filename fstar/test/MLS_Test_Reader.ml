@@ -252,7 +252,6 @@ let parse_message_protection_test (json:Yojson.Safe.t): message_protection_test 
     ("commit", `String commit);
     ("commit_priv", `String commit_priv);
     ("commit_pub", `String commit_pub);
-    ("confirmation_tag", `String confirmation_tag);
     ("confirmed_transcript_hash", `String confirmed_transcript_hash);
     ("encryption_secret", `String encryption_secret);
     ("epoch", `Int epoch);
@@ -277,7 +276,6 @@ let parse_message_protection_test (json:Yojson.Safe.t): message_protection_test 
       encryption_secret1 = encryption_secret;
       sender_data_secret1 = sender_data_secret;
       membership_key = membership_key;
-      confirmation_tag = confirmation_tag;
       proposal = proposal;
       proposal_pub = proposal_pub;
       proposal_priv = proposal_priv;

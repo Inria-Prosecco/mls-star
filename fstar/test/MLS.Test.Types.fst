@@ -114,7 +114,6 @@ type message_protection_test = {
   encryption_secret: string;
   sender_data_secret: string;
   membership_key: string;
-  confirmation_tag: string;
 
   proposal: string;
   proposal_pub: string;
