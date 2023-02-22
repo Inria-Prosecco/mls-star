@@ -11,6 +11,7 @@ open MLS.Test.FromExt.MessageProtection
 open MLS.Test.FromExt.KeySchedule
 open MLS.Test.FromExt.PreSharedKeys
 open MLS.Test.FromExt.Welcome
+open MLS.Test.FromExt.TreeOperations
 open MLS.Test.FromExt.TreeValidation
 open MLS.Test.FromExt.Messages
 open MLS.Test.FromExt.CommitTranscript
@@ -52,6 +53,9 @@ let run_psk_tests () =
 let run_welcome_tests () =
   run_tests "Welcome" Welcome Welcome_test? Welcome_test?._0 test_welcome
 
+let run_tree_operations_tests () =
+  run_tests "Tree Operations" TreeOperations TreeOperations_test? TreeOperations_test?._0 test_tree_operations
+
 let run_tree_validation_tests () =
   run_tests "Tree Validation" TreeValidation TreeValidation_test? TreeValidation_test?._0 test_tree_validation
 
@@ -67,6 +71,7 @@ let main =
   run_keyschedule_tests ();
   run_psk_tests ();
   run_welcome_tests ();
+  run_tree_operations_tests ();
   run_tree_validation_tests ();
   run_messages_tests ();
   run_self_treekem_test ();

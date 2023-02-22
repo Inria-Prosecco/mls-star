@@ -190,6 +190,15 @@ type welcome_test = {
   welcome: string;
 }
 
+(*** Tree Operations ***)
+
+type tree_operations_test = {
+  tree_before: string;
+  proposal: string;
+  proposal_sender: U32.t;
+  tree_after: string;
+}
+
 (*** Tree Validation ***)
 
 type tree_validation_test = {
@@ -281,6 +290,7 @@ type test_type =
   | KeySchedule
   | PreSharedKeys
   | Welcome
+  | TreeOperations
   | TreeValidation
   | Messages
   | CommitTranscript
@@ -294,6 +304,7 @@ type testsuite =
   | KeySchedule_test: list keyschedule_test -> testsuite
   | PreSharedKeys_test: list psk_test -> testsuite
   | Welcome_test: list welcome_test -> testsuite
+  | TreeOperations_test: list tree_operations_test -> testsuite
   | TreeValidation_test: list tree_validation_test -> testsuite
   | Messages_test: list messages_test -> testsuite
   | CommitTranscript_test: list commit_transcript_test -> testsuite

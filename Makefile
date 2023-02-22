@@ -88,7 +88,7 @@ copy_tests: extract_tests
 
 # Test vectors
 
-ALL_TEST_VECTORS = tree-math crypto-basics secret-tree message-protection key-schedule psk_secret welcome tree-validation messages
+ALL_TEST_VECTORS = tree-math crypto-basics secret-tree message-protection key-schedule psk_secret welcome tree-operations tree-validation messages
 ALL_TEST_VECTORS_JSON = $(addprefix test_vectors/data/, $(addsuffix .json, $(ALL_TEST_VECTORS)))
 
 test_vectors/data:

@@ -409,6 +409,24 @@ let parse_welcome_test (json:Yojson.Safe.t): welcome_test =
     }
   | _ -> failwith "parse_welcome_test: incorrect test vector format"
 
+(*** Tree Operations ***)
+
+let parse_tree_operations_test (json:Yojson.Safe.t): tree_operations_test =
+  match json with
+  | `Assoc [
+    ("proposal", `String proposal);
+    ("proposal_sender", `Int proposal_sender);
+    ("tree_after", `String tree_after);
+    ("tree_before", `String tree_before);
+  ] ->
+    {
+      tree_before = tree_before;
+      proposal1 = proposal;
+      proposal_sender = int_to_uint32 proposal_sender;
+      tree_after = tree_after;
+    }
+  | _ -> failwith "parse_tree_operations_test: incorrect test vector format"
+
 (*** Tree Validation ***)
 
 let parse_tree_validation_test (json:Yojson.Safe.t): tree_validation_test =
@@ -560,6 +578,7 @@ let get_filename (typ:test_type): string =
   | KeySchedule -> "test_vectors/data/key-schedule.json"
   | PreSharedKeys -> "test_vectors/data/psk_secret.json"
   | Welcome -> "test_vectors/data/welcome.json"
+  | TreeOperations -> "test_vectors/data/tree-operations.json"
   | TreeValidation -> "test_vectors/data/tree-validation.json"
   | Messages -> "test_vectors/data/messages.json"
   | CommitTranscript -> "test_vectors/data/commit_transcript.json"
@@ -616,6 +635,12 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (Welcome_test (List.map parse_welcome_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
+  | TreeOperations -> begin
+    match json with
+    | `List l ->
+      (TreeOperations_test (List.map parse_tree_operations_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | TreeValidation -> begin
