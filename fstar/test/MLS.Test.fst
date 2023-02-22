@@ -10,11 +10,11 @@ open MLS.Test.FromExt.SecretTree
 open MLS.Test.FromExt.MessageProtection
 open MLS.Test.FromExt.KeySchedule
 open MLS.Test.FromExt.PreSharedKeys
+open MLS.Test.FromExt.TranscriptHashes
 open MLS.Test.FromExt.Welcome
 open MLS.Test.FromExt.TreeOperations
 open MLS.Test.FromExt.TreeValidation
 open MLS.Test.FromExt.Messages
-open MLS.Test.FromExt.CommitTranscript
 open MLS.Test.FromExt.TreeKEM
 open MLS.Test.Self.TreeKEM
 open MLS.Test.Utils
@@ -50,6 +50,9 @@ let run_keyschedule_tests () =
 let run_psk_tests () =
   run_tests "Pre-Shared Keys" PreSharedKeys PreSharedKeys_test? PreSharedKeys_test?._0 test_psk
 
+let run_transcript_hashes_tests () =
+  run_tests "Transcript Hashes" TranscriptHashes TranscriptHashes_test? TranscriptHashes_test?._0 test_transcript_hashes
+
 let run_welcome_tests () =
   run_tests "Welcome" Welcome Welcome_test? Welcome_test?._0 test_welcome
 
@@ -70,6 +73,7 @@ let main =
   run_message_protection_tests ();
   run_keyschedule_tests ();
   run_psk_tests ();
+  run_transcript_hashes_tests ();
   run_welcome_tests ();
   run_tree_operations_tests ();
   run_tree_validation_tests ();

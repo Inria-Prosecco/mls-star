@@ -389,6 +389,28 @@ let parse_psk_test (json:Yojson.Safe.t): psk_test =
     }
   | _ -> failwith "parse_psk_test: incorrect test vector format"
 
+(*** Transcript Hashes ***)
+
+let parse_transcript_hashes_test (json:Yojson.Safe.t): transcript_hashes_test =
+  match json with
+  | `Assoc [
+    ("authenticated_content", `String authenticated_content);
+    ("cipher_suite", `Int cipher_suite);
+    ("confirmation_key", `String confirmation_key);
+    ("confirmed_transcript_hash_after", `String confirmed_transcript_hash_after);
+    ("interim_transcript_hash_after", `String interim_transcript_hash_after);
+    ("interim_transcript_hash_before", `String interim_transcript_hash_before);
+  ] ->
+    {
+      cipher_suite5 = int_to_uint16 cipher_suite;
+      confirmation_key1 = confirmation_key;
+      authenticated_content = authenticated_content;
+      interim_transcript_hash_before = interim_transcript_hash_before;
+      confirmed_transcript_hash_after = confirmed_transcript_hash_after;
+      interim_transcript_hash_after = interim_transcript_hash_after;
+    }
+  | _ -> failwith "parse_transcript_hashes_test: incorrect test vector format"
+
 (*** Welcome ***)
 
 let parse_welcome_test (json:Yojson.Safe.t): welcome_test =
@@ -401,7 +423,7 @@ let parse_welcome_test (json:Yojson.Safe.t): welcome_test =
     ("welcome", `String welcome);
   ] ->
     {
-      cipher_suite5 = int_to_uint16 cipher_suite;
+      cipher_suite6 = int_to_uint16 cipher_suite;
       init_priv = init_priv;
       signer_pub = signer_pub;
       key_package = key_package;
@@ -439,7 +461,7 @@ let parse_tree_validation_test (json:Yojson.Safe.t): tree_validation_test =
     ("tree_hashes", `List tree_hashes);
   ] ->
     {
-      cipher_suite6 = int_to_uint16 cipher_suite;
+      cipher_suite7 = int_to_uint16 cipher_suite;
       tree = tree;
       group_id2 = group_id;
       resolutions = List.map (map_json parse_uint32) resolutions;
@@ -493,40 +515,6 @@ let parse_messages_test (json:Yojson.Safe.t): messages_test =
 
 (*** Old ***)
 
-let parse_commit_transcript_test (json:Yojson.Safe.t): commit_transcript_test =
-  match json with
-  | `Assoc [
-    ("cipher_suite", `Int cipher_suite);
-    ("commit", `String commit);
-    ("confirmation_key", `String confirmation_key);
-    ("confirmed_transcript_hash_after", `String confirmed_transcript_hash_after);
-    ("confirmed_transcript_hash_before", `String confirmed_transcript_hash_before);
-    ("credential", `String credential);
-    ("epoch", epoch);
-    ("group_context", `String group_context);
-    ("group_id", `String group_id);
-    ("interim_transcript_hash_after", `String interim_transcript_hash_after);
-    ("interim_transcript_hash_before", `String interim_transcript_hash_before);
-    ("membership_key", `String membership_key);
-    ("tree_hash_before", `String tree_hash_before);
-  ] ->
-    ({
-      cipher_suite7 = int_to_uint16 cipher_suite;
-      group_id3 = group_id;
-      epoch1 = parse_uint64 epoch;
-      tree_hash_before = tree_hash_before;
-      confirmed_transcript_hash_before = confirmed_transcript_hash_before;
-      interim_transcript_hash_before = interim_transcript_hash_before;
-      credential = credential;
-      membership_key2 = membership_key;
-      confirmation_key1 = confirmation_key;
-      commit2 = commit;
-      group_context1 = group_context;
-      confirmed_transcript_hash_after = confirmed_transcript_hash_after;
-      interim_transcript_hash_after = interim_transcript_hash_after;
-    })
-  | _ -> failwith "parse_commit_transcript_test: incorrect test vector format"
-
 let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
   match json with
   | `Assoc [
@@ -558,7 +546,7 @@ let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
         update_group_context = update_group_context;
       };
       output = {
-        tree_hash_before1 = tree_hash_before;
+        tree_hash_before = tree_hash_before;
         root_secret_after_add = root_secret_after_add;
         root_secret_after_update = root_secret_after_update;
         ratchet_tree_after = ratchet_tree_after;
@@ -577,11 +565,11 @@ let get_filename (typ:test_type): string =
   | MessageProtection -> "test_vectors/data/message-protection.json"
   | KeySchedule -> "test_vectors/data/key-schedule.json"
   | PreSharedKeys -> "test_vectors/data/psk_secret.json"
+  | TranscriptHashes -> "test_vectors/data/transcripts-hashes.json"
   | Welcome -> "test_vectors/data/welcome.json"
   | TreeOperations -> "test_vectors/data/tree-operations.json"
   | TreeValidation -> "test_vectors/data/tree-validation.json"
   | Messages -> "test_vectors/data/messages.json"
-  | CommitTranscript -> "test_vectors/data/commit_transcript.json"
   | TreeKEM -> "test_vectors/data/treekem.json"
 
 let get_filename t =
@@ -631,6 +619,12 @@ let get_testsuite (typ:test_type): testsuite =
       (PreSharedKeys_test (List.map parse_psk_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
+  | TranscriptHashes -> begin
+    match json with
+    | `List l ->
+      (TranscriptHashes_test (List.map parse_transcript_hashes_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end
   | Welcome -> begin
     match json with
     | `List l ->
@@ -653,12 +647,6 @@ let get_testsuite (typ:test_type): testsuite =
     match json with
     | `List l ->
       (Messages_test (List.map parse_messages_test l))
-    | _ -> failwith "get_testsuite: incorrect test vector format"
-  end
-  | CommitTranscript -> begin
-    match json with
-    | `List l ->
-      (CommitTranscript_test (List.map parse_commit_transcript_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
   | TreeKEM -> begin

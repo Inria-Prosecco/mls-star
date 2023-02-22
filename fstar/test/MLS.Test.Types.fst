@@ -180,6 +180,20 @@ type psk_test = {
   psk_secret: string;
 }
 
+(*** Transcript Hashes ***)
+
+type transcript_hashes_test = {
+  cipher_suite: U16.t;
+
+  confirmation_key: string;
+  authenticated_content: string;
+  interim_transcript_hash_before: string;
+
+  confirmed_transcript_hash_after: string;
+  interim_transcript_hash_after: string;
+}
+
+
 (*** Welcome ***)
 
 type welcome_test = {
@@ -237,24 +251,6 @@ type messages_test = {
 
 (*** Old ***)
 
-type commit_transcript_test = {
-  cipher_suite: U16.t;
-  group_id: string;
-  epoch: U64.t;
-  tree_hash_before: string;
-  confirmed_transcript_hash_before: string;
-  interim_transcript_hash_before: string;
-  credential: string;
-
-  membership_key: string;
-  confirmation_key: string;
-  commit: string;
-  group_context: string;
-
-  confirmed_transcript_hash_after: string;
-  interim_transcript_hash_after: string;
-}
-
 type treekem_test_input = {
   ratchet_tree_before: string;
 
@@ -289,11 +285,11 @@ type test_type =
   | MessageProtection
   | KeySchedule
   | PreSharedKeys
+  | TranscriptHashes
   | Welcome
   | TreeOperations
   | TreeValidation
   | Messages
-  | CommitTranscript
   | TreeKEM
 
 type testsuite =
@@ -303,9 +299,9 @@ type testsuite =
   | MessageProtection_test: list message_protection_test -> testsuite
   | KeySchedule_test: list keyschedule_test -> testsuite
   | PreSharedKeys_test: list psk_test -> testsuite
+  | TranscriptHashes_test: list transcript_hashes_test -> testsuite
   | Welcome_test: list welcome_test -> testsuite
   | TreeOperations_test: list tree_operations_test -> testsuite
   | TreeValidation_test: list tree_validation_test -> testsuite
   | Messages_test: list messages_test -> testsuite
-  | CommitTranscript_test: list commit_transcript_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite
