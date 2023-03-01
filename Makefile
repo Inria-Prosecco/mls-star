@@ -107,7 +107,7 @@ build: copy_lib
 	OCAMLPATH=$(FSTAR_HOME)/bin:$(OCAMLPATH) dune build --profile=release
 
 check: copy_lib copy_tests $(ALL_TEST_VECTORS_JSON)
-	OCAMLPATH=$(FSTAR_HOME)/bin:$(OCAMLPATH) dune runtest --no-buffer --profile=release
+	OCAMLPATH=$(FSTAR_HOME)/bin:$(OCAMLPATH) dune runtest --force --no-buffer --profile=release
 
 release:
 	tar cjvf mls-js-$(shell date +%Y%m%d%H%M%z).tar.bz2 js/index.html js/index.js _build/default/js/MLS_JS.bc.js

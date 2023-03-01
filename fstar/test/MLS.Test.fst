@@ -18,6 +18,7 @@ open MLS.Test.FromExt.Messages
 open MLS.Test.FromExt.TreeKEM
 open MLS.Test.Self.TreeKEM
 open MLS.Test.Utils
+open MLS.Test.Bench
 open MLS.StringUtils
 
 val run_tests: #a:Type -> string -> test_type -> ts_pre:(testsuite -> bool) -> (ts:testsuite{ts_pre ts} -> list a) -> (list a -> ML nat) -> ML unit
@@ -79,4 +80,7 @@ let main =
   run_tree_validation_tests ();
   run_messages_tests ();
   run_self_treekem_test ();
+  bench {name = "adds"; n_message_rounds = 20; max_n_members = 10; do_removes = false;};
+  bench {name = "messages"; n_message_rounds = 400; max_n_members = 3; do_removes = false;};
+  bench {name = "removes"; n_message_rounds = 1; max_n_members = 15; do_removes = true;};
   ()

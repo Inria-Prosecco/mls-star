@@ -528,7 +528,7 @@ let generate_update_path st e proposals =
         return (MLS.TreeSync.Operations.external_path_to_path st.treesync_state.tree update_path_ext_sync st.treesync_state.group_id st.sign_private_key sign_nonce)
     ) in
     let? uncompressed_update_path = mls_star_paths_to_update_path update_path_sync update_path_kem in
-    let? update_path = compress_update_path uncompressed_update_path in
+    let? update_path = compress_update_path st.treesync_state.tree uncompressed_update_path in
     let new_key_package_bytes = (ps_prefix_to_ps_whole (ps_leaf_node_nt tkt)).serialize update_path.leaf_node in
     return (update_path, (new_key_package_bytes, new_leaf_secret), e)
   )
@@ -754,6 +754,19 @@ let process_group_message state msg =
             | _ -> error "process_group_message: unknown certificate type"
           ) in
           return (state, MsgAdd identity)
+      | { c_proposals = [ Proposal (Remove ind) ]; c_path = _ } ->
+          let? leaf_package =
+            if ind < pow2 (state.treesync_state.levels) then
+              from_option "leaf node" (leaf_at state.treesync_state.tree ind)
+            else error "process_group_message: leaf index too big"
+          in
+          let? (state, _) = process_commit state message message_auth in
+          let? identity = (
+            match leaf_package.data.credential with
+            | C_basic identity -> return identity
+            | _ -> error "process_group_message: unknown certificate type"
+          ) in
+          return (state, MsgRemove identity)
       | _ -> internal_failure "TODO: commit (general case)"
       end
   | CT_application ->

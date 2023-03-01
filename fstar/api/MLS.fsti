@@ -56,7 +56,7 @@ val create: e:entropy { Seq.length e == 96 } → c:credential → MLS.Crypto.sig
   result state
 
 //Actually more entropy is needed, but we can't give any bound...
-val add: s:state → key_package:bytes → e:entropy { Seq.length e == 4+32 } ->
+val add: s:state → key_package:bytes → e:entropy { Seq.length e >= 4+32 } ->
   result (state & (group_message & welcome_message))
 
 val remove: state → p:identity -> entropy → result (state & group_message)
@@ -78,5 +78,6 @@ val process_welcome_message: w:welcome_message -> ((MLS.Crypto.sign_public_key b
 type outcome =
 | MsgData: bytes -> outcome
 | MsgAdd: Lib.ByteSequence.pub_bytes -> outcome
+| MsgRemove: Lib.ByteSequence.pub_bytes -> outcome
 
 val process_group_message: state → bytes → result (state & outcome)

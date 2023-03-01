@@ -38,14 +38,14 @@ let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path
     )
   )
   | TNode _ left right -> (
-    if not (List.length update_path.nodes > 0) then
-      error "uncompress_update_path: update_path.nodes is too short"
-    else (
-      let (child, sibling) = get_child_sibling t li in
-      if tree_resolution_empty sibling then (
-        let? path_next = uncompress_update_path _ child update_path in
-        return (PNode None path_next)
-      ) else (
+    let (child, sibling) = get_child_sibling t li in
+    if tree_resolution_empty sibling then (
+      let? path_next = uncompress_update_path _ child update_path in
+      return (PNode None path_next)
+    ) else (
+      if not (List.length update_path.nodes > 0) then
+        error "uncompress_update_path: update_path.nodes is too short"
+      else (
         let update_path_length = (List.length update_path.nodes) in
         let (tail_update_path_nodes, head_update_path_nodes) = List.unsnoc update_path.nodes in
         bytes_length_unsnoc ps_update_path_node_nt update_path.nodes;
@@ -125,21 +125,26 @@ let rec update_path_to_treekem #bytes #cb #l #i #li group_context p =
 
 (*** MLS* to UpdatePath ***)
 
-val compress_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> sparse_update_path bytes l i li -> result (update_path_nt bytes)
-let rec compress_update_path #bytes #bl #l #i #li update_path =
+val compress_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> (tree (option leaf_t) (option node_t) l i) -> sparse_update_path bytes l i li -> result (update_path_nt bytes)
+let rec compress_update_path #bytes #bl #leaf_t #node_t #l #i #li t update_path =
   match update_path with
   | PLeaf ln ->
     return ({leaf_node = ln; nodes = []})
   | PNode p_opt_data p_next ->
-    let? compressed_p_next = compress_update_path p_next in
-    match p_opt_data with
-    | None -> return compressed_p_next
-    | Some p_data -> (
-      let new_nodes = List.Tot.snoc (compressed_p_next.nodes, p_data) in
-      if not (bytes_length ps_update_path_node_nt new_nodes < pow2 30) then
-        error "compress_update_path: update path too long!"
-      else
-        return ({ compressed_p_next with nodes = new_nodes; })
+    let (child, sibling) = get_child_sibling t li in
+    if tree_resolution_empty sibling then (
+      compress_update_path child p_next
+    ) else (
+      let? compressed_p_next = compress_update_path child p_next in
+      match p_opt_data with
+      | None -> return compressed_p_next
+      | Some p_data -> (
+        let new_nodes = List.Tot.snoc (compressed_p_next.nodes, p_data) in
+        if not (bytes_length ps_update_path_node_nt new_nodes < pow2 30) then
+          error "compress_update_path: update path too long!"
+        else
+          return ({ compressed_p_next with nodes = new_nodes; })
+      )
     )
 
 val encrypted_path_secret_tk_to_nt: #bytes:Type0 -> {|crypto_bytes bytes|} -> TK.path_secret_ciphertext bytes -> result (hpke_ciphertext_nt bytes)
