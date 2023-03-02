@@ -2,7 +2,7 @@
 
 (library
  (wrapped false)
- (libraries fstarlib mls.haclml)
+ (libraries fstar.lib mls.haclml)
  (name mls_star))
 
 (env

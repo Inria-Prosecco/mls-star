@@ -1,4 +1,4 @@
-{lib, stdenv, which, fstar, z3, ocamlPackages, comparse, dolev-yao-star, fetchFromGitHub}:
+{lib, stdenv, which, fstar, fstar-dune, z3, ocamlPackages, comparse, dolev-yao-star, fetchFromGitHub}:
 
 let
   mls-star = stdenv.mkDerivation {
@@ -18,7 +18,6 @@ let
     ;
     enableParallelBuilding = true;
     buildInputs = [ which fstar z3 ];
-    FSTAR_HOME = fstar;
     COMPARSE_HOME = comparse;
     DY_HOME = dolev-yao-star;
     installPhase = ''
@@ -48,8 +47,7 @@ let
       ++ (with ocamlPackages; [
         ocaml dune_3 findlib yojson hacl-star
       ])
-      ++ (fstar.buildInputs);
-    FSTAR_HOME = fstar;
+      ++ (fstar-dune.buildInputs);
     COMPARSE_HOME = comparse;
     DY_HOME = dolev-yao-star;
     # pre-patch uses build output from mls-star, to avoid building things twice

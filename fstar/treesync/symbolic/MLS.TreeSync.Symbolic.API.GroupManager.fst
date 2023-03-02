@@ -17,6 +17,17 @@ type group_manager_value (bytes:Type0) {|bytes_like bytes|} = {
   si_private: nat;
 }
 
+// When upgrading F* from commit 7ae4850a7e24f011a572ab4097fe1045babab48c to commit eb911fc41d5ba730c15f2ac296ffc5ebf7b46560,
+// We get a failure in the `gen_parser` tactic:
+// Goal: (bytes: Type0), (_: Comparse.Bytes.Typeclass.bytes_like bytes), (x: Prims.nat) |- _ : Prims.squash (forall (y: Prims.nat). (| x, y |) == (| x, y |))
+// Comparse.Tactic.GenerateParser.fst(293,8-293,85): (Error 228) user tactic failed: `apply_lemma: Cannot instantiate lemma FStar.Tactics.Logic.fa_intro_lem (with postcondition: Prims.squash (forall (x: Prims.nat). (| (*?u383*) _, (*?u379*) _ |) == (*?u371*) _)) to match goal (Prims.squash (forall (y: Prims.nat). (| x, y |) == (| x, y |)))` (see also FStar.Tactics.Logic.fst(50,4-50,31))
+// It does not happen in interactive mode, only when compiling using `make`.
+// Very difficult to minimize, modifying functions *after* the tactic call would make the error dissappear.
+// I noticed that adding a dummy function before is fixing the problem.
+// Another option would have been to spend hours minimizing, filing an issue in F* and hope it would be fixed, but I don't have that time right now.
+// This is why there is this horrible hack.
+private let __do_not_remove_me__ (bytes:Type0) = ()
+
 %splice [ps_group_manager_value] (gen_parser (`group_manager_value))
 %splice [ps_group_manager_value_is_well_formed] (gen_is_well_formed_lemma (`group_manager_value))
 

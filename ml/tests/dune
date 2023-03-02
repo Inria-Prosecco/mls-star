@@ -1,7 +1,7 @@
 (copy_files# src/*)
 
 (test
- (libraries fstarlib mls_star yojson)
+ (libraries fstar.lib mls_star yojson)
  (name MLS_Test))
 
 (env
