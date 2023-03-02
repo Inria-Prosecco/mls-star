@@ -17,14 +17,25 @@ open MLS.TreeSync.Symbolic.Parsers
 
 (*** Definitions ***)
 
-val pre_is_hash_compatible: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:(bytes -> prop) -> prop
+val pre_is_hash_compatible:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pre:(bytes -> prop) ->
+  prop
 let pre_is_hash_compatible #bytes #cb pre =
   forall b. (pre b /\ length b < hash_max_input_length #bytes) ==> pre (hash_hash b)
 
 (*** Invariant proofs ***)
 
-val is_well_formed_tree_change_path: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) -> Lemma
-  (requires is_well_formed _ pre t /\ (match oln with | None -> True | Some ln -> is_well_formed _ pre ln))
+val is_well_formed_tree_change_path:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) ->
+  Lemma
+  (requires
+    is_well_formed _ pre t /\
+    (match oln with | None -> True | Some ln -> is_well_formed _ pre ln)
+  )
   (ensures is_well_formed _ pre (tree_change_path t li oln None))
 let rec is_well_formed_tree_change_path #bytes #bl pre #tkt #l #i t li oln =
   match t with
@@ -34,19 +45,34 @@ let rec is_well_formed_tree_change_path #bytes #bl pre #tkt #l #i t li oln =
     then is_well_formed_tree_change_path pre left li oln
     else is_well_formed_tree_change_path pre right li oln
 
-val is_well_formed_tree_update: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
+val is_well_formed_tree_update:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt ->
+  Lemma
   (requires is_well_formed _ pre t /\ is_well_formed _ pre ln)
   (ensures is_well_formed _ pre (tree_update t li ln))
 let is_well_formed_tree_update #bytes #bl pre #tkt #l #i t li ln =
   is_well_formed_tree_change_path pre t li (Some ln)
 
-val is_well_formed_tree_remove: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> Lemma
+val is_well_formed_tree_remove:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i ->
+  Lemma
   (requires is_well_formed _ pre t)
   (ensures is_well_formed _ pre (tree_remove t li))
 let is_well_formed_tree_remove #bytes #bl pre #tkt #l #i t li =
   is_well_formed_tree_change_path pre t li None
 
-val is_well_formed_mk_blank_tree: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> Lemma
+val is_well_formed_mk_blank_tree:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes ->
+  l:nat -> i:tree_index l ->
+  Lemma
   (is_well_formed _ pre (mk_blank_tree l i <: treesync bytes tkt l i))
 let rec is_well_formed_mk_blank_tree #bytes #bl pre #tkt l i =
   if l = 0 then ()
@@ -55,20 +81,39 @@ let rec is_well_formed_mk_blank_tree #bytes #bl pre #tkt l i =
     is_well_formed_mk_blank_tree #bytes #_ pre #tkt (l-1) (right_index #l i)
   )
 
-val is_well_formed_tree_extend: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> Lemma
+val is_well_formed_tree_extend:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat ->
+  t:treesync bytes tkt l 0 ->
+  Lemma
   (requires is_well_formed _ pre t)
   (ensures is_well_formed _ pre (tree_extend t))
 let is_well_formed_tree_extend #bytes #bl pre #tkt #l t =
   is_well_formed_mk_blank_tree #bytes #bl pre #tkt l (right_index #(l+1) 0)
 
-val is_well_formed_tree_truncate: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:pos -> t:treesync bytes tkt l 0 -> Lemma
+val is_well_formed_tree_truncate:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:pos ->
+  t:treesync bytes tkt l 0 ->
+  Lemma
   (requires is_well_formed _ pre t /\ is_tree_empty (TNode?.right t))
   (ensures is_well_formed _ pre (tree_truncate t))
 let is_well_formed_tree_truncate #bytes #bl pre #tkt #l t = ()
 
 #push-options "--z3rlimit 25"
-val is_well_formed_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
-  (requires is_well_formed _ pre t /\ is_well_formed _ pre ln /\ tree_add_pre t li)
+val is_well_formed_tree_add:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt ->
+  Lemma
+  (requires
+    is_well_formed _ pre t /\
+    is_well_formed _ pre ln /\
+    tree_add_pre t li
+  )
   (ensures is_well_formed _ pre (tree_add t li ln))
 let rec is_well_formed_tree_add #bytes #bl pre #tkt #l #i t li ln =
   match t with
@@ -82,7 +127,12 @@ let rec is_well_formed_tree_add #bytes #bl pre #tkt #l #i t li ln =
 #pop-options
 
 #push-options "--z3rlimit 25"
-val pre_tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> Lemma
+val pre_tree_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i ->
+  Lemma
   (requires is_well_formed _ pre t /\ tree_hash_pre t)
   (ensures pre (tree_hash t))
 let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
@@ -106,7 +156,12 @@ let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
   )
 #pop-options
 
-val pre_compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i -> Lemma
+val pre_compute_parent_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
+  content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i ->
+  Lemma
   (requires
     is_well_formed_prefix tkt.ps_node_content pre content /\
     pre parent_hash /\
@@ -124,8 +179,18 @@ let pre_compute_parent_hash #bytes #cb pre #tkt #l #i content parent_hash origin
   })
 
 #push-options "--z3rlimit 25"
-val is_well_formed_apply_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
-  (requires is_well_formed _ pre t /\ is_well_formed _ pre p /\ pre parent_parent_hash /\ apply_path_aux_pre t p (length #bytes parent_parent_hash))
+val is_well_formed_apply_path_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Lemma
+  (requires
+    is_well_formed _ pre t /\
+    is_well_formed _ pre p /\
+    pre parent_parent_hash /\
+    apply_path_aux_pre t p (length #bytes parent_parent_hash)
+  )
   (ensures is_well_formed _ pre (apply_path_aux t p parent_parent_hash))
 let rec is_well_formed_apply_path_aux #bytes #cb pre #tkt #l #i #li t p parent_parent_hash =
   match t, p with
@@ -142,15 +207,30 @@ let rec is_well_formed_apply_path_aux #bytes #cb pre #tkt #l #i #li t p parent_p
   )
 #pop-options
 
-val is_well_formed_apply_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Lemma
+val is_well_formed_apply_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
+  #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
+  Lemma
   (requires is_well_formed _ pre t /\ is_well_formed _ pre p /\ apply_path_pre t p)
   (ensures is_well_formed _ pre (apply_path t p))
 let is_well_formed_apply_path #bytes #cb pre #tkt #l #li t p =
   is_well_formed_apply_path_aux pre t p (root_parent_hash #bytes)
 
 #push-options "--z3rlimit 10"
-val pre_compute_leaf_parent_hash_from_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
-  (requires is_well_formed _ pre t /\ is_well_formed _ pre p /\ pre parent_parent_hash /\ compute_leaf_parent_hash_from_path_pre t p (length #bytes parent_parent_hash))
+val pre_compute_leaf_parent_hash_from_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Lemma
+  (requires
+    is_well_formed _ pre t /\
+    is_well_formed _ pre p /\
+    pre parent_parent_hash /\
+    compute_leaf_parent_hash_from_path_pre t p (length #bytes parent_parent_hash)
+  )
   (ensures pre (compute_leaf_parent_hash_from_path t p parent_parent_hash))
 let rec pre_compute_leaf_parent_hash_from_path #bytes #cb pre #tkt #l #i #li t p parent_parent_hash =
   match t, p with
@@ -166,7 +246,12 @@ let rec pre_compute_leaf_parent_hash_from_path #bytes #cb pre #tkt #l #i #li t p
   )
 #pop-options
 
-val is_well_formed_get_path_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> p:external_pathsync bytes tkt l i li -> Lemma
+val is_well_formed_get_path_leaf:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  p:external_pathsync bytes tkt l i li ->
+  Lemma
   (requires is_well_formed _ pre p)
   (ensures is_well_formed_prefix (ps_leaf_node_data_nt tkt) pre (get_path_leaf p))
 let rec is_well_formed_get_path_leaf #bytes #bl pre #tkt #l #i #li p =
@@ -174,7 +259,12 @@ let rec is_well_formed_get_path_leaf #bytes #bl pre #tkt #l #i #li p =
   | PLeaf _ -> ()
   | PNode _ p_next -> is_well_formed_get_path_leaf pre p_next
 
-val is_well_formed_set_path_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> pre:bytes_compatible_pre bytes -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt -> Lemma
+val is_well_formed_set_path_leaf:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt ->
+  Lemma
   (requires is_well_formed _ pre p /\ is_well_formed _ pre ln)
   (ensures is_well_formed _ pre (set_path_leaf p ln))
 let rec is_well_formed_set_path_leaf #bytes #bl pre #tkt #l #i #li p ln =
@@ -184,7 +274,9 @@ let rec is_well_formed_set_path_leaf #bytes #bl pre #tkt #l #i #li p ln =
 
 open MLS.Symbolic
 
-val pre_is_hash_compatible_is_msg: p:global_usage -> l:label -> i:timestamp -> Lemma
+val pre_is_hash_compatible_is_msg:
+  p:global_usage -> l:label -> i:timestamp ->
+  Lemma
   (pre_is_hash_compatible (is_msg p l i))
   [SMTPat (pre_is_hash_compatible (is_msg p l i))]
 let pre_is_hash_compatible_is_msg p l i =
@@ -196,7 +288,9 @@ let pre_is_hash_compatible_is_msg p l i =
     )
   )
 
-val pre_is_hash_compatible_is_valid: p:global_usage -> i:timestamp -> Lemma
+val pre_is_hash_compatible_is_valid:
+  p:global_usage -> i:timestamp ->
+  Lemma
   (pre_is_hash_compatible (is_valid p i))
   [SMTPat (pre_is_hash_compatible (is_valid p i))]
 let pre_is_hash_compatible_is_valid p i =

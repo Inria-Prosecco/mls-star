@@ -12,7 +12,11 @@ open MLS.TreeSync.TreeHash.Proofs
 
 #set-options "--fuel 1 --ifuel 1"
 
-val get_parent_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} -> parent_hash_input_nt bytes tkt
+val get_parent_hash_input:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} ->
+  parent_hash_input_nt bytes tkt
 let get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sibling =
   let original_sibling_tree_hash = tree_hash original_sibling in
   ({
@@ -21,9 +25,12 @@ let get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sib
     original_sibling_tree_hash;
   })
 
-val length_get_parent_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} -> Lemma (
-  length (serialize #bytes (parent_hash_input_nt bytes tkt) (get_parent_hash_input content parent_hash original_sibling)) < hash_max_input_length #bytes
-)
+val length_get_parent_hash_input:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} ->
+  Lemma
+  (length (serialize #bytes (parent_hash_input_nt bytes tkt) (get_parent_hash_input content parent_hash original_sibling)) < hash_max_input_length #bytes)
 let length_get_parent_hash_input #bytes #cb #tkt #l #i content parent_hash original_sibling = ()
 
 val compute_parent_hash_inj:
@@ -31,10 +38,13 @@ val compute_parent_hash_inj:
   #l1:nat -> #i1:tree_index l1 ->
   #l2:nat -> #i2:tree_index l2 ->
   content1:tkt.node_content -> parent_hash1:mls_bytes bytes -> original_sibling1:treesync bytes tkt l1 i1 ->
-  content2:tkt.node_content -> parent_hash2:mls_bytes bytes -> original_sibling2:treesync bytes tkt l2 i2 -> Pure (bytes & bytes)
-  (requires compute_parent_hash_pre content1 (length #bytes parent_hash1) original_sibling1 /\
-            compute_parent_hash_pre content2 (length #bytes parent_hash2) original_sibling2 /\
-            compute_parent_hash content1 parent_hash1 original_sibling1 == compute_parent_hash content2 parent_hash2 original_sibling2)
+  content2:tkt.node_content -> parent_hash2:mls_bytes bytes -> original_sibling2:treesync bytes tkt l2 i2 ->
+  Pure (bytes & bytes)
+  (requires
+    compute_parent_hash_pre content1 (length #bytes parent_hash1) original_sibling1 /\
+    compute_parent_hash_pre content2 (length #bytes parent_hash2) original_sibling2 /\
+    compute_parent_hash content1 parent_hash1 original_sibling1 == compute_parent_hash content2 parent_hash2 original_sibling2
+  )
   (ensures fun (b1, b2) ->
     l1 == l2 /\ i1 == i2 /\ content1 == content2 /\ parent_hash1 == parent_hash2 /\ original_sibling1 == original_sibling2 \/
     length b1 < hash_max_input_length #bytes /\

@@ -7,7 +7,10 @@ open MLS.TreeDEM.Message.Content
 open MLS.Result
 open MLS.Crypto
 
-val compute_confirmed_transcript_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> bytes -> bytes -> result (lbytes bytes (hash_length #bytes))
+val compute_confirmed_transcript_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  message_content bytes -> bytes -> bytes ->
+  result (lbytes bytes (hash_length #bytes))
 let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcript_hash =
   if not (length signature < pow2 30) then
     internal_failure "compute_confirmed_transcript_hash: signature too long"
@@ -25,7 +28,10 @@ let compute_confirmed_transcript_hash #bytes #cb msg signature interim_transcrip
     else return (hash_hash hash_input)
   )
 
-val compute_interim_transcript_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> bytes -> result (lbytes bytes (hash_length #bytes))
+val compute_interim_transcript_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> bytes ->
+  result (lbytes bytes (hash_length #bytes))
 let compute_interim_transcript_hash #bytes #cb confirmation_tag confirmed_transcript_hash =
   if not (length confirmation_tag < pow2 30) then
     internal_failure "compute_interim_transcript_hash: confirmation_tag too long"

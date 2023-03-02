@@ -48,12 +48,18 @@ let dy_asp gu current_time = {
   );
 }
 
-val leaf_node_to_event: #tkt:treekem_types dy_bytes -> leaf_node_tbs_nt dy_bytes tkt -> event
+val leaf_node_to_event:
+  #tkt:treekem_types dy_bytes ->
+  leaf_node_tbs_nt dy_bytes tkt ->
+  event
 let leaf_node_to_event #tkt ln_tbs =
   let evt_bytes = serialize _ ln_tbs in
   ("MLS.TreeSync.LeafNodeEvent", [evt_bytes])
 
-val leaf_node_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> leaf_node_tbs_nt dy_bytes tkt -> prop
+val leaf_node_has_event:
+  #tkt:treekem_types dy_bytes ->
+  principal -> timestamp -> leaf_node_tbs_nt dy_bytes tkt ->
+  prop
 let leaf_node_has_event #tkt prin time ln_tbs =
   did_event_occur_before prin time (leaf_node_to_event ln_tbs)
 
@@ -72,7 +78,9 @@ type group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types 
 instance parseable_serializeable_group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (group_has_tree_event bytes tkt) = mk_parseable_serializeable (ps_group_has_tree_event tkt)
 
 #push-options "--z3cliopt smt.arith.nl=false"
-val tree_has_event_arithmetic_lemma: l:nat -> i:tree_index l -> Lemma
+val tree_has_event_arithmetic_lemma:
+  l:nat -> i:tree_index l ->
+  Lemma
   ((i/(pow2 l))*(pow2 l) == i)
 let tree_has_event_arithmetic_lemma l i =
   eliminate exists (k:nat). i = k*(pow2 l)
@@ -97,18 +105,28 @@ let tree_to_event #tkt group_id (|l, i, t|) =
   let evt_bytes = serialize _ evt in
   ("MLS.TreeSync.GroupHasTreeEvent", [evt_bytes])
 
-val tree_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> prop
+val tree_has_event:
+  #tkt:treekem_types dy_bytes ->
+  principal -> timestamp ->
+  mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) ->
+  prop
 let tree_has_event #tkt prin time group_id (|l, i, t|) =
   did_event_occur_before prin time (tree_to_event group_id (|l, i, t|))
 
-val tree_list_has_event: #tkt:treekem_types dy_bytes -> principal -> timestamp -> mls_bytes dy_bytes -> tree_list dy_bytes tkt -> prop
+val tree_list_has_event:
+  #tkt:treekem_types dy_bytes ->
+  principal -> timestamp ->
+  mls_bytes dy_bytes -> tree_list dy_bytes tkt ->
+  prop
 let tree_list_has_event #tkt prin time group_id tl =
   for_allP (tree_has_event prin time group_id) tl
 
 val leaf_node_label: string
 let leaf_node_label = "LeafNodeTBS"
 
-val leaf_node_spred: key_usages -> treekem_types dy_bytes -> sign_pred
+val leaf_node_spred:
+  key_usages -> treekem_types dy_bytes ->
+  sign_pred
 let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
   match (parse (leaf_node_tbs_nt dy_bytes tkt) ln_tbs_bytes) with
   | None -> False
@@ -133,14 +151,19 @@ let leaf_node_spred ku tkt usg time vk ln_tbs_bytes =
       )
   )
 
-val has_leaf_node_tbs_invariant: treekem_types dy_bytes -> global_usage -> prop
+val has_leaf_node_tbs_invariant:
+  treekem_types dy_bytes -> global_usage ->
+  prop
 let has_leaf_node_tbs_invariant tkt gu =
   has_sign_pred gu leaf_node_label (leaf_node_spred gu.key_usages tkt)
 
 (*** Proof of verification, for a tree ***)
 
 #push-options "--fuel 2 --ifuel 1 --z3rlimit 25"
-val last_tree_equivalent: #bytes:eqtype -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> tl1:tree_list bytes tkt -> tl2:tree_list bytes tkt -> li:nat -> Lemma
+val last_tree_equivalent:
+  #bytes:eqtype -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  tl1:tree_list bytes tkt -> tl2:tree_list bytes tkt -> li:nat ->
+  Lemma
   (requires tree_list_equivalent_subset tl1 tl2 li /\ Cons? tl1)
   (ensures
     List.Tot.length tl1 <= List.Tot.length tl2 /\ (
@@ -169,7 +192,10 @@ let rec is_subtree_of_transitive #bytes #bl #tkt #l1 #l2 #l3 #i1 #i2 #i3 t1 t2 t
     is_subtree_of_transitive t1 t2 t3_child
   )
 
-val tree_list_head_subtree_tail: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> tl:tree_list bytes tkt -> Lemma
+val tree_list_head_subtree_tail:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  tl:tree_list bytes tkt ->
+  Lemma
   (requires
     Cons? tl /\
     tree_list_is_parent_hash_linkedP tl
@@ -190,9 +216,14 @@ let rec tree_list_head_subtree_tail #bytes #cb #tkt tl =
     is_subtree_of_transitive t1 t2 t3
   )
 
-val get_authentifier_index: #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_index l -> t:treesync dy_bytes tkt l i -> Pure (leaf_index l i)
+val get_authentifier_index:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync dy_bytes tkt l i ->
+  Pure (leaf_index l i)
   (requires
-    unmerged_leaves_ok t /\ parent_hash_invariant t /\
+    unmerged_leaves_ok t /\
+    parent_hash_invariant t /\
     node_not_blank t
   )
   (ensures fun res -> Some? (leaf_at t res))
@@ -206,7 +237,11 @@ let get_authentifier_index #tkt #l #i t =
     leaf_i
   )
 
-val leaf_at_valid_leaves: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> Lemma
+val leaf_at_valid_leaves:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> li:leaf_index l i ->
+  Lemma
   (requires valid_leaves_invariant group_id t)
   (ensures (
     match leaf_at t li with
@@ -220,7 +255,11 @@ let rec leaf_at_valid_leaves #bytes #cb #tkt #l #i group_id t li =
     let (child, _) = get_child_sibling t li in
     leaf_at_valid_leaves group_id child li
 
-val is_well_formed_leaf_at: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> pre:bytes_compatible_pre bytes -> t:treesync bytes tkt l i -> li:leaf_index l i -> Lemma
+val is_well_formed_leaf_at:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  pre:bytes_compatible_pre bytes -> t:treesync bytes tkt l i -> li:leaf_index l i ->
+  Lemma
   (requires is_well_formed _ pre t)
   (ensures (
     match leaf_at t li with
@@ -235,10 +274,17 @@ let rec is_well_formed_leaf_at #bytes #bl #tkt #l #i pre t li =
     is_well_formed_leaf_at pre child li
 
 #push-options "--z3rlimit 100"
-val parent_hash_implies_event: #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_index l -> gu:global_usage -> time:timestamp -> group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i -> Lemma
+val parent_hash_implies_event:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #i:tree_index l ->
+  gu:global_usage -> time:timestamp ->
+  group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i ->
+  Lemma
   (requires
     has_leaf_node_tbs_invariant tkt gu /\
-    unmerged_leaves_ok t /\ parent_hash_invariant t /\ valid_leaves_invariant group_id t /\
+    unmerged_leaves_ok t /\
+    parent_hash_invariant t /\
+    valid_leaves_invariant group_id t /\
     node_has_parent_hash t /\
     all_credentials_ok t ast /\
     is_well_formed _ (is_valid gu time) t /\
@@ -315,7 +361,8 @@ let parent_hash_implies_event #tkt #l #i gu time group_id t ast =
 val valid_leaves_invariant_subtree:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #lp:nat -> #ld:nat -> #ip:tree_index lp -> #id:tree_index ld ->
-  group_id:mls_bytes bytes -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
+  group_id:mls_bytes bytes -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip ->
+  Lemma
   (requires valid_leaves_invariant group_id p /\ is_subtree_of d p)
   (ensures valid_leaves_invariant group_id d)
 let rec valid_leaves_invariant_subtree #bytes #cb #tkt #lp #ld #ip #id group_id d p =
@@ -328,7 +375,8 @@ let rec valid_leaves_invariant_subtree #bytes #cb #tkt #lp #ld #ip #id group_id 
 val is_well_formed_treesync_subtree:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #lp:nat -> #ld:nat -> #ip:tree_index lp -> #id:tree_index ld ->
-  pre:bytes_compatible_pre bytes -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip -> Lemma
+  pre:bytes_compatible_pre bytes -> d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip ->
+  Lemma
   (requires is_well_formed _ pre p /\ is_subtree_of d p)
   (ensures is_well_formed _ pre d)
 let rec is_well_formed_treesync_subtree #bytes #cb #tkt #lp #ld #ip #id pre d p =
@@ -344,7 +392,11 @@ val all_credentials_ok_subtree:
   d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip ->
   ast_d:as_tokens bytes asp.token_t ld id -> ast_p:as_tokens bytes asp.token_t lp ip ->
   Lemma
-  (requires all_credentials_ok p ast_p /\ is_subtree_of d p /\ is_subtree_of ast_d ast_p)
+  (requires
+    all_credentials_ok p ast_p /\
+    is_subtree_of d p /\
+    is_subtree_of ast_d ast_p
+  )
   (ensures all_credentials_ok d ast_d)
 let rec all_credentials_ok_subtree #bytes #cb #tkt #asp #lp #ld #ip #id d p ast_d ast_p =
   if ld = lp then ()
@@ -360,7 +412,8 @@ let rec all_credentials_ok_subtree #bytes #cb #tkt #asp #lp #ld #ip #id d p ast_
 val state_implies_event:
   #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_index l ->
   gu:global_usage -> time:timestamp ->
-  st:treesync_state dy_bytes tkt (dy_asp gu time) -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i -> Lemma
+  st:treesync_state dy_bytes tkt (dy_asp gu time) -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i ->
+  Lemma
   (requires
     has_leaf_node_tbs_invariant tkt gu /\
     node_has_parent_hash t /\
@@ -391,7 +444,11 @@ let state_implies_event #tkt #l #i gu time st t ast =
 
 (*** Proof of path signature ***)
 
-val external_path_to_path_aux_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> Pure (leaf_node_nt bytes tkt)
+val external_path_to_path_aux_nosig:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes ->
+  Pure (leaf_node_nt bytes tkt)
   (requires external_path_to_path_pre t p group_id)
   (ensures fun _ -> True)
 let external_path_to_path_aux_nosig #bytes #cb #tkt #l #i #li t p group_id =
@@ -400,20 +457,32 @@ let external_path_to_path_aux_nosig #bytes #cb #tkt #l #i #li t p group_id =
   let new_lp_data = { lp with source = LNS_commit; parent_hash = computed_parent_hash; } in
   ({ data = new_lp_data; signature = empty #bytes } <: leaf_node_nt bytes tkt)
 
-val external_path_to_path_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes -> Pure (pathsync bytes tkt l i li)
+val external_path_to_path_nosig:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> group_id:mls_bytes bytes ->
+  Pure (pathsync bytes tkt l i li)
   (requires external_path_to_path_pre t p group_id)
   (ensures fun _ -> True)
 let external_path_to_path_nosig #bytes #cb #tkt #l #i #li t p group_id =
   set_path_leaf p (external_path_to_path_aux_nosig t p group_id)
 
-val get_path_leaf_set_path_leaf: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt -> Lemma
+val get_path_leaf_set_path_leaf:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt ->
+  Lemma
   (get_path_leaf (set_path_leaf p ln) == ln)
 let rec get_path_leaf_set_path_leaf #bytes #bl #tkt #l #i #li p ln =
   match p with
   | PLeaf _ -> ()
   | PNode _ p_next -> get_path_leaf_set_path_leaf p_next ln
 
-val compute_leaf_parent_hash_from_path_set_path_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt -> parent_parent_hash:mls_bytes bytes -> Lemma
+val compute_leaf_parent_hash_from_path_set_path_leaf:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt -> parent_parent_hash:mls_bytes bytes ->
+  Lemma
   (requires compute_leaf_parent_hash_from_path_pre t p (length #bytes parent_parent_hash))
   (ensures
     compute_leaf_parent_hash_from_path_pre t (set_path_leaf p ln) (length #bytes parent_parent_hash) /\
@@ -428,7 +497,11 @@ let rec compute_leaf_parent_hash_from_path_set_path_leaf #bytes #cb #tkt #l #i #
     compute_leaf_parent_hash_from_path_set_path_leaf child p_next ln new_parent_parent_hash
 
 #push-options "--z3rlimit 25"
-val path_is_parent_hash_valid_external_path_to_path_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes -> Lemma
+val path_is_parent_hash_valid_external_path_to_path_nosig:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes ->
+  Lemma
   (requires external_path_to_path_pre t p group_id)
   (ensures path_is_parent_hash_valid t (external_path_to_path_nosig t p group_id))
 let path_is_parent_hash_valid_external_path_to_path_nosig #bytes #cb #tkt #l #li t p group_id =
@@ -449,7 +522,11 @@ let path_is_parent_hash_valid_external_path_to_path #bytes #cb #tkt #l #li t p g
 #pop-options
 *)
 
-val path_is_filter_valid_set_path_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt -> Lemma
+val path_is_filter_valid_set_path_leaf:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> ln:leaf_node_nt bytes tkt ->
+  Lemma
   (requires path_is_filter_valid t p)
   (ensures path_is_filter_valid t (set_path_leaf p ln))
 let rec path_is_filter_valid_set_path_leaf #bytes #cb #tkt #l #i #li t p ln =
@@ -460,7 +537,11 @@ let rec path_is_filter_valid_set_path_leaf #bytes #cb #tkt #l #i #li t p ln =
     path_is_filter_valid_set_path_leaf child p_next ln
 
 #push-options "--z3rlimit 25"
-val path_is_filter_valid_external_path_to_path_nosig: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes -> Lemma
+val path_is_filter_valid_external_path_to_path_nosig:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes ->
+  Lemma
   (requires external_path_to_path_pre t p group_id /\ path_is_filter_valid t p)
   (ensures path_is_filter_valid t (external_path_to_path_nosig t p group_id))
 let path_is_filter_valid_external_path_to_path_nosig #bytes #cb #tkt #l #li t p group_id =
@@ -479,7 +560,12 @@ let path_is_filter_valid_external_path_to_path #bytes #cb #tkt #l #li t p group_
 #pop-options
 *)
 
-val external_path_has_event: #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 -> prin:principal -> time:timestamp -> t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes -> Pure prop
+val external_path_has_event:
+  #tkt:treekem_types dy_bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  prin:principal -> time:timestamp ->
+  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  Pure prop
   (requires external_path_to_path_pre t p group_id)
   (ensures fun _ -> True)
 let external_path_has_event #tkt #l #li prin time t p group_id =

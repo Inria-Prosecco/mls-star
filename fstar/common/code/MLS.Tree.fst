@@ -62,7 +62,17 @@ type path (leaf_t:Type) (node_t:Type) (l:nat) (i:tree_index l) (li:leaf_index l 
     next:path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li ->
     path leaf_t node_t l i li
 
-val get_child_sibling: #l:pos -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree leaf_t node_t l i -> li:leaf_index l i -> Pure (tree leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) & tree leaf_t node_t (l-1) (if is_left_leaf li then right_index i else left_index i)) (requires True) (ensures fun _ -> leaf_index_inside (l-1) (if is_left_leaf li then left_index i else right_index i) li)
+val get_child_sibling:
+  #l:pos -> #i:tree_index l ->
+  #leaf_t:Type -> #node_t:Type ->
+  tree leaf_t node_t l i -> li:leaf_index l i ->
+  Pure (
+    tree leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i)
+    &
+    tree leaf_t node_t (l-1) (if is_left_leaf li then right_index i else left_index i)
+  )
+  (requires True)
+  (ensures fun _ -> leaf_index_inside (l-1) (if is_left_leaf li then left_index i else right_index i) li)
 let get_child_sibling #l #i t li =
   match t with
   | TNode content left right ->
@@ -73,7 +83,13 @@ let get_child_sibling #l #i t li =
 
 
 #push-options "--fuel 2"
-val get_leaf_list: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree leaf_t node_t l i -> Pure (list leaf_t) (requires True) (fun res -> List.Tot.length res == pow2 l)
+val get_leaf_list:
+  #l:nat -> #i:tree_index l ->
+  #leaf_t:Type -> #node_t:Type ->
+  tree leaf_t node_t l i ->
+  Pure (list leaf_t)
+  (requires True)
+  (fun res -> List.Tot.length res == pow2 l)
 let rec get_leaf_list #l #i #leaf_t #node_t t =
   let open FStar.List.Tot in
   match t with
@@ -82,8 +98,12 @@ let rec get_leaf_list #l #i #leaf_t #node_t t =
     (get_leaf_list left) @ (get_leaf_list right)
 #pop-options
 
-val leaf_at: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> tree leaf_t node_t l i -> li:leaf_index l i -> leaf_t
-let rec leaf_at #l #i t li =
+val leaf_at:
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  tree leaf_t node_t l i -> li:leaf_index l i ->
+  leaf_t
+let rec leaf_at #leaf_t #node_t #l #i t li =
   match t with
   | TLeaf content -> content
   | TNode _ left right ->
@@ -92,8 +112,12 @@ let rec leaf_at #l #i t li =
     else
       leaf_at right li
 
-val print_tree: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> (leaf_t -> string) -> (node_t -> string) -> tree leaf_t node_t l i -> string
-let rec print_tree #l #i #leaf_t #node_t print_leaf print_node t =
+val print_tree:
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  (leaf_t -> string) -> (node_t -> string) -> tree leaf_t node_t l i ->
+  string
+let rec print_tree #leaf_t #node_t #l #i print_leaf print_node t =
   match t with
   | TLeaf data -> print_leaf data
   | TNode data left right ->

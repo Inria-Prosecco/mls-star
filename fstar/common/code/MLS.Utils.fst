@@ -2,7 +2,10 @@ module MLS.Utils
 
 type nat_less (m:nat) = n:nat{n<m}
 
-val find_index: #a:eqtype -> skips:list a -> a -> l:list a -> option (nat_less (List.Tot.length l))
+val find_index:
+  #a:eqtype ->
+  skips:list a -> a -> l:list a ->
+  option (nat_less (List.Tot.length l))
 let rec find_index #a skips x l =
   match l with
   | [] -> None
@@ -20,7 +23,10 @@ let rec find_index #a skips x l =
     )
 
 #push-options "--fuel 1 --ifuel 1"
-val find_first: #a:Type -> (a -> bool) -> l:list a -> option (n:nat{n < List.Tot.length l})
+val find_first:
+  #a:Type ->
+  (a -> bool) -> l:list a ->
+  option (n:nat{n < List.Tot.length l})
 let rec find_first #a p l =
   match l with
   | [] -> None

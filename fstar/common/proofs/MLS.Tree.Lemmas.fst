@@ -8,7 +8,9 @@ let lemma_mult_lt_right_inv (a:int) (b:int) (c:nat): Lemma (requires a*c < b*c) 
 
 #set-options "--fuel 1 --ifuel 0 --z3cliopt smt.arith.nl=false"
 
-val leaf_index_inside_right_index: ld:pos -> lp:nat{ld <= lp} -> id:tree_index ld -> ip:tree_index lp -> Lemma
+val leaf_index_inside_right_index:
+  ld:pos -> lp:nat{ld <= lp} -> id:tree_index ld -> ip:tree_index lp ->
+  Lemma
   (requires leaf_index_inside lp ip id)
   (ensures leaf_index_inside lp ip (right_index id))
   [SMTPat (leaf_index_inside lp ip (right_index id))]
@@ -25,7 +27,9 @@ let leaf_index_inside_right_index ld lp id ip =
     FStar.Math.Lemmas.distributivity_add_left ku 1 (pow2 ld)
   )
 
-val leaf_index_same_side: ld:nat -> lp:nat{ld < lp} -> id:tree_index ld -> ip:tree_index lp{leaf_index_inside lp ip id} -> li:leaf_index lp ip -> Lemma
+val leaf_index_same_side:
+  ld:nat -> lp:nat{ld < lp} -> id:tree_index ld -> ip:tree_index lp{leaf_index_inside lp ip id} -> li:leaf_index lp ip ->
+  Lemma
   (requires ld < lp /\ leaf_index_inside lp ip id /\ leaf_index_inside ld id li)
   (ensures is_left_leaf #lp #ip id <==> is_left_leaf #lp #ip li)
 let leaf_index_same_side ld lp id ip li =
@@ -43,7 +47,10 @@ let leaf_index_same_side ld lp id ip li =
     )
   ) else ()
 
-val left_right_index_disj: #l1:pos -> #l2:pos -> i1:tree_index l1 -> i2:tree_index l2 -> Lemma
+val left_right_index_disj:
+  #l1:pos -> #l2:pos ->
+  i1:tree_index l1 -> i2:tree_index l2 ->
+  Lemma
   ((l1 <> l2) \/ (left_index i1 <> right_index i2))
 let left_right_index_disj #l1 #l2 i1 i2 =
   eliminate exists k1 k2. i1 = k1 * (pow2 l1) /\ i2 = k2 * (pow2 l2)
@@ -62,7 +69,8 @@ let left_right_index_disj #l1 #l2 i1 i2 =
   )
 
 val leaf_index_inside_subtree:
-  ld:nat -> lc:nat{ld <= lc} -> id:tree_index ld -> ic:tree_index lc -> li:leaf_index ld id -> Lemma
+  ld:nat -> lc:nat{ld <= lc} -> id:tree_index ld -> ic:tree_index lc -> li:leaf_index ld id ->
+  Lemma
   (requires leaf_index_inside lc ic id)
   (ensures leaf_index_inside lc ic li)
 let leaf_index_inside_subtree ld lc id ic li =
@@ -77,11 +85,14 @@ let leaf_index_inside_subtree ld lc id ic li =
     FStar.Math.Lemmas.distributivity_add_left ku 1 (pow2 ld)
   )
 
-#set-options "--fuel 1 --ifuel 1"
-
-val index_get_leaf_list: #l:nat -> #i:tree_index l -> #leaf_t:Type -> #node_t:Type -> t:tree leaf_t node_t l i -> ind:nat{ind < pow2 l} -> Lemma
+#push-options "--fuel 1 --ifuel 1"
+val index_get_leaf_list:
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  t:tree leaf_t node_t l i -> ind:nat{ind < pow2 l} ->
+  Lemma
   (List.Tot.index (get_leaf_list t) ind == leaf_at t (i+ind))
-let rec index_get_leaf_list #l #i #leaf_t #node_t t ind =
+let rec index_get_leaf_list #leaf_t #node_t #l #i t ind =
   match t with
   | TLeaf _ -> ()
   | TNode _ left right -> (
@@ -91,3 +102,4 @@ let rec index_get_leaf_list #l #i #leaf_t #node_t t ind =
     else
       index_get_leaf_list right (ind - pow2 (l-1))
   )
+#pop-options

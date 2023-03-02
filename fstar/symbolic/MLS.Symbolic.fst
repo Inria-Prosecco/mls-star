@@ -19,19 +19,31 @@ let dy_bytes = CryptoLib.bytes
 /// This will have to be cleaned up the day DY* exposes lengths for cryptographic functions.
 
 assume val dy_hash_length: n:nat{1 <= n /\ n < 256}
-assume val dy_hash_length_lemma: b:dy_bytes -> Lemma (length (CryptoLib.hash b) == dy_hash_length)
+assume val dy_hash_length_lemma:
+  b:dy_bytes ->
+  Lemma (length (CryptoLib.hash b) == dy_hash_length)
 
 assume val dy_kdf_length: nat
-assume val dy_kdf_length_lemma: key:dy_bytes -> data:dy_bytes -> Lemma (length (CryptoLib.extract key data) == dy_kdf_length)
+assume val dy_kdf_length_lemma:
+  key:dy_bytes -> data:dy_bytes ->
+  Lemma
+  (length (CryptoLib.extract key data) == dy_kdf_length)
 
 assume val dy_sign_public_key_length: nat
 assume val dy_sign_private_key_length: nat
 assume val dy_sign_nonce_length: nat
 assume val dy_sign_signature_length: n:nat{n < 256}
-assume val dy_sign_signture_length_lemma: sk:dy_bytes -> rand:dy_bytes -> msg:dy_bytes -> Lemma
-  (requires length sk == dy_sign_private_key_length /\ length rand == dy_sign_nonce_length)
+assume val dy_sign_signture_length_lemma:
+  sk:dy_bytes -> rand:dy_bytes -> msg:dy_bytes ->
+  Lemma
+  (requires
+    length sk == dy_sign_private_key_length /\
+    length rand == dy_sign_nonce_length
+  )
   (ensures length (CryptoLib.sign sk rand msg) == dy_sign_signature_length)
-assume val dy_sign_public_key_length_lemma: sk:dy_bytes -> Lemma
+assume val dy_sign_public_key_length_lemma:
+  sk:dy_bytes ->
+  Lemma
   (requires length sk == dy_sign_private_key_length)
   (ensures length (CryptoLib.vk sk) == dy_sign_public_key_length)
 
@@ -39,7 +51,10 @@ assume val dy_aead_nonce_length: n:nat{4 <= n}
 assume val dy_aead_key_length: nat
 
 assume val dy_hmac_length: n:nat{n < 256}
-assume val dy_hmac_length_lemma: key:dy_bytes -> data:dy_bytes -> Lemma (length (CryptoLib.mac key data) == dy_hmac_length)
+assume val dy_hmac_length_lemma:
+  key:dy_bytes -> data:dy_bytes ->
+  Lemma
+  (length (CryptoLib.mac key data) == dy_hmac_length)
 
 val dy_bytes_has_crypto: available_ciphersuite -> crypto_bytes dy_bytes
 let dy_bytes_has_crypto acs = {
@@ -254,29 +269,37 @@ let did_event_occur_before prin time e = GlobalRuntimeLib.did_event_occur_before
 val event_pred_at: preds -> principal -> timestamp -> event -> prop
 let event_pred_at pr prin time e = LabeledRuntimeAPI.event_pred_at pr time prin e
 
-val hash_hash_inj: b1:dy_bytes -> b2:dy_bytes -> Lemma (
-  length b1 < hash_max_input_length #dy_bytes /\
-  length b2 < hash_max_input_length #dy_bytes /\
-  hash_hash b1 == hash_hash b2 ==>
-  b1 == b2
+val hash_hash_inj:
+  b1:dy_bytes -> b2:dy_bytes ->
+  Lemma (
+    length b1 < hash_max_input_length #dy_bytes /\
+    length b2 < hash_max_input_length #dy_bytes /\
+    hash_hash b1 == hash_hash b2 ==>
+    b1 == b2
   )
 let hash_hash_inj b1 b2 = CryptoLib.hash_inj_lemma b1 b2
 
 val is_corrupt: timestamp -> id -> prop
 let is_corrupt time x = LabeledCryptoAPI.corrupt_id time x
 
-val can_flow_to_public_implies_corruption: time:timestamp -> x:id -> Lemma
+val can_flow_to_public_implies_corruption:
+  time:timestamp -> x:id ->
+  Lemma
   (requires (can_flow time (readers [x]) public))
   (ensures is_corrupt time x)
 let can_flow_to_public_implies_corruption time x = LabeledCryptoAPI.can_flow_to_public_implies_corruption time x
 
-val readers_is_injective: x:principal -> y:principal -> Lemma
+val readers_is_injective:
+  x:principal -> y:principal ->
+  Lemma
   (requires readers [p_id x] == readers [p_id y])
   (ensures x == y)
 let readers_is_injective x y =
   SecrecyLabels.readers_is_injective x
 
-val can_flow_transitive: time:timestamp -> l1:label -> l2:label -> l3:label -> Lemma
+val can_flow_transitive:
+  time:timestamp -> l1:label -> l2:label -> l3:label ->
+  Lemma
   (requires can_flow time l1 l2 /\ can_flow time l2 l3)
   (ensures can_flow time l1 l3)
 let can_flow_transitive time l1 l2 l3 =
@@ -284,7 +307,9 @@ let can_flow_transitive time l1 l2 l3 =
 
 (*** Labeled signature predicate ***)
 
-val get_mls_label_inj: l1:valid_label -> l2:valid_label -> Lemma
+val get_mls_label_inj:
+  l1:valid_label -> l2:valid_label ->
+  Lemma
   (requires get_mls_label #dy_bytes l1 == get_mls_label #dy_bytes l2)
   (ensures l1 == l2)
 let get_mls_label_inj l1 l2 =
@@ -338,7 +363,10 @@ let get_mls_label_is_publishable gu time lab =
 // because it will never be used inside a protocol security proof.
 // It can however be used to demonstrate attacks, but that is not our goal.
 #push-options "--z3rlimit 25"
-val sign_with_label_valid: gu:global_usage -> spred:sign_pred -> usg:string -> time:timestamp -> sk:sign_private_key dy_bytes -> lab:valid_label -> msg:mls_bytes dy_bytes -> nonce:sign_nonce dy_bytes -> Lemma
+val sign_with_label_valid:
+  gu:global_usage -> spred:sign_pred -> usg:string -> time:timestamp ->
+  sk:sign_private_key dy_bytes -> lab:valid_label -> msg:mls_bytes dy_bytes -> nonce:sign_nonce dy_bytes ->
+  Lemma
   (requires
     sign_with_label_pre #dy_bytes lab (length #dy_bytes msg) /\
     is_valid gu time sk /\ ( (* is_publishable gu time sk \/ *) get_usage gu sk == Some (sig_usage usg)) /\
@@ -366,7 +394,10 @@ let sign_with_label_valid gu spred usg time sk lab msg nonce =
   can_flow_transitive time (get_label gu (CryptoLib.sign sk nonce sign_content_bytes)) (get_label gu sign_content_bytes) (get_label gu msg)
 #pop-options
 
-val verify_with_label_is_valid: gu:global_usage -> spred:sign_pred -> usg:string -> sk_label:label -> time:timestamp -> vk:sign_public_key dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:sign_signature dy_bytes -> Lemma
+val verify_with_label_is_valid:
+  gu:global_usage -> spred:sign_pred -> usg:string -> sk_label:label -> time:timestamp ->
+  vk:sign_public_key dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:sign_signature dy_bytes ->
+  Lemma
   (requires
     has_sign_pred gu lab spred /\
     is_verification_key gu usg sk_label time vk /\
@@ -396,7 +427,10 @@ val mk_can_sign: list (valid_label & sign_pred) -> timestamp -> string -> dy_byt
 let mk_can_sign l time usg key msg =
   mk_global_pred split_sign_pred_func (List.Tot.map label_sign_pred_to_label_local_pred l) (usg, time, key, msg)
 
-val mk_can_sign_correct: gu:global_usage -> lspred:list (valid_label & sign_pred) -> lab:valid_label -> spred:sign_pred -> Lemma
+val mk_can_sign_correct:
+  gu:global_usage -> lspred:list (valid_label & sign_pred) ->
+  lab:valid_label -> spred:sign_pred ->
+  Lemma
   (requires
     gu.usage_preds.can_sign == mk_can_sign lspred /\
     List.Tot.no_repeats_p (List.Tot.map fst lspred) /\

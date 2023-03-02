@@ -45,7 +45,10 @@ let rec mk_global_pred func l labeled_data =
     in
     cur_prop \/ mk_global_pred func t labeled_data
 
-val mk_global_pred_wrong_label: func:split_predicate_input_values -> the_label:func.label_t -> l:list (func.label_t & local_pred func) -> labeled_data:func.labeled_data_t -> Lemma
+val mk_global_pred_wrong_label:
+  func:split_predicate_input_values -> the_label:func.label_t ->
+  l:list (func.label_t & local_pred func) -> labeled_data:func.labeled_data_t ->
+  Lemma
   (requires ~(List.Tot.memP the_label (List.Tot.map fst l)))
   (ensures (
     match func.decode_labeled_data labeled_data with
@@ -68,7 +71,10 @@ let rec disjointP #a l1 l2 =
   | h1::t1 ->
     ~(List.Tot.memP h1 l2) /\ disjointP t1 l2
 
-val disjointP_cons: #a:Type -> x:a -> l1:list a -> l2:list a -> Lemma
+val disjointP_cons:
+  #a:Type ->
+  x:a -> l1:list a -> l2:list a ->
+  Lemma
   (requires disjointP l1 l2 /\ ~(List.Tot.memP x l1))
   (ensures disjointP l1 (x::l2))
 let rec disjointP_cons #a x l1 l2 =
@@ -76,7 +82,10 @@ let rec disjointP_cons #a x l1 l2 =
   | [] -> ()
   | h1::t1 -> disjointP_cons x t1 l2
 
-val memP_map: #a:Type -> #b:Type -> x:a -> f:(a -> b) -> l:list a -> Lemma
+val memP_map:
+  #a:Type -> #b:Type ->
+  x:a -> f:(a -> b) -> l:list a ->
+  Lemma
   (requires List.Tot.memP x l)
   (ensures List.Tot.memP (f x) (List.Tot.map f l))
 let rec memP_map #a #b x f l =
@@ -86,7 +95,11 @@ let rec memP_map #a #b x f l =
     introduce x =!= h ==> List.Tot.memP (f x) (List.Tot.map f t)
     with _. memP_map x f t
 
-val mk_global_pred_correct_aux: func:split_predicate_input_values -> gpred:global_pred func -> lpreds1:list (func.label_t & local_pred func) -> lpreds2:list (func.label_t & local_pred func) -> the_label:func.label_t -> lpred:local_pred func -> Lemma
+val mk_global_pred_correct_aux:
+  func:split_predicate_input_values -> gpred:global_pred func ->
+  lpreds1:list (func.label_t & local_pred func) -> lpreds2:list (func.label_t & local_pred func) ->
+  the_label:func.label_t -> lpred:local_pred func ->
+  Lemma
   (requires
     (forall labeled_data. (mk_global_pred func lpreds1 labeled_data \/ mk_global_pred func lpreds2 labeled_data) <==> gpred labeled_data) /\
     List.Tot.no_repeats_p (List.Tot.map fst lpreds1) /\
@@ -128,7 +141,10 @@ let rec disjointP_nil #a l =
   | [] -> ()
   | _::t -> disjointP_nil t
 
-val mk_global_pred_correct: func:split_predicate_input_values -> lpreds:list (func.label_t & local_pred func) -> the_label:func.label_t -> lpred:local_pred func -> Lemma
+val mk_global_pred_correct:
+  func:split_predicate_input_values -> lpreds:list (func.label_t & local_pred func) ->
+  the_label:func.label_t -> lpred:local_pred func ->
+  Lemma
   (requires
     List.Tot.no_repeats_p (List.Tot.map fst lpreds) /\
     List.Tot.memP (the_label, lpred) lpreds

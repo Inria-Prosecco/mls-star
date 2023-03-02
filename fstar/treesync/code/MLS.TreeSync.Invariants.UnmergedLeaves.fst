@@ -8,7 +8,10 @@ open MLS.TreeSync.Types
 #set-options "--fuel 1 --ifuel 1"
 
 // Check that the unmerged leaf li is in a non-blank leaf in t's subtree
-val unmerged_leaf_exists: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> nat -> bool
+val unmerged_leaf_exists:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> nat ->
+  bool
 let unmerged_leaf_exists #bytes #bl #tkt #l #i t li =
   leaf_index_inside l i li && Some? (leaf_at t li)
 
@@ -39,7 +42,11 @@ let rec unmerged_leaves_sorted l =
   | [_] -> true
   | x::y::t -> x < y && unmerged_leaves_sorted (y::t)
 
-val unmerged_leaves_ok: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> bool
+val unmerged_leaves_ok:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  treesync bytes tkt l i ->
+  bool
 let rec unmerged_leaves_ok #bytes #bl #tkt #l #i t =
   match t with
   | TLeaf _ -> true

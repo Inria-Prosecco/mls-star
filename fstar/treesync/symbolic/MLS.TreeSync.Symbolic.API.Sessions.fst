@@ -28,8 +28,11 @@ let ps_dy_as_tokens l i =
   ps_as_tokens ps_dy_as_token l i
 
 #push-options "--z3rlimit 25"
-val ps_dy_as_tokens_is_well_formed: #l:nat -> #i:tree_index l -> pre:bytes_compatible_pre dy_bytes -> tokens:as_tokens dy_bytes dy_as_token l i ->
-  Lemma (is_well_formed_prefix (ps_dy_as_tokens l i) pre tokens)
+val ps_dy_as_tokens_is_well_formed:
+  #l:nat -> #i:tree_index l ->
+  pre:bytes_compatible_pre dy_bytes -> tokens:as_tokens dy_bytes dy_as_token l i ->
+  Lemma
+  (is_well_formed_prefix (ps_dy_as_tokens l i) pre tokens)
 let rec ps_dy_as_tokens_is_well_formed #l #i pre tokens =
   match tokens with
   | TLeaf x -> (

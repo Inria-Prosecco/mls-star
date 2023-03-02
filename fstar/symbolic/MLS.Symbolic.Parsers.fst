@@ -18,7 +18,11 @@ noeq type tree_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (
 %splice [ps_tree_internal_node_is_well_formed] (gen_is_well_formed_lemma (`tree_internal_node))
 
 [@@"opaque_to_smt"]
-val ps_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 -> parser_serializer bytes leaf_t -> parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> parser_serializer bytes (tree leaf_t node_t l i)
+val ps_tree:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #leaf_t:Type0 -> #node_t:Type0 ->
+  parser_serializer bytes leaf_t -> parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l ->
+  parser_serializer bytes (tree leaf_t node_t l i)
 let rec ps_tree #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i =
   if l = 0 then (
     mk_isomorphism
@@ -34,7 +38,11 @@ let rec ps_tree #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i =
       (fun (TNode data left right) -> {left; data; right})
   )
 
-val ps_tree_is_well_formed: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 -> ps_leaf_t:parser_serializer bytes leaf_t -> ps_node_t:parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> pre:bytes_compatible_pre bytes -> x:tree leaf_t node_t l i -> Lemma
+val ps_tree_is_well_formed:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 ->
+  ps_leaf_t:parser_serializer bytes leaf_t -> ps_node_t:parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l ->
+  pre:bytes_compatible_pre bytes -> x:tree leaf_t node_t l i ->
+  Lemma
   (is_well_formed_prefix (ps_tree ps_leaf_t ps_node_t l i) pre x <==> (
     match x with
     | TLeaf y -> is_well_formed_prefix ps_leaf_t pre y
@@ -58,7 +66,10 @@ noeq type path_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (
 #pop-options
 
 [@@"opaque_to_smt"]
-val ps_path: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 -> parser_serializer bytes leaf_t -> parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> li:leaf_index l i -> parser_serializer bytes (path leaf_t node_t l i li)
+val ps_path:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 ->
+  parser_serializer bytes leaf_t -> parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> li:leaf_index l i ->
+  parser_serializer bytes (path leaf_t node_t l i li)
 let rec ps_path #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i li =
   if l = 0 then (
     mk_isomorphism
@@ -74,7 +85,11 @@ let rec ps_path #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i li =
       (fun (PNode data next) -> {data; next;})
   )
 
-val ps_path_is_well_formed: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 -> ps_leaf_t:parser_serializer bytes leaf_t -> ps_node_t:parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> li:leaf_index l i -> pre:bytes_compatible_pre bytes -> x:path leaf_t node_t l i li -> Lemma
+val ps_path_is_well_formed:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 ->
+  ps_leaf_t:parser_serializer bytes leaf_t -> ps_node_t:parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> li:leaf_index l i ->
+  pre:bytes_compatible_pre bytes -> x:path leaf_t node_t l i li ->
+  Lemma
   (is_well_formed_prefix (ps_path ps_leaf_t ps_node_t l i li) pre x <==> (
     match x with
     | PLeaf y -> is_well_formed_prefix ps_leaf_t pre y

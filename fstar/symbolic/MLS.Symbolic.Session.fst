@@ -108,7 +108,10 @@ val mk_global_session_pred: list (string & session_pred) -> global_usage -> time
 let mk_global_session_pred l gu time p si vi session =
   mk_global_pred split_session_pred_func (List.Tot.map (label_session_pred_to_label_local_pred gu) l) (p, time, si, vi, session)
 
-val mk_global_session_pred_correct: pr:preds -> lspred:list (string & session_pred) -> lab:string -> spred:session_pred -> Lemma
+val mk_global_session_pred_correct:
+  pr:preds -> lspred:list (string & session_pred) ->
+  lab:string -> spred:session_pred ->
+  Lemma
   (requires
     pr.trace_preds.session_st_inv == mk_global_session_pred lspred pr.global_usage /\
     List.Tot.no_repeats_p (List.Tot.map fst lspred) /\
@@ -125,7 +128,10 @@ let mk_global_session_pred_correct pr lspred lab spred =
   List.Tot.index_extensionality (List.Tot.map fst lspred) (List.Tot.map fst (List.Tot.map (label_session_pred_to_label_local_pred pr.global_usage) lspred));
   mk_global_pred_correct split_session_pred_func (List.Tot.map (label_session_pred_to_label_local_pred pr.global_usage) lspred) lab (session_pred_to_local_pred pr.global_usage spred)
 
-val mk_global_session_pred_is_msg: lspred:list (string & session_pred) -> gu:global_usage -> time:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes -> Lemma
+val mk_global_session_pred_is_msg:
+  lspred:list (string & session_pred) -> gu:global_usage ->
+  time:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes ->
+  Lemma
   (requires mk_global_session_pred lspred gu time p si vi st)
   (ensures is_msg gu (readers [psv_id p si vi]) time st)
 let rec mk_global_session_pred_is_msg lspred gu time p si vi st =
@@ -148,7 +154,10 @@ let rec mk_global_session_pred_is_msg lspred gu time p si vi st =
       ) else ()
     )
 
-val mk_global_session_pred_later: lspred:list (string & session_pred) -> gu:global_usage -> time0:timestamp -> time1:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes -> Lemma
+val mk_global_session_pred_later:
+  lspred:list (string & session_pred) -> gu:global_usage ->
+  time0:timestamp -> time1:timestamp -> p:principal -> si:nat -> vi:nat -> st:dy_bytes ->
+  Lemma
   (requires mk_global_session_pred lspred gu time0 p si vi st /\ time0 <$ time1)
   (ensures mk_global_session_pred lspred gu time1 p si vi st)
 let rec mk_global_session_pred_later lspred gu time0 time1 p si vi st =

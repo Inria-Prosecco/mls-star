@@ -9,7 +9,11 @@ open MLS.TreeSync.TreeHash
 
 #set-options "--fuel 1 --ifuel 1"
 
-val get_tree_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> tree_hash_input_nt bytes tkt
+val get_tree_hash_input:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i{tree_hash_pre t} ->
+  tree_hash_input_nt bytes tkt
 let get_tree_hash_input #bytes #cb #tkt #l #i t =
   match t with
   | TLeaf olp ->
@@ -27,14 +31,22 @@ let get_tree_hash_input #bytes #cb #tkt #l #i t =
     })
 
 #push-options "--z3rlimit 50"
-val length_get_tree_hash_input: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> Lemma (
-  length (serialize #bytes (tree_hash_input_nt bytes tkt) (get_tree_hash_input t)) < hash_max_input_length #bytes
-)
+val length_get_tree_hash_input:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i{tree_hash_pre t} ->
+  Lemma
+  (length (serialize #bytes (tree_hash_input_nt bytes tkt) (get_tree_hash_input t)) < hash_max_input_length #bytes)
 let length_get_tree_hash_input #bytes #cb #tkt #l #i t = ()
 #pop-options
 
 #push-options "--z3rlimit 50"
-val tree_hash_inj: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l1:nat -> #i1:tree_index l1 -> #l2:nat -> #i2:tree_index l2 -> t1:treesync bytes tkt l1 i1{tree_hash_pre t1} -> t2:treesync bytes tkt l2 i2{tree_hash_pre t2} -> Pure (bytes & bytes)
+val tree_hash_inj:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l1:nat -> #i1:tree_index l1 ->
+  #l2:nat -> #i2:tree_index l2 ->
+  t1:treesync bytes tkt l1 i1{tree_hash_pre t1} -> t2:treesync bytes tkt l2 i2{tree_hash_pre t2} ->
+  Pure (bytes & bytes)
   (requires tree_hash t1 == tree_hash t2)
   (ensures fun (b1, b2) ->
     l1 == l2 /\ i1 == i2 /\ t1 == t2 \/

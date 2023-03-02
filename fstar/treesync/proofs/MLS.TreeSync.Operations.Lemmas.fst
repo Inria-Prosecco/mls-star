@@ -11,7 +11,11 @@ open MLS.TreeSync.Operations
 
 #set-options "--fuel 1 --ifuel 1"
 
-val leaf_at_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> li':leaf_index l i -> Lemma
+val leaf_at_tree_add:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> li':leaf_index l i ->
+  Lemma
   (requires tree_add_pre t li)
   (ensures leaf_at (tree_add t li ln) li' == (if li = li' then Some ln else leaf_at t li'))
 let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li ln li' =
@@ -24,7 +28,11 @@ let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li ln li' =
     | _, _ -> ()
   )
 
-val leaf_at_apply_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> li':leaf_index l i -> Lemma
+val leaf_at_apply_path_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> li':leaf_index l i ->
+  Lemma
   (requires apply_path_aux_pre t p (length #bytes parent_parent_hash))
   (ensures leaf_at (apply_path_aux t p parent_parent_hash) li' == (if li = li' then Some (get_path_leaf p) else leaf_at t li'))
 let rec leaf_at_apply_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash li' =
@@ -39,7 +47,11 @@ let rec leaf_at_apply_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash 
     | _, _ -> ()
   )
 
-val leaf_at_apply_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> li':leaf_index l 0 -> Lemma
+val leaf_at_apply_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> li':leaf_index l 0 ->
+  Lemma
   (requires apply_path_pre t p)
   (ensures leaf_at (apply_path t p) li' = (if li = li' then Some (get_path_leaf p) else leaf_at t li'))
 let leaf_at_apply_path #bytes #cb #tkt #l #li t p li' =

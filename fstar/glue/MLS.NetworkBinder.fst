@@ -18,7 +18,11 @@ let sparse_update_path (bytes:Type0) {|bytes_like bytes|} = path (leaf_node_nt b
 
 (*** UpdatePath to MLS* ***)
 
-val tree_resolution_empty: #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> tree (option leaf_t) (option node_t) l i -> bool
+val tree_resolution_empty:
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  tree (option leaf_t) (option node_t) l i ->
+  bool
 let rec tree_resolution_empty #leaf_t #node_t #l #i t =
   match t with
   | TLeaf None -> true
@@ -27,7 +31,12 @@ let rec tree_resolution_empty #leaf_t #node_t #l #i t =
     tree_resolution_empty left && tree_resolution_empty right
   | TNode (Some _) _ _ -> false
 
-val uncompress_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> li:leaf_index l i -> tree (option leaf_t) (option node_t) l i -> update_path_nt bytes -> result (sparse_update_path bytes l i li)
+val uncompress_update_path:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  li:leaf_index l i -> tree (option leaf_t) (option node_t) l i -> update_path_nt bytes ->
+  result (sparse_update_path bytes l i li)
 let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path =
   match t with
   | TLeaf _ -> (
@@ -56,7 +65,11 @@ let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path
     )
   )
 
-val update_path_to_treesync: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> update_path:sparse_update_path bytes l i li -> TS.pathsync bytes tkt l i li
+val update_path_to_treesync:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  update_path:sparse_update_path bytes l i li ->
+  TS.pathsync bytes tkt l i li
 let rec update_path_to_treesync #bytes #cb #l #i #li p =
   match p with
   | PLeaf ln -> PLeaf ln
@@ -70,7 +83,10 @@ let rec update_path_to_treesync #bytes #cb #l #i #li p =
     PNode path_data path_next
   )
 
-val leaf_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> leaf_node_nt bytes tkt -> result (TK.member_info bytes)
+val leaf_node_to_treekem:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  leaf_node_nt bytes tkt ->
+  result (TK.member_info bytes)
 let leaf_node_to_treekem #bytes #cb ln =
   if not (length (ln.data.content <: bytes) = hpke_public_key_length #bytes) then
     error "leaf_node_to_treekem: public key has wrong length"
@@ -79,7 +95,10 @@ let leaf_node_to_treekem #bytes #cb ln =
       TK.public_key = ln.data.content;
     } <: TK.member_info bytes)
 
-val update_path_node_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> TK.direction -> update_path_node_nt bytes -> result (TK.key_package bytes)
+val update_path_node_to_treekem:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> TK.direction -> update_path_node_nt bytes ->
+  result (TK.key_package bytes)
 let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
   if not (length (update_path_node.encryption_key <: bytes) = hpke_public_key_length #bytes) then
     error "update_path_node_to_treekem: public key has wrong length"
@@ -102,7 +121,11 @@ let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
     })
   )
 
-val update_path_to_treekem: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> bytes -> update_path:sparse_update_path bytes l i li -> result (TK.pathkem bytes l i li)
+val update_path_to_treekem:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  bytes -> update_path:sparse_update_path bytes l i li ->
+  result (TK.pathkem bytes l i li)
 let rec update_path_to_treekem #bytes #cb #l #i #li group_context p =
   match p with
   | PLeaf ln -> (
@@ -125,7 +148,12 @@ let rec update_path_to_treekem #bytes #cb #l #i #li group_context p =
 
 (*** MLS* to UpdatePath ***)
 
-val compress_update_path: #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type -> #node_t:Type -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> (tree (option leaf_t) (option node_t) l i) -> sparse_update_path bytes l i li -> result (update_path_nt bytes)
+val compress_update_path:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  (tree (option leaf_t) (option node_t) l i) -> sparse_update_path bytes l i li ->
+  result (update_path_nt bytes)
 let rec compress_update_path #bytes #bl #leaf_t #node_t #l #i #li t update_path =
   match update_path with
   | PLeaf ln ->
@@ -147,7 +175,10 @@ let rec compress_update_path #bytes #bl #leaf_t #node_t #l #i #li t update_path 
       )
     )
 
-val encrypted_path_secret_tk_to_nt: #bytes:Type0 -> {|crypto_bytes bytes|} -> TK.path_secret_ciphertext bytes -> result (hpke_ciphertext_nt bytes)
+val encrypted_path_secret_tk_to_nt:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  TK.path_secret_ciphertext bytes ->
+  result (hpke_ciphertext_nt bytes)
 let encrypted_path_secret_tk_to_nt #bytes #cb x =
   if not (length (x.kem_output <: bytes) < pow2 30) then
     internal_failure "encrypted_path_secret_tk_to_nt: kem_output too long"
@@ -159,7 +190,10 @@ let encrypted_path_secret_tk_to_nt #bytes #cb x =
       ciphertext = x.ciphertext;
     } <: hpke_ciphertext_nt bytes)
 
-val treekem_to_update_path_node: #bytes:Type0 -> {|crypto_bytes bytes|} -> TK.key_package bytes -> result (update_path_node_nt bytes)
+val treekem_to_update_path_node:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  TK.key_package bytes ->
+  result (update_path_node_nt bytes)
 let treekem_to_update_path_node #bytes #cb kp =
   let? encrypted_path_secret = mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext in
   if not (bytes_length ps_hpke_ciphertext_nt encrypted_path_secret < pow2 30) then
@@ -171,7 +205,11 @@ let treekem_to_update_path_node #bytes #cb kp =
     } <: update_path_node_nt bytes)
   )
 
-val mls_star_paths_to_update_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> TS.pathsync bytes tkt l i li -> TK.pathkem bytes l i li -> result (sparse_update_path bytes l i li)
+val mls_star_paths_to_update_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  TS.pathsync bytes tkt l i li -> TK.pathkem bytes l i li ->
+  result (sparse_update_path bytes l i li)
 let rec mls_star_paths_to_update_path #bytes #cb #l #i #li psync pkem =
   match psync, pkem with
   | PLeaf lp, PLeaf _ -> return (PLeaf lp)
@@ -189,7 +227,10 @@ let rec mls_star_paths_to_update_path #bytes #cb #l #i #li psync pkem =
 
 (*** ratchet_tree extension (13.4.3.3) ***)
 
-val ratchet_tree_l: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> nodes:ratchet_tree_nt bytes tkt -> result (new_nodes:list (option (node_nt bytes tkt)) & l:nat{List.length new_nodes == (pow2 (l+1))-1})
+val ratchet_tree_l:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  nodes:ratchet_tree_nt bytes tkt ->
+  result (new_nodes:list (option (node_nt bytes tkt)) & l:nat{List.length new_nodes == (pow2 (l+1))-1})
 let ratchet_tree_l #bytes #bl #tkt nodes =
   let n_nodes = List.length nodes in
   if n_nodes%2 = 0 then
@@ -204,7 +245,10 @@ let ratchet_tree_l #bytes #bl #tkt nodes =
       return (|new_nodes, l+1|)
 
 #push-options "--ifuel 1 --fuel 2"
-val ratchet_tree_to_treesync_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> nodes:list (option (node_nt bytes tkt)){List.length nodes = (pow2 (l+1)-1)} -> result (TS.treesync bytes tkt l i)
+val ratchet_tree_to_treesync_aux:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  l:nat -> i:tree_index l -> nodes:list (option (node_nt bytes tkt)){List.length nodes = (pow2 (l+1)-1)} ->
+  result (TS.treesync bytes tkt l i)
 let rec ratchet_tree_to_treesync_aux #bytes #bl #tkt l i nodes =
   if l = 0 then (
     assert(List.length nodes = 1);
@@ -228,13 +272,20 @@ let rec ratchet_tree_to_treesync_aux #bytes #bl #tkt l i nodes =
   )
 #pop-options
 
-val ratchet_tree_to_treesync: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> ratchet_tree_nt bytes tkt -> result (l:nat & TS.treesync bytes tkt l 0)
+val ratchet_tree_to_treesync:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  ratchet_tree_nt bytes tkt ->
+  result (l:nat & TS.treesync bytes tkt l 0)
 let ratchet_tree_to_treesync #bytes #bl #tkt nodes =
   let? (|new_nodes, l|) = ratchet_tree_l nodes in
   let? res = ratchet_tree_to_treesync_aux l 0 new_nodes in
   return #((l:nat & TS.treesync bytes tkt l 0)) (|l, res|)
 
-val treesync_to_ratchet_tree_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> TS.treesync bytes tkt l i -> result (list (option (node_nt bytes tkt)))
+val treesync_to_ratchet_tree_aux:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  TS.treesync bytes tkt l i ->
+  result (list (option (node_nt bytes tkt)))
 let rec treesync_to_ratchet_tree_aux #bytes #bl #tkt #l #i t =
   match t with
   | TLeaf None ->
@@ -252,7 +303,10 @@ let rec treesync_to_ratchet_tree_aux #bytes #bl #tkt #l #i t =
     let? right_ratchet = treesync_to_ratchet_tree_aux right in
     return (left_ratchet @ [parent_node] @ right_ratchet)
 
-val shrink_ratchet_tree_aux: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> list (option (node_nt bytes tkt)) -> option (list (option (node_nt bytes tkt)))
+val shrink_ratchet_tree_aux:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  list (option (node_nt bytes tkt)) ->
+  option (list (option (node_nt bytes tkt)))
 let rec shrink_ratchet_tree_aux #bytes #bl #tkt l =
   match l with
   | [] -> None
@@ -264,7 +318,10 @@ let rec shrink_ratchet_tree_aux #bytes #bl #tkt l =
     | _, Some shrinked_t -> Some (opt_h::shrinked_t)
   )
 
-val shrink_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> list (option (node_nt bytes tkt)) -> result (ratchet_tree_nt bytes tkt)
+val shrink_ratchet_tree:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  list (option (node_nt bytes tkt)) ->
+  result (ratchet_tree_nt bytes tkt)
 let shrink_ratchet_tree #bytes #bl #tkt l =
   match shrink_ratchet_tree_aux l with
   | None -> return []
@@ -275,7 +332,11 @@ let shrink_ratchet_tree #bytes #bl #tkt l =
       return res
   )
 
-val treesync_to_ratchet_tree: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> TS.treesync bytes tkt l i -> result (ratchet_tree_nt bytes tkt)
+val treesync_to_ratchet_tree:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  TS.treesync bytes tkt l i ->
+  result (ratchet_tree_nt bytes tkt)
 let treesync_to_ratchet_tree #bytes #bl #tkt #l #i t =
   let? pre_ratchet_tree = treesync_to_ratchet_tree_aux t in
   shrink_ratchet_tree pre_ratchet_tree

@@ -42,7 +42,11 @@ type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types by
 instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (tree_hash_input_nt bytes tkt) =
   mk_parseable_serializeable (ps_tree_hash_input_nt tkt)
 
-val tree_hash_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> bool
+val tree_hash_pre:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  treesync bytes tkt l i ->
+  bool
 let rec tree_hash_pre #bytes #cb #tkt #l #i t =
   match t with
   | TLeaf olp ->
@@ -53,7 +57,11 @@ let rec tree_hash_pre #bytes #cb #tkt #l #i t =
     (1 + prefixes_length ((ps_option (ps_parent_node_nt tkt)).serialize onp)) + 2 + hash_length #bytes + 2 + hash_length #bytes < hash_max_input_length #bytes
 
 #push-options "--z3rlimit 50"
-val tree_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i{tree_hash_pre t} -> lbytes bytes (hash_length #bytes)
+val tree_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i{tree_hash_pre t} ->
+  lbytes bytes (hash_length #bytes)
 let rec tree_hash #bytes #cb #tkt #l #i t =
   match t with
   | TLeaf olp ->

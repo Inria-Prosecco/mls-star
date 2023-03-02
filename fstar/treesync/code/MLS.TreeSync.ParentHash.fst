@@ -25,12 +25,20 @@ type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types 
 instance parseable_serializeable_parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (parent_hash_input_nt bytes tkt) =
   mk_parseable_serializeable (ps_parent_hash_input_nt tkt)
 
-val compute_parent_hash_pre: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> tkt.node_content -> mls_nat -> treesync bytes tkt l i -> bool
+val compute_parent_hash_pre:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  tkt.node_content -> mls_nat -> treesync bytes tkt l i ->
+  bool
 let compute_parent_hash_pre #bytes #cb #tkt #l #i content parent_hash_length original_sibling =
   tree_hash_pre original_sibling &&
   prefixes_length (tkt.ps_node_content.serialize content) + 4 + parent_hash_length + 2 + hash_length #bytes < hash_max_input_length #bytes
 
-val compute_parent_hash: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} -> lbytes bytes (hash_length #bytes)
+val compute_parent_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  content:tkt.node_content -> parent_hash:mls_bytes bytes -> original_sibling:treesync bytes tkt l i{compute_parent_hash_pre content (length #bytes parent_hash) original_sibling} ->
+  lbytes bytes (hash_length #bytes)
 let compute_parent_hash #bytes #cb #tkt #l #i content parent_hash original_sibling =
   let original_sibling_tree_hash = tree_hash original_sibling in
   let hash_input = serialize #bytes (parent_hash_input_nt bytes tkt) ({
@@ -40,5 +48,7 @@ let compute_parent_hash #bytes #cb #tkt #l #i content parent_hash original_sibli
   }) in
   hash_hash #bytes hash_input
 
-val root_parent_hash: #bytes:Type0 -> {|bytes_like bytes|} -> mls_bytes bytes
+val root_parent_hash:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  mls_bytes bytes
 let root_parent_hash #bytes #bl = empty #bytes

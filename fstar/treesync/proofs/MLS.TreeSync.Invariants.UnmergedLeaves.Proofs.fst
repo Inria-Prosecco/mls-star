@@ -17,13 +17,20 @@ open MLS.MiscLemmas
 
 (*** Create ***)
 
-val unmerged_leaves_ok_tree_create: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> ln:leaf_node_nt bytes tkt -> Lemma
+val unmerged_leaves_ok_tree_create:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  ln:leaf_node_nt bytes tkt ->
+  Lemma
   (unmerged_leaves_ok (tree_create (Some ln)))
 let unmerged_leaves_ok_tree_create #bytes #bl #tkt ln = ()
 
 (*** Update/Remove ***)
 
-val unmerged_leaves_ok_tree_change_path: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) -> Lemma
+val unmerged_leaves_ok_tree_change_path:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> oln:option (leaf_node_nt bytes tkt) ->
+  Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_change_path t li oln None))
 let rec unmerged_leaves_ok_tree_change_path #l #i t li oln =
@@ -35,19 +42,30 @@ let rec unmerged_leaves_ok_tree_change_path #l #i t li oln =
     else
       unmerged_leaves_ok_tree_change_path right li oln
 
-val unmerged_leaves_ok_tree_update: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> Lemma
+val unmerged_leaves_ok_tree_update:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt ->
+  Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_update t li ln))
 let unmerged_leaves_ok_tree_update #l #i t li ln =
   unmerged_leaves_ok_tree_change_path t li (Some ln)
 
-val unmerged_leaves_ok_tree_remove: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> Lemma
+val unmerged_leaves_ok_tree_remove:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i ->
+  Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_remove t li))
 let unmerged_leaves_ok_tree_remove #l #i t li =
   unmerged_leaves_ok_tree_change_path t li None
 
-val unmerged_leaves_ok_mk_blank_tree: #bytes:Type0 -> {|bl:bytes_like bytes|} -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> Lemma
+val unmerged_leaves_ok_mk_blank_tree:
+  #bytes:Type0 -> {|bl:bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  l:nat -> i:tree_index l ->
+  Lemma
   (ensures unmerged_leaves_ok #bytes #bl #tkt (mk_blank_tree l i))
 let rec unmerged_leaves_ok_mk_blank_tree #bytes #bl #tkt l i =
   if l = 0 then ()
@@ -58,13 +76,21 @@ let rec unmerged_leaves_ok_mk_blank_tree #bytes #bl #tkt l i =
 
 (*** Extend / Truncate ***)
 
-val unmerged_leaves_ok_tree_extend: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> t:treesync bytes tkt l 0 -> Lemma
+val unmerged_leaves_ok_tree_extend:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat ->
+  t:treesync bytes tkt l 0 ->
+  Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_extend t))
 let unmerged_leaves_ok_tree_extend #bytes #bl #tkt #l t =
   unmerged_leaves_ok_mk_blank_tree #bytes #bl #tkt l (right_index #(l+1) 0)
 
-val unmerged_leaves_ok_tree_truncate: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:pos -> t:treesync bytes tkt l 0{is_tree_empty (TNode?.right t)} -> Lemma
+val unmerged_leaves_ok_tree_truncate:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:pos ->
+  t:treesync bytes tkt l 0{is_tree_empty (TNode?.right t)} ->
+  Lemma
   (requires unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_truncate t))
 let unmerged_leaves_ok_tree_truncate #bytes #bl #tkt #l t =
@@ -73,7 +99,10 @@ let unmerged_leaves_ok_tree_truncate #bytes #bl #tkt #l t =
 (*** Add ***)
 
 #push-options "--ifuel 2 --fuel 2"
-val unmerged_leaves_sorted_insert_sorted: x:nat_lbytes 4 -> l:list (nat_lbytes 4) -> Lemma
+val unmerged_leaves_sorted_insert_sorted:
+  x:nat_lbytes 4 ->
+  l:list (nat_lbytes 4) ->
+  Lemma
   (requires unmerged_leaves_sorted l)
   (ensures unmerged_leaves_sorted (insert_sorted x l))
 let rec unmerged_leaves_sorted_insert_sorted x l =
@@ -86,7 +115,11 @@ let rec unmerged_leaves_sorted_insert_sorted x l =
     else unmerged_leaves_sorted_insert_sorted x (z::t)
 #pop-options
 
-val leaf_at_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> li':leaf_index l i -> Lemma
+val leaf_at_tree_add:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> li':leaf_index l i ->
+  Lemma
   (requires tree_add_pre t li)
   (ensures leaf_at (tree_add t li content) li' == (if li = li' then Some content else leaf_at t li'))
 let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li content li' =
@@ -153,7 +186,11 @@ let rec unmerged_leaf_consistent_tree_add_other #bytes #bl #tkt #l #i t li conte
     | None -> ()
     | Some content -> mem_insert_sorted li content.unmerged_leaves li'
 
-val unmerged_leaves_ok_tree_add: #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt -> Lemma
+val unmerged_leaves_ok_tree_add:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i -> content:leaf_node_nt bytes tkt ->
+  Lemma
   (requires tree_add_pre t li /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (tree_add t li content))
 let rec unmerged_leaves_ok_tree_add #bytes #bl #tkt #l #i t li content =
@@ -181,7 +218,11 @@ let rec unmerged_leaves_ok_tree_add #bytes #bl #tkt #l #i t li content =
 
 (*** Apply path ***)
 
-val unmerged_leaves_ok_apply_path_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes -> Lemma
+val unmerged_leaves_ok_apply_path_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  Lemma
   (requires apply_path_aux_pre #bytes t p (length #bytes parent_parent_hash) /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (apply_path_aux t p parent_parent_hash))
 let rec unmerged_leaves_ok_apply_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash =
@@ -195,7 +236,11 @@ let rec unmerged_leaves_ok_apply_path_aux #bytes #cb #tkt #l #i #li t p parent_p
     else
       unmerged_leaves_ok_apply_path_aux right p_next new_parent_parent_hash
 
-val unmerged_leaves_ok_apply_path: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 -> t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> Lemma
+val unmerged_leaves_ok_apply_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
+  Lemma
   (requires apply_path_pre #bytes t p /\ unmerged_leaves_ok t)
   (ensures unmerged_leaves_ok (apply_path t p))
 let unmerged_leaves_ok_apply_path #bytes #cb #tkt #l #li t p =

@@ -10,14 +10,17 @@ val ps_mls_nat: #bytes:Type0 -> {| bytes_like bytes |} -> nat_parser_serializer 
 let ps_mls_nat #bytes #bl =
   mk_trivial_isomorphism (refine ps_quic_nat mls_nat_pred)
 
-val ps_mls_nat_length: #bytes:Type0 -> {| bytes_like bytes |} -> x:mls_nat -> Lemma
-  (prefixes_length #bytes (ps_mls_nat.serialize x) == (
-    if x < pow2 6 then 1
-    else if x < pow2 14 then 2
-    else 4
-  ) /\
-  pow2 6 == normalize_term (pow2 6) /\
-  pow2 14 == normalize_term (pow2 14)
+val ps_mls_nat_length:
+  #bytes:Type0 -> {| bytes_like bytes |} ->
+  x:mls_nat ->
+  Lemma (
+    prefixes_length #bytes (ps_mls_nat.serialize x) == (
+      if x < pow2 6 then 1
+      else if x < pow2 14 then 2
+      else 4
+    ) /\
+    pow2 6 == normalize_term (pow2 6) /\
+    pow2 14 == normalize_term (pow2 14)
   )
   [SMTPat (prefixes_length #bytes (ps_mls_nat.serialize x))]
 let ps_mls_nat_length #bytes #bl x = ()
@@ -97,7 +100,10 @@ type extension_nt (bytes:Type0) {|bytes_like bytes|} = {
 /// } optional<T>;
 
 [@@"opaque_to_smt"]
-val ps_option: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> parser_serializer bytes a -> parser_serializer bytes (option a)
+val ps_option:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 ->
+  parser_serializer bytes a ->
+  parser_serializer bytes (option a)
 let ps_option #bytes #bl #a ps_a =
   let n_pred = (fun n -> n <= 1) in
   let b_type (x:refined (nat_lbytes 1) n_pred): Type0 =
@@ -121,22 +127,30 @@ let ps_option #bytes #bl #a ps_a =
     | Some x -> (|1, x|)
   )
 
-val ps_option_length: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> ps_a:parser_serializer bytes a -> x:option a -> Lemma (
-  prefixes_length ((ps_option ps_a).serialize x) == (
-    match x with
-    | None -> 1
-    | Some y -> 1 + prefixes_length (ps_a.serialize y)
-  ))
+val ps_option_length:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 ->
+  ps_a:parser_serializer bytes a -> x:option a ->
+  Lemma (
+    prefixes_length ((ps_option ps_a).serialize x) == (
+      match x with
+      | None -> 1
+      | Some y -> 1 + prefixes_length (ps_a.serialize y)
+    )
+  )
   [SMTPat (prefixes_length ((ps_option ps_a).serialize x))]
 let ps_option_length #bytes #bl #a ps_a x =
   reveal_opaque (`%ps_option) (ps_option ps_a)
 
-val ps_option_is_well_formed: #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 -> ps_a:parser_serializer bytes a -> pre:bytes_compatible_pre bytes -> x:option a -> Lemma (
-  is_well_formed_prefix (ps_option ps_a) pre x <==> (
-    match x with
-    | None -> True
-    | Some y -> is_well_formed_prefix ps_a pre y
-  ))
+val ps_option_is_well_formed:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 ->
+  ps_a:parser_serializer bytes a -> pre:bytes_compatible_pre bytes -> x:option a ->
+  Lemma (
+    is_well_formed_prefix (ps_option ps_a) pre x <==> (
+      match x with
+      | None -> True
+      | Some y -> is_well_formed_prefix ps_a pre y
+    )
+  )
   [SMTPat (is_well_formed_prefix (ps_option ps_a) pre x)]
 let ps_option_is_well_formed #bytes #bl #a ps_a pre x =
   reveal_opaque (`%ps_option) (ps_option ps_a)

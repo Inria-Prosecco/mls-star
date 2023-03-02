@@ -17,7 +17,10 @@ type psk_id_nonce (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 #push-options "--ifuel 1"
-val psk_id_nonce_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> psk_id_nonce bytes -> result (NT.pre_shared_key_id_nt bytes)
+val psk_id_nonce_to_network:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  psk_id_nonce bytes ->
+  result (NT.pre_shared_key_id_nt bytes)
 let psk_id_nonce_to_network psk =
   if not (length psk.nonce < pow2 30) then
     error "psk_to_network: nonce is too long"
@@ -40,7 +43,10 @@ let psk_id_nonce_to_network psk =
 #pop-options
 
 #push-options "--ifuel 1"
-val network_to_psk_id_nonce: #bytes:Type0 -> {|bytes_like bytes|} -> NT.pre_shared_key_id_nt bytes -> result (psk_id_nonce bytes)
+val network_to_psk_id_nonce:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  NT.pre_shared_key_id_nt bytes ->
+  result (psk_id_nonce bytes)
 let network_to_psk_id_nonce psk_id =
   match psk_id with
   | NT.PSKI_external id nonce -> return ({id = PSKI_external id; nonce = nonce})
@@ -53,7 +59,10 @@ type psk_label (bytes:Type0) {|bytes_like bytes|} = {
   count: nat;
 }
 
-val psk_label_to_network: #bytes:Type0 -> {|bytes_like bytes|} -> psk_label bytes -> result (NT.psk_label_nt bytes)
+val psk_label_to_network:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  psk_label bytes ->
+  result (NT.psk_label_nt bytes)
 let psk_label_to_network label =
   if not (label.count < pow2 16) then
     error "psk_label_to_network: count is too big"
@@ -68,7 +77,10 @@ let psk_label_to_network label =
     })
   )
 
-val network_to_psk_label: #bytes:Type0 -> {|bytes_like bytes|} -> NT.psk_label_nt bytes -> result (psk_label bytes)
+val network_to_psk_label:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  NT.psk_label_nt bytes ->
+  result (psk_label bytes)
 let network_to_psk_label label =
   let? id_nonce = network_to_psk_id_nonce label.NT.id in
   return ({
@@ -78,7 +90,10 @@ let network_to_psk_label label =
   })
 
 // Compute psk_secret[i+1] given psk[i], psk_label[i] and psk_secret[i]
-val compute_psk_secret_step: #bytes:Type0 -> {|crypto_bytes bytes|} -> psk_label bytes -> bytes -> bytes -> result bytes
+val compute_psk_secret_step:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  psk_label bytes -> bytes -> bytes ->
+  result bytes
 let compute_psk_secret_step #bytes #cb label psk prev_psk_secret =
     let? label_network = psk_label_to_network label in
     let? psk_extracted = kdf_extract (zero_vector #bytes) psk in
@@ -87,7 +102,11 @@ let compute_psk_secret_step #bytes #cb label psk prev_psk_secret =
     return (new_psk_secret <: bytes)
 
 // Compute psk_secret[n] given psk_secret[ind]
-val compute_psk_secret_aux: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:list (psk_id_nonce bytes & bytes) -> ind:nat{ind <= List.Tot.length l} -> bytes -> Tot (result bytes) (decreases (List.Tot.length l - ind))
+val compute_psk_secret_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  l:list (psk_id_nonce bytes & bytes) -> ind:nat{ind <= List.Tot.length l} -> bytes ->
+  Tot (result bytes)
+  (decreases (List.Tot.length l - ind))
 let rec compute_psk_secret_aux #bytes #cb l ind psk_secret_ind =
   if ind = List.Tot.length l then
     return psk_secret_ind
@@ -102,6 +121,9 @@ let rec compute_psk_secret_aux #bytes #cb l ind psk_secret_ind =
     compute_psk_secret_aux l (ind+1) next_psk_secret
   )
 
-val compute_psk_secret: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (psk_id_nonce bytes & bytes) -> result bytes
+val compute_psk_secret:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  list (psk_id_nonce bytes & bytes) ->
+  result bytes
 let compute_psk_secret #bytes #cb l =
   compute_psk_secret_aux l 0 (zero_vector #bytes)

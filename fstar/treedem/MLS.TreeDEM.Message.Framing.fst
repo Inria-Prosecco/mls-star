@@ -14,14 +14,23 @@ module NT = MLS.TreeDEM.NetworkTypes
 
 (*** Authentication ***)
 
-val compute_message_confirmation_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> bytes -> result (lbytes bytes (hmac_length #bytes))
+val compute_message_confirmation_tag:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> bytes ->
+  result (lbytes bytes (hmac_length #bytes))
 let compute_message_confirmation_tag #bytes #cb confirmation_key confirmed_transcript_hash =
   hmac_hmac confirmation_key confirmed_transcript_hash
 
-val knows_group_context: #bytes:Type0 -> {|bytes_like bytes|} -> sender_nt bytes -> bool
+val knows_group_context:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  sender_nt bytes ->
+  bool
 let knows_group_context #bytes #bl sender = NT.S_member? sender || NT.S_new_member_commit? sender
 
-val compute_tbs: #bytes:Type0 -> {|bytes_like bytes|} -> wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> framed_content_tbs_nt bytes
+val compute_tbs:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  framed_content_tbs_nt bytes
 let compute_tbs #bytes #bl wire_format content group_context =
   ({
     wire_format;
@@ -29,7 +38,10 @@ let compute_tbs #bytes #bl wire_format content group_context =
     group_context = (match group_context with | Some gc -> gc | None -> ());
   } <: framed_content_tbs_nt bytes)
 
-val compute_tbm: #bytes:Type0 -> {|bytes_like bytes|} -> content:framed_content_nt bytes -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> authenticated_content_tbm_nt bytes
+val compute_tbm:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  content:framed_content_nt bytes -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  authenticated_content_tbm_nt bytes
 let compute_tbm #bytes #bl content auth group_context =
   let content_tbs = compute_tbs WF_mls_public_message content group_context in
   ({
@@ -37,7 +49,10 @@ let compute_tbm #bytes #bl content auth group_context =
     auth;
   } <: authenticated_content_tbm_nt bytes)
 
-val compute_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_private_key bytes -> sign_nonce bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> result (sign_signature bytes)
+val compute_message_signature:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  sign_private_key bytes -> sign_nonce bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  result (sign_signature bytes)
 let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
   let serialized_tbs: bytes = serialize (framed_content_tbs_nt bytes) tbs in
@@ -46,7 +61,10 @@ let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
     return (sign_with_label sk "FramedContentTBS" serialized_tbs rand)
   )
 
-val check_message_signature: #bytes:Type0 -> {|crypto_bytes bytes|} -> sign_public_key bytes -> sign_signature bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> result bool
+val check_message_signature:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  sign_public_key bytes -> sign_signature bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  result bool
 let check_message_signature #bytes #cb pk signature wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
   let serialized_tbs: bytes = serialize (framed_content_tbs_nt bytes) tbs in
@@ -55,14 +73,20 @@ let check_message_signature #bytes #cb pk signature wire_format msg group_contex
     return (verify_with_label pk "FramedContentTBS" serialized_tbs signature)
   )
 
-val compute_message_membership_tag: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> content:framed_content_nt bytes -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} -> result (lbytes bytes (hmac_length #bytes))
+val compute_message_membership_tag:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> content:framed_content_nt bytes -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  result (lbytes bytes (hmac_length #bytes))
 let compute_message_membership_tag #bytes #cb membership_key msg auth group_context =
   let tbm = compute_tbm msg auth group_context in
   let serialized_tbm = serialize (authenticated_content_tbm_nt bytes) tbm in
   hmac_hmac membership_key serialized_tbm
 
 //TODO: this function should be refactored
-val message_compute_auth: #bytes:Type0 -> {|crypto_bytes bytes|} -> message_content bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes -> result (message_auth bytes)
+val message_compute_auth:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  message_content bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes ->
+  result (message_auth bytes)
 let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key interim_transcript_hash =
   let? msg_network = message_content_to_network msg in
   if not (Some? group_context = knows_group_context msg_network.sender) then
@@ -87,7 +111,10 @@ let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key i
 (*** From/to plaintext ***)
 
 //TODO check membership tag
-val message_plaintext_to_message: #bytes:Type0 -> {|bytes_like bytes|} -> public_message_nt bytes -> authenticated_content_nt bytes
+val message_plaintext_to_message:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  public_message_nt bytes ->
+  authenticated_content_nt bytes
 let message_plaintext_to_message #bytes #bl pt =
   {
     wire_format = WF_mls_public_message;
@@ -95,7 +122,10 @@ let message_plaintext_to_message #bytes #bl pt =
     auth = pt.auth;
   }
 
-val message_to_message_plaintext: #bytes:Type0 -> {|crypto_bytes bytes|} -> membership_key:bytes -> auth_msg:authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_public_message} -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context auth_msg.content.sender} -> result (public_message_nt bytes)
+val message_to_message_plaintext:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  membership_key:bytes -> auth_msg:authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_public_message} -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context auth_msg.content.sender} ->
+  result (public_message_nt bytes)
 let message_to_message_plaintext #bytes #cb membership_key auth_msg group_context =
   let? membership_tag = (
     match auth_msg.content.sender with
@@ -113,7 +143,10 @@ let message_to_message_plaintext #bytes #cb membership_key auth_msg group_contex
 
 (*** From/to ciphertext ***)
 
-val get_ciphertext_sample: #bytes:Type0 -> {|crypto_bytes bytes|} -> bytes -> bytes
+val get_ciphertext_sample:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  bytes
 let get_ciphertext_sample #bytes #cb ct =
   let len = kdf_length #bytes in
   if length ct <= len then
@@ -122,7 +155,10 @@ let get_ciphertext_sample #bytes #cb ct =
     fst (unsafe_split ct len)
 
 //Used in decryption
-val message_ciphertext_to_sender_data_aad: #bytes:Type0 -> {|bytes_like bytes|} -> private_message_nt bytes -> sender_data_aad_nt bytes
+val message_ciphertext_to_sender_data_aad:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  private_message_nt bytes ->
+  sender_data_aad_nt bytes
 let message_ciphertext_to_sender_data_aad #bytes #bl ct =
   ({
     group_id = ct.group_id;
@@ -131,7 +167,10 @@ let message_ciphertext_to_sender_data_aad #bytes #bl ct =
   } <: sender_data_aad_nt bytes)
 
 //Used in encryption
-val message_to_sender_data_aad: #bytes:Type0 -> {|bytes_like bytes|} -> framed_content_nt bytes -> sender_data_aad_nt bytes
+val message_to_sender_data_aad:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  framed_content_nt bytes ->
+  sender_data_aad_nt bytes
 let message_to_sender_data_aad #bytes #bl content =
   ({
     group_id = content.group_id;
@@ -139,25 +178,37 @@ let message_to_sender_data_aad #bytes #bl content =
     content_type = content.content.content_type;
   } <: sender_data_aad_nt bytes)
 
-val sender_data_key_nonce: #bytes:Type0 -> {|crypto_bytes bytes|} -> ciphertext_sample:bytes -> sender_data_secret:bytes -> result (lbytes bytes (aead_key_length #bytes) & lbytes bytes (aead_nonce_length #bytes))
+val sender_data_key_nonce:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  ciphertext_sample:bytes -> sender_data_secret:bytes ->
+  result (lbytes bytes (aead_key_length #bytes) & lbytes bytes (aead_nonce_length #bytes))
 let sender_data_key_nonce #bytes #cb ciphertext_sample sender_data_secret =
   let? sender_data_key = expand_with_label sender_data_secret (string_to_bytes #bytes "key") ciphertext_sample (aead_key_length #bytes) in
   let? sender_data_nonce = expand_with_label sender_data_secret (string_to_bytes #bytes "nonce") ciphertext_sample (aead_nonce_length #bytes) in
   return (sender_data_key, sender_data_nonce)
 
-val decrypt_sender_data: #bytes:Type0 -> {|crypto_bytes bytes|} -> sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> encrypted_sender_data:bytes -> result (sender_data_nt bytes)
+val decrypt_sender_data:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> encrypted_sender_data:bytes ->
+  result (sender_data_nt bytes)
 let decrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret encrypted_sender_data =
   let? (sender_data_key, sender_data_nonce) = sender_data_key_nonce ciphertext_sample sender_data_secret in
   let? sender_data = aead_decrypt sender_data_key sender_data_nonce (serialize (sender_data_aad_nt bytes) ad) encrypted_sender_data in
   from_option "decrypt_sender_data: malformed sender data" (parse (sender_data_nt bytes) sender_data)
 
-val encrypt_sender_data: #bytes:Type0 -> {|crypto_bytes bytes|} -> sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> sender_data_nt bytes -> result bytes
+val encrypt_sender_data:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  sender_data_aad_nt bytes -> ciphertext_sample:bytes -> sender_data_secret:bytes -> sender_data_nt bytes ->
+  result bytes
 let encrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret sender_data =
   let? (sender_data_key, sender_data_nonce) = sender_data_key_nonce ciphertext_sample sender_data_secret in
   aead_encrypt sender_data_key sender_data_nonce (serialize (sender_data_aad_nt bytes) ad) (serialize (sender_data_nt bytes) sender_data)
 
 // Used in decryption
-val message_ciphertext_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> ct:private_message_nt bytes -> res:private_content_aad_nt bytes{res.content_type == ct.content_type}
+val message_ciphertext_to_ciphertext_content_aad:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  ct:private_message_nt bytes ->
+  res:private_content_aad_nt bytes{res.content_type == ct.content_type}
 let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
   ({
     group_id = ct.group_id;
@@ -166,13 +217,19 @@ let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
     authenticated_data = ct.authenticated_data;
   } <: private_content_aad_nt bytes)
 
-val decrypt_ciphertext_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> ct:bytes -> result (private_content_tbe_nt bytes ad.content_type)
+val decrypt_ciphertext_content:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> ct:bytes ->
+  result (private_content_tbe_nt bytes ad.content_type)
 let decrypt_ciphertext_content #bytes #cb ad key nonce ct =
   let? ciphertext_content = aead_decrypt key nonce (serialize (private_content_aad_nt bytes) ad) ct in
   from_option "decrypt_ciphertext_content: malformed ciphertext content" (parse (private_content_tbe_nt bytes ad.content_type) ciphertext_content)
 
 // Used in encryption
-val message_to_ciphertext_content_aad: #bytes:Type0 -> {|bytes_like bytes|} -> content:framed_content_nt bytes -> res:private_content_aad_nt bytes{res.content_type == content.content.content_type}
+val message_to_ciphertext_content_aad:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  content:framed_content_nt bytes ->
+  res:private_content_aad_nt bytes{res.content_type == content.content.content_type}
 let message_to_ciphertext_content_aad #bytes #bl content =
   ({
     group_id = content.group_id;
@@ -181,11 +238,17 @@ let message_to_ciphertext_content_aad #bytes #bl content =
     authenticated_data = content.authenticated_data;
   } <: private_content_aad_nt bytes)
 
-val encrypt_ciphertext_content: #bytes:Type0 -> {|crypto_bytes bytes|} -> ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> (private_content_tbe_nt bytes ad.content_type) -> result bytes
+val encrypt_ciphertext_content:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> (private_content_tbe_nt bytes ad.content_type) ->
+  result bytes
 let encrypt_ciphertext_content #bytes #cb ad key nonce pt =
   aead_encrypt key nonce (serialize (private_content_aad_nt bytes) ad) (serialize (private_content_tbe_nt bytes ad.content_type) pt)
 
-val apply_reuse_guard: #bytes:Type0 -> {|crypto_bytes bytes|} -> lbytes bytes 4 -> aead_nonce bytes -> aead_nonce bytes
+val apply_reuse_guard:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  lbytes bytes 4 -> aead_nonce bytes ->
+  aead_nonce bytes
 let apply_reuse_guard #bytes #cb reuse_guard nonce =
   let (nonce_head, nonce_tail) = unsafe_split #bytes nonce 4 in
   assume(length nonce_head == 4);
@@ -193,7 +256,10 @@ let apply_reuse_guard #bytes #cb reuse_guard nonce =
   let new_nonce_head = xor nonce_head reuse_guard in
   concat #bytes new_nonce_head nonce_tail
 
-val message_ciphertext_to_message: #bytes:Type0 -> {|crypto_bytes bytes|} -> l:nat -> encryption_secret:bytes -> sender_data_secret:bytes -> private_message_nt bytes -> result (authenticated_content_nt bytes)
+val message_ciphertext_to_message:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  l:nat -> encryption_secret:bytes -> sender_data_secret:bytes -> private_message_nt bytes ->
+  result (authenticated_content_nt bytes)
 let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_secret ct =
   let? sender_data = (
     let sender_data_ad = message_ciphertext_to_sender_data_aad ct in
@@ -239,7 +305,10 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
     };
   } <: authenticated_content_nt bytes)
 
-val get_serializeable_bytes: #bytes:Type0 -> {|bytes_like bytes|} -> bytes -> result (mls_bytes bytes)
+val get_serializeable_bytes:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  bytes ->
+  result (mls_bytes bytes)
 let get_serializeable_bytes #bytes #bl b =
   if not (length b < pow2 30) then (
     internal_failure "get_serializeable_bytes: buffer too long"
@@ -247,7 +316,10 @@ let get_serializeable_bytes #bytes #bl b =
     return b
   )
 
-val message_to_message_ciphertext: #bytes:Type0 -> {|crypto_bytes bytes|} -> ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} -> result (private_message_nt bytes & ratchet_state bytes)
+val message_to_message_ciphertext:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} ->
+  result (private_message_nt bytes & ratchet_state bytes)
 let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_secret auth_msg =
   let? ciphertext = (
     let? key_nonce = ratchet_get_key ratchet in

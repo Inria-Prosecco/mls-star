@@ -93,7 +93,20 @@ val mk_concrete_crypto_bytes: available_ciphersuite -> Pure (crypto_bytes hacl_s
 
 (*** Randomness ***)
 
-val randomness: bytes:Type0 -> {|bytes_like bytes|} -> list nat -> Type0
-val mk_empty_randomness: bytes:Type0 -> {|bytes_like bytes|} -> randomness bytes []
-val mk_randomness:   #bytes:Type0 -> {|bytes_like bytes|} -> #head_size:nat -> #tail_size:list nat -> (lbytes bytes head_size & randomness bytes tail_size) -> randomness bytes (head_size::tail_size)
-val dest_randomness: #bytes:Type0 -> {|bytes_like bytes|} -> #head_size:nat -> #tail_size:list nat -> randomness bytes (head_size::tail_size) -> (lbytes bytes head_size & randomness bytes tail_size)
+val randomness:
+  bytes:Type0 -> {|bytes_like bytes|} ->
+  list nat ->
+  Type0
+val mk_empty_randomness:
+  bytes:Type0 -> {|bytes_like bytes|} ->
+  randomness bytes []
+val mk_randomness:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #head_size:nat -> #tail_size:list nat ->
+  (lbytes bytes head_size & randomness bytes tail_size) ->
+  randomness bytes (head_size::tail_size)
+val dest_randomness:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #head_size:nat -> #tail_size:list nat ->
+  randomness bytes (head_size::tail_size) ->
+  (lbytes bytes head_size & randomness bytes tail_size)

@@ -23,18 +23,26 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-let as_input_for (#bytes:Type0) {|bytes_like bytes|} (#tkt:treekem_types bytes) (ln:leaf_node_nt bytes tkt) =
+let as_input_for
+  (#bytes:Type0) {|bytes_like bytes|} (#tkt:treekem_types bytes)
+  (ln:leaf_node_nt bytes tkt) =
   x:as_input bytes{ x == leaf_node_to_as_input ln }
 
-let as_token_for (#bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) (inp:as_input bytes) =
+let as_token_for
+  (#bytes:Type0) {|bytes_like bytes|}
+  (asp:as_parameters bytes) (inp:as_input bytes) =
   token:asp.token_t{ asp.credential_ok inp token }
 
-val state_leaf_at: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> st:treesync_state bytes tkt asp -> li:treesync_index st{Some? (leaf_at st.tree li)} -> leaf_node_nt bytes tkt
+val state_leaf_at:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
+  st:treesync_state bytes tkt asp -> li:treesync_index st{Some? (leaf_at st.tree li)} ->
+  leaf_node_nt bytes tkt
 let state_leaf_at #bytes #cb #tkt #asp st li =
   Some?.v (leaf_at st.tree li)
 
 val state_update_tree:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
+  #l:nat ->
   st:treesync_state bytes tkt asp -> new_tree:treesync_valid bytes tkt l 0 st.group_id -> new_tokens:as_tokens bytes asp.token_t l 0{all_credentials_ok new_tree new_tokens} ->
   treesync_state bytes tkt asp
 let state_update_tree #bytes #cb #tkt #asp #l st new_tree new_tokens =
@@ -46,12 +54,17 @@ let state_update_tree #bytes #cb #tkt #asp #l st new_tree new_tokens =
 
 (*** Create ***)
 
-let pending_create_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (group_id:mls_bytes bytes) (ln:leaf_node_nt bytes tkt) =
+let pending_create_proof
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes)
+  (group_id:mls_bytes bytes) (ln:leaf_node_nt bytes tkt) =
   squash (
     leaf_is_valid ln group_id 0
   )
 
-type pending_create (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (group_id:mls_bytes bytes) (ln:leaf_node_nt bytes tkt) = {
+type pending_create
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes)
+  (group_id:mls_bytes bytes) (ln:leaf_node_nt bytes tkt) =
+  {
   can_create_proof: pending_create_proof group_id ln;
   as_input: as_input_for ln;
 }
@@ -93,7 +106,9 @@ let finalize_create #bytes #cb #tkt #asp #group_id #ln pend token =
 
 (*** Welcome ***)
 
-let pending_welcome_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) =
+let pending_welcome_proof
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes)
+  (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) =
   squash (
     unmerged_leaves_ok t /\
     parent_hash_invariant t /\
@@ -101,7 +116,10 @@ let pending_welcome_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_ty
   )
 
 #push-options "--fuel 0 --ifuel 1"
-type pending_welcome (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat) (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) = {
+type pending_welcome
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#l:nat)
+  (group_id:mls_bytes bytes) (t:treesync bytes tkt l 0) =
+  {
   can_welcome_proof: pending_welcome_proof group_id t;
   as_inputs: list (option (as_input bytes));
   as_inputs_proof: squash (
@@ -126,7 +144,8 @@ type tokens_for_welcome
   }
 
 val prepare_welcome:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #l:nat ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat ->
   group_id:mls_bytes bytes -> t:treesync bytes tkt l 0 ->
   result (pending_welcome group_id t)
 let prepare_welcome #bytes #cb #tkt #l group_id t =
@@ -151,7 +170,10 @@ let prepare_welcome #bytes #cb #tkt #l group_id t =
   )
 
 #push-options "--fuel 2 --ifuel 2"
-val tokens_from_list: #bytes:Type0 -> {|bytes_like bytes|} -> asp:as_parameters bytes -> l:nat -> i:tree_index l -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 l} -> as_tokens bytes asp.token_t l i
+val tokens_from_list:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  asp:as_parameters bytes -> l:nat -> i:tree_index l -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 l} ->
+  as_tokens bytes asp.token_t l i
 let rec tokens_from_list #bytes #bl asp l i tokens =
   if l = 0 then (
     let [token] = tokens in
@@ -164,9 +186,11 @@ let rec tokens_from_list #bytes #bl asp l i tokens =
 #pop-options
 
 #push-options "--fuel 2 --ifuel 2"
-val leaf_at_token_from_list: #bytes:Type0 -> {|bytes_like bytes|} -> asp:as_parameters bytes -> l:nat -> i:tree_index l -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 l} -> li:leaf_index l i -> Lemma (
-  leaf_at (tokens_from_list asp l i tokens) li == List.Tot.index tokens (li-i)
-)
+val leaf_at_token_from_list:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  asp:as_parameters bytes -> l:nat -> i:tree_index l -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 l} -> li:leaf_index l i ->
+  Lemma
+  (leaf_at (tokens_from_list asp l i tokens) li == List.Tot.index tokens (li-i))
 let rec leaf_at_token_from_list #bytes #bl asp l i tokens li =
   if l = 0 then ()
   else (
@@ -181,8 +205,8 @@ let rec leaf_at_token_from_list #bytes #bl asp l i tokens li =
 #pop-options
 
 val finalize_welcome:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #l:nat ->
-  #group_id:mls_bytes bytes -> #t:treesync bytes tkt l 0 ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
+  #l:nat -> #group_id:mls_bytes bytes -> #t:treesync bytes tkt l 0 ->
   pend:pending_welcome group_id t -> tokens:tokens_for_welcome asp pend ->
   treesync_state bytes tkt asp
 let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
@@ -201,7 +225,9 @@ let finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pend tokens =
 
 (*** Add ***)
 
-let pending_add_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) =
+let pending_add_proof
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) =
   squash (
     ln.data.source == LNS_key_package /\ ( //TODO: check key package signature
       match find_empty_leaf st.tree with
@@ -217,7 +243,10 @@ let pending_add_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types 
     )
   )
 
-type pending_add (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) = {
+type pending_add
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) =
+  {
   can_add_proof: pending_add_proof st ln;
   as_input: as_input_for ln;
 }
@@ -288,14 +317,19 @@ let finalize_add #bytes #cb #tkt #asp #st #ln pend token =
 
 (*** Update ***)
 
-let pending_update_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) (li:treesync_index st) =
+let pending_update_proof
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) (li:treesync_index st) =
   squash (
     ln.data.source == LNS_update /\
     leaf_is_valid ln st.group_id li /\
     Some? (leaf_at st.tree li)
   )
 
-type pending_update (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) (li:treesync_index st) = {
+type pending_update
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (ln:leaf_node_nt bytes tkt) (li:treesync_index st) =
+  {
   can_update_proof: pending_update_proof st ln li;
   as_input_before: (can_update_proof; as_input_for (state_leaf_at st li));
   as_input: as_input_for ln;
@@ -338,12 +372,17 @@ let finalize_update #bytes #cb #tkt #asp #st #ln #li pend token =
 
 (*** Remove ***)
 
-let pending_remove_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (li:treesync_index st) =
+let pending_remove_proof
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (li:treesync_index st) =
   squash (
     Some? (leaf_at st.tree li)
   )
 
-type pending_remove (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (li:treesync_index st) = {
+type pending_remove
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (li:treesync_index st) =
+  {
   can_remove_proof: pending_remove_proof st li;
 }
 
@@ -380,7 +419,9 @@ let finalize_remove #bytes #cb #tkt #asp #st #li pend =
 
 (*** Commit ***)
 
-let pending_commit_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (#li:treesync_index st) (p:pathsync bytes tkt st.levels 0 li) =
+let pending_commit_proof
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (#li:treesync_index st) (p:pathsync bytes tkt st.levels 0 li) =
   squash (
     apply_path_pre st.tree p /\
     path_is_valid st.group_id st.tree p /\
@@ -388,7 +429,10 @@ let pending_commit_proof (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_typ
   )
 
 #push-options "--fuel 0 --ifuel 1"
-type pending_commit (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (st:treesync_state bytes tkt asp) (#li:treesync_index st) (p:pathsync bytes tkt st.levels 0 li) = {
+type pending_commit
+  (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
+  (st:treesync_state bytes tkt asp) (#li:treesync_index st) (p:pathsync bytes tkt st.levels 0 li) =
+  {
   can_commit_proof: pending_commit_proof st p;
   as_input_before: (can_commit_proof; as_input_for (state_leaf_at st li));
   as_input: as_input_for (get_path_leaf p);

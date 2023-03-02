@@ -18,7 +18,10 @@ let error #a s = ProtocolError s
 
 #push-options "--ifuel 1"
 //TODO unfold? (to remove all the lambdas in the spec and in the generated code)
-val (let?): #a:Type -> #b:Type -> result a -> (a -> result b) -> result b
+val (let?):
+  #a:Type -> #b:Type ->
+  result a -> (a -> result b) ->
+  result b
 let (let?) #a #b rx f =
   match rx with
   | Success x -> f x
@@ -26,14 +29,20 @@ let (let?) #a #b rx f =
   | ProtocolError x -> ProtocolError x
 #pop-options
 
-val from_option: #a:Type -> string -> option a -> result a
+val from_option:
+  #a:Type ->
+  string -> option a ->
+  result a
 let from_option #a s x =
   match x with
   | None -> error s
   | Some x -> return x
 
 #push-options "--ifuel 1 --fuel 1"
-val mapM: #a:Type -> #b:Type -> (a -> result b) -> l:list a -> result (res:list b{List.Tot.length res == List.Tot.length l})
+val mapM:
+  #a:Type -> #b:Type ->
+  (a -> result b) -> l:list a ->
+  result (res:list b{List.Tot.length res == List.Tot.length l})
 let rec mapM #a #b f l =
   match l with
   | [] -> return []
@@ -44,7 +53,10 @@ let rec mapM #a #b f l =
 #pop-options
 
 #push-options "--ifuel 1 --fuel 1"
-val fold_leftM: #a:Type -> #b:Type -> (a -> b -> result a) -> a -> list b -> result a
+val fold_leftM:
+  #a:Type -> #b:Type ->
+  (a -> b -> result a) -> a -> list b ->
+  result a
 let rec fold_leftM #a #b f x l: Tot (result a) (decreases l) =
   match l with
   | [] -> return x
