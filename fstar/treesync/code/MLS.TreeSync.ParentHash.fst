@@ -34,6 +34,11 @@ let compute_parent_hash_pre #bytes #cb #tkt #l #i content parent_hash_length ori
   tree_hash_pre original_sibling &&
   prefixes_length (tkt.ps_node_content.serialize content) + 4 + parent_hash_length + 2 + hash_length #bytes < hash_max_input_length #bytes
 
+/// Compute the parent hash to store in the child of a node, given:
+/// - the node content (with TreeKEM, the HPKE public key),
+/// - the parent hash stored in the node,
+/// - the original sibling.
+/// The precondition checks that the hash inputs will fit in the hash maximum allowed size.
 val compute_parent_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->

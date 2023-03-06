@@ -23,6 +23,11 @@ open FStar.Mul
 
 (*** Tree equivalence definition ***)
 
+/// Empty the signature of one specific leaf.
+/// Later, we will prove that thanks to the parent-hash,
+/// the signature of a leaf covers many subtrees above it.
+/// Except that the signature doesn't cover itself,
+/// so we first have to remove it before stating our integrity theorem.
 val canonicalize_leaf_signature:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
@@ -38,6 +43,9 @@ let rec canonicalize_leaf_signature #bytes #bl #tkt #l #i t li =
     else
       TNode opn left (canonicalize_leaf_signature right li)
 
+/// Remove unmerged leaves from a subtree.
+/// Unmerged leaves represent leaves that were added after the subtree was last authenticated,
+/// hence we remove them to state our integrity theorem.
 val canonicalize_unmerged_leaves:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
@@ -50,6 +58,9 @@ let canonicalize_unmerged_leaves #bytes #bl #tkt #l #i t =
   | TNode (Some content) _ _ ->
     un_add t content.unmerged_leaves
 
+/// Do the full canonicalization:
+/// - remove unmerged leaves of the root node,
+/// - remove the signature of one leaf (the one who last updated the subtree).
 val canonicalize:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
@@ -58,6 +69,8 @@ val canonicalize:
 let canonicalize #bytes #bl #tkt #l #i t li =
   canonicalize_leaf_signature (canonicalize_unmerged_leaves t) li
 
+/// Two subtrees are said to be equivalent (with respect to a leaf index `li`)
+/// when they have the same canonicalization.
 val equivalent:
   #bytes:eqtype -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l1:nat -> #l2:nat -> #i1:tree_index l1 -> #i2:tree_index l2 ->
@@ -476,6 +489,25 @@ let rec is_subtree_with_blanks_between_d_p_aux #bytes #bl #tkt #ld #lc #id #ic d
     )
   )
 
+/// This theorem can be viewed as a correctness theorem for `last_update_correct`,
+/// that contains an ugly equation involving resolution.
+/// A picture:
+///           P
+///          / \
+///        Cn   ...
+///        / \
+///      ...  Sn
+///      /
+///     C2
+///    / \
+///   C1  S2
+///  / \
+/// D   S1
+///
+/// If D and P were updated at the same time according to the equation in `last_update_correct`,
+/// then after canonicalizing P,
+/// C1, C2, ..., Cn are blank nodes,
+/// and S1, S2, ..., Sn are empty trees.
 val is_subtree_with_blanks_between_d_p:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp ->
@@ -523,6 +555,19 @@ val un_add_myself:
 let un_add_myself l =
   un_add_myself_aux l l
 
+/// Induction step of the parent-hash integrity theorem.
+/// Intuitively, it says that the parent-hash link lifts up in the tree the equivalence relation:
+/// given two parent-hash links D1 ~> P1, and D2 ~> P2,
+/// if D1 and D2 are equivalent then P1 and P2 are equivalent.
+/// (modulo hash collision)
+///
+/// The proof goes as follows:
+/// Using parent-hash injectivity theorem `compute_parent_hash_inj`,
+/// we get that the canonicalized siblings are equal and at the same position.
+/// With the last-update equation, via `is_subtree_with_blanks_between_d_p`,
+/// we get that there are only blank nodes between D1 and P1 (resp. D2 and P2), after canonicalization.
+/// Hence, with `is_subtree_with_blanks_between_eq_lemma` we obtain that P1 and P2 are equal after canonicalization,
+/// hence are equivalent.
 #push-options "--z3rlimit 100"
 val parent_hash_guarantee_theorem_step:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
@@ -595,6 +640,9 @@ let get_leaf_tree_tbs #bytes #bl #tkt #i t group_id =
   let TLeaf (Some ln) = t in
   get_leaf_tbs ln group_id i
 
+/// Base case of the parent-hash integrity theorem:
+/// if the signature of two leaves covers the same content,
+/// then their corresponding subtrees are equivalent.
 val equal_tbs_implies_equivalence:
   #bytes:eqtype -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #i1:tree_index 0{i1 < pow2 32} -> #i2:tree_index 0{i2 < pow2 32} ->
@@ -770,9 +818,17 @@ let rec parent_hash_guarantee_theorem_aux #bytes #cb #tkt tl1 tl2 li =
   )
 #pop-options
 
-//The spirit:
-//tl1 is a tree list you get via parent hash invariant
-//tl2 is a tree list you get via signature predicate
+/// The full parent-hash integrity theorem:
+/// given two list of trees `tl1` and `tl2`, if:
+/// - they are both parent-hash linked (i.e., a tree in a list in parent-hash linked to the next one in the list)
+/// - their first trees are leaves with the same signature content
+/// - one of them (`tl2`) ends at the root, i.e. the parent-hash stored in the root of the last tree is empty
+/// Then their trees are pointwise equivalent.
+/// (modulo hash collision)
+///
+/// From where do you obtain the tree lists?
+/// - tl1 comes from the parent hash invariant (via `parent_hash_invariant_to_tree_list`),
+/// - tl2 comes from the signature predicate (via `path_to_tree_list`).
 val parent_hash_guarantee_theorem:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   tl1:tree_list bytes tkt -> tl2:tree_list bytes tkt -> tbs:bytes ->
@@ -1004,6 +1060,8 @@ let rec parent_hash_invariant_to_tree_list_rev #bytes #cb #tkt #l #i t =
     tl
   )
 
+/// Given a tree that satisfy the parent-hash invariant,
+/// compute a list of trees that are parent-hash linked and end at this tree.
 val parent_hash_invariant_to_tree_list:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
@@ -1253,6 +1311,11 @@ let rec last_to_tree_list_ends_at_root #bytes #bl #tkt tl =
   | [_] -> ()
   | _::t -> last_to_tree_list_ends_at_root t
 
+/// Given a tree and a path,
+/// compute a list of trees that are parent-hash linked,
+/// start at the leaf of the path,
+/// and end at the root.
+/// (Proved by the next lemma.)
 val path_to_tree_list:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->

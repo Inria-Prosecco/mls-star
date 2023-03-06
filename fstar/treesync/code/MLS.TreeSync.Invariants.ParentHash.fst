@@ -54,6 +54,8 @@ val un_add_unmerged_leaf: list (nat_lbytes 4) -> nat -> bool
 let un_add_unmerged_leaf leaves i =
   not (mem_ul i leaves)
 
+/// Remove, or "un-add" the leaves whose index are in a list.
+/// This to compute the "original silbing" in the parent-hash check when joining a group.
 val un_add:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
@@ -62,6 +64,8 @@ val un_add:
 let un_add #bytes #bl #tkt #l #i t leaves =
   un_addP t (un_add_unmerged_leaf leaves)
 
+/// Given a "parent" tree P, and a "descendant" D,
+/// check that the parent-hash stored at the root of D is correct with respect to P.
 val parent_hash_correct:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
@@ -133,6 +137,9 @@ let last_update_d_in_res_c #bytes #bl #tkt #ld #lp #id #ip d p =
   let (c, _) = get_child_sibling p id in
   List.Tot.mem (|ld, id|) (resolution c)
 
+/// Given a "parent" tree P, and a "descendant" D,
+/// check that D and P were last updated at the same time,
+/// using the "ninja" equation used in the RFC involving the resolution.
 val last_update_correct:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
@@ -141,6 +148,10 @@ val last_update_correct:
 let last_update_correct #bytes #bl #tkt #ld #lp #id #ip d p =
   last_update_d_in_res_c d p && set_eq (last_update_lhs d p) (last_update_rhs d p)
 
+/// The `parent-hash link` relationship between a "parent" tree P, and a "descendant" D.
+/// It checks that:
+/// - the parent-hash stored in D is correct with respect to P,
+/// - D and P were last updated at the same time.
 val parent_hash_linked:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
@@ -178,6 +189,8 @@ let node_has_parent_hash_link #bytes #cb #tkt #lp #ip p =
   | TNode (Some _) left right ->
     node_has_parent_hash_link_aux left p || node_has_parent_hash_link_aux right p
 
+/// The parent-hash invariant:
+/// every non-blank node has a parent-hash link coming from a node below it.
 val parent_hash_invariant:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #lp:nat -> #ip:tree_index lp ->

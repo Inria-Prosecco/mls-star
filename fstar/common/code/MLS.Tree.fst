@@ -34,6 +34,15 @@ let right_index #l n =
   // End of math proof
   n + pow2 (l-1)
 
+/// Type for complete binary tree, with height `l`.
+/// The index `i` represents the leaf index of the leftmost leaf in the subtree.
+/// It does not change the shape of the tree, it is however very useful:
+/// many recursive functions must compute it through the recursive calls,
+/// putting it in the type allows to compute it for free, using F* implicit arguments.
+/// It therefore enforces a correct-by-construction tracking of leaf indices,
+/// rules out programmer errors,
+/// and enforces the MLS invariant that two sub-trees at different positions,
+/// even if otherwise identical, are never interchangeable.
 type tree (leaf_t:Type) (node_t:Type) (l:nat) (i:tree_index l) =
   | TLeaf:
     data: leaf_t{l == 0} ->
@@ -53,6 +62,10 @@ type leaf_index (l:nat) (i:tree_index l) = li:nat{leaf_index_inside l i li}
 
 let is_left_leaf (#l:pos) (#i:tree_index l) (li:leaf_index l i) = li < i+(pow2 (l-1))
 
+/// Type for path in a tree of height `l`, with left-most leaf index `i`,
+/// from the root down to leaf index `li`.
+/// `i` and `li` have no impact on the structure of the type ;
+/// however like in `tree` they prove to be very useful.
 type path (leaf_t:Type) (node_t:Type) (l:nat) (i:tree_index l) (li:leaf_index l i) =
   | PLeaf:
     data:leaf_t{l == 0} ->
@@ -62,6 +75,12 @@ type path (leaf_t:Type) (node_t:Type) (l:nat) (i:tree_index l) (li:leaf_index l 
     next:path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li ->
     path leaf_t node_t l i li
 
+/// When dealing with a subtree and a specific leaf in this subtree,
+/// MLS use the term `child` for the child of the subtree containing the leaf,
+/// and the term `sibling` for the other child (that doesn't contain the leaf).
+/// This function returns a pair containing the left child and right child,
+/// with the first element being the "child" and the second being the "sibling".
+/// This is why the return type signature is a bit involved.
 val get_child_sibling:
   #l:pos -> #i:tree_index l ->
   #leaf_t:Type -> #node_t:Type ->

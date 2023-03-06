@@ -9,6 +9,17 @@ open MLS.TreeSync.Types
 
 #set-options "--fuel 1 --ifuel 1"
 
+/// Abstraction for the Authentication Service (AS).
+/// The goal for the AS is to verify that a signature public key belong to some credential.
+/// To make no assumption on how it is implemented, we abstract it away:
+/// - when a signature public key and a credential is validated by the AS, it gives a token of type `token_t`,
+/// - we also obtain some relationship between the signature public key, credential and the token (`credential_ok`).
+/// We store tokens for every leaf with the `as_tokens` type,
+/// and have the invariant that every leaf identity has been validated by the AS, using the tokens.
+/// At the end, there are several instantiations for `as_parameters`:
+/// - in the DY* proofs,
+/// - in the executable, concrete MLS API.
+
 type as_input (bytes:Type0) {|bytes_like bytes|} = signature_public_key_nt bytes & credential_nt bytes
 
 val leaf_node_to_as_input:
@@ -24,7 +35,9 @@ noeq type as_parameters (bytes:Type0) {|bytes_like bytes|} = {
   valid_successor: as_input bytes -> as_input bytes -> prop;
 }
 
-// Actually an array, but it's easier to manipulate with TreeSync like that
+/// An array of tokens for every leaf of a tree.
+/// Internally it's defined as a tree with no internal node content,
+/// because it's easier to manipulate with TreeSync like that in the proofs
 let as_tokens (bytes:Type0) {|bytes_like bytes|} (token_t:Type0) = tree (option token_t) unit
 
 val as_add_update:
@@ -71,6 +84,8 @@ let one_credential_ok #bytes #bl #tkt #asp #l #i ts ast li =
   | None, None -> True
   | _, _ -> False
 
+/// The authentication service invariant:
+/// Every non-blank leaf is associated with a token that attests its identity was validated by the AS.
 val all_credentials_ok:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
   #l:nat -> #i:tree_index l ->

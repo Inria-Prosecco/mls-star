@@ -7,7 +7,7 @@ open MLS.TreeSync.Types
 
 #set-options "--fuel 1 --ifuel 1"
 
-// Check that the unmerged leaf li is in a non-blank leaf in t's subtree
+/// Check that the unmerged leaf li is in a non-blank leaf in t's subtree
 val unmerged_leaf_exists:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> nat ->
@@ -15,7 +15,7 @@ val unmerged_leaf_exists:
 let unmerged_leaf_exists #bytes #bl #tkt #l #i t li =
   leaf_index_inside l i li && Some? (leaf_at t li)
 
-// Check that the unmerged leaf li is unmerged everywhere it can be in t's subtree
+/// Check that the unmerged leaf li is unmerged everywhere it can be in t's subtree
 val unmerged_leaf_consistent:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
@@ -35,6 +35,7 @@ let rec unmerged_leaf_consistent #bytes #bl #tkt #l #i t li =
     unmerged_leaf_consistent left li &&
     unmerged_leaf_consistent right li
 
+/// Check that the unmerged leaves are sorted
 val unmerged_leaves_sorted: list (nat_lbytes 4) -> bool
 let rec unmerged_leaves_sorted l =
   match l with
@@ -42,6 +43,8 @@ let rec unmerged_leaves_sorted l =
   | [_] -> true
   | x::y::t -> x < y && unmerged_leaves_sorted (y::t)
 
+/// The unmerged leaves invariant:
+/// every non-blank node has unmerged leaves satisfying the three properties above.
 val unmerged_leaves_ok:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->

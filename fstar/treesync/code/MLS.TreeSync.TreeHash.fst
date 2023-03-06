@@ -56,6 +56,8 @@ let rec tree_hash_pre #bytes #cb #tkt #l #i t =
     tree_hash_pre right &&
     (1 + prefixes_length ((ps_option (ps_parent_node_nt tkt)).serialize onp)) + 2 + hash_length #bytes + 2 + hash_length #bytes < hash_max_input_length #bytes
 
+/// Compute the tree hash of a tree.
+/// The precondition checks that the hash inputs will fit in the hash maximum allowed size.
 #push-options "--z3rlimit 50"
 val tree_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->

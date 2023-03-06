@@ -10,6 +10,8 @@ open MLS.TreeSync.Operations //leaf_is_valid
 
 #set-options "--fuel 1 --ifuel 1"
 
+/// The "valid leaves" invariant:
+/// every non-blank leaf has a valid signature.
 val valid_leaves_invariant:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->

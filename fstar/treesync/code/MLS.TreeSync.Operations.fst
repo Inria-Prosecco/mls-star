@@ -27,6 +27,15 @@ let rec tree_add_pre #bytes #bl #tkt #l #i t li =
     | Some content -> li < pow2 32 && bytes_length #bytes (ps_nat_lbytes 4) (insert_sorted li content.unmerged_leaves) < pow2 30
     )
 
+/// Add a new leaf at a specific position in the tree.
+/// MLS specifies that an add must happen in the first empty leaf,
+/// and that the tree must be extended if there are no empty leaves.
+/// Finding the empty leaf and extending are separate functions,
+/// `tree_add` only deals with modifying a leaf and adding its index to the unmerged_leaves lists.
+/// We can't always add a leaf in the tree:
+/// - its leaf index has to fit in 32 bits
+/// - the unmerged_leaves array lengths have to fit in 30 bits
+/// This is what the `tree_add_pre` precondition is checking.
 val tree_add:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
@@ -114,6 +123,11 @@ val compute_leaf_parent_hash_from_path_pre:
   bool
 let compute_leaf_parent_hash_from_path_pre = compute_path_parent_hash_pre
 
+/// Recompute the parent-hash of a leaf at the end of a path.
+/// When `path_leaf_t == leaf_node_data_nt bytes tkt`, the path type corresponds to `external_pathsync`,
+/// and this function is used to compute the new leaf parent-hash before signature.
+/// When `path_leaf_t == leaf_node_nt bytes tkt`, the path type corresponds to `pathsync`,
+/// and this function is used to check the validity of the path before applying it on the tree.
 val compute_leaf_parent_hash_from_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #path_leaf_t:Type ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
@@ -160,9 +174,7 @@ let get_leaf_tbs #bytes #bl #tkt ln group_id leaf_index =
     leaf_index = if ln.data.source = LNS_key_package then () else leaf_index;
   })
 
-// TODO: other checks described in
-// https://messaginglayersecurity.rocks/mls-protocol/draft-ietf-mls-protocol.html#name-leaf-node-validation
-// ?
+/// Check the signature inside a leaf.
 val leaf_is_valid:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   leaf_node_nt bytes tkt -> mls_bytes bytes -> nat ->
@@ -175,8 +187,12 @@ let leaf_is_valid #bytes #cb #tkt ln group_id leaf_index =
   length #bytes ln.data.signature_key = sign_public_key_length #bytes &&
   length #bytes ln.signature = sign_signature_length #bytes &&
   verify_with_label #bytes ln.data.signature_key "LeafNodeTBS" tbs_bytes ln.signature
+  // TODO: other checks described in
+  // https://messaginglayersecurity.rocks/mls-protocol/draft-ietf-mls-protocol.html#name-leaf-node-validation
+  // ?
   )
 
+/// Check the signature of the path's leaf.
 val path_leaf_is_valid:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
@@ -185,6 +201,7 @@ val path_leaf_is_valid:
 let path_leaf_is_valid #bytes #cb #tkt #l #li group_id p =
   leaf_is_valid (get_path_leaf p) group_id li
 
+/// Check the parent-hash of the path's leaf.
 val path_is_parent_hash_valid:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
@@ -197,6 +214,7 @@ let path_is_parent_hash_valid #bytes #cb #tkt #l #li t p =
   (new_lp.data.source = LNS_commit && (new_lp.data.parent_hash <: bytes) = computed_parent_hash)
   )
 
+/// Check that blank nodes in the path corresponds to filtered nodes.
 val path_is_filter_valid:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_t:Type -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
@@ -215,6 +233,7 @@ let rec path_is_filter_valid #bytes #cb #leaf_t #tkt #l #i #li t p =
     sibling_ok && path_is_filter_valid child p_next
   )
 
+/// Combine all the validity checks for paths, defined above.
 val path_is_valid:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
@@ -263,6 +282,7 @@ let external_path_to_path_aux #bytes #cb #tkt #l #i #li t p group_id sign_key no
   ({ data = new_lp_data; signature = new_signature } <: leaf_node_nt bytes tkt)
 #pop-options
 
+/// Authenticate an `external_pathsync` by computing the leaf parent-hash, signing the leaf, and returns a `pathsync`.
 val external_path_to_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
@@ -307,6 +327,7 @@ val apply_path_pre:
 let apply_path_pre #bytes #cb #tkt #l #li t p =
   apply_path_aux_pre t p (length #bytes (root_parent_hash #bytes))
 
+/// Apply a path on the tree, and compute the parent-hashes of internal nodes.
 val apply_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
@@ -317,6 +338,9 @@ val apply_path:
 let apply_path #bytes #cb #tkt #l #li t p =
   apply_path_aux t p root_parent_hash
 
+/// Remove, or "un-add" the leaves whose index satisfy some predicate.
+/// This is useful in the proofs, and also to compute the "original silbing"
+/// in the parent-hash check when joining a group.
 val un_addP:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->

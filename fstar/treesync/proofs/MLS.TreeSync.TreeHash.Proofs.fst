@@ -40,19 +40,30 @@ val length_get_tree_hash_input:
 let length_get_tree_hash_input #bytes #cb #tkt #l #i t = ()
 #pop-options
 
+/// The tree hash injectivity theorem.
+/// Since hash functions are not injective, we can't exactly prove injectivity,
+/// but we do prove injectivity modulo hash collisions.
+/// Given two trees that have the same hash, then either:
+/// - the two trees are equal, and at the same position (same height `l` and same leftmost leaf index `i`),
+/// - or we compute (in polynomial time) a hash collision.
 #push-options "--z3rlimit 50"
 val tree_hash_inj:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l1:nat -> #i1:tree_index l1 ->
   #l2:nat -> #i2:tree_index l2 ->
   t1:treesync bytes tkt l1 i1{tree_hash_pre t1} -> t2:treesync bytes tkt l2 i2{tree_hash_pre t2} ->
+  // The lemma is actually a function computing a pair of bytes with the following property:
   Pure (bytes & bytes)
+  // if the trees `t1` and `t2` have equal tree hash,
   (requires tree_hash t1 == tree_hash t2)
   (ensures fun (b1, b2) ->
+    // then either they are equal,
     l1 == l2 /\ i1 == i2 /\ t1 == t2 \/
+    // or the two bytes computed by the function are a hash collision.
     length b1 < hash_max_input_length #bytes /\
     length b2 < hash_max_input_length #bytes /\
-    hash_hash b1 == hash_hash b2 /\ ~(b1 == b2))
+    hash_hash b1 == hash_hash b2 /\ ~(b1 == b2)
+  )
 let rec tree_hash_inj #bytes #sb #tkt #l1 #i1 #l2 #i2 t1 t2 =
   let hash_input1 = get_tree_hash_input t1 in
   let hash_input2 = get_tree_hash_input t2 in
