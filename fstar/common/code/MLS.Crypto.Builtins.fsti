@@ -7,7 +7,6 @@ open MLS.Result
 
 type available_ciphersuite =
   | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256
   | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
 
 class crypto_bytes (bytes:Type0) = {

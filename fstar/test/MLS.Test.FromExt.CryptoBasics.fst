@@ -60,41 +60,35 @@ let test_derive_tree_secret t =
 
 val test_sign_with_label: {|crypto_bytes bytes|} -> crypto_basics_sign_with_label -> ML unit
 let test_sign_with_label t =
-  match ciphersuite #bytes with
-  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> (
-    IO.print_string "(crypto basics: skipping one signature test because P256 is unavailable)\n"
-  )
-  | _ -> (
-    let priv = hex_string_to_bytes t.priv in
-    let pub = hex_string_to_bytes t.pub in
-    let content = hex_string_to_bytes t.content in
-    let label = t.label in
-    let signature = hex_string_to_bytes t.signature in
-    if not (length pub = sign_public_key_length #bytes) then (
-      failwith "test_sign_with_label: signature public key has wrong length\n"
-    ) else if not (length priv = sign_private_key_length #bytes) then (
-      failwith "test_sign_with_label: signature private key has wrong length\n"
-    ) else if not (length signature = sign_signature_length #bytes) then (
-      failwith "test_sign_with_label: signature has wrong length\n"
-    ) else if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
-      failwith "test_sign_with_label: label is malformed\n"
-    ) else if not (length content < pow2 30 && sign_with_label_pre #bytes label (length content)) then (
-      failwith "test_sign_with_label: bad signature precondition\n"
-    ) else (
-      let signature_ok =
-        verify_with_label #bytes pub label content signature
-      in
-      let signature_roundtrip_ok =
-        let (_, nonce) = gen_rand_bytes #bytes (init_rand_state 0xC0FFEE) (sign_nonce_length #bytes) in
-        let my_signature = sign_with_label #bytes priv label content nonce in
-        verify_with_label #bytes pub label content my_signature
-      in
-      if not signature_ok then (
-        failwith "test_sign_with_label: wrong signature"
-      );
-      if not signature_roundtrip_ok then (
-        failwith "test_sign_with_label: wrong signature roundtrip"
-      )
+  let priv = hex_string_to_bytes t.priv in
+  let pub = hex_string_to_bytes t.pub in
+  let content = hex_string_to_bytes t.content in
+  let label = t.label in
+  let signature = hex_string_to_bytes t.signature in
+  if not (length pub = sign_public_key_length #bytes) then (
+    failwith "test_sign_with_label: signature public key has wrong length\n"
+  ) else if not (length priv = sign_private_key_length #bytes) then (
+    failwith "test_sign_with_label: signature private key has wrong length\n"
+  ) else if not (length signature = sign_signature_length #bytes) then (
+    failwith "test_sign_with_label: signature has wrong length\n"
+  ) else if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
+    failwith "test_sign_with_label: label is malformed\n"
+  ) else if not (length content < pow2 30 && sign_with_label_pre #bytes label (length content)) then (
+    failwith "test_sign_with_label: bad signature precondition\n"
+  ) else (
+    let signature_ok =
+      verify_with_label #bytes pub label content signature
+    in
+    let signature_roundtrip_ok =
+      let (_, nonce) = gen_rand_bytes #bytes (init_rand_state 0xC0FFEE) (sign_nonce_length #bytes) in
+      let my_signature = sign_with_label #bytes priv label content nonce in
+      verify_with_label #bytes pub label content my_signature
+    in
+    if not signature_ok then (
+      failwith "test_sign_with_label: wrong signature"
+    );
+    if not signature_roundtrip_ok then (
+      failwith "test_sign_with_label: wrong signature roundtrip"
     )
   )
 

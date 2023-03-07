@@ -64,39 +64,32 @@ let test_tree_validation_one t =
     failwith ("Internal error! '" ^ s ^ "'\n")
   end
   | Success cs -> begin
-    match cs with
-    | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> (
-      // Unsupported ciphersuite (because of P256)
-      false
-    )
-    | _ -> (
-      let cb = mk_concrete_crypto_bytes cs in
+    let cb = mk_concrete_crypto_bytes cs in
 
-      let group_id = hex_string_to_bytes t.group_id in
-      let group_id: mls_bytes bytes = if length group_id < pow2 30 then group_id else failwith "test_tree_validation_one: group_id too long" in
-      let ratchet_tree = extract_option "ratchet_tree" (((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt))).parse (hex_string_to_bytes t.tree)) in
-      let (|l, tree|) = extract_result (ratchet_tree_to_treesync ratchet_tree) in
+    let group_id = hex_string_to_bytes t.group_id in
+    let group_id: mls_bytes bytes = if length group_id < pow2 30 then group_id else failwith "test_tree_validation_one: group_id too long" in
+    let ratchet_tree = extract_option "ratchet_tree" (((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt))).parse (hex_string_to_bytes t.tree)) in
+    let (|l, tree|) = extract_result (ratchet_tree_to_treesync ratchet_tree) in
 
-      if not (unmerged_leaves_ok tree) then (
-        failwith "test_tree_validation_one: bad unmerged leaves"
-      );
-      if not (parent_hash_invariant tree) then (
-        failwith "test_tree_validation_one: bad parent-hash"
-      );
-      if not (valid_leaves_invariant group_id tree) then (
-        failwith "test_tree_validation_one: bad leaf signature"
-      );
+    if not (unmerged_leaves_ok tree) then (
+      failwith "test_tree_validation_one: bad unmerged leaves"
+    );
+    if not (parent_hash_invariant tree) then (
+      failwith "test_tree_validation_one: bad parent-hash"
+    );
+    if not (valid_leaves_invariant group_id tree) then (
+      failwith "test_tree_validation_one: bad leaf signature"
+    );
 
-      FStar.List.iter (fun (expected_tree_hash, my_tree_hash) ->
-        check_equal "tree_hash" (bytes_to_hex_string) (hex_string_to_bytes expected_tree_hash) (my_tree_hash)
-      ) (FStar.List.zip t.tree_hashes (compute_tree_hashes tree));
+    FStar.List.iter (fun (expected_tree_hash, my_tree_hash) ->
+      check_equal "tree_hash" (bytes_to_hex_string) (hex_string_to_bytes expected_tree_hash) (my_tree_hash)
+    ) (FStar.List.zip t.tree_hashes (compute_tree_hashes tree));
 
-      FStar.List.iter (fun (expected_resolution, my_resolution) ->
-        check_equal "resolution" (list_to_string nat_to_string) (List.Tot.map FStar.UInt32.v expected_resolution) (my_resolution)
-      ) (FStar.List.zip t.resolutions (compute_resolutions tree));
+    FStar.List.iter (fun (expected_resolution, my_resolution) ->
+      check_equal "resolution" (list_to_string nat_to_string) (List.Tot.map FStar.UInt32.v expected_resolution) (my_resolution)
+    ) (FStar.List.zip t.resolutions (compute_resolutions tree));
 
-      true
-    )
+    true
   end
 
 val test_tree_validation: list tree_validation_test -> ML nat

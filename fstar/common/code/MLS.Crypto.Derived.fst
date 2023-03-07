@@ -14,7 +14,7 @@ let available_ciphersuite_from_network cs =
   match cs with
   | CS_reserved -> error "available_ciphersuite_from_network: ciphersuite not available"
   | CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> return AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | CS_mls_128_dhkemp256_aes128gcm_sha256_p256 -> return AC_mls_128_dhkemp256_aes128gcm_sha256_p256
+  | CS_mls_128_dhkemp256_aes128gcm_sha256_p256 -> error "available_ciphersuite_from_network: ciphersuite not available"
   | CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> return AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
   | CS_mls_256_dhkemx448_aes256gcm_sha512_ed448 -> error "available_ciphersuite_from_network: ciphersuite not available"
   | CS_mls_256_dhkemp521_aes256gcm_sha512_p521 -> error "available_ciphersuite_from_network: ciphersuite not available"
@@ -28,7 +28,6 @@ val available_ciphersuite_to_network: available_ciphersuite -> cipher_suite_nt
 let available_ciphersuite_to_network cs =
   match cs with
   | AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
-  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> CS_mls_128_dhkemp256_aes128gcm_sha256_p256
   | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
 #pop-options
 

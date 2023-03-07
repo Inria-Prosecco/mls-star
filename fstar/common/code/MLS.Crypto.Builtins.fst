@@ -71,27 +71,6 @@ let ed25519_signature_functions = {
   );
 }
 
-//TODO
-val p256_signature_functions: signature_functions hacl_star_bytes #bytes_like_hacl_star_bytes
-let p256_signature_functions = {
-  sign_public_key_length = 0;
-  sign_private_key_length = 0;
-  sign_nonce_length = 0;
-  sign_signature_length = 0;
-  sign_signature_length_bound = ();
-  sign_max_input_length = 0;
-  sign_gen_keypair = (fun rand ->
-    magic()
-  );
-  sign_sign = (fun sk msg rand ->
-    magic()
-  );
-  sign_verify = (fun pk msg signature ->
-    false
-  );
-}
-
-
 val available_ciphersuite_to_concrete_ciphersuite: available_ciphersuite -> concrete_ciphersuite & signature_functions hacl_star_bytes #bytes_like_hacl_star_bytes
 let available_ciphersuite_to_concrete_ciphersuite cs =
   match cs with
@@ -101,12 +80,6 @@ let available_ciphersuite_to_concrete_ciphersuite cs =
     aead = AEAD.AES128_GCM;
     kdf_hash = Hash.SHA2_256;
   }, ed25519_signature_functions)
-  | AC_mls_128_dhkemp256_aes128gcm_sha256_p256 -> ({
-    kem_dh = DH.DH_P256;
-    kem_hash = Hash.SHA2_256;
-    aead = AEAD.AES128_GCM;
-    kdf_hash = Hash.SHA2_256;
-  }, p256_signature_functions)
   | AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> ({
     kem_dh = DH.DH_Curve25519;
     kem_hash = Hash.SHA2_256;
