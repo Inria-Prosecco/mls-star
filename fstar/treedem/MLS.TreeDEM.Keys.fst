@@ -154,7 +154,7 @@ let mls_exporter #bytes #cb exporter_secret label context len =
   if not (length context < hash_max_input_length #bytes) then
     internal_failure "mls_exporter: context too long"
   else
-    expand_with_label #bytes derived_secret (string_to_bytes #bytes "exporter") (hash_hash context) len
+    expand_with_label #bytes derived_secret (string_to_bytes #bytes "exported") (hash_hash context) len
 
 type ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = {
   secret: lbytes bytes (kdf_length #bytes);
