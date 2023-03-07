@@ -565,7 +565,7 @@ let get_filename (typ:test_type): string =
   | MessageProtection -> "test_vectors/data/message-protection.json"
   | KeySchedule -> "test_vectors/data/key-schedule.json"
   | PreSharedKeys -> "test_vectors/data/psk_secret.json"
-  | TranscriptHashes -> "test_vectors/data/transcripts-hashes.json"
+  | TranscriptHashes -> "test_vectors/data/transcript-hashes.json"
   | Welcome -> "test_vectors/data/welcome.json"
   | TreeOperations -> "test_vectors/data/tree-operations.json"
   | TreeValidation -> "test_vectors/data/tree-validation.json"
