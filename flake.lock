@@ -10,11 +10,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1681831908,
-        "narHash": "sha256-LgeRLYTtELkpVQfK9V4VuKH+ocHnUkzCYJ1/unYsUSI=",
+        "lastModified": 1684168681,
+        "narHash": "sha256-qAf0hLT/olg73un1Yw79NYzzEjTgt16psoQUFL6CvbY=",
         "ref": "refs/heads/main",
-        "rev": "2f51a02ec85db2a2639ad08eca332cf64364c619",
-        "revCount": 102,
+        "rev": "a548a1c92c40b1c40a6864a2af9646559bba3f1c",
+        "revCount": 111,
         "type": "git",
         "url": "ssh://git@github.com/TWal/comparse.git"
       },
@@ -26,11 +26,11 @@
     "dolev-yao-star-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1676284961,
-        "narHash": "sha256-1MlJEbsMYt9QS7aFfU65CyiuRIxi7p2qNnbJDpiI22E=",
+        "lastModified": 1682000512,
+        "narHash": "sha256-hW7ugRgVWIFg2N/2AKDeXtgY8JC50LvZWcSdkw54Irw=",
         "ref": "comparse",
-        "rev": "4b7865617be266653eafe8c916e62ca2b50ac4e5",
-        "revCount": 1144,
+        "rev": "42bd3fccd85bd549ccb9427143d6b3beab94cc77",
+        "revCount": 1163,
         "type": "git",
         "url": "ssh://git@github.com/prosecco/dolev-yao-star.git"
       },
@@ -57,35 +57,35 @@
     "fstar-flake": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
+        "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1681489664,
-        "narHash": "sha256-vqMsErdrV7DkQsmjMnHHRXYTw79QKupg4nyZoO62nh8=",
+        "lastModified": 1684144101,
+        "narHash": "sha256-3NpcEcp1CKpWXH4efmgRGKC5kOrV5ctIRMUsWEja29A=",
         "owner": "FStarLang",
         "repo": "FStar",
-        "rev": "b07d0e2cbd398ea074579f50805b1e3dc3e57a04",
+        "rev": "31e595dcc610d64e6424f54d486784672f8e90f1",
         "type": "github"
       },
       "original": {
         "owner": "FStarLang",
         "repo": "FStar",
+        "rev": "31e595dcc610d64e6424f54d486784672f8e90f1",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1681753173,
-        "narHash": "sha256-MrGmzZWLUqh2VstoikKLFFIELXm/lsf/G9U9zR96VD4=",
+        "lastModified": 1669140675,
+        "narHash": "sha256-npzfyfLECsJWgzK/M4gWhykP2DNAJTYjgY2BWkz/oEQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "0a4206a51b386e5cda731e8ac78d76ad924c7125",
+        "rev": "2788904d26dda6cfa1921c5abb7a2466ffe3cb8c",
         "type": "github"
       },
       "original": {
         "id": "nixpkgs",
+        "ref": "nixos-unstable",
         "type": "indirect"
       }
     },
@@ -94,7 +94,10 @@
         "comparse-flake": "comparse-flake",
         "dolev-yao-star-src": "dolev-yao-star-src",
         "fstar-flake": "fstar-flake",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": [
+          "fstar-flake",
+          "nixpkgs"
+        ]
       }
     }
   },

@@ -7,7 +7,7 @@ type codes =
 type fuel = Vale_X64_Decls.va_fuel
 type ('c, 's0, 'f0, 'sN) eval =
   (unit, unit, unit, unit) Vale_X64_Decls.eval_code
-type ('r, 'msg, 'p) labeled_wrap = (unit, unit, 'p) Prims.labeled
+type ('r, 'msg, 'p) labeled_wrap = (unit, unit, 'p) FStar_Range.labeled
 type ('r, 'msg, 'p) label = (unit, unit, 'p) labeled_wrap
 
 
@@ -41,25 +41,25 @@ type ('a, 'dummyV0) quickCodes =
   | QEmpty of 'a 
   | QSeq of unit * (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
   Vale_X64_Machine_s.precode * (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
-  Vale_X64_Machine_s.precode Prims.list * Prims.range * Prims.string *
+  Vale_X64_Machine_s.precode Prims.list * FStar_Range.range * Prims.string *
   (Obj.t, unit) Vale_X64_QuickCode.quickCode * ('a, unit) quickCodes 
   | QBind of unit * (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
   Vale_X64_Machine_s.precode * (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
-  Vale_X64_Machine_s.precode Prims.list * Prims.range * Prims.string *
+  Vale_X64_Machine_s.precode Prims.list * FStar_Range.range * Prims.string *
   (Obj.t, unit) Vale_X64_QuickCode.quickCode * unit 
   | QGetState of (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
   Vale_X64_Machine_s.precode Prims.list * unit 
   | QPURE of (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
-  Vale_X64_Machine_s.precode Prims.list * Prims.range * Prims.string * unit *
+  Vale_X64_Machine_s.precode Prims.list * FStar_Range.range * Prims.string * unit *
   unit * ('a, unit) quickCodes 
   | QLemma of (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
-  Vale_X64_Machine_s.precode Prims.list * Prims.range * Prims.string * unit *
+  Vale_X64_Machine_s.precode Prims.list * FStar_Range.range * Prims.string * unit *
   unit * unit * ('a, unit) quickCodes 
   | QGhost of (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
-  Vale_X64_Machine_s.precode Prims.list * unit * Prims.range * Prims.string *
+  Vale_X64_Machine_s.precode Prims.list * unit * FStar_Range.range * Prims.string *
   unit * unit * unit * unit 
   | QAssertBy of (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
-  Vale_X64_Machine_s.precode Prims.list * Prims.range * Prims.string * unit *
+  Vale_X64_Machine_s.precode Prims.list * FStar_Range.range * Prims.string * unit *
   (unit, unit) quickCodes * ('a, unit) quickCodes 
 let uu___is_QEmpty :
   'a .
@@ -108,7 +108,7 @@ let __proj__QSeq__item__cs :
 let __proj__QSeq__item__r :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
-      Prims.list -> ('a, unit) quickCodes -> Prims.range
+      Prims.list -> ('a, unit) quickCodes -> FStar_Range.range
   =
   fun uu___ ->
     fun projectee ->
@@ -175,7 +175,7 @@ let __proj__QBind__item__cs :
 let __proj__QBind__item__r :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
-      Prims.list -> ('a, unit) quickCodes -> Prims.range
+      Prims.list -> ('a, unit) quickCodes -> FStar_Range.range
   =
   fun uu___ ->
     fun projectee ->
@@ -244,7 +244,7 @@ let __proj__QPURE__item__cs :
 let __proj__QPURE__item__r :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
-      Prims.list -> ('a, unit) quickCodes -> Prims.range
+      Prims.list -> ('a, unit) quickCodes -> FStar_Range.range
   =
   fun uu___ ->
     fun projectee ->
@@ -290,7 +290,7 @@ let __proj__QLemma__item__cs :
 let __proj__QLemma__item__r :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
-      Prims.list -> ('a, unit) quickCodes -> Prims.range
+      Prims.list -> ('a, unit) quickCodes -> FStar_Range.range
   =
   fun uu___ ->
     fun projectee ->
@@ -336,7 +336,7 @@ let __proj__QGhost__item__cs :
 let __proj__QGhost__item__r :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
-      Prims.list -> ('a, unit) quickCodes -> Prims.range
+      Prims.list -> ('a, unit) quickCodes -> FStar_Range.range
   =
   fun uu___ ->
     fun projectee ->
@@ -375,7 +375,7 @@ let __proj__QAssertBy__item__cs :
 let __proj__QAssertBy__item__r :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
-      Prims.list -> ('a, unit) quickCodes -> Prims.range
+      Prims.list -> ('a, unit) quickCodes -> FStar_Range.range
   =
   fun uu___ ->
     fun projectee ->
@@ -409,7 +409,7 @@ let va_QBind :
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
       (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
         Prims.list ->
-        Prims.range ->
+        FStar_Range.range ->
           Prims.string ->
             ('b, unit) Vale_X64_QuickCode.quickCode ->
               unit -> ('a, unit) quickCodes
@@ -424,7 +424,7 @@ let va_QLemma :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
       Prims.list ->
-      Prims.range ->
+      FStar_Range.range ->
         Prims.string ->
           unit ->
             unit -> unit -> ('a, unit) quickCodes -> ('a, unit) quickCodes
@@ -440,7 +440,7 @@ let va_QSeq :
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
       (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
         Prims.list ->
-        Prims.range ->
+        FStar_Range.range ->
           Prims.string ->
             ('b, unit) Vale_X64_QuickCode.quickCode ->
               ('a, unit) quickCodes -> ('a, unit) quickCodes
@@ -455,7 +455,7 @@ let (va_qPURE :
     Prims.list ->
     unit ->
       unit ->
-        Prims.range ->
+        FStar_Range.range ->
           Prims.string ->
             unit -> (Obj.t, unit) quickCodes -> (Obj.t, unit) quickCodes)
   =
@@ -468,8 +468,8 @@ type ('a, 'c, 'qc, 's0, 'k) wp_proc = Obj.t
 type 'a wp_Seq_t = unit
 type 'a wp_Bind_t = unit
 type ('p, 'uuuuu, 'uuuuu1) k_AssertBy = 'p
-let (va_range1 : Prims.range) =
-  Prims.mk_range "" Prims.int_zero Prims.int_zero Prims.int_zero
+let (va_range1 : FStar_Range.range) =
+  FStar_Range.mk_range "" Prims.int_zero Prims.int_zero Prims.int_zero
     Prims.int_zero
 
 type ('a, 'cs, 'qcs, 'mods, 'k, 's0) wp = Obj.t
@@ -639,7 +639,7 @@ let va_qAssert :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
       Prims.list ->
-      Prims.range ->
+      FStar_Range.range ->
         Prims.string ->
           unit -> ('a, unit) quickCodes -> ('a, unit) quickCodes
   =
@@ -652,7 +652,7 @@ let va_qAssume :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
       Prims.list ->
-      Prims.range ->
+      FStar_Range.range ->
         Prims.string ->
           unit -> ('a, unit) quickCodes -> ('a, unit) quickCodes
   =
@@ -665,7 +665,7 @@ let va_qAssertSquash :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
       Prims.list ->
-      Prims.range -> Prims.string -> unit -> unit -> ('a, unit) quickCodes
+      FStar_Range.range -> Prims.string -> unit -> unit -> ('a, unit) quickCodes
   =
   fun cs ->
     fun r ->
@@ -674,7 +674,7 @@ let va_qAssertBy :
   'a .
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
       Prims.list ->
-      Prims.range ->
+      FStar_Range.range ->
         Prims.string ->
           unit ->
             (unit, unit) quickCodes ->

@@ -28,7 +28,7 @@ let rec zip :
                      (FStar_Tactics_Types.incr_depth
                         (FStar_Tactics_Types.set_proofstate_range ps
                            (FStar_Range.prims_to_fstar_range
-                              (Prims.mk_range
+                              (FStar_Range.mk_range
                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                  (Prims.of_int (16)) (Prims.of_int (34))
                                  (Prims.of_int (16)) (Prims.of_int (43))))))
@@ -37,7 +37,7 @@ let rec zip :
                  (match FStar_Tactics_Types.tracepoint
                           (FStar_Tactics_Types.set_proofstate_range ps'
                              (FStar_Range.prims_to_fstar_range
-                                (Prims.mk_range
+                                (FStar_Range.mk_range
                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                    (Prims.of_int (16)) (Prims.of_int (31))
                                    (Prims.of_int (16)) (Prims.of_int (33)))))
@@ -48,7 +48,7 @@ let rec zip :
                           (FStar_Tactics_Types.decr_depth
                              (FStar_Tactics_Types.set_proofstate_range ps'
                                 (FStar_Range.prims_to_fstar_range
-                                   (Prims.mk_range
+                                   (FStar_Range.mk_range
                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                       (Prims.of_int (16)) (Prims.of_int (31))
                                       (Prims.of_int (16)) (Prims.of_int (33))))))))
@@ -100,14 +100,14 @@ let rec (string_of_name :
                                   (FStar_Tactics_Types.set_proofstate_range
                                      ps
                                      (FStar_Range.prims_to_fstar_range
-                                        (Prims.mk_range
+                                        (FStar_Range.mk_range
                                            "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                            (Prims.of_int (79))
                                            (Prims.of_int (19))
                                            (Prims.of_int (79))
                                            (Prims.of_int (42))))))
                                (FStar_Range.prims_to_fstar_range
-                                  (Prims.mk_range
+                                  (FStar_Range.mk_range
                                      "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                      (Prims.of_int (79)) (Prims.of_int (25))
                                      (Prims.of_int (79)) (Prims.of_int (42))))))
@@ -116,7 +116,7 @@ let rec (string_of_name :
                      (match FStar_Tactics_Types.tracepoint
                               (FStar_Tactics_Types.set_proofstate_range ps'
                                  (FStar_Range.prims_to_fstar_range
-                                    (Prims.mk_range "prims.fst"
+                                    (FStar_Range.mk_range "prims.fst"
                                        (Prims.of_int (557))
                                        (Prims.of_int (19))
                                        (Prims.of_int (557))
@@ -129,7 +129,7 @@ let rec (string_of_name :
                                  (FStar_Tactics_Types.set_proofstate_range
                                     ps'
                                     (FStar_Range.prims_to_fstar_range
-                                       (Prims.mk_range "prims.fst"
+                                       (FStar_Range.mk_range "prims.fst"
                                           (Prims.of_int (557))
                                           (Prims.of_int (19))
                                           (Prims.of_int (557))
@@ -141,7 +141,7 @@ let rec (string_of_name :
                (match FStar_Tactics_Types.tracepoint
                         (FStar_Tactics_Types.set_proofstate_range ps'
                            (FStar_Range.prims_to_fstar_range
-                              (Prims.mk_range "prims.fst"
+                              (FStar_Range.mk_range "prims.fst"
                                  (Prims.of_int (557)) (Prims.of_int (19))
                                  (Prims.of_int (557)) (Prims.of_int (31)))))
                 with
@@ -151,7 +151,7 @@ let rec (string_of_name :
                         (FStar_Tactics_Types.decr_depth
                            (FStar_Tactics_Types.set_proofstate_range ps'
                               (FStar_Range.prims_to_fstar_range
-                                 (Prims.mk_range "prims.fst"
+                                 (FStar_Range.mk_range "prims.fst"
                                     (Prims.of_int (557)) (Prims.of_int (19))
                                     (Prims.of_int (557)) (Prims.of_int (31))))))))
            | FStar_Tactics_Result.Failed (e, ps') ->
@@ -172,7 +172,7 @@ let rec (suffix_name :
                      (FStar_Tactics_Types.incr_depth
                         (FStar_Tactics_Types.set_proofstate_range ps
                            (FStar_Range.prims_to_fstar_range
-                              (Prims.mk_range
+                              (FStar_Range.mk_range
                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                  (Prims.of_int (84)) (Prims.of_int (16))
                                  (Prims.of_int (84)) (Prims.of_int (29))))))
@@ -181,7 +181,7 @@ let rec (suffix_name :
                  (match FStar_Tactics_Types.tracepoint
                           (FStar_Tactics_Types.set_proofstate_range ps'
                              (FStar_Range.prims_to_fstar_range
-                                (Prims.mk_range
+                                (FStar_Range.mk_range
                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                    (Prims.of_int (84)) (Prims.of_int (16))
                                    (Prims.of_int (84)) (Prims.of_int (68)))))
@@ -194,7 +194,7 @@ let rec (suffix_name :
                           (FStar_Tactics_Types.decr_depth
                              (FStar_Tactics_Types.set_proofstate_range ps'
                                 (FStar_Range.prims_to_fstar_range
-                                   (Prims.mk_range
+                                   (FStar_Range.mk_range
                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                       (Prims.of_int (84)) (Prims.of_int (16))
                                       (Prims.of_int (84)) (Prims.of_int (68))))))))
@@ -237,7 +237,7 @@ let rec (push_pre :
                 (FStar_Tactics_Types.incr_depth
                    (FStar_Tactics_Types.set_proofstate_range ps
                       (FStar_Range.prims_to_fstar_range
-                         (Prims.mk_range
+                         (FStar_Range.mk_range
                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                             (Prims.of_int (99)) (Prims.of_int (8))
                             (Prims.of_int (99)) (Prims.of_int (17))))))
@@ -246,7 +246,7 @@ let rec (push_pre :
             (match FStar_Tactics_Types.tracepoint
                      (FStar_Tactics_Types.set_proofstate_range ps'
                         (FStar_Range.prims_to_fstar_range
-                           (Prims.mk_range
+                           (FStar_Range.mk_range
                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                               (Prims.of_int (99)) (Prims.of_int (2))
                               (Prims.of_int (131)) (Prims.of_int (53)))))
@@ -268,14 +268,14 @@ let rec (push_pre :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps2
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (104))
                                                                     (Prims.of_int (15))
                                                                     (Prims.of_int (104))
                                                                     (Prims.of_int (61))))))
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (104))
                                                                   (Prims.of_int (15))
@@ -288,7 +288,7 @@ let rec (push_pre :
                                                            (FStar_Tactics_Types.set_proofstate_range
                                                               ps'1
                                                               (FStar_Range.prims_to_fstar_range
-                                                                 (Prims.mk_range
+                                                                 (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (104))
                                                                     (Prims.of_int (15))
@@ -304,7 +304,7 @@ let rec (push_pre :
                                                                  ps'1
                                                                  (FStar_Range.prims_to_fstar_range
                                                                     (
-                                                                    Prims.mk_range
+                                                                    FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (104))
                                                                     (Prims.of_int (15))
@@ -321,7 +321,7 @@ let rec (push_pre :
                                                      (FStar_Tactics_Types.set_proofstate_range
                                                         ps'1
                                                         (FStar_Range.prims_to_fstar_range
-                                                           (Prims.mk_range
+                                                           (FStar_Range.mk_range
                                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                               (Prims.of_int (104))
                                                               (Prims.of_int (12))
@@ -346,14 +346,14 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (109))
                                                                     (Prims.of_int (22))
                                                                     (Prims.of_int (114))
                                                                     (Prims.of_int (75))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (109))
                                                                     (Prims.of_int (28))
@@ -369,7 +369,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (109))
                                                                     (Prims.of_int (22))
@@ -402,28 +402,28 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (37))
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (108))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (54))
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (108))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (56))
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (88))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (56))
@@ -439,7 +439,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (56))
@@ -455,7 +455,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (56))
@@ -478,7 +478,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (54))
@@ -495,7 +495,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (54))
@@ -518,7 +518,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (37))
@@ -539,7 +539,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (111))
                                                                     (Prims.of_int (37))
@@ -562,7 +562,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (112))
                                                                     (Prims.of_int (26))
@@ -578,7 +578,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (112))
                                                                     (Prims.of_int (26))
@@ -599,7 +599,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (109))
                                                                     (Prims.of_int (22))
@@ -622,7 +622,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (116))
                                                                     (Prims.of_int (32))
@@ -639,7 +639,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (116))
                                                                     (Prims.of_int (32))
@@ -664,14 +664,14 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (118))
                                                                     (Prims.of_int (25))
                                                                     (Prims.of_int (118))
                                                                     (Prims.of_int (85))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (118))
                                                                     (Prims.of_int (68))
@@ -687,7 +687,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -704,7 +704,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -727,7 +727,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (118))
                                                                     (Prims.of_int (20))
@@ -742,7 +742,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (118))
                                                                     (Prims.of_int (20))
@@ -759,7 +759,7 @@ let rec (push_pre :
                                                                   (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (106))
                                                                     (Prims.of_int (16))
@@ -773,7 +773,7 @@ let rec (push_pre :
                                                                     FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (120))
                                                                     (Prims.of_int (14))
@@ -790,7 +790,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (120))
                                                                     (Prims.of_int (14))
@@ -810,14 +810,14 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (122))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (122))
                                                                     (Prims.of_int (84))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (122))
                                                                     (Prims.of_int (67))
@@ -832,7 +832,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -848,7 +848,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -867,7 +867,7 @@ let rec (push_pre :
                                                                     FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (122))
                                                                     (Prims.of_int (14))
@@ -881,7 +881,7 @@ let rec (push_pre :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (122))
                                                                     (Prims.of_int (14))
@@ -895,7 +895,7 @@ let rec (push_pre :
                                                       (FStar_Tactics_Types.set_proofstate_range
                                                          ps'1
                                                          (FStar_Range.prims_to_fstar_range
-                                                            (Prims.mk_range
+                                                            (FStar_Range.mk_range
                                                                "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                (Prims.of_int (104))
                                                                (Prims.of_int (12))
@@ -913,7 +913,7 @@ let rec (push_pre :
                                                    (FStar_Tactics_Types.set_proofstate_range
                                                       ps2
                                                       (FStar_Range.prims_to_fstar_range
-                                                         (Prims.mk_range
+                                                         (FStar_Range.mk_range
                                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                             (Prims.of_int (124))
                                                             (Prims.of_int (20))
@@ -926,7 +926,7 @@ let rec (push_pre :
                                                      (FStar_Tactics_Types.set_proofstate_range
                                                         ps'1
                                                         (FStar_Range.prims_to_fstar_range
-                                                           (Prims.mk_range
+                                                           (FStar_Range.mk_range
                                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                               (Prims.of_int (124))
                                                               (Prims.of_int (12))
@@ -941,7 +941,7 @@ let rec (push_pre :
                                                         (FStar_Tactics_Types.set_proofstate_range
                                                            ps'1
                                                            (FStar_Range.prims_to_fstar_range
-                                                              (Prims.mk_range
+                                                              (FStar_Range.mk_range
                                                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                  (Prims.of_int (124))
                                                                  (Prims.of_int (12))
@@ -961,7 +961,7 @@ let rec (push_pre :
                                      (FStar_Tactics_Types.set_proofstate_range
                                         ps1
                                         (FStar_Range.prims_to_fstar_range
-                                           (Prims.mk_range
+                                           (FStar_Range.mk_range
                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                               (Prims.of_int (102))
                                               (Prims.of_int (8))
@@ -973,7 +973,7 @@ let rec (push_pre :
                                        (FStar_Tactics_Types.set_proofstate_range
                                           ps'1
                                           (FStar_Range.prims_to_fstar_range
-                                             (Prims.mk_range
+                                             (FStar_Range.mk_range
                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                 (Prims.of_int (128))
                                                 (Prims.of_int (6))
@@ -989,21 +989,21 @@ let rec (push_pre :
                                                         (FStar_Tactics_Types.set_proofstate_range
                                                            ps'1
                                                            (FStar_Range.prims_to_fstar_range
-                                                              (Prims.mk_range
+                                                              (FStar_Range.mk_range
                                                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                  (Prims.of_int (128))
                                                                  (Prims.of_int (6))
                                                                  (Prims.of_int (129))
                                                                  (Prims.of_int (26))))))
                                                      (FStar_Range.prims_to_fstar_range
-                                                        (Prims.mk_range
+                                                        (FStar_Range.mk_range
                                                            "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                            (Prims.of_int (128))
                                                            (Prims.of_int (14))
                                                            (Prims.of_int (128))
                                                            (Prims.of_int (25))))))
                                                (FStar_Range.prims_to_fstar_range
-                                                  (Prims.mk_range
+                                                  (FStar_Range.mk_range
                                                      "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                      (Prims.of_int (129))
                                                      (Prims.of_int (6))
@@ -1024,21 +1024,21 @@ let rec (push_pre :
                                                          (FStar_Tactics_Types.set_proofstate_range
                                                             ps'1
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (128))
                                                                   (Prims.of_int (6))
                                                                   (Prims.of_int (129))
                                                                   (Prims.of_int (26))))))
                                                       (FStar_Range.prims_to_fstar_range
-                                                         (Prims.mk_range
+                                                         (FStar_Range.mk_range
                                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                             (Prims.of_int (128))
                                                             (Prims.of_int (14))
                                                             (Prims.of_int (128))
                                                             (Prims.of_int (25))))))
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (129))
                                                       (Prims.of_int (6))
@@ -1053,7 +1053,7 @@ let rec (push_pre :
                    (FStar_Tactics_Types.decr_depth
                       (FStar_Tactics_Types.set_proofstate_range ps'
                          (FStar_Range.prims_to_fstar_range
-                            (Prims.mk_range
+                            (FStar_Range.mk_range
                                "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                (Prims.of_int (99)) (Prims.of_int (2))
                                (Prims.of_int (131)) (Prims.of_int (53)))))))
@@ -1072,7 +1072,7 @@ let rec (to_reduce :
               (FStar_Tactics_Types.incr_depth
                  (FStar_Tactics_Types.set_proofstate_range ps
                     (FStar_Range.prims_to_fstar_range
-                       (Prims.mk_range
+                       (FStar_Range.mk_range
                           "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                           (Prims.of_int (134)) (Prims.of_int (8))
                           (Prims.of_int (134)) (Prims.of_int (27))))))
@@ -1081,7 +1081,7 @@ let rec (to_reduce :
           (match FStar_Tactics_Types.tracepoint
                    (FStar_Tactics_Types.set_proofstate_range ps'
                       (FStar_Range.prims_to_fstar_range
-                         (Prims.mk_range
+                         (FStar_Range.mk_range
                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                             (Prims.of_int (134)) (Prims.of_int (2))
                             (Prims.of_int (145)) (Prims.of_int (8)))))
@@ -1102,7 +1102,7 @@ let rec (to_reduce :
                  (FStar_Tactics_Types.decr_depth
                     (FStar_Tactics_Types.set_proofstate_range ps'
                        (FStar_Range.prims_to_fstar_range
-                          (Prims.mk_range
+                          (FStar_Range.mk_range
                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                              (Prims.of_int (134)) (Prims.of_int (2))
                              (Prims.of_int (145)) (Prims.of_int (8)))))))
@@ -1133,7 +1133,7 @@ let (lambda_over_only_p :
                 (FStar_Tactics_Types.incr_depth
                    (FStar_Tactics_Types.set_proofstate_range ps
                       (FStar_Range.prims_to_fstar_range
-                         (Prims.mk_range
+                         (FStar_Range.mk_range
                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                             (Prims.of_int (151)) (Prims.of_int (12))
                             (Prims.of_int (151)) (Prims.of_int (27))))))
@@ -1142,7 +1142,7 @@ let (lambda_over_only_p :
             (match FStar_Tactics_Types.tracepoint
                      (FStar_Tactics_Types.set_proofstate_range ps'
                         (FStar_Range.prims_to_fstar_range
-                           (Prims.mk_range
+                           (FStar_Range.mk_range
                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                               (Prims.of_int (152)) (Prims.of_int (2))
                               (Prims.of_int (154)) (Prims.of_int (46)))))
@@ -1161,14 +1161,14 @@ let (lambda_over_only_p :
                                    (FStar_Tactics_Types.set_proofstate_range
                                       ps'
                                       (FStar_Range.prims_to_fstar_range
-                                         (Prims.mk_range
+                                         (FStar_Range.mk_range
                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                             (Prims.of_int (152))
                                             (Prims.of_int (2))
                                             (Prims.of_int (154))
                                             (Prims.of_int (46))))))
                                 (FStar_Range.prims_to_fstar_range
-                                   (Prims.mk_range
+                                   (FStar_Range.mk_range
                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                       (Prims.of_int (152)) (Prims.of_int (2))
                                       (Prims.of_int (152))
@@ -1178,7 +1178,7 @@ let (lambda_over_only_p :
                       (match FStar_Tactics_Types.tracepoint
                                (FStar_Tactics_Types.set_proofstate_range ps'1
                                   (FStar_Range.prims_to_fstar_range
-                                     (Prims.mk_range
+                                     (FStar_Range.mk_range
                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                         (Prims.of_int (153))
                                         (Prims.of_int (2))
@@ -1195,21 +1195,21 @@ let (lambda_over_only_p :
                                                          (FStar_Tactics_Types.set_proofstate_range
                                                             ps'1
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (153))
                                                                   (Prims.of_int (2))
                                                                   (Prims.of_int (154))
                                                                   (Prims.of_int (46))))))
                                                       (FStar_Range.prims_to_fstar_range
-                                                         (Prims.mk_range
+                                                         (FStar_Range.mk_range
                                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                             (Prims.of_int (153))
                                                             (Prims.of_int (14))
                                                             (Prims.of_int (153))
                                                             (Prims.of_int (79))))))
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (153))
                                                       (Prims.of_int (28))
@@ -1222,7 +1222,7 @@ let (lambda_over_only_p :
                                                (FStar_Tactics_Types.set_proofstate_range
                                                   ps'2
                                                   (FStar_Range.prims_to_fstar_range
-                                                     (Prims.mk_range
+                                                     (FStar_Range.mk_range
                                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                         (Prims.of_int (153))
                                                         (Prims.of_int (14))
@@ -1242,28 +1242,28 @@ let (lambda_over_only_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (79))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (41))
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (43))
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (71))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (54))
@@ -1276,7 +1276,7 @@ let (lambda_over_only_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (43))
@@ -1291,7 +1291,7 @@ let (lambda_over_only_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (43))
@@ -1308,7 +1308,7 @@ let (lambda_over_only_p :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps'3
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (41))
@@ -1322,7 +1322,7 @@ let (lambda_over_only_p :
                                                                   (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (153))
                                                                     (Prims.of_int (41))
@@ -1339,7 +1339,7 @@ let (lambda_over_only_p :
                                                          (FStar_Tactics_Types.set_proofstate_range
                                                             ps'3
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (153))
                                                                   (Prims.of_int (14))
@@ -1353,7 +1353,7 @@ let (lambda_over_only_p :
                                                           (FStar_Tactics_Types.set_proofstate_range
                                                              ps'3
                                                              (FStar_Range.prims_to_fstar_range
-                                                                (Prims.mk_range
+                                                                (FStar_Range.mk_range
                                                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                    (Prims.of_int (153))
                                                                    (Prims.of_int (14))
@@ -1371,7 +1371,7 @@ let (lambda_over_only_p :
                                          (FStar_Tactics_Types.set_proofstate_range
                                             ps'2
                                             (FStar_Range.prims_to_fstar_range
-                                               (Prims.mk_range
+                                               (FStar_Range.mk_range
                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                   (Prims.of_int (154))
                                                   (Prims.of_int (2))
@@ -1386,14 +1386,14 @@ let (lambda_over_only_p :
                                                        (FStar_Tactics_Types.set_proofstate_range
                                                           ps'2
                                                           (FStar_Range.prims_to_fstar_range
-                                                             (Prims.mk_range
+                                                             (FStar_Range.mk_range
                                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                 (Prims.of_int (154))
                                                                 (Prims.of_int (2))
                                                                 (Prims.of_int (154))
                                                                 (Prims.of_int (46))))))
                                                     (FStar_Range.prims_to_fstar_range
-                                                       (Prims.mk_range
+                                                       (FStar_Range.mk_range
                                                           "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                           (Prims.of_int (154))
                                                           (Prims.of_int (23))
@@ -1406,7 +1406,7 @@ let (lambda_over_only_p :
                                                    (FStar_Tactics_Types.set_proofstate_range
                                                       ps'3
                                                       (FStar_Range.prims_to_fstar_range
-                                                         (Prims.mk_range
+                                                         (FStar_Range.mk_range
                                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                             (Prims.of_int (154))
                                                             (Prims.of_int (2))
@@ -1419,7 +1419,7 @@ let (lambda_over_only_p :
                                                     (FStar_Tactics_Types.set_proofstate_range
                                                        ps'3
                                                        (FStar_Range.prims_to_fstar_range
-                                                          (Prims.mk_range
+                                                          (FStar_Range.mk_range
                                                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                              (Prims.of_int (154))
                                                              (Prims.of_int (2))
@@ -1452,7 +1452,7 @@ let (lambda_over_index_and_p :
                     (FStar_Tactics_Types.incr_depth
                        (FStar_Tactics_Types.set_proofstate_range ps
                           (FStar_Range.prims_to_fstar_range
-                             (Prims.mk_range
+                             (FStar_Range.mk_range
                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                 (Prims.of_int (160)) (Prims.of_int (12))
                                 (Prims.of_int (160)) (Prims.of_int (27))))))
@@ -1461,7 +1461,7 @@ let (lambda_over_index_and_p :
                 (match FStar_Tactics_Types.tracepoint
                          (FStar_Tactics_Types.set_proofstate_range ps'
                             (FStar_Range.prims_to_fstar_range
-                               (Prims.mk_range
+                               (FStar_Range.mk_range
                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                   (Prims.of_int (161)) (Prims.of_int (2))
                                   (Prims.of_int (185)) (Prims.of_int (50)))))
@@ -1480,14 +1480,14 @@ let (lambda_over_index_and_p :
                                        (FStar_Tactics_Types.set_proofstate_range
                                           ps'
                                           (FStar_Range.prims_to_fstar_range
-                                             (Prims.mk_range
+                                             (FStar_Range.mk_range
                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                 (Prims.of_int (161))
                                                 (Prims.of_int (2))
                                                 (Prims.of_int (185))
                                                 (Prims.of_int (50))))))
                                     (FStar_Range.prims_to_fstar_range
-                                       (Prims.mk_range
+                                       (FStar_Range.mk_range
                                           "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                           (Prims.of_int (161))
                                           (Prims.of_int (2))
@@ -1499,7 +1499,7 @@ let (lambda_over_index_and_p :
                                    (FStar_Tactics_Types.set_proofstate_range
                                       ps'1
                                       (FStar_Range.prims_to_fstar_range
-                                         (Prims.mk_range
+                                         (FStar_Range.mk_range
                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                             (Prims.of_int (162))
                                             (Prims.of_int (2))
@@ -1517,21 +1517,21 @@ let (lambda_over_index_and_p :
                                                              (FStar_Tactics_Types.set_proofstate_range
                                                                 ps'1
                                                                 (FStar_Range.prims_to_fstar_range
-                                                                   (Prims.mk_range
+                                                                   (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (2))
                                                                     (Prims.of_int (185))
                                                                     (Prims.of_int (50))))))
                                                           (FStar_Range.prims_to_fstar_range
-                                                             (Prims.mk_range
+                                                             (FStar_Range.mk_range
                                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                 (Prims.of_int (162))
                                                                 (Prims.of_int (14))
                                                                 (Prims.of_int (162))
                                                                 (Prims.of_int (79))))))
                                                     (FStar_Range.prims_to_fstar_range
-                                                       (Prims.mk_range
+                                                       (FStar_Range.mk_range
                                                           "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                           (Prims.of_int (162))
                                                           (Prims.of_int (28))
@@ -1544,7 +1544,7 @@ let (lambda_over_index_and_p :
                                                    (FStar_Tactics_Types.set_proofstate_range
                                                       ps'2
                                                       (FStar_Range.prims_to_fstar_range
-                                                         (Prims.mk_range
+                                                         (FStar_Range.mk_range
                                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                             (Prims.of_int (162))
                                                             (Prims.of_int (14))
@@ -1565,28 +1565,28 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (79))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (41))
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (43))
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (71))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (54))
@@ -1600,7 +1600,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (43))
@@ -1615,7 +1615,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (43))
@@ -1632,7 +1632,7 @@ let (lambda_over_index_and_p :
                                                                    (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (41))
@@ -1646,7 +1646,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (41))
@@ -1663,7 +1663,7 @@ let (lambda_over_index_and_p :
                                                              (FStar_Tactics_Types.set_proofstate_range
                                                                 ps'3
                                                                 (FStar_Range.prims_to_fstar_range
-                                                                   (Prims.mk_range
+                                                                   (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (14))
@@ -1678,7 +1678,7 @@ let (lambda_over_index_and_p :
                                                                  ps'3
                                                                  (FStar_Range.prims_to_fstar_range
                                                                     (
-                                                                    Prims.mk_range
+                                                                    FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (162))
                                                                     (Prims.of_int (14))
@@ -1698,7 +1698,7 @@ let (lambda_over_index_and_p :
                                              (FStar_Tactics_Types.set_proofstate_range
                                                 ps'2
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (163))
                                                       (Prims.of_int (2))
@@ -1714,14 +1714,14 @@ let (lambda_over_index_and_p :
                                                            (FStar_Tactics_Types.set_proofstate_range
                                                               ps'2
                                                               (FStar_Range.prims_to_fstar_range
-                                                                 (Prims.mk_range
+                                                                 (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (163))
                                                                     (Prims.of_int (2))
                                                                     (Prims.of_int (185))
                                                                     (Prims.of_int (50))))))
                                                         (FStar_Range.prims_to_fstar_range
-                                                           (Prims.mk_range
+                                                           (FStar_Range.mk_range
                                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                               (Prims.of_int (163))
                                                               (Prims.of_int (8))
@@ -1734,7 +1734,7 @@ let (lambda_over_index_and_p :
                                                        (FStar_Tactics_Types.set_proofstate_range
                                                           ps'3
                                                           (FStar_Range.prims_to_fstar_range
-                                                             (Prims.mk_range
+                                                             (FStar_Range.mk_range
                                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                 (Prims.of_int (163))
                                                                 (Prims.of_int (2))
@@ -1753,14 +1753,14 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (165))
                                                                     (Prims.of_int (31))
                                                                     (Prims.of_int (165))
                                                                     (Prims.of_int (48))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (165))
                                                                     (Prims.of_int (6))
@@ -1799,21 +1799,21 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (167))
                                                                     (Prims.of_int (13))
                                                                     (Prims.of_int (167))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (167))
                                                                     (Prims.of_int (54))
                                                                     (Prims.of_int (167))
                                                                     (Prims.of_int (96))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (167))
                                                                     (Prims.of_int (54))
@@ -1829,7 +1829,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -1846,7 +1846,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -1868,7 +1868,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -1885,7 +1885,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -1907,7 +1907,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (167))
                                                                     (Prims.of_int (8))
@@ -1922,7 +1922,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (167))
                                                                     (Prims.of_int (8))
@@ -1942,7 +1942,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (166))
                                                                     (Prims.of_int (6))
@@ -1958,7 +1958,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (6))
@@ -1976,21 +1976,21 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (6))
                                                                     (Prims.of_int (182))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (28))
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (41))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (6))
@@ -2024,7 +2024,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (169))
                                                                     (Prims.of_int (6))
@@ -2040,7 +2040,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (170))
                                                                     (Prims.of_int (6))
@@ -2068,7 +2068,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (174))
                                                                     (Prims.of_int (20))
@@ -2084,7 +2084,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (176))
                                                                     (Prims.of_int (12))
@@ -2102,14 +2102,14 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (176))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (178))
                                                                     (Prims.of_int (58))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (176))
                                                                     (Prims.of_int (20))
@@ -2125,7 +2125,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (178))
                                                                     (Prims.of_int (12))
@@ -2144,7 +2144,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (178))
                                                                     (Prims.of_int (12))
@@ -2179,21 +2179,21 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (180))
                                                                     (Prims.of_int (17))
                                                                     (Prims.of_int (180))
                                                                     (Prims.of_int (79))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (180))
                                                                     (Prims.of_int (42))
                                                                     (Prims.of_int (180))
                                                                     (Prims.of_int (78))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (180))
                                                                     (Prims.of_int (42))
@@ -2209,7 +2209,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2226,7 +2226,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2248,7 +2248,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2265,7 +2265,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2287,7 +2287,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (180))
                                                                     (Prims.of_int (12))
@@ -2302,7 +2302,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (180))
                                                                     (Prims.of_int (12))
@@ -2320,14 +2320,14 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (170))
                                                                     (Prims.of_int (6))
                                                                     (Prims.of_int (182))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (171))
                                                                     (Prims.of_int (8))
@@ -2343,7 +2343,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (170))
                                                                     (Prims.of_int (10))
@@ -2358,7 +2358,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (170))
                                                                     (Prims.of_int (10))
@@ -2384,21 +2384,21 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (6))
                                                                     (Prims.of_int (182))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (28))
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (41))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (168))
                                                                     (Prims.of_int (6))
@@ -2416,14 +2416,14 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (165))
                                                                     (Prims.of_int (31))
                                                                     (Prims.of_int (165))
                                                                     (Prims.of_int (48))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (165))
                                                                     (Prims.of_int (6))
@@ -2440,14 +2440,14 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (184))
                                                                     (Prims.of_int (11))
                                                                     (Prims.of_int (185))
                                                                     (Prims.of_int (50))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (184))
                                                                     (Prims.of_int (12))
@@ -2462,7 +2462,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2479,7 +2479,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2498,7 +2498,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (184))
                                                                     (Prims.of_int (6))
@@ -2512,7 +2512,7 @@ let (lambda_over_index_and_p :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (184))
                                                                     (Prims.of_int (6))
@@ -2526,7 +2526,7 @@ let (lambda_over_index_and_p :
                                                         (FStar_Tactics_Types.set_proofstate_range
                                                            ps'3
                                                            (FStar_Range.prims_to_fstar_range
-                                                              (Prims.mk_range
+                                                              (FStar_Range.mk_range
                                                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                  (Prims.of_int (163))
                                                                  (Prims.of_int (2))
@@ -2572,12 +2572,12 @@ let (binder_is_legit :
                      (FStar_Tactics_Types.incr_depth
                         (FStar_Tactics_Types.set_proofstate_range ps
                            (FStar_Range.prims_to_fstar_range
-                              (Prims.mk_range
+                              (FStar_Range.mk_range
                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                  (Prims.of_int (197)) (Prims.of_int (27))
                                  (Prims.of_int (197)) (Prims.of_int (48))))))
                      (FStar_Range.prims_to_fstar_range
-                        (Prims.mk_range
+                        (FStar_Range.mk_range
                            "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                            (Prims.of_int (197)) (Prims.of_int (2))
                            (Prims.of_int (208)) (Prims.of_int (24)))))
@@ -2592,14 +2592,14 @@ let (binder_is_legit :
                                      (FStar_Tactics_Types.set_proofstate_range
                                         ps1
                                         (FStar_Range.prims_to_fstar_range
-                                           (Prims.mk_range
+                                           (FStar_Range.mk_range
                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                               (Prims.of_int (198))
                                               (Prims.of_int (42))
                                               (Prims.of_int (198))
                                               (Prims.of_int (55))))))
                                   (FStar_Range.prims_to_fstar_range
-                                     (Prims.mk_range
+                                     (FStar_Range.mk_range
                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                         (Prims.of_int (198))
                                         (Prims.of_int (2))
@@ -2619,14 +2619,14 @@ let (binder_is_legit :
                                                   (FStar_Tactics_Types.set_proofstate_range
                                                      ps2
                                                      (FStar_Range.prims_to_fstar_range
-                                                        (Prims.mk_range
+                                                        (FStar_Range.mk_range
                                                            "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                            (Prims.of_int (199))
                                                            (Prims.of_int (17))
                                                            (Prims.of_int (199))
                                                            (Prims.of_int (33))))))
                                                (FStar_Range.prims_to_fstar_range
-                                                  (Prims.mk_range
+                                                  (FStar_Range.mk_range
                                                      "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                      (Prims.of_int (200))
                                                      (Prims.of_int (2))
@@ -2644,28 +2644,28 @@ let (binder_is_legit :
                                                                    (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (199))
                                                                     (Prims.of_int (17))
                                                                     (Prims.of_int (199))
                                                                     (Prims.of_int (33))))))
                                                                 (FStar_Range.prims_to_fstar_range
-                                                                   (Prims.mk_range
+                                                                   (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (200))
                                                                     (Prims.of_int (2))
                                                                     (Prims.of_int (208))
                                                                     (Prims.of_int (24))))))
                                                           (FStar_Range.prims_to_fstar_range
-                                                             (Prims.mk_range
+                                                             (FStar_Range.mk_range
                                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                 (Prims.of_int (200))
                                                                 (Prims.of_int (19))
                                                                 (Prims.of_int (200))
                                                                 (Prims.of_int (32))))))
                                                     (FStar_Range.prims_to_fstar_range
-                                                       (Prims.mk_range
+                                                       (FStar_Range.mk_range
                                                           "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                           (Prims.of_int (201))
                                                           (Prims.of_int (2))
@@ -2692,21 +2692,21 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (202))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (203))
                                                                     (Prims.of_int (36))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (202))
                                                                     (Prims.of_int (48))
                                                                     (Prims.of_int (203))
                                                                     (Prims.of_int (35))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (202))
                                                                     (Prims.of_int (48))
@@ -2721,7 +2721,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2738,7 +2738,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2758,7 +2758,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2775,7 +2775,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2793,7 +2793,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (202))
                                                                     (Prims.of_int (4))
@@ -2808,7 +2808,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (202))
                                                                     (Prims.of_int (4))
@@ -2834,35 +2834,35 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (199))
                                                                     (Prims.of_int (17))
                                                                     (Prims.of_int (199))
                                                                     (Prims.of_int (33))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (200))
                                                                     (Prims.of_int (2))
                                                                     (Prims.of_int (208))
                                                                     (Prims.of_int (24))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (200))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (200))
                                                                     (Prims.of_int (32))))))
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (201))
                                                                     (Prims.of_int (2))
                                                                     (Prims.of_int (208))
                                                                     (Prims.of_int (24))))))
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (201))
                                                                   (Prims.of_int (2))
@@ -2875,7 +2875,7 @@ let (binder_is_legit :
                                                            (FStar_Tactics_Types.set_proofstate_range
                                                               ps'
                                                               (FStar_Range.prims_to_fstar_range
-                                                                 (Prims.mk_range
+                                                                 (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (205))
                                                                     (Prims.of_int (2))
@@ -2905,21 +2905,21 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (206))
                                                                     (Prims.of_int (9))
                                                                     (Prims.of_int (207))
                                                                     (Prims.of_int (37))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (206))
                                                                     (Prims.of_int (38))
                                                                     (Prims.of_int (207))
                                                                     (Prims.of_int (36))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (206))
                                                                     (Prims.of_int (38))
@@ -2935,7 +2935,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2952,7 +2952,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2974,7 +2974,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -2991,7 +2991,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3013,7 +3013,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (206))
                                                                     (Prims.of_int (4))
@@ -3028,7 +3028,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (206))
                                                                     (Prims.of_int (4))
@@ -3050,14 +3050,14 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (205))
                                                                     (Prims.of_int (2))
                                                                     (Prims.of_int (208))
                                                                     (Prims.of_int (24))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (205))
                                                                     (Prims.of_int (2))
@@ -3070,7 +3070,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (208))
                                                                     (Prims.of_int (2))
@@ -3087,7 +3087,7 @@ let (binder_is_legit :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (208))
                                                                     (Prims.of_int (2))
@@ -3107,14 +3107,14 @@ let (binder_is_legit :
                                       (FStar_Tactics_Types.set_proofstate_range
                                          ps1
                                          (FStar_Range.prims_to_fstar_range
-                                            (Prims.mk_range
+                                            (FStar_Range.mk_range
                                                "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                (Prims.of_int (198))
                                                (Prims.of_int (42))
                                                (Prims.of_int (198))
                                                (Prims.of_int (55))))))
                                    (FStar_Range.prims_to_fstar_range
-                                      (Prims.mk_range
+                                      (FStar_Range.mk_range
                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                          (Prims.of_int (198))
                                          (Prims.of_int (2))
@@ -3125,12 +3125,12 @@ let (binder_is_legit :
                       (FStar_Tactics_Types.incr_depth
                          (FStar_Tactics_Types.set_proofstate_range ps
                             (FStar_Range.prims_to_fstar_range
-                               (Prims.mk_range
+                               (FStar_Range.mk_range
                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                   (Prims.of_int (197)) (Prims.of_int (27))
                                   (Prims.of_int (197)) (Prims.of_int (48))))))
                       (FStar_Range.prims_to_fstar_range
-                         (Prims.mk_range
+                         (FStar_Range.mk_range
                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                             (Prims.of_int (197)) (Prims.of_int (2))
                             (Prims.of_int (208)) (Prims.of_int (24))))))
@@ -3162,28 +3162,28 @@ let rec (visit_function :
                                                            (FStar_Tactics_Types.set_proofstate_range
                                                               ps
                                                               (FStar_Range.prims_to_fstar_range
-                                                                 (Prims.mk_range
+                                                                 (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (213))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (213))
                                                                     (Prims.of_int (74))))))
                                                         (FStar_Range.prims_to_fstar_range
-                                                           (Prims.mk_range
+                                                           (FStar_Range.mk_range
                                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                               (Prims.of_int (213))
                                                               (Prims.of_int (18))
                                                               (Prims.of_int (213))
                                                               (Prims.of_int (74))))))
                                                   (FStar_Range.prims_to_fstar_range
-                                                     (Prims.mk_range
+                                                     (FStar_Range.mk_range
                                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                         (Prims.of_int (213))
                                                         (Prims.of_int (31))
                                                         (Prims.of_int (213))
                                                         (Prims.of_int (73))))))
                                             (FStar_Range.prims_to_fstar_range
-                                               (Prims.mk_range
+                                               (FStar_Range.mk_range
                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                   (Prims.of_int (213))
                                                   (Prims.of_int (52))
@@ -3195,7 +3195,7 @@ let rec (visit_function :
                                            (FStar_Tactics_Types.set_proofstate_range
                                               ps'
                                               (FStar_Range.prims_to_fstar_range
-                                                 (Prims.mk_range "prims.fst"
+                                                 (FStar_Range.mk_range "prims.fst"
                                                     (Prims.of_int (557))
                                                     (Prims.of_int (19))
                                                     (Prims.of_int (557))
@@ -3208,7 +3208,7 @@ let rec (visit_function :
                                               (FStar_Tactics_Types.set_proofstate_range
                                                  ps'
                                                  (FStar_Range.prims_to_fstar_range
-                                                    (Prims.mk_range
+                                                    (FStar_Range.mk_range
                                                        "prims.fst"
                                                        (Prims.of_int (557))
                                                        (Prims.of_int (19))
@@ -3222,7 +3222,7 @@ let rec (visit_function :
                                      (FStar_Tactics_Types.set_proofstate_range
                                         ps'
                                         (FStar_Range.prims_to_fstar_range
-                                           (Prims.mk_range "prims.fst"
+                                           (FStar_Range.mk_range "prims.fst"
                                               (Prims.of_int (557))
                                               (Prims.of_int (19))
                                               (Prims.of_int (557))
@@ -3235,7 +3235,7 @@ let rec (visit_function :
                                         (FStar_Tactics_Types.set_proofstate_range
                                            ps'
                                            (FStar_Range.prims_to_fstar_range
-                                              (Prims.mk_range "prims.fst"
+                                              (FStar_Range.mk_range "prims.fst"
                                                  (Prims.of_int (557))
                                                  (Prims.of_int (19))
                                                  (Prims.of_int (557))
@@ -3247,7 +3247,7 @@ let rec (visit_function :
                       (match FStar_Tactics_Types.tracepoint
                                (FStar_Tactics_Types.set_proofstate_range ps'
                                   (FStar_Range.prims_to_fstar_range
-                                     (Prims.mk_range
+                                     (FStar_Range.mk_range
                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                         (Prims.of_int (213))
                                         (Prims.of_int (12))
@@ -3259,7 +3259,7 @@ let rec (visit_function :
                              (FStar_Tactics_Types.decr_depth
                                 (FStar_Tactics_Types.set_proofstate_range ps'
                                    (FStar_Range.prims_to_fstar_range
-                                      (Prims.mk_range
+                                      (FStar_Range.mk_range
                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                          (Prims.of_int (213))
                                          (Prims.of_int (12))
@@ -3272,7 +3272,7 @@ let rec (visit_function :
                 (match FStar_Tactics_Types.tracepoint
                          (FStar_Tactics_Types.set_proofstate_range ps'
                             (FStar_Range.prims_to_fstar_range
-                               (Prims.mk_range
+                               (FStar_Range.mk_range
                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                   (Prims.of_int (216)) (Prims.of_int (4))
                                   (Prims.of_int (216)) (Prims.of_int (10)))))
@@ -3283,7 +3283,7 @@ let rec (visit_function :
                          (FStar_Tactics_Types.decr_depth
                             (FStar_Tactics_Types.set_proofstate_range ps'
                                (FStar_Range.prims_to_fstar_range
-                                  (Prims.mk_range
+                                  (FStar_Range.mk_range
                                      "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                      (Prims.of_int (216)) (Prims.of_int (4))
                                      (Prims.of_int (216)) (Prims.of_int (10))))))))
@@ -3298,14 +3298,14 @@ let rec (visit_function :
                                     (FStar_Tactics_Types.set_proofstate_range
                                        ps
                                        (FStar_Range.prims_to_fstar_range
-                                          (Prims.mk_range
+                                          (FStar_Range.mk_range
                                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                              (Prims.of_int (220))
                                              (Prims.of_int (12))
                                              (Prims.of_int (220))
                                              (Prims.of_int (42))))))
                                  (FStar_Range.prims_to_fstar_range
-                                    (Prims.mk_range
+                                    (FStar_Range.mk_range
                                        "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                        (Prims.of_int (220))
                                        (Prims.of_int (23))
@@ -3316,7 +3316,7 @@ let rec (visit_function :
                        (match FStar_Tactics_Types.tracepoint
                                 (FStar_Tactics_Types.set_proofstate_range ps'
                                    (FStar_Range.prims_to_fstar_range
-                                      (Prims.mk_range
+                                      (FStar_Range.mk_range
                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                          (Prims.of_int (220))
                                          (Prims.of_int (12))
@@ -3330,7 +3330,7 @@ let rec (visit_function :
                                    (FStar_Tactics_Types.set_proofstate_range
                                       ps'
                                       (FStar_Range.prims_to_fstar_range
-                                         (Prims.mk_range
+                                         (FStar_Range.mk_range
                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                             (Prims.of_int (220))
                                             (Prims.of_int (12))
@@ -3343,7 +3343,7 @@ let rec (visit_function :
                  (match FStar_Tactics_Types.tracepoint
                           (FStar_Tactics_Types.set_proofstate_range ps'
                              (FStar_Range.prims_to_fstar_range
-                                (Prims.mk_range
+                                (FStar_Range.mk_range
                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                    (Prims.of_int (221)) (Prims.of_int (4))
                                    (Prims.of_int (417)) (Prims.of_int (18)))))
@@ -3362,14 +3362,14 @@ let rec (visit_function :
                                         (FStar_Tactics_Types.set_proofstate_range
                                            ps'
                                            (FStar_Range.prims_to_fstar_range
-                                              (Prims.mk_range
+                                              (FStar_Range.mk_range
                                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                  (Prims.of_int (221))
                                                  (Prims.of_int (4))
                                                  (Prims.of_int (417))
                                                  (Prims.of_int (18))))))
                                      (FStar_Range.prims_to_fstar_range
-                                        (Prims.mk_range
+                                        (FStar_Range.mk_range
                                            "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                            (Prims.of_int (221))
                                            (Prims.of_int (12))
@@ -3381,7 +3381,7 @@ let rec (visit_function :
                                     (FStar_Tactics_Types.set_proofstate_range
                                        ps'1
                                        (FStar_Range.prims_to_fstar_range
-                                          (Prims.mk_range
+                                          (FStar_Range.mk_range
                                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                              (Prims.of_int (222))
                                              (Prims.of_int (4))
@@ -3420,28 +3420,28 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (223))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (223))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (223))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (223))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (223))
                                                                     (Prims.of_int (33))
                                                                     (Prims.of_int (223))
                                                                     (Prims.of_int (72))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (223))
                                                                     (Prims.of_int (51))
@@ -3454,7 +3454,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3470,7 +3470,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3487,7 +3487,7 @@ let rec (visit_function :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps'2
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3502,7 +3502,7 @@ let rec (visit_function :
                                                                   (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3519,7 +3519,7 @@ let rec (visit_function :
                                                          (FStar_Tactics_Types.set_proofstate_range
                                                             ps'2
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (223))
                                                                   (Prims.of_int (14))
@@ -3533,7 +3533,7 @@ let rec (visit_function :
                                                           (FStar_Tactics_Types.set_proofstate_range
                                                              ps'2
                                                              (FStar_Range.prims_to_fstar_range
-                                                                (Prims.mk_range
+                                                                (FStar_Range.mk_range
                                                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                    (Prims.of_int (223))
                                                                    (Prims.of_int (14))
@@ -3550,7 +3550,7 @@ let rec (visit_function :
                                                    (FStar_Tactics_Types.set_proofstate_range
                                                       ps'2
                                                       (FStar_Range.prims_to_fstar_range
-                                                         (Prims.mk_range
+                                                         (FStar_Range.mk_range
                                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                             (Prims.of_int (226))
                                                             (Prims.of_int (6))
@@ -3564,7 +3564,7 @@ let rec (visit_function :
                                                       (FStar_Tactics_Types.set_proofstate_range
                                                          ps'2
                                                          (FStar_Range.prims_to_fstar_range
-                                                            (Prims.mk_range
+                                                            (FStar_Range.mk_range
                                                                "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                (Prims.of_int (226))
                                                                (Prims.of_int (6))
@@ -3588,28 +3588,28 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (228))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (228))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (228))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (228))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (228))
                                                                     (Prims.of_int (33))
                                                                     (Prims.of_int (228))
                                                                     (Prims.of_int (68))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (228))
                                                                     (Prims.of_int (47))
@@ -3622,7 +3622,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3638,7 +3638,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3655,7 +3655,7 @@ let rec (visit_function :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps'2
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3670,7 +3670,7 @@ let rec (visit_function :
                                                                   (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3687,7 +3687,7 @@ let rec (visit_function :
                                                          (FStar_Tactics_Types.set_proofstate_range
                                                             ps'2
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (228))
                                                                   (Prims.of_int (14))
@@ -3701,7 +3701,7 @@ let rec (visit_function :
                                                           (FStar_Tactics_Types.set_proofstate_range
                                                              ps'2
                                                              (FStar_Range.prims_to_fstar_range
-                                                                (Prims.mk_range
+                                                                (FStar_Range.mk_range
                                                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                    (Prims.of_int (228))
                                                                    (Prims.of_int (14))
@@ -3718,7 +3718,7 @@ let rec (visit_function :
                                                    (FStar_Tactics_Types.set_proofstate_range
                                                       ps'2
                                                       (FStar_Range.prims_to_fstar_range
-                                                         (Prims.mk_range
+                                                         (FStar_Range.mk_range
                                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                             (Prims.of_int (229))
                                                             (Prims.of_int (6))
@@ -3750,21 +3750,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (232))
                                                                     (Prims.of_int (15))
                                                                     (Prims.of_int (232))
                                                                     (Prims.of_int (74))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (232))
                                                                     (Prims.of_int (34))
                                                                     (Prims.of_int (232))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (232))
                                                                     (Prims.of_int (34))
@@ -3780,7 +3780,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3797,7 +3797,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3819,7 +3819,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3836,7 +3836,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -3858,7 +3858,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (232))
                                                                     (Prims.of_int (10))
@@ -3873,7 +3873,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (232))
                                                                     (Prims.of_int (10))
@@ -3893,7 +3893,7 @@ let rec (visit_function :
                                                                    (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (231))
                                                                     (Prims.of_int (8))
@@ -3906,7 +3906,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (8))
@@ -3923,21 +3923,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (28))
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (41))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (8))
@@ -3958,35 +3958,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (28))
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (41))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (25))
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (34))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (238))
                                                                     (Prims.of_int (8))
@@ -4012,49 +4012,49 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (28))
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (41))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (25))
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (34))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (238))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (238))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (238))
                                                                     (Prims.of_int (52))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (239))
                                                                     (Prims.of_int (8))
@@ -4085,56 +4085,56 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (28))
                                                                     (Prims.of_int (234))
                                                                     (Prims.of_int (41))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (25))
                                                                     (Prims.of_int (237))
                                                                     (Prims.of_int (34))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (238))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (238))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (238))
                                                                     (Prims.of_int (52))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (239))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (239))
                                                                     (Prims.of_int (23))
@@ -4150,7 +4150,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (243))
                                                                     (Prims.of_int (8))
@@ -4171,21 +4171,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (243))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (244))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (259))
                                                                     (Prims.of_int (76))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (244))
                                                                     (Prims.of_int (16))
@@ -4201,7 +4201,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (244))
                                                                     (Prims.of_int (10))
@@ -4225,14 +4225,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (246))
                                                                     (Prims.of_int (29))
                                                                     (Prims.of_int (246))
                                                                     (Prims.of_int (50))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (246))
                                                                     (Prims.of_int (14))
@@ -4256,14 +4256,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (247))
                                                                     (Prims.of_int (54))
                                                                     (Prims.of_int (247))
                                                                     (Prims.of_int (67))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (247))
                                                                     (Prims.of_int (14))
@@ -4294,7 +4294,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (248))
                                                                     (Prims.of_int (17))
@@ -4310,7 +4310,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (248))
                                                                     (Prims.of_int (14))
@@ -4346,7 +4346,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (249))
                                                                     (Prims.of_int (16))
@@ -4362,7 +4362,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (250))
                                                                     (Prims.of_int (16))
@@ -4380,7 +4380,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (250))
                                                                     (Prims.of_int (16))
@@ -4403,7 +4403,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (248))
                                                                     (Prims.of_int (14))
@@ -4421,14 +4421,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (247))
                                                                     (Prims.of_int (54))
                                                                     (Prims.of_int (247))
                                                                     (Prims.of_int (67))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (247))
                                                                     (Prims.of_int (14))
@@ -4440,14 +4440,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (246))
                                                                     (Prims.of_int (29))
                                                                     (Prims.of_int (246))
                                                                     (Prims.of_int (50))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (246))
                                                                     (Prims.of_int (14))
@@ -4467,14 +4467,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (259))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (259))
                                                                     (Prims.of_int (76))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (259))
                                                                     (Prims.of_int (20))
@@ -4490,7 +4490,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -4507,7 +4507,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -4529,7 +4529,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (259))
                                                                     (Prims.of_int (14))
@@ -4544,7 +4544,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (259))
                                                                     (Prims.of_int (14))
@@ -4560,7 +4560,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (244))
                                                                     (Prims.of_int (10))
@@ -4582,7 +4582,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (243))
                                                                     (Prims.of_int (8))
@@ -4606,14 +4606,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (262))
                                                                     (Prims.of_int (25))
                                                                     (Prims.of_int (266))
                                                                     (Prims.of_int (10))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (268))
                                                                     (Prims.of_int (8))
@@ -4642,14 +4642,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (29))
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (60))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (35))
@@ -4665,7 +4665,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (29))
@@ -4681,7 +4681,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (29))
@@ -4703,7 +4703,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (14))
@@ -4734,14 +4734,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (96))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (61))
@@ -4757,7 +4757,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (14))
@@ -4781,7 +4781,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (271))
                                                                     (Prims.of_int (14))
@@ -4823,7 +4823,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (273))
                                                                     (Prims.of_int (34))
@@ -4839,7 +4839,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (273))
                                                                     (Prims.of_int (14))
@@ -4865,7 +4865,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (273))
                                                                     (Prims.of_int (14))
@@ -4885,21 +4885,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (262))
                                                                     (Prims.of_int (25))
                                                                     (Prims.of_int (266))
                                                                     (Prims.of_int (10))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (268))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (269))
                                                                     (Prims.of_int (10))
@@ -4915,7 +4915,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (268))
                                                                     (Prims.of_int (8))
@@ -4940,14 +4940,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (46))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (8))
@@ -4967,28 +4967,28 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (46))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (16))
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (95))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (8))
@@ -5012,42 +5012,42 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (46))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (16))
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (95))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (32))
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (55))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (8))
@@ -5073,7 +5073,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (285))
                                                                     (Prims.of_int (25))
@@ -5089,7 +5089,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (286))
                                                                     (Prims.of_int (8))
@@ -5133,7 +5133,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (289))
                                                                     (Prims.of_int (14))
@@ -5149,7 +5149,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (289))
                                                                     (Prims.of_int (14))
@@ -5189,21 +5189,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (289))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (292))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (290))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (291))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (290))
                                                                     (Prims.of_int (64))
@@ -5219,7 +5219,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (290))
                                                                     (Prims.of_int (14))
@@ -5238,7 +5238,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (290))
                                                                     (Prims.of_int (14))
@@ -5260,7 +5260,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (289))
                                                                     (Prims.of_int (14))
@@ -5276,7 +5276,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (289))
                                                                     (Prims.of_int (14))
@@ -5317,7 +5317,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (294))
                                                                     (Prims.of_int (14))
@@ -5333,7 +5333,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (294))
                                                                     (Prims.of_int (14))
@@ -5370,14 +5370,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (294))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (296))
                                                                     (Prims.of_int (19))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (295))
                                                                     (Prims.of_int (14))
@@ -5393,7 +5393,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (294))
                                                                     (Prims.of_int (14))
@@ -5409,7 +5409,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (294))
                                                                     (Prims.of_int (14))
@@ -5433,14 +5433,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (286))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (287))
                                                                     (Prims.of_int (10))
@@ -5456,7 +5456,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (286))
                                                                     (Prims.of_int (8))
@@ -5492,35 +5492,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (298))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (300))
                                                                     (Prims.of_int (31))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (298))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (300))
                                                                     (Prims.of_int (31))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (298))
                                                                     (Prims.of_int (27))
                                                                     (Prims.of_int (300))
                                                                     (Prims.of_int (30))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (298))
                                                                     (Prims.of_int (38))
                                                                     (Prims.of_int (300))
                                                                     (Prims.of_int (30))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (298))
                                                                     (Prims.of_int (38))
@@ -5536,7 +5536,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -5561,7 +5561,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -5583,7 +5583,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -5600,7 +5600,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -5622,7 +5622,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -5644,7 +5644,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -5666,7 +5666,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (298))
                                                                     (Prims.of_int (8))
@@ -5681,7 +5681,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (298))
                                                                     (Prims.of_int (8))
@@ -5703,7 +5703,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (8))
@@ -5721,21 +5721,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (85))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (8))
@@ -5757,35 +5757,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (85))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (77))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (303))
                                                                     (Prims.of_int (8))
@@ -5811,49 +5811,49 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (85))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (77))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (303))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (303))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (305))
                                                                     (Prims.of_int (21))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (307))
                                                                     (Prims.of_int (8))
@@ -5885,56 +5885,56 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (301))
                                                                     (Prims.of_int (85))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (302))
                                                                     (Prims.of_int (77))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (303))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (303))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (305))
                                                                     (Prims.of_int (21))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (307))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (307))
                                                                     (Prims.of_int (20))
@@ -5950,7 +5950,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (8))
@@ -5968,21 +5968,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (86))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (311))
                                                                     (Prims.of_int (8))
@@ -6004,35 +6004,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (86))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (311))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (312))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (349))
                                                                     (Prims.of_int (10))
@@ -6062,49 +6062,49 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (308))
                                                                     (Prims.of_int (86))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (311))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (312))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (349))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (350))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (352))
                                                                     (Prims.of_int (45))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (352))
                                                                     (Prims.of_int (14))
@@ -6120,7 +6120,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (350))
                                                                     (Prims.of_int (12))
@@ -6149,7 +6149,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (350))
                                                                     (Prims.of_int (12))
@@ -6172,7 +6172,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (358))
                                                                     (Prims.of_int (10))
@@ -6206,14 +6206,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (358))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (358))
                                                                     (Prims.of_int (25))
@@ -6229,7 +6229,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (359))
                                                                     (Prims.of_int (10))
@@ -6262,14 +6262,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (359))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (360))
                                                                     (Prims.of_int (12))
@@ -6285,7 +6285,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (364))
                                                                     (Prims.of_int (10))
@@ -6306,28 +6306,28 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (364))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (30))
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (12))
@@ -6351,42 +6351,42 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (364))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (30))
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (63))
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (65))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (12))
@@ -6414,56 +6414,56 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (364))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (30))
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (63))
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (65))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (96))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (368))
                                                                     (Prims.of_int (12))
@@ -6499,35 +6499,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (18))
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (86))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (27))
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (85))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (33))
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (84))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (47))
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (83))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (48))
@@ -6543,7 +6543,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (47))
@@ -6559,7 +6559,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (47))
@@ -6582,7 +6582,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (33))
@@ -6599,7 +6599,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (33))
@@ -6622,7 +6622,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (27))
@@ -6637,7 +6637,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (372))
                                                                     (Prims.of_int (27))
@@ -6660,7 +6660,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
@@ -6697,28 +6697,28 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (96))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (51))
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (96))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (61))
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (95))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (62))
@@ -6734,7 +6734,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (61))
@@ -6750,7 +6750,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (61))
@@ -6773,7 +6773,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (51))
@@ -6790,7 +6790,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (51))
@@ -6813,7 +6813,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
@@ -6828,7 +6828,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
@@ -6858,7 +6858,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (370))
                                                                     (Prims.of_int (16))
@@ -6898,7 +6898,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (370))
                                                                     (Prims.of_int (16))
@@ -6944,28 +6944,28 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (39))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (51))
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (96))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (61))
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (95))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (62))
@@ -6981,7 +6981,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (61))
@@ -6997,7 +6997,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (61))
@@ -7020,7 +7020,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (51))
@@ -7037,7 +7037,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (51))
@@ -7060,7 +7060,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
@@ -7075,7 +7075,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
@@ -7098,7 +7098,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (16))
@@ -7134,7 +7134,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (16))
@@ -7165,56 +7165,56 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (364))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (30))
                                                                     (Prims.of_int (365))
                                                                     (Prims.of_int (73))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (63))
                                                                     (Prims.of_int (366))
                                                                     (Prims.of_int (65))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (374))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (46))
                                                                     (Prims.of_int (367))
                                                                     (Prims.of_int (96))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (368))
                                                                     (Prims.of_int (12))
@@ -7230,7 +7230,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (10))
@@ -7248,21 +7248,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (84))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (10))
@@ -7284,35 +7284,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (84))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (75))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (378))
                                                                     (Prims.of_int (10))
@@ -7338,49 +7338,49 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (84))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (75))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (378))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (378))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (380))
                                                                     (Prims.of_int (21))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (10))
@@ -7422,84 +7422,84 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'14
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (376))
                                                                     (Prims.of_int (84))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (377))
                                                                     (Prims.of_int (75))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (378))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (378))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (380))
                                                                     (Prims.of_int (21))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (385))
                                                                     (Prims.of_int (48))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (16))
                                                                     (Prims.of_int (385))
                                                                     (Prims.of_int (48))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (29))
                                                                     (Prims.of_int (385))
                                                                     (Prims.of_int (47))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (40))
                                                                     (Prims.of_int (385))
                                                                     (Prims.of_int (47))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (40))
@@ -7515,7 +7515,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -7647,7 +7647,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -7670,7 +7670,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -7687,7 +7687,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -7710,7 +7710,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -7760,7 +7760,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -7783,7 +7783,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (10))
@@ -7798,7 +7798,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (382))
                                                                     (Prims.of_int (10))
@@ -7821,7 +7821,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (10))
@@ -7849,35 +7849,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'15
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (28))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (388))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (388))
                                                                     (Prims.of_int (84))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (312))
                                                                     (Prims.of_int (21))
@@ -7893,7 +7893,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (313))
                                                                     (Prims.of_int (10))
@@ -7911,21 +7911,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (313))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (314))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (316))
                                                                     (Prims.of_int (21))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (10))
@@ -7947,35 +7947,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (313))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (314))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (316))
                                                                     (Prims.of_int (21))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (42))
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (70))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (10))
@@ -8008,56 +8008,56 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (313))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (314))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (316))
                                                                     (Prims.of_int (21))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (42))
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (70))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (22))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (321))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (321))
                                                                     (Prims.of_int (64))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (321))
                                                                     (Prims.of_int (21))
@@ -8073,7 +8073,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'17
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (321))
                                                                     (Prims.of_int (12))
@@ -8089,7 +8089,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'17
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (321))
                                                                     (Prims.of_int (12))
@@ -8112,7 +8112,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'17
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (22))
@@ -8148,21 +8148,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'17
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (22))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (324))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (17))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (328))
                                                                     (Prims.of_int (25))
@@ -8178,7 +8178,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'18
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (324))
                                                                     (Prims.of_int (12))
@@ -8199,21 +8199,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'18
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (324))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (17))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (327))
                                                                     (Prims.of_int (26))
                                                                     (Prims.of_int (327))
                                                                     (Prims.of_int (66))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (327))
                                                                     (Prims.of_int (40))
@@ -8229,7 +8229,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'19
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (42))
@@ -8246,7 +8246,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'19
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (318))
                                                                     (Prims.of_int (42))
@@ -8269,7 +8269,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'19
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (324))
                                                                     (Prims.of_int (12))
@@ -8306,14 +8306,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'19
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (324))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (330))
                                                                     (Prims.of_int (17))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (326))
                                                                     (Prims.of_int (25))
@@ -8329,7 +8329,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'20
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (324))
                                                                     (Prims.of_int (12))
@@ -8485,7 +8485,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'20
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (324))
                                                                     (Prims.of_int (12))
@@ -8522,7 +8522,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'18
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (22))
@@ -8545,7 +8545,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'18
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (22))
@@ -8575,7 +8575,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'17
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (10))
@@ -8591,7 +8591,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'17
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (319))
                                                                     (Prims.of_int (10))
@@ -8621,7 +8621,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (28))
@@ -8698,7 +8698,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (28))
@@ -8721,7 +8721,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (14))
@@ -8738,7 +8738,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (14))
@@ -8761,7 +8761,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (10))
@@ -8809,7 +8809,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'16
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (387))
                                                                     (Prims.of_int (10))
@@ -8874,7 +8874,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (286))
                                                                     (Prims.of_int (8))
@@ -8906,42 +8906,42 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (275))
                                                                     (Prims.of_int (46))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (16))
                                                                     (Prims.of_int (281))
                                                                     (Prims.of_int (95))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (8))
                                                                     (Prims.of_int (389))
                                                                     (Prims.of_int (11))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (32))
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (55))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (282))
                                                                     (Prims.of_int (8))
@@ -8951,7 +8951,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (268))
                                                                     (Prims.of_int (8))
@@ -8967,7 +8967,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (243))
                                                                     (Prims.of_int (8))
@@ -9006,14 +9006,14 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (393))
                                                                     (Prims.of_int (29))
                                                                     (Prims.of_int (397))
                                                                     (Prims.of_int (14))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (400))
                                                                     (Prims.of_int (12))
@@ -9035,21 +9035,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (393))
                                                                     (Prims.of_int (29))
                                                                     (Prims.of_int (397))
                                                                     (Prims.of_int (14))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (400))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (415))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (400))
                                                                     (Prims.of_int (20))
@@ -9064,7 +9064,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (401))
                                                                     (Prims.of_int (12))
@@ -9085,21 +9085,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (401))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (415))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (401))
                                                                     (Prims.of_int (24))
                                                                     (Prims.of_int (401))
                                                                     (Prims.of_int (41))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (401))
                                                                     (Prims.of_int (27))
@@ -9115,7 +9115,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (401))
                                                                     (Prims.of_int (24))
@@ -9130,7 +9130,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (401))
                                                                     (Prims.of_int (24))
@@ -9152,7 +9152,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (402))
                                                                     (Prims.of_int (12))
@@ -9173,21 +9173,21 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (402))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (415))
                                                                     (Prims.of_int (18))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (403))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (410))
                                                                     (Prims.of_int (56))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (403))
                                                                     (Prims.of_int (20))
@@ -9203,7 +9203,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (403))
                                                                     (Prims.of_int (14))
@@ -9228,7 +9228,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (405))
                                                                     (Prims.of_int (21))
@@ -9244,7 +9244,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (405))
                                                                     (Prims.of_int (18))
@@ -9278,7 +9278,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (406))
                                                                     (Prims.of_int (20))
@@ -9294,7 +9294,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (406))
                                                                     (Prims.of_int (20))
@@ -9310,7 +9310,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (406))
                                                                     (Prims.of_int (20))
@@ -9344,7 +9344,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (408))
                                                                     (Prims.of_int (20))
@@ -9360,7 +9360,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (408))
                                                                     (Prims.of_int (20))
@@ -9376,7 +9376,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (408))
                                                                     (Prims.of_int (20))
@@ -9392,7 +9392,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (405))
                                                                     (Prims.of_int (18))
@@ -9427,7 +9427,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (410))
                                                                     (Prims.of_int (18))
@@ -9443,7 +9443,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (410))
                                                                     (Prims.of_int (18))
@@ -9459,7 +9459,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (410))
                                                                     (Prims.of_int (18))
@@ -9475,7 +9475,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (403))
                                                                     (Prims.of_int (14))
@@ -9497,7 +9497,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (402))
                                                                     (Prims.of_int (12))
@@ -9532,35 +9532,35 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (412))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (413))
                                                                     (Prims.of_int (35))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (412))
                                                                     (Prims.of_int (18))
                                                                     (Prims.of_int (413))
                                                                     (Prims.of_int (35))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (412))
                                                                     (Prims.of_int (31))
                                                                     (Prims.of_int (413))
                                                                     (Prims.of_int (34))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (412))
                                                                     (Prims.of_int (50))
                                                                     (Prims.of_int (413))
                                                                     (Prims.of_int (34))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (412))
                                                                     (Prims.of_int (50))
@@ -9576,7 +9576,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -9596,7 +9596,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -9618,7 +9618,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -9635,7 +9635,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -9657,7 +9657,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -9674,7 +9674,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -9696,7 +9696,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (412))
                                                                     (Prims.of_int (12))
@@ -9711,7 +9711,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (412))
                                                                     (Prims.of_int (12))
@@ -9733,7 +9733,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (415))
                                                                     (Prims.of_int (12))
@@ -9758,7 +9758,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (415))
                                                                     (Prims.of_int (12))
@@ -9774,7 +9774,7 @@ let rec (visit_function :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (402))
                                                                     (Prims.of_int (12))
@@ -9805,7 +9805,7 @@ let rec (visit_function :
                                                     (FStar_Tactics_Types.set_proofstate_range
                                                        ps'2
                                                        (FStar_Range.prims_to_fstar_range
-                                                          (Prims.mk_range
+                                                          (FStar_Range.mk_range
                                                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                              (Prims.of_int (229))
                                                              (Prims.of_int (6))
@@ -9819,7 +9819,7 @@ let rec (visit_function :
                                      (FStar_Tactics_Types.set_proofstate_range
                                         ps'1
                                         (FStar_Range.prims_to_fstar_range
-                                           (Prims.mk_range
+                                           (FStar_Range.mk_range
                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                               (Prims.of_int (222))
                                               (Prims.of_int (4))
@@ -9862,7 +9862,7 @@ and (visit_many :
                                                 (FStar_Tactics_Types.set_proofstate_range
                                                    ps1
                                                    (FStar_Range.prims_to_fstar_range
-                                                      (Prims.mk_range
+                                                      (FStar_Range.mk_range
                                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                          (Prims.of_int (428))
                                                          (Prims.of_int (27))
@@ -9875,7 +9875,7 @@ and (visit_many :
                                                   (FStar_Tactics_Types.set_proofstate_range
                                                      ps'
                                                      (FStar_Range.prims_to_fstar_range
-                                                        (Prims.mk_range
+                                                        (FStar_Range.mk_range
                                                            "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                            (Prims.of_int (428))
                                                            (Prims.of_int (4))
@@ -9894,7 +9894,7 @@ and (visit_many :
                                                      (FStar_Tactics_Types.set_proofstate_range
                                                         ps'
                                                         (FStar_Range.prims_to_fstar_range
-                                                           (Prims.mk_range
+                                                           (FStar_Range.mk_range
                                                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                               (Prims.of_int (428))
                                                               (Prims.of_int (4))
@@ -9907,7 +9907,7 @@ and (visit_many :
                         (FStar_Tactics_Types.incr_depth
                            (FStar_Tactics_Types.set_proofstate_range ps
                               (FStar_Range.prims_to_fstar_range
-                                 (Prims.mk_range
+                                 (FStar_Range.mk_range
                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                     (Prims.of_int (427)) (Prims.of_int (25))
                                     (Prims.of_int (430)) (Prims.of_int (24))))))
@@ -9916,7 +9916,7 @@ and (visit_many :
                     (match FStar_Tactics_Types.tracepoint
                              (FStar_Tactics_Types.set_proofstate_range ps'
                                 (FStar_Range.prims_to_fstar_range
-                                   (Prims.mk_range
+                                   (FStar_Range.mk_range
                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                       (Prims.of_int (427)) (Prims.of_int (2))
                                       (Prims.of_int (432))
@@ -9931,7 +9931,7 @@ and (visit_many :
                              (FStar_Tactics_Types.decr_depth
                                 (FStar_Tactics_Types.set_proofstate_range ps'
                                    (FStar_Range.prims_to_fstar_range
-                                      (Prims.mk_range
+                                      (FStar_Range.mk_range
                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                          (Prims.of_int (427))
                                          (Prims.of_int (2))
@@ -9964,7 +9964,7 @@ and (visit_body :
                         (FStar_Tactics_Types.incr_depth
                            (FStar_Tactics_Types.set_proofstate_range ps
                               (FStar_Range.prims_to_fstar_range
-                                 (Prims.mk_range
+                                 (FStar_Range.mk_range
                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                     (Prims.of_int (446)) (Prims.of_int (8))
                                     (Prims.of_int (446)) (Prims.of_int (17))))))
@@ -9973,7 +9973,7 @@ and (visit_body :
                     (match FStar_Tactics_Types.tracepoint
                              (FStar_Tactics_Types.set_proofstate_range ps'
                                 (FStar_Range.prims_to_fstar_range
-                                   (Prims.mk_range
+                                   (FStar_Range.mk_range
                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                       (Prims.of_int (446)) (Prims.of_int (2))
                                       (Prims.of_int (586))
@@ -9989,14 +9989,14 @@ and (visit_body :
                                                 (FStar_Tactics_Types.set_proofstate_range
                                                    ps1
                                                    (FStar_Range.prims_to_fstar_range
-                                                      (Prims.mk_range
+                                                      (FStar_Range.mk_range
                                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                          (Prims.of_int (448))
                                                          (Prims.of_int (18))
                                                          (Prims.of_int (448))
                                                          (Prims.of_int (31))))))
                                              (FStar_Range.prims_to_fstar_range
-                                                (Prims.mk_range
+                                                (FStar_Range.mk_range
                                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                    (Prims.of_int (448))
                                                    (Prims.of_int (6))
@@ -10015,14 +10015,14 @@ and (visit_body :
                                                              (FStar_Tactics_Types.set_proofstate_range
                                                                 ps2
                                                                 (FStar_Range.prims_to_fstar_range
-                                                                   (Prims.mk_range
+                                                                   (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (451))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (451))
                                                                     (Prims.of_int (37))))))
                                                           (FStar_Range.prims_to_fstar_range
-                                                             (Prims.mk_range
+                                                             (FStar_Range.mk_range
                                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                 (Prims.of_int (451))
                                                                 (Prims.of_int (6))
@@ -10045,7 +10045,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (452))
                                                                     (Prims.of_int (29))
@@ -10059,7 +10059,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (452))
                                                                     (Prims.of_int (6))
@@ -10082,7 +10082,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (453))
                                                                     (Prims.of_int (15))
@@ -10098,7 +10098,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (456))
                                                                     (Prims.of_int (12))
@@ -10116,14 +10116,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (456))
                                                                     (Prims.of_int (12))
                                                                     (Prims.of_int (545))
                                                                     (Prims.of_int (25))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (456))
                                                                     (Prims.of_int (18))
@@ -10139,7 +10139,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (456))
                                                                     (Prims.of_int (12))
@@ -10161,14 +10161,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (459))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (459))
                                                                     (Prims.of_int (32))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (460))
                                                                     (Prims.of_int (10))
@@ -10190,21 +10190,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (459))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (459))
                                                                     (Prims.of_int (32))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (460))
                                                                     (Prims.of_int (10))
                                                                     (Prims.of_int (542))
                                                                     (Prims.of_int (13))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (460))
                                                                     (Prims.of_int (25))
@@ -10220,7 +10220,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (460))
                                                                     (Prims.of_int (10))
@@ -10242,14 +10242,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (461))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (461))
                                                                     (Prims.of_int (30))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (464))
                                                                     (Prims.of_int (16))
@@ -10288,28 +10288,28 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (81))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (81))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (33))
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (80))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (63))
@@ -10325,7 +10325,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10342,7 +10342,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10365,7 +10365,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10382,7 +10382,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10405,7 +10405,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (14))
@@ -10420,7 +10420,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (466))
                                                                     (Prims.of_int (14))
@@ -10443,7 +10443,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (468))
                                                                     (Prims.of_int (14))
@@ -10482,14 +10482,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'5
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (468))
                                                                     (Prims.of_int (14))
                                                                     (Prims.of_int (537))
                                                                     (Prims.of_int (17))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (469))
                                                                     (Prims.of_int (16))
@@ -10505,7 +10505,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (468))
                                                                     (Prims.of_int (14))
@@ -10527,14 +10527,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (483))
                                                                     (Prims.of_int (16))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (513))
                                                                     (Prims.of_int (20))
@@ -10588,28 +10588,28 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (81))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (26))
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (81))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (39))
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (80))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (39))
@@ -10625,7 +10625,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10642,7 +10642,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10665,7 +10665,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10682,7 +10682,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10705,7 +10705,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (20))
@@ -10720,7 +10720,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (20))
@@ -10743,7 +10743,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -10765,21 +10765,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (55))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (50))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (21))
@@ -10795,7 +10795,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -10811,7 +10811,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -10834,7 +10834,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -10850,7 +10850,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -10883,7 +10883,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (493))
                                                                     (Prims.of_int (49))
@@ -10899,7 +10899,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (493))
                                                                     (Prims.of_int (24))
@@ -10937,14 +10937,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (27))
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (83))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (63))
@@ -10960,7 +10960,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -10977,7 +10977,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11000,7 +11000,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (22))
@@ -11015,7 +11015,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (22))
@@ -11036,7 +11036,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (494))
                                                                     (Prims.of_int (20))
@@ -11052,7 +11052,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
@@ -11082,42 +11082,42 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (98))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (26))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (98))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (39))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
@@ -11133,7 +11133,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
@@ -11160,7 +11160,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (58))
@@ -11176,7 +11176,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (43))
@@ -11192,7 +11192,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (43))
@@ -11226,49 +11226,49 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (84))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (498))
                                                                     (Prims.of_int (22))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (498))
                                                                     (Prims.of_int (32))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (498))
                                                                     (Prims.of_int (53))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (22))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (22))
@@ -11284,7 +11284,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11300,7 +11300,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11323,7 +11323,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11339,7 +11339,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11362,7 +11362,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11379,7 +11379,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11402,7 +11402,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11419,7 +11419,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11442,7 +11442,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11459,7 +11459,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11482,7 +11482,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11498,7 +11498,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11528,7 +11528,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11545,7 +11545,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11568,7 +11568,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11585,7 +11585,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11608,7 +11608,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
@@ -11623,7 +11623,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
@@ -11646,7 +11646,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (501))
                                                                     (Prims.of_int (20))
@@ -11674,21 +11674,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (47))
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (88))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (59))
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (87))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (60))
@@ -11704,7 +11704,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (59))
@@ -11720,7 +11720,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (59))
@@ -11743,7 +11743,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (47))
@@ -11760,7 +11760,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (47))
@@ -11783,7 +11783,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (42))
@@ -11798,7 +11798,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (42))
@@ -11821,14 +11821,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (501))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (22))
@@ -11844,7 +11844,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (504))
                                                                     (Prims.of_int (20))
@@ -11865,14 +11865,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (504))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (504))
                                                                     (Prims.of_int (30))
@@ -11888,7 +11888,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (20))
@@ -11915,35 +11915,35 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (33))
                                                                     (Prims.of_int (509))
                                                                     (Prims.of_int (22))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (41))
                                                                     (Prims.of_int (509))
                                                                     (Prims.of_int (22))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (506))
                                                                     (Prims.of_int (34))
                                                                     (Prims.of_int (506))
                                                                     (Prims.of_int (62))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (506))
                                                                     (Prims.of_int (43))
@@ -11959,7 +11959,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11976,7 +11976,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -11999,7 +11999,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (41))
@@ -12022,7 +12022,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (41))
@@ -12045,7 +12045,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (33))
@@ -12061,7 +12061,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (33))
@@ -12084,7 +12084,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -12106,21 +12106,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (50))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (21))
@@ -12136,7 +12136,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -12152,7 +12152,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -12175,7 +12175,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -12193,7 +12193,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -12245,7 +12245,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (493))
                                                                     (Prims.of_int (24))
@@ -12262,7 +12262,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (519))
                                                                     (Prims.of_int (36))
@@ -12278,7 +12278,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (519))
                                                                     (Prims.of_int (24))
@@ -12301,7 +12301,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (519))
                                                                     (Prims.of_int (24))
@@ -12320,7 +12320,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (518))
                                                                     (Prims.of_int (40))
@@ -12336,7 +12336,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (518))
                                                                     (Prims.of_int (18))
@@ -12358,14 +12358,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (522))
                                                                     (Prims.of_int (35))
                                                                     (Prims.of_int (522))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (523))
                                                                     (Prims.of_int (18))
@@ -12385,28 +12385,28 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (522))
                                                                     (Prims.of_int (35))
                                                                     (Prims.of_int (522))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (523))
                                                                     (Prims.of_int (18))
                                                                     (Prims.of_int (530))
                                                                     (Prims.of_int (33))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (523))
                                                                     (Prims.of_int (56))
                                                                     (Prims.of_int (523))
                                                                     (Prims.of_int (58))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (524))
                                                                     (Prims.of_int (18))
@@ -12431,14 +12431,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (38))
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (65))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (39))
@@ -12454,7 +12454,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (38))
@@ -12470,7 +12470,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (38))
@@ -12493,7 +12493,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (66))
@@ -12513,7 +12513,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (66))
@@ -12547,35 +12547,35 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (522))
                                                                     (Prims.of_int (35))
                                                                     (Prims.of_int (522))
                                                                     (Prims.of_int (54))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (523))
                                                                     (Prims.of_int (18))
                                                                     (Prims.of_int (530))
                                                                     (Prims.of_int (33))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (523))
                                                                     (Prims.of_int (56))
                                                                     (Prims.of_int (523))
                                                                     (Prims.of_int (58))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (524))
                                                                     (Prims.of_int (18))
                                                                     (Prims.of_int (530))
                                                                     (Prims.of_int (33))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (526))
                                                                     (Prims.of_int (20))
@@ -12591,7 +12591,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (529))
                                                                     (Prims.of_int (18))
@@ -12614,21 +12614,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (529))
                                                                     (Prims.of_int (18))
                                                                     (Prims.of_int (530))
                                                                     (Prims.of_int (33))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (529))
                                                                     (Prims.of_int (26))
                                                                     (Prims.of_int (529))
                                                                     (Prims.of_int (80))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (529))
                                                                     (Prims.of_int (33))
@@ -12644,7 +12644,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (529))
                                                                     (Prims.of_int (26))
@@ -12662,7 +12662,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (529))
                                                                     (Prims.of_int (26))
@@ -12685,7 +12685,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (530))
                                                                     (Prims.of_int (18))
@@ -12703,7 +12703,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (530))
                                                                     (Prims.of_int (18))
@@ -12727,7 +12727,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (518))
                                                                     (Prims.of_int (18))
@@ -12772,28 +12772,28 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (81))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (26))
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (81))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (39))
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (80))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (39))
@@ -12809,7 +12809,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -12826,7 +12826,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -12849,7 +12849,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -12866,7 +12866,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -12889,7 +12889,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (20))
@@ -12904,7 +12904,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (485))
                                                                     (Prims.of_int (20))
@@ -12927,7 +12927,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -12949,21 +12949,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (55))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (50))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (21))
@@ -12979,7 +12979,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -12995,7 +12995,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -13018,7 +13018,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -13034,7 +13034,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (488))
                                                                     (Prims.of_int (20))
@@ -13068,7 +13068,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (493))
                                                                     (Prims.of_int (49))
@@ -13084,7 +13084,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (493))
                                                                     (Prims.of_int (24))
@@ -13123,14 +13123,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (27))
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (83))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (63))
@@ -13146,7 +13146,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13163,7 +13163,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13186,7 +13186,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (22))
@@ -13201,7 +13201,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (495))
                                                                     (Prims.of_int (22))
@@ -13222,7 +13222,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (494))
                                                                     (Prims.of_int (20))
@@ -13238,7 +13238,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
@@ -13269,42 +13269,42 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (98))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (26))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (98))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (39))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
@@ -13320,7 +13320,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
@@ -13347,7 +13347,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (58))
@@ -13363,7 +13363,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (43))
@@ -13379,7 +13379,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (43))
@@ -13413,49 +13413,49 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (62))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (84))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (498))
                                                                     (Prims.of_int (22))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (498))
                                                                     (Prims.of_int (32))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (498))
                                                                     (Prims.of_int (53))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (22))
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (97))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (499))
                                                                     (Prims.of_int (22))
@@ -13471,7 +13471,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13487,7 +13487,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13510,7 +13510,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13526,7 +13526,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13549,7 +13549,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13566,7 +13566,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13589,7 +13589,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13606,7 +13606,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13629,7 +13629,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13646,7 +13646,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13669,7 +13669,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13685,7 +13685,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13715,7 +13715,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13732,7 +13732,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13755,7 +13755,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13772,7 +13772,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -13795,7 +13795,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
@@ -13810,7 +13810,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (497))
                                                                     (Prims.of_int (20))
@@ -13833,7 +13833,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (501))
                                                                     (Prims.of_int (20))
@@ -13861,21 +13861,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (47))
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (88))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (59))
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (87))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (60))
@@ -13891,7 +13891,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (59))
@@ -13907,7 +13907,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (59))
@@ -13930,7 +13930,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (47))
@@ -13947,7 +13947,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (47))
@@ -13970,7 +13970,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (42))
@@ -13985,7 +13985,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (42))
@@ -14008,14 +14008,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (501))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (502))
                                                                     (Prims.of_int (22))
@@ -14031,7 +14031,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (504))
                                                                     (Prims.of_int (20))
@@ -14052,14 +14052,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'10
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (504))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (504))
                                                                     (Prims.of_int (30))
@@ -14075,7 +14075,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (20))
@@ -14103,35 +14103,35 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'11
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (33))
                                                                     (Prims.of_int (509))
                                                                     (Prims.of_int (22))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (41))
                                                                     (Prims.of_int (509))
                                                                     (Prims.of_int (22))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (506))
                                                                     (Prims.of_int (34))
                                                                     (Prims.of_int (506))
                                                                     (Prims.of_int (62))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (506))
                                                                     (Prims.of_int (43))
@@ -14147,7 +14147,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -14164,7 +14164,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "prims.fst"
                                                                     (Prims.of_int (557))
                                                                     (Prims.of_int (19))
@@ -14187,7 +14187,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (41))
@@ -14210,7 +14210,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (41))
@@ -14233,7 +14233,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (33))
@@ -14249,7 +14249,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (505))
                                                                     (Prims.of_int (33))
@@ -14272,7 +14272,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -14294,21 +14294,21 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'12
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (50))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (21))
@@ -14324,7 +14324,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -14340,7 +14340,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -14363,7 +14363,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -14381,7 +14381,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'13
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (20))
@@ -14433,7 +14433,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (493))
                                                                     (Prims.of_int (24))
@@ -14450,7 +14450,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps9
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (534))
                                                                     (Prims.of_int (31))
@@ -14466,7 +14466,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (534))
                                                                     (Prims.of_int (18))
@@ -14493,7 +14493,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'7
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (534))
                                                                     (Prims.of_int (18))
@@ -14512,14 +14512,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps8
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (483))
                                                                     (Prims.of_int (16))
                                                                     (Prims.of_int (510))
                                                                     (Prims.of_int (69))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (513))
                                                                     (Prims.of_int (20))
@@ -14529,7 +14529,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (468))
                                                                     (Prims.of_int (14))
@@ -14566,14 +14566,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps6
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (461))
                                                                     (Prims.of_int (20))
                                                                     (Prims.of_int (461))
                                                                     (Prims.of_int (30))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (464))
                                                                     (Prims.of_int (16))
@@ -14583,7 +14583,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (460))
                                                                     (Prims.of_int (10))
@@ -14609,7 +14609,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (456))
                                                                     (Prims.of_int (12))
@@ -14633,7 +14633,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'1
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (452))
                                                                     (Prims.of_int (6))
@@ -14650,14 +14650,14 @@ and (visit_body :
                                                                  ps2
                                                                  (FStar_Range.prims_to_fstar_range
                                                                     (
-                                                                    Prims.mk_range
+                                                                    FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (451))
                                                                     (Prims.of_int (19))
                                                                     (Prims.of_int (451))
                                                                     (Prims.of_int (37))))))
                                                            (FStar_Range.prims_to_fstar_range
-                                                              (Prims.mk_range
+                                                              (FStar_Range.mk_range
                                                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                  (Prims.of_int (451))
                                                                  (Prims.of_int (6))
@@ -14669,14 +14669,14 @@ and (visit_body :
                                                  (FStar_Tactics_Types.set_proofstate_range
                                                     ps1
                                                     (FStar_Range.prims_to_fstar_range
-                                                       (Prims.mk_range
+                                                       (FStar_Range.mk_range
                                                           "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                           (Prims.of_int (448))
                                                           (Prims.of_int (18))
                                                           (Prims.of_int (448))
                                                           (Prims.of_int (31))))))
                                               (FStar_Range.prims_to_fstar_range
-                                                 (Prims.mk_range
+                                                 (FStar_Range.mk_range
                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                     (Prims.of_int (448))
                                                     (Prims.of_int (6))
@@ -14706,7 +14706,7 @@ and (visit_body :
                                              (FStar_Tactics_Types.set_proofstate_range
                                                 ps1
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (553))
                                                       (Prims.of_int (28))
@@ -14719,7 +14719,7 @@ and (visit_body :
                                                (FStar_Tactics_Types.set_proofstate_range
                                                   ps'1
                                                   (FStar_Range.prims_to_fstar_range
-                                                     (Prims.mk_range
+                                                     (FStar_Range.mk_range
                                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                         (Prims.of_int (553))
                                                         (Prims.of_int (6))
@@ -14737,7 +14737,7 @@ and (visit_body :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps2
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (554))
                                                                     (Prims.of_int (14))
@@ -14751,7 +14751,7 @@ and (visit_body :
                                                                     ps'2
                                                                     (
                                                                     FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (555))
                                                                     (Prims.of_int (6))
@@ -14767,7 +14767,7 @@ and (visit_body :
                                                                     FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (555))
                                                                     (Prims.of_int (6))
@@ -14781,7 +14781,7 @@ and (visit_body :
                                                 (FStar_Tactics_Types.set_proofstate_range
                                                    ps'1
                                                    (FStar_Range.prims_to_fstar_range
-                                                      (Prims.mk_range
+                                                      (FStar_Range.mk_range
                                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                          (Prims.of_int (553))
                                                          (Prims.of_int (6))
@@ -14798,7 +14798,7 @@ and (visit_body :
                                              (FStar_Tactics_Types.set_proofstate_range
                                                 ps1
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (558))
                                                       (Prims.of_int (32))
@@ -14811,7 +14811,7 @@ and (visit_body :
                                                (FStar_Tactics_Types.set_proofstate_range
                                                   ps'1
                                                   (FStar_Range.prims_to_fstar_range
-                                                     (Prims.mk_range
+                                                     (FStar_Range.mk_range
                                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                         (Prims.of_int (558))
                                                         (Prims.of_int (6))
@@ -14828,14 +14828,14 @@ and (visit_body :
                                                                   (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (559))
                                                                     (Prims.of_int (21))
                                                                     (Prims.of_int (559))
                                                                     (Prims.of_int (44))))))
                                                                (FStar_Range.prims_to_fstar_range
-                                                                  (Prims.mk_range
+                                                                  (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (559))
                                                                     (Prims.of_int (6))
@@ -14859,7 +14859,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (560))
                                                                     (Prims.of_int (30))
@@ -14874,7 +14874,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (560))
                                                                     (Prims.of_int (6))
@@ -14898,7 +14898,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (561))
                                                                     (Prims.of_int (21))
@@ -14914,7 +14914,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (562))
                                                                     (Prims.of_int (6))
@@ -14935,14 +14935,14 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (562))
                                                                     (Prims.of_int (6))
                                                                     (Prims.of_int (562))
                                                                     (Prims.of_int (66))))))
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (562))
                                                                     (Prims.of_int (10))
@@ -14958,7 +14958,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (562))
                                                                     (Prims.of_int (6))
@@ -14976,7 +14976,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'4
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (562))
                                                                     (Prims.of_int (6))
@@ -15000,7 +15000,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (560))
                                                                     (Prims.of_int (6))
@@ -15018,14 +15018,14 @@ and (visit_body :
                                                                    (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (559))
                                                                     (Prims.of_int (21))
                                                                     (Prims.of_int (559))
                                                                     (Prims.of_int (44))))))
                                                                 (FStar_Range.prims_to_fstar_range
-                                                                   (Prims.mk_range
+                                                                   (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (559))
                                                                     (Prims.of_int (6))
@@ -15035,7 +15035,7 @@ and (visit_body :
                                                 (FStar_Tactics_Types.set_proofstate_range
                                                    ps'1
                                                    (FStar_Range.prims_to_fstar_range
-                                                      (Prims.mk_range
+                                                      (FStar_Range.mk_range
                                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                          (Prims.of_int (558))
                                                          (Prims.of_int (6))
@@ -15052,7 +15052,7 @@ and (visit_body :
                                              (FStar_Tactics_Types.set_proofstate_range
                                                 ps1
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (565))
                                                       (Prims.of_int (29))
@@ -15065,7 +15065,7 @@ and (visit_body :
                                                (FStar_Tactics_Types.set_proofstate_range
                                                   ps'1
                                                   (FStar_Range.prims_to_fstar_range
-                                                     (Prims.mk_range
+                                                     (FStar_Range.mk_range
                                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                         (Prims.of_int (565))
                                                         (Prims.of_int (6))
@@ -15083,7 +15083,7 @@ and (visit_body :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps2
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (566))
                                                                     (Prims.of_int (30))
@@ -15097,7 +15097,7 @@ and (visit_body :
                                                                     ps'2
                                                                     (
                                                                     FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (566))
                                                                     (Prims.of_int (6))
@@ -15122,7 +15122,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (567))
                                                                     (Prims.of_int (14))
@@ -15138,7 +15138,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (568))
                                                                     (Prims.of_int (6))
@@ -15156,7 +15156,7 @@ and (visit_body :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'3
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (568))
                                                                     (Prims.of_int (6))
@@ -15173,7 +15173,7 @@ and (visit_body :
                                                                   (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (566))
                                                                     (Prims.of_int (6))
@@ -15187,7 +15187,7 @@ and (visit_body :
                                                 (FStar_Tactics_Types.set_proofstate_range
                                                    ps'1
                                                    (FStar_Range.prims_to_fstar_range
-                                                      (Prims.mk_range
+                                                      (FStar_Range.mk_range
                                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                          (Prims.of_int (565))
                                                          (Prims.of_int (6))
@@ -15204,7 +15204,7 @@ and (visit_body :
                                              (FStar_Tactics_Types.set_proofstate_range
                                                 ps1
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (571))
                                                       (Prims.of_int (28))
@@ -15217,7 +15217,7 @@ and (visit_body :
                                                (FStar_Tactics_Types.set_proofstate_range
                                                   ps'1
                                                   (FStar_Range.prims_to_fstar_range
-                                                     (Prims.mk_range
+                                                     (FStar_Range.mk_range
                                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                         (Prims.of_int (571))
                                                         (Prims.of_int (6))
@@ -15235,7 +15235,7 @@ and (visit_body :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps2
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (572))
                                                                     (Prims.of_int (14))
@@ -15249,7 +15249,7 @@ and (visit_body :
                                                                     ps'2
                                                                     (
                                                                     FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (573))
                                                                     (Prims.of_int (6))
@@ -15265,7 +15265,7 @@ and (visit_body :
                                                                     FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (573))
                                                                     (Prims.of_int (6))
@@ -15279,7 +15279,7 @@ and (visit_body :
                                                 (FStar_Tactics_Types.set_proofstate_range
                                                    ps'1
                                                    (FStar_Range.prims_to_fstar_range
-                                                      (Prims.mk_range
+                                                      (FStar_Range.mk_range
                                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                          (Prims.of_int (571))
                                                          (Prims.of_int (6))
@@ -15296,7 +15296,7 @@ and (visit_body :
                                              (FStar_Tactics_Types.set_proofstate_range
                                                 ps1
                                                 (FStar_Range.prims_to_fstar_range
-                                                   (Prims.mk_range
+                                                   (FStar_Range.mk_range
                                                       "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                       (Prims.of_int (576))
                                                       (Prims.of_int (28))
@@ -15309,7 +15309,7 @@ and (visit_body :
                                                (FStar_Tactics_Types.set_proofstate_range
                                                   ps'1
                                                   (FStar_Range.prims_to_fstar_range
-                                                     (Prims.mk_range
+                                                     (FStar_Range.mk_range
                                                         "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                         (Prims.of_int (576))
                                                         (Prims.of_int (6))
@@ -15327,7 +15327,7 @@ and (visit_body :
                                                                (FStar_Tactics_Types.set_proofstate_range
                                                                   ps2
                                                                   (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (577))
                                                                     (Prims.of_int (14))
@@ -15341,7 +15341,7 @@ and (visit_body :
                                                                     ps'2
                                                                     (
                                                                     FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (578))
                                                                     (Prims.of_int (6))
@@ -15357,7 +15357,7 @@ and (visit_body :
                                                                     FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (578))
                                                                     (Prims.of_int (6))
@@ -15371,7 +15371,7 @@ and (visit_body :
                                                 (FStar_Tactics_Types.set_proofstate_range
                                                    ps'1
                                                    (FStar_Range.prims_to_fstar_range
-                                                      (Prims.mk_range
+                                                      (FStar_Range.mk_range
                                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                          (Prims.of_int (576))
                                                          (Prims.of_int (6))
@@ -15404,7 +15404,7 @@ and (visit_body :
                            (FStar_Tactics_Types.decr_depth
                               (FStar_Tactics_Types.set_proofstate_range ps'
                                  (FStar_Range.prims_to_fstar_range
-                                    (Prims.mk_range
+                                    (FStar_Range.mk_range
                                        "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                        (Prims.of_int (446))
                                        (Prims.of_int (2))
@@ -15429,7 +15429,7 @@ let (specialize :
                                  (FStar_Tactics_Types.set_proofstate_range
                                     ps1
                                     (FStar_Range.prims_to_fstar_range
-                                       (Prims.mk_range
+                                       (FStar_Range.mk_range
                                           "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                           (Prims.of_int (591))
                                           (Prims.of_int (10))
@@ -15441,7 +15441,7 @@ let (specialize :
                                    (FStar_Tactics_Types.set_proofstate_range
                                       ps'
                                       (FStar_Range.prims_to_fstar_range
-                                         (Prims.mk_range
+                                         (FStar_Range.mk_range
                                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                             (Prims.of_int (591))
                                             (Prims.of_int (4))
@@ -15462,7 +15462,7 @@ let (specialize :
                                     (FStar_Tactics_Types.set_proofstate_range
                                        ps'
                                        (FStar_Range.prims_to_fstar_range
-                                          (Prims.mk_range
+                                          (FStar_Range.mk_range
                                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                              (Prims.of_int (591))
                                              (Prims.of_int (4))
@@ -15473,7 +15473,7 @@ let (specialize :
                 (FStar_Tactics_Types.incr_depth
                    (FStar_Tactics_Types.set_proofstate_range ps
                       (FStar_Range.prims_to_fstar_range
-                         (Prims.mk_range
+                         (FStar_Range.mk_range
                             "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                             (Prims.of_int (590)) (Prims.of_int (14))
                             (Prims.of_int (594)) (Prims.of_int (9))))))
@@ -15482,7 +15482,7 @@ let (specialize :
             (match FStar_Tactics_Types.tracepoint
                      (FStar_Tactics_Types.set_proofstate_range ps'
                         (FStar_Range.prims_to_fstar_range
-                           (Prims.mk_range
+                           (FStar_Range.mk_range
                               "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                               (Prims.of_int (595)) (Prims.of_int (2))
                               (Prims.of_int (601)) (Prims.of_int (5)))))
@@ -15496,21 +15496,21 @@ let (specialize :
                                       (FStar_Tactics_Types.set_proofstate_range
                                          ps'
                                          (FStar_Range.prims_to_fstar_range
-                                            (Prims.mk_range
+                                            (FStar_Range.mk_range
                                                "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                (Prims.of_int (595))
                                                (Prims.of_int (2))
                                                (Prims.of_int (601))
                                                (Prims.of_int (5))))))
                                    (FStar_Range.prims_to_fstar_range
-                                      (Prims.mk_range
+                                      (FStar_Range.mk_range
                                          "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                          (Prims.of_int (595))
                                          (Prims.of_int (13))
                                          (Prims.of_int (595))
                                          (Prims.of_int (35))))))
                              (FStar_Range.prims_to_fstar_range
-                                (Prims.mk_range
+                                (FStar_Range.mk_range
                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                    (Prims.of_int (596)) (Prims.of_int (2))
                                    (Prims.of_int (601)) (Prims.of_int (5)))))
@@ -15527,7 +15527,7 @@ let (specialize :
                                                        (FStar_Tactics_Types.set_proofstate_range
                                                           ps1
                                                           (FStar_Range.prims_to_fstar_range
-                                                             (Prims.mk_range
+                                                             (FStar_Range.mk_range
                                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                 (Prims.of_int (597))
                                                                 (Prims.of_int (19))
@@ -15540,7 +15540,7 @@ let (specialize :
                                                          (FStar_Tactics_Types.set_proofstate_range
                                                             ps'1
                                                             (FStar_Range.prims_to_fstar_range
-                                                               (Prims.mk_range
+                                                               (FStar_Range.mk_range
                                                                   "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                   (Prims.of_int (597))
                                                                   (Prims.of_int (8))
@@ -15561,7 +15561,7 @@ let (specialize :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (598))
                                                                     (Prims.of_int (4))
@@ -15576,7 +15576,7 @@ let (specialize :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (599))
                                                                     (Prims.of_int (4))
@@ -15593,7 +15593,7 @@ let (specialize :
                                                                     (FStar_Tactics_Types.set_proofstate_range
                                                                     ps'2
                                                                     (FStar_Range.prims_to_fstar_range
-                                                                    (Prims.mk_range
+                                                                    (FStar_Range.mk_range
                                                                     "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                     (Prims.of_int (599))
                                                                     (Prims.of_int (4))
@@ -15608,7 +15608,7 @@ let (specialize :
                                                           (FStar_Tactics_Types.set_proofstate_range
                                                              ps'1
                                                              (FStar_Range.prims_to_fstar_range
-                                                                (Prims.mk_range
+                                                                (FStar_Range.mk_range
                                                                    "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                                    (Prims.of_int (597))
                                                                    (Prims.of_int (8))
@@ -15629,28 +15629,28 @@ let (specialize :
                                                     (FStar_Tactics_Types.set_proofstate_range
                                                        ps'
                                                        (FStar_Range.prims_to_fstar_range
-                                                          (Prims.mk_range
+                                                          (FStar_Range.mk_range
                                                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                              (Prims.of_int (595))
                                                              (Prims.of_int (2))
                                                              (Prims.of_int (601))
                                                              (Prims.of_int (5))))))
                                                  (FStar_Range.prims_to_fstar_range
-                                                    (Prims.mk_range
+                                                    (FStar_Range.mk_range
                                                        "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                        (Prims.of_int (595))
                                                        (Prims.of_int (13))
                                                        (Prims.of_int (595))
                                                        (Prims.of_int (35))))))
                                            (FStar_Range.prims_to_fstar_range
-                                              (Prims.mk_range
+                                              (FStar_Range.mk_range
                                                  "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                  (Prims.of_int (596))
                                                  (Prims.of_int (2))
                                                  (Prims.of_int (601))
                                                  (Prims.of_int (5))))))
                                      (FStar_Range.prims_to_fstar_range
-                                        (Prims.mk_range
+                                        (FStar_Range.mk_range
                                            "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                            (Prims.of_int (596))
                                            (Prims.of_int (15))
@@ -15662,7 +15662,7 @@ let (specialize :
                                     (FStar_Tactics_Types.set_proofstate_range
                                        ps'1
                                        (FStar_Range.prims_to_fstar_range
-                                          (Prims.mk_range
+                                          (FStar_Range.mk_range
                                              "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                              (Prims.of_int (596))
                                              (Prims.of_int (2))
@@ -15676,7 +15676,7 @@ let (specialize :
                                        (FStar_Tactics_Types.set_proofstate_range
                                           ps'1
                                           (FStar_Range.prims_to_fstar_range
-                                             (Prims.mk_range
+                                             (FStar_Range.mk_range
                                                 "/Users/bhargava/Desktop/repositories/hacl-star-master/code/meta/Meta.Interface.fst"
                                                 (Prims.of_int (596))
                                                 (Prims.of_int (2))

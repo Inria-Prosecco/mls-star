@@ -1,11 +1,7 @@
 {
   inputs = {
-    nixpkgs.url = "nixpkgs";
-
-    fstar-flake = {
-      url = "github:FStarLang/FStar";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    fstar-flake.url = "github:FStarLang/FStar";
+    nixpkgs.follows = "fstar-flake/nixpkgs";
 
     comparse-flake = {
       url = "git+ssh://git@github.com/TWal/comparse.git";
