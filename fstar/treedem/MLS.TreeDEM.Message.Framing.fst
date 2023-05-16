@@ -33,6 +33,7 @@ val compute_tbs:
   framed_content_tbs_nt bytes
 let compute_tbs #bytes #bl wire_format content group_context =
   ({
+    version = PV_mls10;
     wire_format;
     content;
     group_context = (match group_context with | Some gc -> gc | None -> ());
@@ -220,10 +221,10 @@ let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
 val decrypt_ciphertext_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> ct:bytes ->
-  result (private_content_tbe_nt bytes ad.content_type)
+  result (private_message_content_nt bytes ad.content_type)
 let decrypt_ciphertext_content #bytes #cb ad key nonce ct =
   let? ciphertext_content = aead_decrypt key nonce (serialize (private_content_aad_nt bytes) ad) ct in
-  from_option "decrypt_ciphertext_content: malformed ciphertext content" (parse (private_content_tbe_nt bytes ad.content_type) ciphertext_content)
+  from_option "decrypt_ciphertext_content: malformed ciphertext content" (parse (private_message_content_nt bytes ad.content_type) ciphertext_content)
 
 // Used in encryption
 val message_to_ciphertext_content_aad:
@@ -240,10 +241,10 @@ let message_to_ciphertext_content_aad #bytes #bl content =
 
 val encrypt_ciphertext_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> (private_content_tbe_nt bytes ad.content_type) ->
+  ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> (private_message_content_nt bytes ad.content_type) ->
   result bytes
 let encrypt_ciphertext_content #bytes #cb ad key nonce pt =
-  aead_encrypt key nonce (serialize (private_content_aad_nt bytes) ad) (serialize (private_content_tbe_nt bytes ad.content_type) pt)
+  aead_encrypt key nonce (serialize (private_content_aad_nt bytes) ad) (serialize (private_message_content_nt bytes ad.content_type) pt)
 
 val apply_reuse_guard:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -325,7 +326,7 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
     let? key_nonce = ratchet_get_key ratchet in
     let key = key_nonce.key in
     let patched_nonce = apply_reuse_guard reuse_guard key_nonce.nonce in
-    let ciphertext_content: private_content_tbe_nt bytes (auth_msg.content.content.content_type) = {
+    let ciphertext_content: private_message_content_nt bytes (auth_msg.content.content.content_type) = {
       data = {
         content = auth_msg.content.content.content;
         auth = auth_msg.auth;

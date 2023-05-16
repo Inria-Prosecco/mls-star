@@ -44,6 +44,11 @@ private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
 
 (*** SignWithLabel / VerifyWithLabel ***)
 
+/// struct {
+///     opaque label<V>;
+///     opaque content<V>;
+/// } SignContent;
+
 type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   label: mls_bytes bytes;
   content: mls_bytes bytes;
@@ -105,6 +110,12 @@ let verify_with_label #bytes #cb verification_key label content signature =
 
 (*** ExpandWithLabel / DeriveSecret ***)
 
+/// struct {
+///     uint16 length;
+///     opaque label<V>;
+///     opaque context<V>;
+/// } KDFLabel;
+
 type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
   label: mls_bytes bytes;
@@ -143,6 +154,11 @@ let derive_secret #bytes #cb secret label =
   expand_with_label secret label (empty #bytes) (kdf_length #bytes)
 
 (*** EncryptWithLabel / DecryptWithLabel ***)
+
+/// struct {
+///   opaque label<V>;
+///   opaque context<V>;
+/// } EncryptContext;
 
 type encrypt_context_nt (bytes:Type0) {|bytes_like bytes|} = {
   label: mls_bytes bytes;
@@ -186,6 +202,11 @@ let decrypt_with_label #bytes #cb skR label context kem_output ciphertext =
   hpke_decrypt kem_output skR context_bytes empty ciphertext
 
 (*** Ref hash ***)
+
+/// struct {
+///   opaque label<V>;
+///   opaque value<V>;
+/// } RefHashInput;
 
 type ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
   label: mls_bytes bytes;

@@ -11,6 +11,12 @@ open MLS.Result
 
 #set-options "--ifuel 1 --fuel 1"
 
+/// struct {
+///     HPKEPublicKey encryption_key;
+///     opaque parent_hash<V>;
+///     opaque original_sibling_tree_hash<V>;
+/// } ParentHashInput;
+
 type parent_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_node_content]
   content: tkt.node_content; //encryption_key
