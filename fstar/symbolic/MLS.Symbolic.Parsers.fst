@@ -38,6 +38,8 @@ let rec ps_tree #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i =
       (fun (TNode data left right) -> {left; data; right})
   )
 
+let reveal_rec_opaque (s: string) = norm_spec [delta_only [s]; zeta]
+
 val ps_tree_is_well_formed:
   #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 ->
   ps_leaf_t:parser_serializer bytes leaf_t -> ps_node_t:parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l ->
@@ -50,8 +52,7 @@ val ps_tree_is_well_formed:
   ))
   [SMTPat (is_well_formed_prefix (ps_tree ps_leaf_t ps_node_t l i) pre x)]
 let ps_tree_is_well_formed #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i pre x =
-  // For some reason, reveal_opaque doesn't work here
-  normalize_term_spec (ps_tree ps_leaf_t ps_node_t l i)
+  reveal_rec_opaque (`%ps_tree) (ps_tree ps_leaf_t ps_node_t l i)
 
 noeq type path_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (node_t:Type0) (l:pos) (i:tree_index l) (li:leaf_index l i) (ps_node_t:parser_serializer_prefix bytes node_t) (ps_next:parser_serializer bytes (path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li)) = {
   [@@@ with_parser #bytes ps_node_t]
@@ -97,5 +98,4 @@ val ps_path_is_well_formed:
   ))
   [SMTPat (is_well_formed_prefix (ps_path ps_leaf_t ps_node_t l i li) pre x)]
 let ps_path_is_well_formed #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i li pre x =
-  // For some reason, reveal_opaque doesn't work here
-  normalize_term_spec (ps_path ps_leaf_t ps_node_t l i li)
+  reveal_rec_opaque (`%ps_path) (ps_path ps_leaf_t ps_node_t l i li)
