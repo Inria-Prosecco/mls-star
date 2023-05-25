@@ -2,15 +2,11 @@ module MLS.TreeDEM.Message.Framing
 
 open Comparse
 open MLS.TreeDEM.Keys
-open MLS.TreeDEM.Message.Content
 open MLS.TreeDEM.Message.Transcript
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
-open MLS.TreeDEM.Message.Types
 open MLS.Result
-
-module NT = MLS.TreeDEM.NetworkTypes
 
 (*** Authentication ***)
 
@@ -25,7 +21,7 @@ val knows_group_context:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   sender_nt bytes ->
   bool
-let knows_group_context #bytes #bl sender = NT.S_member? sender || NT.S_new_member_commit? sender
+let knows_group_context #bytes #bl sender = S_member? sender || S_new_member_commit? sender
 
 val compute_tbs:
   #bytes:Type0 -> {|bytes_like bytes|} ->
@@ -86,27 +82,26 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
 //TODO: this function should be refactored
 val message_compute_auth:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  message_content bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes ->
-  result (message_auth bytes)
-let message_compute_auth #bytes #cb msg sk rand group_context confirmation_key interim_transcript_hash =
-  let? msg_network = message_content_to_network msg in
-  if not (Some? group_context = knows_group_context msg_network.sender) then
+  wire_format_nt -> msg:framed_content_nt bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes ->
+  result (framed_content_auth_data_nt bytes msg.content.content_type)
+let message_compute_auth #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
+  if not (Some? group_context = knows_group_context msg.sender) then
     internal_failure "message_compute_auth: bad optional group context"
   else (
-    let? signature = compute_message_signature sk rand msg.wire_format msg_network group_context in
+    let? signature = compute_message_signature sk rand wire_format msg group_context in
     let? confirmation_tag = (
-      if msg.content_type = CT_commit then (
-        let? confirmed_transcript_hash = compute_confirmed_transcript_hash msg signature interim_transcript_hash in
+      if msg.content.content_type = CT_commit then (
+        let? confirmed_transcript_hash = compute_confirmed_transcript_hash wire_format msg signature interim_transcript_hash in
         let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
-        return (Some confirmation_tag <: option bytes)
+        return (confirmation_tag <: confirmation_tag_nt bytes msg.content.content_type)
       ) else (
-        return None
+        return (() <: confirmation_tag_nt bytes msg.content.content_type)
       )
     ) in
     return ({
       signature = signature;
       confirmation_tag = confirmation_tag;
-    } <: message_auth bytes)
+    } <: framed_content_auth_data_nt bytes msg.content.content_type)
   )
 
 (*** From/to plaintext ***)
@@ -130,7 +125,7 @@ val message_to_message_plaintext:
 let message_to_message_plaintext #bytes #cb membership_key auth_msg group_context =
   let? membership_tag = (
     match auth_msg.content.sender with
-    | NT.S_member _ -> (
+    | S_member _ -> (
       let? res = compute_message_membership_tag membership_key auth_msg.content auth_msg.auth group_context in
       return (res <: membership_tag_nt bytes auth_msg.content.sender)
     )
@@ -293,7 +288,7 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
     content = {
       group_id = ct.group_id;
       epoch = ct.epoch;
-      sender = NT.S_member sender_data.leaf_index;
+      sender = S_member sender_data.leaf_index;
       authenticated_data = ct.authenticated_data;
       content = {
         content_type = ct.content_type;
@@ -338,14 +333,14 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
     get_serializeable_bytes ciphertext
   ) in
   let? encrypted_sender_data = (
-    if not (NT.S_member? auth_msg.content.sender) then
+    if not (S_member? auth_msg.content.sender) then
       error "message_to_message_ciphertext: sender is not a member"
     else if not (ratchet.generation < pow2 32) then
       internal_failure "message_to_message_ciphertext: ratchet too big"
     else (
       let sender_data_ad = message_to_sender_data_aad auth_msg.content in
       let sender_data = ({
-        leaf_index = NT.S_member?.leaf_index auth_msg.content.sender;
+        leaf_index = S_member?.leaf_index auth_msg.content.sender;
         generation = ratchet.generation;
         reuse_guard = reuse_guard;
       }) in

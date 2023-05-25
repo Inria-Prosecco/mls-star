@@ -11,7 +11,6 @@ open MLS.Result
 open MLS.NetworkTypes
 open MLS.Crypto
 open MLS.TreeDEM.NetworkTypes
-open MLS.TreeDEM.Message.Types
 open MLS.TreeDEM.Message.Transcript
 open MLS.TreeDEM.Message.Framing
 
@@ -33,7 +32,7 @@ let test_transcript_hashes_one t =
     ) else (
       let confirmation_key = hex_string_to_bytes t.confirmation_key in
       let interim_transcript_hash_before = hex_string_to_bytes t.interim_transcript_hash_before in
-      let confirmed_transcript_hash_after = extract_result (compute_confirmed_transcript_hash (extract_result (network_to_message_content authenticated_content.wire_format authenticated_content.content)) authenticated_content.auth.signature interim_transcript_hash_before) in
+      let confirmed_transcript_hash_after = extract_result (compute_confirmed_transcript_hash authenticated_content.wire_format authenticated_content.content authenticated_content.auth.signature interim_transcript_hash_before) in
       let confirmation_tag = extract_result (compute_message_confirmation_tag confirmation_key confirmed_transcript_hash_after) in
       let interim_transcript_hash_after = extract_result (compute_interim_transcript_hash #bytes authenticated_content.auth.confirmation_tag confirmed_transcript_hash_after) in
       check_equal "confirmation_tag" (bytes_to_hex_string) (authenticated_content.auth.confirmation_tag) (confirmation_tag);
