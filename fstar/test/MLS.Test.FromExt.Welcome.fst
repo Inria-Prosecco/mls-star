@@ -48,18 +48,18 @@ let test_welcome_one t =
 
     let kp_ref = extract_result (make_keypackage_ref #bytes (serialize _ key_package)) in
 
-    let (group_info, group_secrets) = extract_result (decrypt_welcome (network_to_welcome welcome) (fun ref -> if ref = kp_ref then Some init_priv else None) None) in
+    let (group_info, group_secrets) = extract_result (decrypt_welcome welcome (fun ref -> if ref = kp_ref then Some init_priv else None) None) in
 
     if not (extract_result (verify_welcome_group_info (fun _ -> return signer_pub) group_info)) then (
       failwith "test_welcome_one: bad signature"
     );
 
-    let group_context = gen_group_context (ciphersuite #bytes) group_info.group_context.group_id group_info.group_context.epoch group_info.group_context.tree_hash group_info.group_context.confirmed_transcript_hash in
+    let group_context = gen_group_context (ciphersuite #bytes) group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch group_info.tbs.group_context.tree_hash group_info.tbs.group_context.confirmed_transcript_hash in
     let joiner_secret = group_secrets.joiner_secret in
     let epoch_secret = extract_result (secret_joiner_to_epoch joiner_secret None group_context) in
     let confirmation_key = extract_result (secret_epoch_to_confirmation #bytes epoch_secret) in
-    let confirmation_tag = extract_result (compute_message_confirmation_tag confirmation_key group_info.group_context.confirmed_transcript_hash) in
-    check_equal "confirmation_tag" (bytes_to_hex_string) (group_info.confirmation_tag) (confirmation_tag);
+    let confirmation_tag = extract_result (compute_message_confirmation_tag #bytes confirmation_key group_info.tbs.group_context.confirmed_transcript_hash) in
+    check_equal "confirmation_tag" (bytes_to_hex_string) (group_info.tbs.confirmation_tag) (confirmation_tag);
     true
   end
 

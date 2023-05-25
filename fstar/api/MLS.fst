@@ -416,7 +416,7 @@ let rec unsafe_mk_randomness #l e =
 // Have to factor out this function otherwise F* typecheck goes mad in `generate_welcome_message`
 // (Error 54) bytes_like bytes is not a subtype of the expected type bytes
 // Yeah thanks, but I don't see where it's relevant?
-val generate_key_package_and_path_secret: state -> msg:framed_content_nt bytes{msg.content.content_type == CT_commit} -> key_package_nt bytes tkt -> result (key_package_nt bytes tkt & option bytes)
+val generate_key_package_and_path_secret: state -> msg:framed_content_nt bytes{msg.content.content_type == CT_commit} -> key_package_nt bytes tkt -> result (key_package_nt bytes tkt & option (mls_bytes bytes))
 let generate_key_package_and_path_secret future_state msg new_key_package =
   let x: option (update_path_nt bytes) = msg.content.content.path in
   let new_leaf_package = new_key_package.tbs.leaf_node in
@@ -433,44 +433,62 @@ let generate_key_package_and_path_secret future_state msg new_key_package =
         let tk = future_state.treekem_state.tree in
         assume(future_state.treesync_state.levels == future_state.treekem_state.levels);
         let? path_secret = path_secret_at_least_common_ancestor tk future_state.leaf_index new_leaf_index future_state.leaf_secret in
-        return (new_key_package, Some path_secret)
+        if not (length path_secret < pow2 30) then
+          internal_failure "generate_welcome_message: path_secret too long"
+        else
+          return (new_key_package, Some (path_secret <: mls_bytes bytes))
       )
   )
   | None -> (
     return (new_key_package, None)
   )
 
-val generate_welcome_message: state -> wire_format_nt -> msg:framed_content_nt bytes{msg.content.content_type == CT_commit} -> framed_content_auth_data_nt bytes CT_commit -> bool -> new_key_packages:list (key_package_nt bytes tkt) -> bytes -> result (welcome bytes)
+val generate_welcome_message: state -> wire_format_nt -> msg:framed_content_nt bytes{msg.content.content_type == CT_commit} -> framed_content_auth_data_nt bytes CT_commit -> bool -> new_key_packages:list (key_package_nt bytes tkt) -> bytes -> result (welcome_nt bytes)
 let generate_welcome_message st wire_format msg msg_auth include_path_secrets new_leaf_packages e =
   let? (future_state, joiner_secret) = process_commit st wire_format msg msg_auth in
+  let? joiner_secret = (if length joiner_secret < pow2 30 then return #(mls_bytes bytes) joiner_secret else internal_failure "") in
   let? tree_hash = (
     if not (MLS.TreeSync.TreeHash.tree_hash_pre future_state.treesync_state.tree) then
       error "generate_welcome_message: bad tree hash pre"
     else
-      return #bytes (MLS.TreeSync.TreeHash.tree_hash future_state.treesync_state.tree)
+      let res = MLS.TreeSync.TreeHash.tree_hash future_state.treesync_state.tree in
+      if not (length #bytes res < pow2 30) then
+        internal_failure ""
+      else
+        return #(mls_bytes bytes) res
   ) in
   let? ratchet_tree = treesync_to_ratchet_tree future_state.treesync_state.tree in
   let? ratchet_tree_bytes = (
     let l = bytes_length (ps_option (ps_node_nt tkt)) ratchet_tree in
     if l < pow2 30 then
-      return #bytes ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree)
+      let res = ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree) in
+      if length res < pow2 30 then
+        return #(mls_bytes bytes) res
+      else
+        internal_failure "generate_welcome_message: ratchet_tree too big"
     else
       internal_failure "generate_welcome_message: ratchet_tree too big"
   ) in
-  let group_info: welcome_group_info bytes = {
-    group_context = {
-      version = PV_mls10;
-      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
-      group_id = future_state.treesync_state.group_id;
-      epoch = future_state.epoch;
-      tree_hash = tree_hash;
-      confirmed_transcript_hash = future_state.confirmed_transcript_hash;
-      extensions = []; //TODO handle group context extensions
+  let? (epoch:nat_lbytes 8) = (if future_state.epoch < pow2 64 then return future_state.epoch else error "generate_welcome_message: epoch too big") in
+  let? (confirmed_transcript_hash:mls_bytes bytes) = (if length future_state.confirmed_transcript_hash < pow2 30 then return future_state.confirmed_transcript_hash else error "generate_welcome_message: confirmed_transcript_hash too long") in
+  let? (leaf_index:nat_lbytes 4) = (if future_state.leaf_index < pow2 32 then return future_state.leaf_index else error "generate_welcome_message: leaf_index too big") in
+  assert_norm(bytes_length #bytes ps_extension_nt [] == 0);
+  let group_info: group_info_nt bytes = {
+    tbs = {
+      group_context = {
+        version = PV_mls10;
+        cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
+        group_id = future_state.treesync_state.group_id;
+        epoch = epoch;
+        tree_hash = tree_hash;
+        confirmed_transcript_hash = confirmed_transcript_hash;
+        extensions = []; //TODO handle group context extensions
+      };
+      extensions = ratchet_tree_bytes;
+      confirmation_tag = msg_auth.confirmation_tag;
+      signer = leaf_index;
     };
-    extensions = ratchet_tree_bytes;
-    confirmation_tag = msg_auth.confirmation_tag;
-    signer = future_state.leaf_index;
-    signature = empty; //Signed afterward
+    signature = empty #bytes; //Signed afterward
   } in
   let? group_info = (
     let? nonce = universal_sign_nonce in
@@ -567,8 +585,7 @@ let add state key_package e =
   assume (hpke_private_key_length #bytes == 32);
   assert_norm (List.Tot.length [key_package] == 1);
   let? welcome_msg = generate_welcome_message state WF_mls_private_message msg msg_auth false [key_package] rand in
-  let? welcome_msg_network = welcome_to_network welcome_msg in
-  let w:welcome_message = (empty #bytes, (ps_prefix_to_ps_whole ps_welcome_nt).serialize welcome_msg_network) in
+  let w:welcome_message = (empty #bytes, (ps_prefix_to_ps_whole ps_welcome_nt).serialize welcome_msg) in
   return (state, (g,w))
 
 let remove state p e =
@@ -621,8 +638,7 @@ let find_my_index #l t sign_pk =
 #push-options "--z3rlimit 50"
 let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
-  let? welcome_network = from_option "process_welcome_message: can't parse welcome message" ((ps_prefix_to_ps_whole ps_welcome_nt).parse welcome_bytes) in
-  let welcome = network_to_welcome welcome_network in
+  let? welcome = from_option "process_welcome_message: can't parse welcome message" ((ps_prefix_to_ps_whole ps_welcome_nt).parse welcome_bytes) in
   let? (group_info, secrets) = decrypt_welcome welcome (fun kp_hash ->
     match lookup kp_hash with
     | Some leaf_secret -> (
@@ -633,13 +649,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     )
     | None -> None
   ) None in
-  let? group_id = (
-    if not (length group_info.group_context.group_id < pow2 30) then
-      internal_failure "process_welcome_message: group_id too long"
-    else
-      return #(mls_bytes bytes) group_info.group_context.group_id
-  ) in
-  let? ratchet_tree = from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse group_info.extensions) in
+  let group_id = group_info.tbs.group_context.group_id in
+  let? ratchet_tree = from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse group_info.tbs.extensions) in
   let? treesync_state = (
     let? (|l, treesync|) = ratchet_tree_to_treesync ratchet_tree in
     let? welcome_pend = MLS.TreeSync.API.prepare_welcome group_id treesync in
@@ -673,8 +684,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     let? treekem = treesync_to_treekem treesync in
     match secrets.path_secret with
     | None -> return treekem
-    | Some path_secret ->
-      let signer_index = group_info.signer in
+    | Some {path_secret} ->
+      let signer_index = group_info.tbs.signer in
       if not (signer_index <> leaf_index) then
         error "process_welcome_message: signer index is equal to our leaf index"
       else if not (signer_index < pow2 l) then
@@ -684,8 +695,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
         return (MLS.TreeKEM.Operations.tree_apply_path treekem update_path_kem)
       )
   ) in
-  let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash group_info.confirmation_tag group_info.group_context.confirmed_transcript_hash in
-  let? group_context = compute_group_context group_info.group_context.group_id group_info.group_context.epoch treesync group_info.group_context.confirmed_transcript_hash in
+  let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash #bytes group_info.tbs.confirmation_tag group_info.tbs.group_context.confirmed_transcript_hash in
+  let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch treesync group_info.tbs.group_context.confirmed_transcript_hash in
   let? epoch_secret = MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context) in
   let? leaf_secret = (
     let opt_my_leaf_package = leaf_at treesync leaf_index in
@@ -708,19 +719,19 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       levels = l;
       tree = treekem;
     };
-    epoch = group_info.group_context.epoch;
+    epoch = group_info.tbs.group_context.epoch;
     leaf_index;
     leaf_secret;
     sign_private_key = sign_sk;
     handshake_state = dumb_ratchet_state;
     application_state = dumb_ratchet_state;
     epoch_secret;
-    confirmed_transcript_hash = group_info.group_context.confirmed_transcript_hash;
+    confirmed_transcript_hash = group_info.tbs.group_context.confirmed_transcript_hash;
     interim_transcript_hash;
     pending_updatepath = [];
   } in
   let? st = reset_ratchet_states st in
-  return(group_info.group_context.group_id, st)
+  return ((group_id <: bytes), st)
 #pop-options
 
 let process_group_message state msg =
