@@ -9,6 +9,7 @@ open MLS.StringUtils
 
 open MLS.Result
 open MLS.Crypto
+open MLS.TreeDEM.NetworkTypes
 open MLS.TreeDEM.PSK
 
 val test_psk_one: psk_test -> ML bool
@@ -25,10 +26,11 @@ let test_psk_one t =
     let cb = mk_concrete_crypto_bytes cs in
     let psk_data =
       List.map
-        (fun psk -> ({
-          id = PSKI_external (hex_string_to_bytes psk.psk_id);
-          nonce = (hex_string_to_bytes psk.psk_nonce);
-        }, hex_string_to_bytes psk.psk))
+        (fun (psk:psk_test_psk) -> (
+          let psk_id = extract_result (mk_mls_bytes (hex_string_to_bytes psk.psk_id) "test_psk_one" "psk_id") in
+          let psk_nonce = extract_result (mk_mls_bytes (hex_string_to_bytes psk.psk_nonce) "test_psk_one" "psk_nonce") in
+          (PSKI_external psk_id psk_nonce, hex_string_to_bytes psk.psk)
+        ))
         t.psks
     in
     let psk_secret = extract_result (compute_psk_secret psk_data) in
