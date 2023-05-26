@@ -21,14 +21,14 @@ val welcome_secret_to_key:
   bytes ->
   result (aead_key bytes)
 let welcome_secret_to_key #bytes #cb welcome_secret =
-  expand_with_label welcome_secret (string_to_bytes #bytes "key") (empty #bytes) (aead_key_length #bytes)
+  expand_with_label welcome_secret "key" (empty #bytes) (aead_key_length #bytes)
 
 val welcome_secret_to_nonce:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (aead_nonce bytes)
 let welcome_secret_to_nonce #bytes #cb welcome_secret =
-  expand_with_label welcome_secret (string_to_bytes #bytes "nonce") (empty #bytes) (aead_nonce_length #bytes)
+  expand_with_label welcome_secret "nonce" (empty #bytes) (aead_nonce_length #bytes)
 
 (*** Decrypting a welcome ***)
 

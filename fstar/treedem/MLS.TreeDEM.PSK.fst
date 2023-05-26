@@ -97,7 +97,7 @@ val compute_psk_secret_step:
 let compute_psk_secret_step #bytes #cb label psk prev_psk_secret =
     let? label_network = psk_label_to_network label in
     let? psk_extracted = kdf_extract (zero_vector #bytes) psk in
-    let? psk_input = expand_with_label #bytes psk_extracted (string_to_bytes #bytes "derived psk") (serialize (NT.psk_label_nt bytes) label_network) (kdf_length #bytes) in
+    let? psk_input = expand_with_label #bytes psk_extracted "derived psk" (serialize (NT.psk_label_nt bytes) label_network) (kdf_length #bytes) in
     let? new_psk_secret = kdf_extract psk_input prev_psk_secret in
     return (new_psk_secret <: bytes)
 

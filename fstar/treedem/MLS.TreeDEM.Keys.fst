@@ -16,7 +16,7 @@ instance parseable_serializeable_tree_context_nt (bytes:Type0) {|bytes_like byte
 
 val derive_tree_secret:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  secret:bytes -> label:bytes -> generation:nat -> len:nat ->
+  secret:bytes -> label:valid_label -> generation:nat -> len:nat ->
   result (lbytes bytes len)
 let derive_tree_secret #bytes #cb secret label generation len =
   let? generation = mk_nat_lbytes generation "derive_tree_secret" "generation" in
@@ -36,7 +36,7 @@ let rec leaf_kdf #bytes #cb #l #i encryption_secret leaf_index =
   ) else (
     let dir_string = if is_left_leaf leaf_index then "left" else "right" in
     let new_i = if is_left_leaf leaf_index then left_index i else right_index i in
-    let? new_encryption_secret = expand_with_label encryption_secret (string_to_bytes #bytes "tree") (string_to_bytes #bytes dir_string) (kdf_length #bytes) in
+    let? new_encryption_secret = expand_with_label encryption_secret "tree" (string_to_bytes #bytes dir_string) (kdf_length #bytes) in
     leaf_kdf #bytes #cb #_ #new_i new_encryption_secret leaf_index
   )
 
@@ -55,7 +55,7 @@ val secret_init_to_joiner:
   result (lbytes bytes (kdf_length #bytes))
 let secret_init_to_joiner #bytes #cb init_secret opt_commit_secret group_context =
   let? prk = kdf_extract init_secret (opt_secret_to_secret opt_commit_secret) in
-  expand_with_label #bytes prk (string_to_bytes #bytes "joiner") group_context (kdf_length #bytes)
+  expand_with_label #bytes prk "joiner" group_context (kdf_length #bytes)
 
 val secret_joiner_to_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -63,7 +63,7 @@ val secret_joiner_to_welcome:
   result (lbytes bytes (kdf_length #bytes))
 let secret_joiner_to_welcome #bytes #cb joiner_secret opt_psk_secret =
   let? prk = kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret) in
-  derive_secret #bytes prk (string_to_bytes #bytes "welcome")
+  derive_secret #bytes prk "welcome"
 
 val secret_joiner_to_epoch:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -71,70 +71,70 @@ val secret_joiner_to_epoch:
   result (lbytes bytes (kdf_length #bytes))
 let secret_joiner_to_epoch #bytes #cb joiner_secret opt_psk_secret group_context =
   let? prk = kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret) in
-  expand_with_label #bytes prk (string_to_bytes #bytes "epoch") group_context (kdf_length #bytes)
+  expand_with_label #bytes prk "epoch" group_context (kdf_length #bytes)
 
 val secret_epoch_to_sender_data:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_sender_data #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "sender data")
+  derive_secret epoch_secret "sender data"
 
 val secret_epoch_to_encryption:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_encryption #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "encryption")
+  derive_secret epoch_secret "encryption"
 
 val secret_epoch_to_exporter:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_exporter #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "exporter")
+  derive_secret epoch_secret "exporter"
 
 val secret_epoch_to_external:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_external #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "external")
+  derive_secret epoch_secret "external"
 
 val secret_epoch_to_confirmation:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_confirmation #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "confirm")
+  derive_secret epoch_secret "confirm"
 
 val secret_epoch_to_membership:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_membership #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "membership")
+  derive_secret epoch_secret "membership"
 
 val secret_epoch_to_resumption:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_resumption #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "resumption")
+  derive_secret epoch_secret "resumption"
 
 val secret_epoch_to_authentication:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_authentication #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "authentication")
+  derive_secret epoch_secret "authentication"
 
 val secret_epoch_to_init:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_epoch_to_init #bytes #cb epoch_secret =
-  derive_secret epoch_secret (string_to_bytes #bytes "init")
+  derive_secret epoch_secret "init"
 
 val secret_external_to_keypair:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -145,14 +145,14 @@ let secret_external_to_keypair #bytes #cb external_secret =
 
 val mls_exporter:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> ascii_string -> bytes -> len:nat ->
+  bytes -> valid_label -> bytes -> len:nat ->
   result (lbytes bytes len)
 let mls_exporter #bytes #cb exporter_secret label context len =
-  let? derived_secret: bytes = derive_secret exporter_secret (string_to_bytes #bytes label) in
+  let? derived_secret: bytes = derive_secret exporter_secret label in
   if not (length context < hash_max_input_length #bytes) then
     internal_failure "mls_exporter: context too long"
   else
-    expand_with_label #bytes derived_secret (string_to_bytes #bytes "exported") (hash_hash context) len
+    expand_with_label #bytes derived_secret "exported" (hash_hash context) len
 
 type ratchet_state (bytes:Type0) {|crypto_bytes bytes|} = {
   secret: lbytes bytes (kdf_length #bytes);
@@ -171,7 +171,7 @@ val init_handshake_ratchet:
   bytes ->
   result (init_ratchet_state bytes)
 let init_handshake_ratchet #bytes #cb tree_node_secret =
-  let? ratchet_secret = expand_with_label tree_node_secret (string_to_bytes #bytes "handshake") (string_to_bytes #bytes "") (kdf_length #bytes) in
+  let? ratchet_secret = expand_with_label tree_node_secret "handshake" (string_to_bytes #bytes "") (kdf_length #bytes) in
   return ({
     secret = ratchet_secret;
     generation = 0;
@@ -183,7 +183,7 @@ val init_application_ratchet:
   bytes ->
   result (init_ratchet_state bytes)
 let init_application_ratchet #bytes #cb tree_node_secret =
-  let? ratchet_secret = expand_with_label tree_node_secret (string_to_bytes #bytes "application") (string_to_bytes #bytes "") (kdf_length #bytes) in
+  let? ratchet_secret = expand_with_label tree_node_secret "application" (string_to_bytes #bytes "") (kdf_length #bytes) in
   return ({
     secret = ratchet_secret;
     generation = 0;
@@ -194,8 +194,8 @@ val ratchet_get_key:
   ratchet_state bytes ->
   result (ratchet_output bytes)
 let ratchet_get_key #bytes #cb st =
-  let? nonce = derive_tree_secret st.secret (string_to_bytes #bytes "nonce") st.generation (aead_nonce_length #bytes) in
-  let? key = derive_tree_secret st.secret (string_to_bytes #bytes "key") st.generation (aead_key_length #bytes) in
+  let? nonce = derive_tree_secret st.secret "nonce" st.generation (aead_nonce_length #bytes) in
+  let? key = derive_tree_secret st.secret "key" st.generation (aead_key_length #bytes) in
   return ({
     nonce = nonce;
     key = key;
@@ -206,7 +206,7 @@ val ratchet_next_state:
   ratchet_state bytes ->
   result (ratchet_state bytes)
 let ratchet_next_state #bytes #cb st =
-  let? new_secret = derive_tree_secret st.secret (string_to_bytes #bytes "secret") st.generation (kdf_length #bytes) in
+  let? new_secret = derive_tree_secret st.secret "secret" st.generation (kdf_length #bytes) in
   return ({
     secret = new_secret;
     generation = st.generation + 1;

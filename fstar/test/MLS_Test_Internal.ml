@@ -61,7 +61,7 @@ let test () =
   let dummy64 = bytes_of_list dummy64 in
   let dummy96 = bytes_of_list dummy96 in
   let dummy128 = bytes_of_list dummy128 in
-  let s = extract (MLS_Crypto_Derived.derive_secret cb dummy32 dummy32) in
+  let s = extract (MLS_Crypto_Derived.derive_secret cb dummy32 "dummy") in
   debug_buffer s;
   let s1, _, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32) in
   debug_buffer s1;

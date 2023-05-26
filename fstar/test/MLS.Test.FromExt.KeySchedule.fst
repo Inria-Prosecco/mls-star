@@ -33,7 +33,7 @@ let gen_epoch_output #cb group_id last_init_secret epoch inp =
   let resumption_psk = extract_result (secret_epoch_to_resumption epoch_secret) in
   let external_pub = (snd (extract_result (secret_external_to_keypair external_secret))) in
   let exported_secret =
-    if not (string_is_ascii inp.exporter_label) then
+    if not (string_is_ascii inp.exporter_label && String.strlen inp.exporter_label < pow2 30 - 8) then
       failwith "gen_epoch_output: exporter label is not ascii"
     else
       extract_result (mls_exporter exporter_secret inp.exporter_label (hex_string_to_bytes inp.exporter_context) (UInt32.v inp.exporter_length))

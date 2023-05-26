@@ -310,21 +310,15 @@ let can_flow_transitive time l1 l2 l3 =
 val get_mls_label_inj:
   l1:valid_label -> l2:valid_label ->
   Lemma
-  (requires get_mls_label #dy_bytes l1 == get_mls_label #dy_bytes l2)
+  (requires get_mls_label l1 == get_mls_label l2)
   (ensures l1 == l2)
 let get_mls_label_inj l1 l2 =
-  let bytes_mls = CryptoLib.string_to_bytes "MLS 1.0 " in
-  let bytes_label1 = CryptoLib.string_to_bytes l1 in
-  let bytes_label2 = CryptoLib.string_to_bytes l2 in
-  CryptoLib.split_at_raw_concat_lemma bytes_mls bytes_label1;
-  CryptoLib.split_at_raw_concat_lemma bytes_mls bytes_label2;
-  CryptoLib.string_to_bytes_lemma l1;
-  CryptoLib.string_to_bytes_lemma l2
+  String.concat_injective "MLS 1.0 " "MLS 1.0 " l1 l2
 
 let split_sign_pred_func: split_predicate_input_values = {
   labeled_data_t = (string & timestamp & dy_bytes & dy_bytes);
   label_t = valid_label;
-  encoded_label_t = dy_bytes;
+  encoded_label_t = mls_ascii_string;
   raw_data_t = (string & timestamp & dy_bytes & dy_bytes);
 
   decode_labeled_data = (fun (usg, time, key, data) -> (
@@ -333,7 +327,7 @@ let split_sign_pred_func: split_predicate_input_values = {
     | None -> None
   ));
 
-  encode_label = get_mls_label #dy_bytes;
+  encode_label = get_mls_label;
   encode_label_inj = get_mls_label_inj;
 }
 
@@ -350,14 +344,6 @@ let global_usage_to_global_pred gu (usg, time, key, msg) =
 val has_sign_pred: global_usage -> valid_label -> sign_pred -> prop
 let has_sign_pred gu lab spred =
   has_local_pred split_sign_pred_func (global_usage_to_global_pred gu) lab (sign_pred_to_local_pred spred)
-
-val get_mls_label_is_publishable: gu:global_usage -> time:timestamp -> lab:valid_label -> Lemma (is_publishable gu time (get_mls_label #dy_bytes lab))
-let get_mls_label_is_publishable gu time lab =
-  LabeledCryptoAPI.string_to_bytes_lemma #gu #time "MLS 1.0 ";
-  LabeledCryptoAPI.string_to_bytes_lemma #gu #time lab;
-  let bytes_mls = string_to_bytes #dy_bytes "MLS 1.0 " in
-  let bytes_label = string_to_bytes #dy_bytes lab in
-  LabeledCryptoAPI.raw_concat_lemma #gu #time #SecrecyLabels.public bytes_mls bytes_label
 
 // We can omit the `is_publishable` disjunction in the precondition,
 // because it will never be used inside a protocol security proof.
@@ -381,9 +367,8 @@ val sign_with_label_valid:
   )
 let sign_with_label_valid gu spred usg time sk lab msg nonce =
   assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
-  get_mls_label_is_publishable gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
-    label = get_mls_label #dy_bytes lab;
+    label = get_mls_label lab;
     content = msg;
   } in
   serialize_wf_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
@@ -409,9 +394,8 @@ val verify_with_label_is_valid:
   (ensures can_flow time sk_label public \/ (exists time_sig. time_sig <$ time /\ spred usg time_sig vk content))
 let verify_with_label_is_valid gu spred usg sk_label time vk lab content signature =
   assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
-  get_mls_label_is_publishable gu time lab;
   let sign_content: sign_content_nt dy_bytes = {
-    label = get_mls_label #dy_bytes lab;
+    label = get_mls_label lab;
     content = content;
   } in
   serialize_wf_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;

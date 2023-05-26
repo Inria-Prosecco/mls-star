@@ -31,6 +31,33 @@ type mls_list (bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializ
 let ps_mls_bytes (#bytes:Type0) {|bytes_like bytes|}: parser_serializer bytes (mls_bytes bytes) = ps_pre_length_bytes mls_nat_pred ps_mls_nat
 let ps_mls_list (#bytes:Type0) {|bytes_like bytes|} (#a:Type) (ps_a:parser_serializer bytes a): parser_serializer bytes (mls_list bytes ps_a) = ps_pre_length_list #bytes mls_nat_pred ps_mls_nat ps_a
 
+let mls_ascii_string_pred (s:ascii_string): bool = mls_nat_pred (FStar.String.strlen s)
+type mls_ascii_string = refined ascii_string mls_ascii_string_pred
+let ps_mls_ascii_string (#bytes:Type0) {|bytes_like bytes|}: parser_serializer bytes mls_ascii_string =
+  length_prefix_ps_whole mls_nat_pred ps_mls_nat (refine_whole ps_whole_ascii_string mls_ascii_string_pred)
+
+val ps_mls_ascii_string_length:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  x:mls_ascii_string ->
+  Lemma (
+    prefixes_length #bytes (ps_mls_ascii_string.serialize x) ==
+      prefixes_length #bytes (ps_mls_nat.serialize (String.strlen x)) +
+      String.strlen x
+  )
+  [SMTPat (prefixes_length #bytes (ps_mls_ascii_string.serialize x))]
+let ps_mls_ascii_string_length #bytes #bl x =
+  length_prefix_ps_whole_length #bytes mls_nat_pred ps_mls_nat (refine_whole ps_whole_ascii_string mls_ascii_string_pred) x
+
+val ps_mls_ascii_string_is_well_formed:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  x:mls_ascii_string ->
+  Lemma (is_well_formed_prefix ps_mls_ascii_string pre x)
+  [SMTPat (is_well_formed_prefix ps_mls_ascii_string pre x)]
+let ps_mls_ascii_string_is_well_formed #bytes #bl pre x =
+  assert(is_well_formed_whole ps_whole_ascii_string pre x);
+  length_prefix_ps_whole_is_well_formed #bytes mls_nat_pred ps_mls_nat (refine_whole ps_whole_ascii_string mls_ascii_string_pred) pre x
+
 /// opaque HPKEPublicKey<V>;
 
 type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes

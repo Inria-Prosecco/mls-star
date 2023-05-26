@@ -12,10 +12,10 @@ open MLS.Result
 
 val test_ref_hash: {|crypto_bytes bytes|} -> crypto_basics_ref_hash -> ML unit
 let test_ref_hash t =
-  if not (string_is_ascii t.label) then (
+  if not (string_is_ascii t.label && String.strlen t.label < pow2 30) then (
     failwith "Error: malformed label"
   ) else (
-    let label = string_to_bytes #bytes t.label in
+    let label = t.label in
     let value = hex_string_to_bytes t.value in
     let out = extract_result (ref_hash label value) in
     check_equal "ref hash" (bytes_to_hex_string) (hex_string_to_bytes t.out) (out)
@@ -23,11 +23,11 @@ let test_ref_hash t =
 
 val test_expand_with_label: {|crypto_bytes bytes|} -> crypto_basics_expand_with_label -> ML unit
 let test_expand_with_label t =
-  if not (string_is_ascii t.label) then (
+  if not (string_is_ascii t.label && String.strlen t.label < pow2 30 - 8) then (
     failwith "Error: malformed label"
   ) else (
     let secret = hex_string_to_bytes t.secret in
-    let label = string_to_bytes #bytes t.label in
+    let label = t.label in
     let context = hex_string_to_bytes t.context in
     let length = UInt16.v t.length in
     let out = extract_result (expand_with_label secret label context length) in
@@ -36,22 +36,22 @@ let test_expand_with_label t =
 
 val test_derive_secret: {|crypto_bytes bytes|} -> crypto_basics_derive_secret -> ML unit
 let test_derive_secret t =
-  if not (string_is_ascii t.label) then (
+  if not (string_is_ascii t.label && String.strlen t.label < pow2 30 - 8) then (
     failwith "Error: malformed label"
   ) else (
     let secret = hex_string_to_bytes t.secret in
-    let label = string_to_bytes #bytes t.label in
+    let label = t.label in
     let out = extract_result (derive_secret secret label) in
     check_equal "derive secret" (bytes_to_hex_string) (hex_string_to_bytes t.out) (out)
   )
 
 val test_derive_tree_secret: {|crypto_bytes bytes|} -> crypto_basics_derive_tree_secret -> ML unit
 let test_derive_tree_secret t =
-  if not (string_is_ascii t.label) then (
+  if not (string_is_ascii t.label && String.strlen t.label < pow2 30 - 8) then (
     failwith "Error: malformed label"
   ) else (
     let secret = hex_string_to_bytes t.secret in
-    let label = string_to_bytes #bytes t.label in
+    let label = t.label in
     let generation = UInt32.v t.generation in
     let length = UInt16.v t.length in
     let out = extract_result (derive_tree_secret secret label generation length) in

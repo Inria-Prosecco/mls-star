@@ -198,7 +198,7 @@ val derive_keypair_from_path_secret:
   bytes ->
   result (hpke_private_key bytes & hpke_public_key bytes)
 let derive_keypair_from_path_secret #bytes #cb path_secret =
-  let? node_secret = derive_secret path_secret (string_to_bytes #bytes "node") in
+  let? node_secret = derive_secret path_secret "node" in
   hpke_gen_keypair (node_secret <: bytes)
 
 val derive_next_path_secret:
@@ -206,7 +206,7 @@ val derive_next_path_secret:
   bytes ->
   result bytes
 let derive_next_path_secret #bytes #cb path_secret =
-  let? res = derive_secret path_secret (string_to_bytes #bytes "path") in
+  let? res = derive_secret path_secret "path" in
   return (res <: bytes)
 
 val node_encap:

@@ -179,8 +179,8 @@ val sender_data_key_nonce:
   ciphertext_sample:bytes -> sender_data_secret:bytes ->
   result (lbytes bytes (aead_key_length #bytes) & lbytes bytes (aead_nonce_length #bytes))
 let sender_data_key_nonce #bytes #cb ciphertext_sample sender_data_secret =
-  let? sender_data_key = expand_with_label sender_data_secret (string_to_bytes #bytes "key") ciphertext_sample (aead_key_length #bytes) in
-  let? sender_data_nonce = expand_with_label sender_data_secret (string_to_bytes #bytes "nonce") ciphertext_sample (aead_nonce_length #bytes) in
+  let? sender_data_key = expand_with_label sender_data_secret "key" ciphertext_sample (aead_key_length #bytes) in
+  let? sender_data_nonce = expand_with_label sender_data_secret "nonce" ciphertext_sample (aead_nonce_length #bytes) in
   return (sender_data_key, sender_data_nonce)
 
 val decrypt_sender_data:

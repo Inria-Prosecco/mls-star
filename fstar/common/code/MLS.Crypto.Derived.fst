@@ -1,10 +1,10 @@
 module MLS.Crypto.Derived
 
+open FStar.List.Tot
 open Comparse
 open MLS.Crypto.Builtins
 open MLS.NetworkTypes
 open MLS.Result
-
 
 #set-options "--fuel 0 --ifuel 0"
 
@@ -187,7 +187,7 @@ let mk_aead_key #bytes #cb b fun_name var_name =
 /// } SignContent;
 
 type sign_content_nt (bytes:Type0) {|bytes_like bytes|} = {
-  label: mls_bytes bytes;
+  label: mls_ascii_string;
   content: mls_bytes bytes;
 }
 
@@ -200,19 +200,21 @@ instance parseable_serializeable_sign_content_nt (bytes:Type0) {|bytes_like byte
 let valid_label = s:string{b2t (normalize_term (string_is_ascii s)) /\ normalize_term (String.length s) < normalize_term ((pow2 30) - 8)}
 
 val get_mls_label:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
   label:valid_label ->
-  Pure (mls_bytes bytes)
+  Pure (mls_ascii_string)
   (requires True)
-  (ensures fun res -> length #bytes res == 8 + String.strlen label)
-let get_mls_label #bytes #cb label =
+  (ensures fun res -> String.strlen res == 8 + String.strlen label)
+let get_mls_label label =
   normalize_term_spec (String.strlen label);
-  normalize_term_spec ((pow2 30) - 8);
   assert_norm (String.strlen "MLS 1.0 " == 8);
-  let bytes_mls = string_to_bytes #bytes "MLS 1.0 " in
-  let bytes_label = string_to_bytes #bytes label in
-  concat_length #bytes bytes_mls bytes_label;
-  concat #bytes bytes_mls bytes_label
+  String.list_of_concat "MLS 1.0 " label;
+  List.Tot.for_all_append char_is_ascii (String.list_of_string "MLS 1.0 ") (String.list_of_string label);
+  assert_norm(string_is_ascii "MLS 1.0 ");
+  assert_norm(String.strlen "MLS 1.0 " == List.Tot.length (String.list_of_string "MLS 1.0 "));
+  assert_norm(string_is_ascii "MLS 1.0 " <==> List.Tot.for_all char_is_ascii (String.list_of_string "MLS 1.0 "));
+  normalize_term_spec (string_is_ascii label);
+  normalize_term_spec (string_is_ascii ("MLS 1.0 " ^ label));
+  "MLS 1.0 " ^ label
 
 let sign_with_label_pre (#bytes:Type0) {|crypto_bytes bytes|} (label:valid_label) (length_content:mls_nat): bool =
   8 + (8 + String.strlen label) + length_content < sign_max_input_length #bytes
@@ -225,7 +227,7 @@ val get_sign_content:
   (ensures fun res -> length #bytes res < sign_max_input_length #bytes)
 let get_sign_content #bytes #cb label content =
   ((ps_prefix_to_ps_whole ps_sign_content_nt).serialize ({
-    label = get_mls_label #bytes label;
+    label = get_mls_label label;
     content = content;
   }))
 
@@ -255,7 +257,7 @@ let verify_with_label #bytes #cb verification_key label content signature =
 
 type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
   length: nat_lbytes 2;
-  label: mls_bytes bytes;
+  label: mls_ascii_string;
   context: mls_bytes bytes;
 }
 
@@ -263,29 +265,22 @@ type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 val expand_with_label:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  secret:bytes -> label:bytes -> context:bytes -> len:nat ->
+  secret:bytes -> label:valid_label -> context:bytes -> len:nat ->
   result (lbytes bytes len)
 let expand_with_label #bytes #cb secret label context len =
-  assert_norm (String.strlen "MLS 1.0 " == 8);
-  if not (len < pow2 16) then
-    internal_failure "expand_with_label: len too high"
-  else if not (length label < (pow2 30)-8) then
-    internal_failure "expand_with_label: label too long"
-  else if not (length context < pow2 30) then
-    internal_failure "expand_with_label: context too long"
-  else (
-    concat_length (string_to_bytes #bytes "MLS 1.0 ") label;
-    let kdf_label = (ps_prefix_to_ps_whole ps_kdf_label_nt).serialize ({
-      length = len;
-      label = concat #bytes (string_to_bytes #bytes "MLS 1.0 ") label;
-      context = context;
-    }) in
-    kdf_expand secret kdf_label len
-  )
+  normalize_term_spec ((pow2 30) - 8);
+  let? length = mk_nat_lbytes len "expand_with_label" "len" in
+  let? context = mk_mls_bytes context "expand_with_label" "context" in
+  let kdf_label = (ps_prefix_to_ps_whole ps_kdf_label_nt).serialize ({
+    length;
+    label = get_mls_label label;
+    context;
+  }) in
+  kdf_expand secret kdf_label len
 
 val derive_secret:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  secret:bytes -> label:bytes ->
+  secret:bytes -> label:valid_label ->
   result (lbytes bytes (kdf_length #bytes))
 let derive_secret #bytes #cb secret label =
   expand_with_label secret label (empty #bytes) (kdf_length #bytes)
@@ -298,7 +293,7 @@ let derive_secret #bytes #cb secret label =
 /// } EncryptContext;
 
 type encrypt_context_nt (bytes:Type0) {|bytes_like bytes|} = {
-  label: mls_bytes bytes;
+  label: mls_ascii_string;
   context: mls_bytes bytes;
 }
 
@@ -343,7 +338,7 @@ let decrypt_with_label #bytes #cb skR label context kem_output ciphertext =
 /// } RefHashInput;
 
 type ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
-  label: mls_bytes bytes;
+  label: mls_ascii_string;
   value: mls_bytes bytes;
 }
 
@@ -353,10 +348,9 @@ instance parseable_serializeable_ref_hash_input_nt (bytes:Type0) {|bytes_like by
 
 val ref_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> bytes ->
+  mls_ascii_string -> bytes ->
   result (lbytes bytes (hash_length #bytes))
 let ref_hash #bytes #cb label value =
-  let? label = mk_mls_bytes label "ref_hash" "label" in
   let? value = mk_mls_bytes value "ref_hash" "value" in
   let hash_content = (serialize (ref_hash_input_nt bytes) ({label; value;})) in
   if not (length #bytes hash_content < hash_max_input_length #bytes) then
@@ -370,14 +364,16 @@ val make_keypackage_ref:
   bytes ->
   result (lbytes bytes (hash_length #bytes))
 let make_keypackage_ref #bytes #cb buf =
-  ref_hash (string_to_bytes #bytes "MLS 1.0 KeyPackage Reference") buf
+  normalize_term_spec (String.strlen "MLS 1.0 KeyPackage Reference");
+  ref_hash "MLS 1.0 KeyPackage Reference" buf
 
 val make_proposal_ref:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (lbytes bytes (hash_length #bytes))
 let make_proposal_ref #bytes #cb buf =
-  ref_hash (string_to_bytes #bytes "MLS 1.0 Proposal Reference") buf
+  normalize_term_spec (String.strlen "MLS 1.0 Proposal Reference");
+  ref_hash "MLS 1.0 Proposal Reference" buf
 
 (*** Utility functions ***)
 

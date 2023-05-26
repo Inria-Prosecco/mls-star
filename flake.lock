@@ -10,11 +10,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1684168681,
-        "narHash": "sha256-qAf0hLT/olg73un1Yw79NYzzEjTgt16psoQUFL6CvbY=",
+        "lastModified": 1685131747,
+        "narHash": "sha256-25bC/RW425+fJHvrqTPTXudbY25GlXQJCeX8xM+P/RA=",
         "ref": "refs/heads/main",
-        "rev": "a548a1c92c40b1c40a6864a2af9646559bba3f1c",
-        "revCount": 111,
+        "rev": "57996a3521babf130c0d2227d2c6503c89daeb83",
+        "revCount": 112,
         "type": "git",
         "url": "ssh://git@github.com/TWal/comparse.git"
       },
