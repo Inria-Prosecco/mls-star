@@ -67,7 +67,7 @@ let test_tree_validation_one t =
     let cb = mk_concrete_crypto_bytes cs in
 
     let group_id = hex_string_to_bytes t.group_id in
-    let group_id: mls_bytes bytes = if length group_id < pow2 30 then group_id else failwith "test_tree_validation_one: group_id too long" in
+    let group_id: mls_bytes bytes = extract_result (mk_mls_bytes group_id "test_tree_validation_one" "group_id") in
     let ratchet_tree = extract_option "ratchet_tree" (((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt))).parse (hex_string_to_bytes t.tree)) in
     let (|l, tree|) = extract_result (ratchet_tree_to_treesync ratchet_tree) in
 

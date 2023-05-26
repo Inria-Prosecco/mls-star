@@ -60,20 +60,14 @@ let test_derive_tree_secret t =
 
 val test_sign_with_label: {|crypto_bytes bytes|} -> crypto_basics_sign_with_label -> ML unit
 let test_sign_with_label t =
-  let priv = hex_string_to_bytes t.priv in
-  let pub = hex_string_to_bytes t.pub in
-  let content = hex_string_to_bytes t.content in
+  let priv = extract_result (mk_sign_private_key (hex_string_to_bytes t.priv) "test_sign_with_label" "priv") in
+  let pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.pub) "test_sign_with_label" "pub") in
+  let content = extract_result (mk_mls_bytes (hex_string_to_bytes t.content) "test_sign_with_label" "content") in
   let label = t.label in
-  let signature = hex_string_to_bytes t.signature in
-  if not (length pub = sign_public_key_length #bytes) then (
-    failwith "test_sign_with_label: signature public key has wrong length\n"
-  ) else if not (length priv = sign_private_key_length #bytes) then (
-    failwith "test_sign_with_label: signature private key has wrong length\n"
-  ) else if not (length signature = sign_signature_length #bytes) then (
-    failwith "test_sign_with_label: signature has wrong length\n"
-  ) else if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
+  let signature = extract_result (mk_sign_signature (hex_string_to_bytes t.signature) "test_sign_with_label" "signature") in
+  if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
     failwith "test_sign_with_label: label is malformed\n"
-  ) else if not (length content < pow2 30 && sign_with_label_pre #bytes label (length content)) then (
+  ) else if not (sign_with_label_pre #bytes label (length #bytes content)) then (
     failwith "test_sign_with_label: bad signature precondition\n"
   ) else (
     let signature_ok =
@@ -94,20 +88,14 @@ let test_sign_with_label t =
 
 val test_encrypt_with_label: {|crypto_bytes bytes|} -> crypto_basics_encrypt_with_label -> ML unit
 let test_encrypt_with_label t =
-  let priv = hex_string_to_bytes t.priv in
-  let pub = hex_string_to_bytes t.pub in
+  let priv = extract_result (mk_hpke_private_key (hex_string_to_bytes t.priv) "test_encrypt_with_label" "priv") in
+  let pub = extract_result (mk_hpke_public_key (hex_string_to_bytes t.pub) "test_encrypt_with_label" "pub") in
   let label = t.label in
   let context = hex_string_to_bytes t.context in
   let plaintext = hex_string_to_bytes t.plaintext in
-  let kem_output = hex_string_to_bytes t.kem_output in
+  let kem_output = extract_result (mk_hpke_kem_output (hex_string_to_bytes t.kem_output) "test_encrypt_with_label" "kem_output") in
   let ciphertext = hex_string_to_bytes t.ciphertext in
-  if not (length priv = hpke_private_key_length #bytes) then (
-    failwith "Error: hpke private key has wrong length\n"
-  ) else if not (length pub = hpke_public_key_length #bytes) then (
-    failwith "Error: hpke public key has wrong length\n"
-  ) else if not (length kem_output = hpke_kem_output_length #bytes) then (
-    failwith "Error: hpke kem output has wrong length\n"
-  ) else if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
+  if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
     failwith "Error: label is malformed\n"
   ) else (
     let my_plaintext = extract_result (decrypt_with_label priv label context kem_output ciphertext) in

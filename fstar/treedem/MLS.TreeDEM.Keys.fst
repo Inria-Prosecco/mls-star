@@ -19,13 +19,11 @@ val derive_tree_secret:
   secret:bytes -> label:bytes -> generation:nat -> len:nat ->
   result (lbytes bytes len)
 let derive_tree_secret #bytes #cb secret label generation len =
-  if not (generation < pow2 32) then
-    internal_failure "derive_tree_secret: generation too high"
-  else
-    let tree_context = serialize tree_context_nt ({
-      generation = generation;
-    }) in
-    expand_with_label secret label tree_context len
+  let? generation = mk_nat_lbytes generation "derive_tree_secret" "generation" in
+  let tree_context = serialize tree_context_nt ({
+    generation = generation;
+  }) in
+  expand_with_label secret label tree_context len
 
 val leaf_kdf:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->

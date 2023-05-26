@@ -63,27 +63,20 @@ let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
     if not (MLS.TreeSync.TreeHash.tree_hash_pre tree) then
       internal_failure "state_to_group_context: tree_hash precondition false"
     else
-      return #bytes (MLS.TreeSync.TreeHash.tree_hash #bytes #cb tree)
+      mk_mls_bytes (MLS.TreeSync.TreeHash.tree_hash #bytes #cb tree) "compute_group_context" "tree_hash"
   ) in
-  if not (length group_id < pow2 30) then
-    internal_failure "state_to_group_context: group_id too long"
-  else if not (epoch < pow2 64) then
-    internal_failure "state_to_group_context: epoch too big"
-  else if not (length #bytes tree_hash < pow2 30) then
-    internal_failure "state_to_group_context: tree_hash too long"
-  else if not (length confirmed_transcript_hash < pow2 30) then
-    internal_failure "state_to_group_context: confirmed_transcript_hash too long"
-  else (
-    return ({
-      version = PV_mls10;
-      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
-      group_id = group_id;
-      epoch = epoch;
-      tree_hash = tree_hash;
-      confirmed_transcript_hash = confirmed_transcript_hash;
-      extensions = []; //TODO
-    } <: group_context_nt bytes)
-  )
+  let? group_id = mk_mls_bytes group_id "compute_group_context" "group_id" in
+  let? epoch = mk_nat_lbytes epoch "compute_group_context" "epoch" in
+  let? confirmed_transcript_hash = mk_mls_bytes tree_hash "compute_group_context" "confirmed_transcript_hash" in
+  return ({
+    version = PV_mls10;
+    cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
+    group_id = group_id;
+    epoch = epoch;
+    tree_hash = tree_hash;
+    confirmed_transcript_hash = confirmed_transcript_hash;
+    extensions = []; //TODO
+  } <: group_context_nt bytes)
 #pop-options
 
 val state_to_group_context: state -> result (group_context_nt bytes)
@@ -256,24 +249,12 @@ let chop_entropy (e: bytes) (l: nat): (result ((fresh:bytes{Seq.length fresh == 
 
 val default_capabilities: result (capabilities_nt bytes)
 let default_capabilities =
-  let versions = [PV_mls10] in
-  let ciphersuites = [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519] in
-  let extensions = [] in
-  let proposals = [] in
-  let credentials = [CT_basic] in
-  if not (bytes_length #bytes ps_protocol_version_nt versions < pow2 30) then
-    internal_failure "fresh_key_package: initial protocol versions too long"
-  else if not (bytes_length #bytes ps_extension_type_nt extensions < pow2 30) then
-    internal_failure "fresh_key_package: initial extension types too long"
-  else if not (bytes_length #bytes ps_cipher_suite_nt ciphersuites < pow2 30) then
-    internal_failure "fresh_key_package: initial cipher suites too long"
-  else if not (bytes_length #bytes ps_proposal_type_nt proposals < pow2 30) then
-    internal_failure "fresh_key_package: initial proposals too long"
-  else if not (bytes_length #bytes ps_credential_type_nt credentials < pow2 30) then
-    internal_failure "fresh_key_package: initial credentials too long"
-  else (
-    return ({versions; ciphersuites; extensions; proposals; credentials;} <: capabilities_nt bytes)
-  )
+  let? versions = mk_mls_list [PV_mls10] "default_capabilities" "versions" in
+  let? ciphersuites = mk_mls_list [CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519] "default_capabilities" "ciphersuites" in
+  let? extensions = mk_mls_list [] "default_capabilities" "extensions" in
+  let? proposals = mk_mls_list [] "default_capabilities" "proposals" in
+  let? credentials = mk_mls_list [CT_basic] "default_capabilities" "credentials" in
+  return ({versions; ciphersuites; extensions; proposals; credentials;} <: capabilities_nt bytes)
 
 val fresh_key_package_internal: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key bytes -> result (key_package_nt bytes tkt & bytes)
 let fresh_key_package_internal e { identity; signature_key } private_sign_key =
@@ -341,13 +322,11 @@ let current_epoch s = s.epoch
 let create e cred private_sign_key group_id =
   let? fresh, e = chop_entropy e 64 in
   let? key_package, leaf_secret = fresh_key_package_internal fresh cred private_sign_key in
+  let? group_id = mk_mls_bytes group_id "create" "group_id" in
   let? treesync_state = (
-    if not (length #bytes group_id < pow2 30) then error "create: group_id too long"
-    else (
-      let? create_pend = MLS.TreeSync.API.prepare_create group_id key_package.tbs.leaf_node in
-      //TODO AS check
-      return (MLS.TreeSync.API.finalize_create create_pend ())
-    )
+    let? create_pend = MLS.TreeSync.API.prepare_create group_id key_package.tbs.leaf_node in
+    //TODO AS check
+    return (MLS.TreeSync.API.finalize_create create_pend ())
   ) in
   let? treekem = treesync_to_treekem treesync_state.tree in
   let treekem_state: treekem_state bytes = { levels = treesync_state.levels; tree = treekem } in
@@ -433,10 +412,8 @@ let generate_key_package_and_path_secret future_state msg new_key_package =
         let tk = future_state.treekem_state.tree in
         assume(future_state.treesync_state.levels == future_state.treekem_state.levels);
         let? path_secret = path_secret_at_least_common_ancestor tk future_state.leaf_index new_leaf_index future_state.leaf_secret in
-        if not (length path_secret < pow2 30) then
-          internal_failure "generate_welcome_message: path_secret too long"
-        else
-          return (new_key_package, Some (path_secret <: mls_bytes bytes))
+        let? path_secret = mk_mls_bytes path_secret "generate_key_package_and_path_secret" "path_secret" in
+        return (new_key_package, Some path_secret)
       )
   )
   | None -> (
@@ -446,32 +423,19 @@ let generate_key_package_and_path_secret future_state msg new_key_package =
 val generate_welcome_message: state -> wire_format_nt -> msg:framed_content_nt bytes{msg.content.content_type == CT_commit} -> framed_content_auth_data_nt bytes CT_commit -> bool -> new_key_packages:list (key_package_nt bytes tkt) -> bytes -> result (welcome_nt bytes)
 let generate_welcome_message st wire_format msg msg_auth include_path_secrets new_leaf_packages e =
   let? (future_state, joiner_secret) = process_commit st wire_format msg msg_auth in
-  let? joiner_secret = (if length joiner_secret < pow2 30 then return #(mls_bytes bytes) joiner_secret else internal_failure "") in
+  let? joiner_secret = mk_mls_bytes joiner_secret "generate_welcome_message" "joiner_secret" in
   let? tree_hash = (
     if not (MLS.TreeSync.TreeHash.tree_hash_pre future_state.treesync_state.tree) then
       error "generate_welcome_message: bad tree hash pre"
     else
-      let res = MLS.TreeSync.TreeHash.tree_hash future_state.treesync_state.tree in
-      if not (length #bytes res < pow2 30) then
-        internal_failure ""
-      else
-        return #(mls_bytes bytes) res
+      mk_mls_bytes (MLS.TreeSync.TreeHash.tree_hash future_state.treesync_state.tree) "generate_welcome_message" "tree_hash"
   ) in
   let? ratchet_tree = treesync_to_ratchet_tree future_state.treesync_state.tree in
-  let? ratchet_tree_bytes = (
-    let l = bytes_length (ps_option (ps_node_nt tkt)) ratchet_tree in
-    if l < pow2 30 then
-      let res = ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree) in
-      if length res < pow2 30 then
-        return #(mls_bytes bytes) res
-      else
-        internal_failure "generate_welcome_message: ratchet_tree too big"
-    else
-      internal_failure "generate_welcome_message: ratchet_tree too big"
-  ) in
-  let? (epoch:nat_lbytes 8) = (if future_state.epoch < pow2 64 then return future_state.epoch else error "generate_welcome_message: epoch too big") in
-  let? (confirmed_transcript_hash:mls_bytes bytes) = (if length future_state.confirmed_transcript_hash < pow2 30 then return future_state.confirmed_transcript_hash else error "generate_welcome_message: confirmed_transcript_hash too long") in
-  let? (leaf_index:nat_lbytes 4) = (if future_state.leaf_index < pow2 32 then return future_state.leaf_index else error "generate_welcome_message: leaf_index too big") in
+  let? ratchet_tree = mk_mls_list ratchet_tree "generate_welcome_message" "ratchet_tree" in
+  let? ratchet_tree_bytes = mk_mls_bytes ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree) "generate_welcome_message" "ratchet_tree" in
+  let? epoch = mk_nat_lbytes future_state.epoch "generate_welcome_message" "epoch" in
+  let? confirmed_transcript_hash = mk_mls_bytes future_state.confirmed_transcript_hash "generate_welcome_message" "confirmed_transcript_hash" in
+  let? leaf_index = mk_nat_lbytes future_state.leaf_index "generate_welcome_message" "leaf_index" in
   assert_norm(bytes_length #bytes ps_extension_nt [] == 0);
   let group_info: group_info_nt bytes = {
     tbs = {
@@ -553,15 +517,10 @@ let message_commit = m:framed_content_nt bytes{m.content.content_type == CT_comm
 val generate_commit: state -> entropy -> list (proposal_nt bytes) -> result (message_commit & state & entropy)
 let generate_commit state e proposals =
   let? (update_path, pending, e) = generate_update_path state e proposals in
-  let? epoch = (if state.epoch < pow2 64 then return state.epoch else error "epoch too big") in
-  let? leaf_index = (if state.leaf_index < pow2 32 then return state.leaf_index else error "leaf index too big") in
-  let? proposals = (
-    let res = List.Tot.map POR_proposal proposals in
-    if bytes_length ps_proposal_or_ref_nt res < pow2 30 then return res
-    else error "proposals too big"
-  ) in
+  let? epoch = mk_nat_lbytes state.epoch "generate_commit" "epoch" in
+  let? leaf_index = mk_nat_lbytes state.leaf_index "generate_commit" "leaf_index" in
+  let? proposals = mk_mls_list (List.Tot.map POR_proposal proposals) "generate_commit" "proposals" in
   let state = { state with pending_updatepath = pending::state.pending_updatepath} in
-  assert(0 < pow2 30);
   let msg: framed_content_nt bytes = {
     group_id = state.treesync_state.group_id;
     epoch;
@@ -592,7 +551,7 @@ let remove state p e =
   match find_first #(option (leaf_node_nt bytes tkt)) (fun olp -> match olp with | Some lp -> lp.data.credential = C_basic p | None -> false) (get_leaf_list state.treesync_state.tree) with
   | None -> error "remove: can't find the leaf to remove"
   | Some removed -> (
-    let? removed = (if removed < pow2 32 then return removed else error "removed too big") in
+    let? removed = mk_nat_lbytes removed "remove" "removed" in
     let proposals = [P_remove {removed}] in
     let? (msg, state, e) = generate_commit state e proposals in
     let? fresh, e = chop_entropy e 4 in
@@ -608,9 +567,9 @@ let update state e =
   return (state, g)
 
 let send state e data =
-  let? epoch = (if state.epoch < pow2 64 then return state.epoch else error "epoch too big") in
-  let? leaf_index = (if state.leaf_index < pow2 32 then return state.leaf_index else error "leaf index too big") in
-  let? data = (if length data < pow2 30 then return data else error "data too big") in
+  let? epoch = mk_nat_lbytes state.epoch "generate_commit" "epoch" in
+  let? leaf_index = mk_nat_lbytes state.leaf_index "generate_commit" "leaf_index" in
+  let? data = mk_mls_bytes data "generate_commit" "data" in
   let msg: framed_content_nt bytes = {
     group_id = state.treesync_state.group_id;
     epoch;
@@ -671,10 +630,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
       else (
         let? sender_leaf_package = from_option "process_welcome_message: signer leaf is blanked (1)" (leaf_at treesync leaf_ind) in
         let result = sender_leaf_package.data.signature_key in
-        if not (length #bytes result = sign_public_key_length #bytes) then
-          error "process_welcome_message: bad public key length"
-        else
-          return (result <: sign_public_key bytes)
+        mk_sign_public_key #bytes sender_leaf_package.data.signature_key "process_welcome_message" "signature_key"
       )
     ) group_info in
     return ()

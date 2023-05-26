@@ -42,6 +42,143 @@ private let sanity_lemma_2 (cs:cipher_suite_nt): Lemma (
 ) = ()
 #pop-options
 
+(*** Helper functions with refined types ***)
+
+#push-options "--fuel 1"
+val mk_nat_lbytes:
+  #sz:nat ->
+  nat ->
+  string -> string ->
+  result (nat_lbytes sz)
+let mk_nat_lbytes #sz n fun_name var_name =
+  if not (n < pow2 (8 `op_Multiply` sz)) then
+    error (fun_name ^ ": " ^ var_name ^ " too big")
+  else
+    return n
+#pop-options
+
+val mk_mls_bytes:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  bytes ->
+  string -> string ->
+  result (mls_bytes bytes)
+let mk_mls_bytes #bytes #bl b fun_name var_name =
+  if not (length b < pow2 30) then
+    error (fun_name ^ ": " ^ var_name ^ " too long")
+  else
+    return b
+
+val mk_mls_list:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #a:Type -> #ps_a:parser_serializer bytes a ->
+  list a ->
+  string -> string ->
+  result (mls_list bytes ps_a)
+let mk_mls_list #bytes #bl #a #ps_a l fun_name var_name =
+  if not (bytes_length ps_a l < pow2 30) then
+    error (fun_name ^ ": " ^ var_name ^ " too long")
+  else
+    return l
+
+val mk_hpke_public_key:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (hpke_public_key bytes)
+let mk_hpke_public_key #bytes #cb b fun_name var_name =
+  if not (length b = hpke_public_key_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_hpke_private_key:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (hpke_private_key bytes)
+let mk_hpke_private_key #bytes #cb b fun_name var_name =
+  if not (length b = hpke_private_key_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_hpke_kem_output:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (hpke_kem_output bytes)
+let mk_hpke_kem_output #bytes #cb b fun_name var_name =
+  if not (length b = hpke_kem_output_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_sign_public_key:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (sign_public_key bytes)
+let mk_sign_public_key #bytes #cb b fun_name var_name =
+  if not (length b = sign_public_key_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_sign_private_key:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (sign_private_key bytes)
+let mk_sign_private_key #bytes #cb b fun_name var_name =
+  if not (length b = sign_private_key_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_sign_nonce:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (sign_nonce bytes)
+let mk_sign_nonce #bytes #cb b fun_name var_name =
+  if not (length b = sign_nonce_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_sign_signature:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (sign_signature bytes)
+let mk_sign_signature #bytes #cb b fun_name var_name =
+  if not (length b = sign_signature_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_aead_nonce:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (aead_nonce bytes)
+let mk_aead_nonce #bytes #cb b fun_name var_name =
+  if not (length b = aead_nonce_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
+val mk_aead_key:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  string -> string ->
+  result (aead_key bytes)
+let mk_aead_key #bytes #cb b fun_name var_name =
+  if not (length b = aead_key_length #bytes) then
+    error (fun_name ^ ": " ^ var_name ^ " has bad length")
+  else
+    return b
+
 (*** SignWithLabel / VerifyWithLabel ***)
 
 /// struct {
@@ -174,16 +311,13 @@ val compute_encryption_context:
   label:valid_label -> context:bytes ->
   result bytes
 let compute_encryption_context #bytes #cb label context =
-  if not (length context < pow2 30) then
-    internal_failure "compute_encryption_context: context too long"
-  else (
-    let label_bytes = get_mls_label label in
-    let context = {
-      label = label_bytes;
-      context;
-    } in
-    return (serialize (encrypt_context_nt bytes) context)
-  )
+  let? context = mk_mls_bytes context "compute_encryption_context" "context" in
+  let label_bytes = get_mls_label label in
+  let context = {
+    label = label_bytes;
+    context;
+  } in
+  return (serialize (encrypt_context_nt bytes) context)
 
 val encrypt_with_label:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -222,14 +356,13 @@ val ref_hash:
   bytes -> bytes ->
   result (lbytes bytes (hash_length #bytes))
 let ref_hash #bytes #cb label value =
-  if not (length label < pow2 30) then
-    internal_failure "ref_hash: label too long"
-  else if not (length value < pow2 30) then
-    internal_failure "ref_hash: value too long"
-  else if not (length #bytes (serialize (ref_hash_input_nt bytes) ({label; value;})) < hash_max_input_length #bytes) then
+  let? label = mk_mls_bytes label "ref_hash" "label" in
+  let? value = mk_mls_bytes value "ref_hash" "value" in
+  let hash_content = (serialize (ref_hash_input_nt bytes) ({label; value;})) in
+  if not (length #bytes hash_content < hash_max_input_length #bytes) then
     internal_failure "ref_hash: hash_pre failed"
   else (
-    return (hash_hash (serialize #bytes (ref_hash_input_nt bytes) ({label; value;})))
+    return (hash_hash hash_content)
   )
 
 val make_keypackage_ref:

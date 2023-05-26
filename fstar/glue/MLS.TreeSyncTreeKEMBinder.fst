@@ -16,18 +16,15 @@ val treesync_to_treekem_node_package:
   parent_node_nt bytes tkt ->
   result (key_package bytes)
 let treesync_to_treekem_node_package #bytes #cb np =
-  if not (length (np.content <: bytes) = hpke_public_key_length #bytes) then
-    error "treesync_to_treekem_node_package: public key has wrong length"
-  else (
-    let unmerged_leaves = List.Tot.map #(nat_lbytes 4) #nat (fun x -> x) np.unmerged_leaves in
-    return ({
-      public_key = np.content;
-      last_group_context = empty;
-      unmerged_leaves = unmerged_leaves;
-      path_secret_from = Left;
-      path_secret_ciphertext = [];
-    })
-  )
+  let? public_key = mk_hpke_public_key np.content "treesync_to_treekem_node_package" "public_key" in
+  let unmerged_leaves = List.Tot.map #(nat_lbytes 4) #nat (fun x -> x) np.unmerged_leaves in
+  return ({
+    public_key;
+    last_group_context = empty;
+    unmerged_leaves = unmerged_leaves;
+    path_secret_from = Left;
+    path_secret_ciphertext = [];
+  })
 
 // This does not contain any internal TreeKEM data. To be used then joining a new group.
 val treesync_to_treekem:
@@ -40,10 +37,8 @@ let rec treesync_to_treekem #bytes #cb #l #i t =
   | TLeaf None ->
     return (TLeaf None)
   | TLeaf (Some lp) ->
-    if not (length (lp.data.content <: bytes) = hpke_public_key_length #bytes) then
-      error "treesync_to_treekem: public key has wrong length"
-    else
-      return (TLeaf (Some ({public_key = lp.data.content} <: member_info bytes)))
+    let? public_key = mk_hpke_public_key lp.data.content "treesync_to_treekem" "public_key" in
+    return (TLeaf (Some ({public_key} <: member_info bytes)))
   | TNode onp left right -> begin
     let? tk_left = treesync_to_treekem left in
     let? tk_right = treesync_to_treekem right in

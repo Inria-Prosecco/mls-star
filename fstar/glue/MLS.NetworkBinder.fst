@@ -88,38 +88,31 @@ val leaf_node_to_treekem:
   leaf_node_nt bytes tkt ->
   result (TK.member_info bytes)
 let leaf_node_to_treekem #bytes #cb ln =
-  if not (length (ln.data.content <: bytes) = hpke_public_key_length #bytes) then
-    error "leaf_node_to_treekem: public key has wrong length"
-  else
-    return ({
-      TK.public_key = ln.data.content;
-    } <: TK.member_info bytes)
+  let? public_key = mk_hpke_public_key #bytes ln.data.content "leaf_node_to_treekem" "public_key" in
+  return ({
+    TK.public_key;
+  } <: TK.member_info bytes)
 
 val update_path_node_to_treekem:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes -> TK.direction -> update_path_node_nt bytes ->
   result (TK.key_package bytes)
 let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
-  if not (length (update_path_node.encryption_key <: bytes) = hpke_public_key_length #bytes) then
-    error "update_path_node_to_treekem: public key has wrong length"
-  else (
-    let? path_secret_ciphertext = mapM (fun (hpke_ciphertext: hpke_ciphertext_nt bytes) ->
-      if not (length (hpke_ciphertext.kem_output <: bytes) = hpke_kem_output_length #bytes) then
-        error "update_path_node_to_treekem: kem output has wrong length"
-      else
-        return ({
-          TK.kem_output = hpke_ciphertext.kem_output;
-          TK.ciphertext = hpke_ciphertext.ciphertext;
-        } <: TK.path_secret_ciphertext bytes)
-    ) update_path_node.encrypted_path_secret in
+  let? public_key = mk_hpke_public_key update_path_node.encryption_key "update_path_node_to_treekem" "public_key" in
+  let? path_secret_ciphertext = mapM (fun (hpke_ciphertext: hpke_ciphertext_nt bytes) ->
+    let? kem_output = mk_hpke_kem_output hpke_ciphertext.kem_output "update_path_node_to_treekem" "kem_output" in
     return ({
-      TK.public_key = update_path_node.encryption_key;
-      TK.last_group_context = group_context;
-      TK.unmerged_leaves = [];
-      TK.path_secret_from = dir;
-      TK.path_secret_ciphertext = path_secret_ciphertext;
-    })
-  )
+      TK.kem_output;
+      TK.ciphertext = hpke_ciphertext.ciphertext;
+    } <: TK.path_secret_ciphertext bytes)
+  ) update_path_node.encrypted_path_secret in
+  return ({
+    TK.public_key;
+    TK.last_group_context = group_context;
+    TK.unmerged_leaves = [];
+    TK.path_secret_from = dir;
+    TK.path_secret_ciphertext = path_secret_ciphertext;
+  })
 
 val update_path_to_treekem:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -167,11 +160,8 @@ let rec compress_update_path #bytes #bl #leaf_t #node_t #l #i #li t update_path 
       match p_opt_data with
       | None -> return compressed_p_next
       | Some p_data -> (
-        let new_nodes = List.Tot.snoc (compressed_p_next.nodes, p_data) in
-        if not (bytes_length ps_update_path_node_nt new_nodes < pow2 30) then
-          error "compress_update_path: update path too long!"
-        else
-          return ({ compressed_p_next with nodes = new_nodes; })
+        let? new_nodes = mk_mls_list (List.Tot.snoc (compressed_p_next.nodes, p_data)) "compress_update_path" "new_nodes" in
+        return ({ compressed_p_next with nodes = new_nodes; })
       )
     )
 
@@ -180,15 +170,12 @@ val encrypted_path_secret_tk_to_nt:
   TK.path_secret_ciphertext bytes ->
   result (hpke_ciphertext_nt bytes)
 let encrypted_path_secret_tk_to_nt #bytes #cb x =
-  if not (length (x.kem_output <: bytes) < pow2 30) then
-    internal_failure "encrypted_path_secret_tk_to_nt: kem_output too long"
-  else if not (length (x.ciphertext <: bytes) < pow2 30) then
-    internal_failure "encrypted_path_secret_tk_to_nt: ciphertext too long"
-  else
-    return ({
-      kem_output = x.kem_output;
-      ciphertext = x.ciphertext;
-    } <: hpke_ciphertext_nt bytes)
+  let? kem_output = mk_mls_bytes x.kem_output "encrypted_path_secret_tk_to_nt" "kem_output" in
+  let? ciphertext = mk_mls_bytes x.ciphertext "encrypted_path_secret_tk_to_nt" "ciphertext" in
+  return ({
+    kem_output;
+    ciphertext;
+  } <: hpke_ciphertext_nt bytes)
 
 val treekem_to_update_path_node:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -196,14 +183,11 @@ val treekem_to_update_path_node:
   result (update_path_node_nt bytes)
 let treekem_to_update_path_node #bytes #cb kp =
   let? encrypted_path_secret = mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext in
-  if not (bytes_length ps_hpke_ciphertext_nt encrypted_path_secret < pow2 30) then
-    error "treekem_to_update_path_node: encrypted_path_secret too long"
-  else (
-    return ({
-      encryption_key = kp.public_key;
-      encrypted_path_secret;
-    } <: update_path_node_nt bytes)
-  )
+  let? encrypted_path_secret = mk_mls_list encrypted_path_secret "treekem_to_update_path_node" "encrypted_path_secret" in
+  return ({
+    encryption_key = kp.public_key;
+    encrypted_path_secret;
+  } <: update_path_node_nt bytes)
 
 val mls_star_paths_to_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -325,12 +309,7 @@ val shrink_ratchet_tree:
 let shrink_ratchet_tree #bytes #bl #tkt l =
   match shrink_ratchet_tree_aux l with
   | None -> return []
-  | Some res -> (
-    if not (bytes_length (ps_option (ps_node_nt tkt)) res < pow2 30) then
-      internal_failure "shrink_ratchet_tree: ratchet_tree too long"
-    else
-      return res
-  )
+  | Some res -> mk_mls_list res "shrink_ratchet_tree" "ratchet_tree"
 
 val treesync_to_ratchet_tree:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->

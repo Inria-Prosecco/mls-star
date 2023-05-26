@@ -1,5 +1,9 @@
 module MLS.Utils
 
+open Comparse
+open MLS.NetworkTypes
+open MLS.Result
+
 type nat_less (m:nat) = n:nat{n<m}
 
 val find_index:

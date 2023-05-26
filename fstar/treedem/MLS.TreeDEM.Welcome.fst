@@ -16,16 +16,6 @@ open MLS.Result
 
 (*** Utility functions ***)
 
-val bytes_to_kem_output:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes ->
-  result (hpke_kem_output bytes)
-let bytes_to_kem_output #bytes #cb b =
-  if not (length b = hpke_kem_output_length #bytes) then
-    error "bytes_to_kem_output: kem_output has wrong length"
-  else
-    return b
-
 val welcome_secret_to_key:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
@@ -64,7 +54,7 @@ val decrypt_welcome:
 let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
   let? group_secrets = (
     let? (my_hpke_sk, my_hpke_ciphertext) = from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_ref_to_hpke_sk w.secrets) in
-    let? kem_output = bytes_to_kem_output my_hpke_ciphertext.kem_output in
+    let? kem_output = mk_hpke_kem_output my_hpke_ciphertext.kem_output "decrypt_welcome" "kem_output" in
     let? group_secrets_bytes = decrypt_with_label my_hpke_sk "Welcome" w.encrypted_group_info kem_output my_hpke_ciphertext.ciphertext in
     let? group_secrets_network = from_option "decrypt_welcome: malformed group secrets" (parse (group_secrets_nt bytes) group_secrets_bytes) in
     return group_secrets_network
@@ -89,22 +79,10 @@ val encrypt_one_group_secrets:
 let encrypt_one_group_secrets #bytes #cb kp encrypted_group_info gs rand =
   let? kp_ref = compute_key_package_ref kp in
   let gs_bytes = serialize #bytes (group_secrets_nt bytes) gs in
-  let? leaf_hpke_pk: hpke_public_key bytes = (
-    let leaf_hpke_pk = kp.tbs.init_key in
-    if not (length (leaf_hpke_pk <: bytes) = hpke_public_key_length #bytes) then
-      internal_failure "encrypt_one_group_secrets: public key has wrong size"
-    else
-      return leaf_hpke_pk
-  ) in
-  let? (kem_output, ciphertext) = (
-    let? (kem_output, ciphertext) = encrypt_with_label leaf_hpke_pk "Welcome" encrypted_group_info gs_bytes rand in
-    if not (length #bytes kem_output < pow2 30) then
-      error "encrypt_one_group_secrets: kem_output too long"
-    else if not (length #bytes ciphertext < pow2 30) then
-      error "encrypt_one_group_secrets: ciphertext too long"
-    else
-      return ((kem_output <: mls_bytes bytes), (ciphertext <: mls_bytes bytes))
-  ) in
+  let? leaf_hpke_pk = mk_hpke_public_key kp.tbs.init_key "encrypt_one_group_secrets" "leaf_hpke_pk" in
+  let? (kem_output, ciphertext) = encrypt_with_label leaf_hpke_pk "Welcome" encrypted_group_info gs_bytes rand in
+  let? kem_output = mk_mls_bytes kem_output "encrypt_one_group_secrets" "kem_output" in
+  let? ciphertext = mk_mls_bytes ciphertext "encrypt_one_group_secrets" "ciphertext" in
   return ({
     new_member = kp_ref;
     encrypted_group_secrets = {
@@ -162,18 +140,10 @@ let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
     let? welcome_nonce = welcome_secret_to_nonce welcome_secret in
     let group_info_bytes = serialize (group_info_nt bytes) group_info in
     let? encrypted_welcome_group_info = aead_encrypt welcome_key welcome_nonce empty group_info_bytes in
-    if not (length encrypted_welcome_group_info < pow2 30) then
-      error "encrypt_welcome: encrypted_welcome_group_info too long"
-    else
-      return (encrypted_welcome_group_info <: mls_bytes bytes)
+    mk_mls_bytes encrypted_welcome_group_info "encrypt_welcome" "encrypted_welcome_group_info"
   ) in
-  let? group_secrets = (
-    let? group_secrets = encrypt_group_secrets encrypted_group_info joiner_secret key_packages [] (*TODO psks*) rand in
-    if not (bytes_length ps_encrypted_group_secrets_nt group_secrets < pow2 30) then
-      error "encrypt_welcome: secrets too long"
-    else
-      return (group_secrets <: mls_list bytes ps_encrypted_group_secrets_nt)
-  ) in
+  let? group_secrets = encrypt_group_secrets encrypted_group_info joiner_secret key_packages [] (*TODO psks*) rand in
+  let? group_secrets = mk_mls_list group_secrets "encrypt_welcome" "group_secrets" in
   let cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes) in
   return ({
     cipher_suite;
@@ -193,10 +163,8 @@ let sign_welcome_group_info #bytes #cb sign_sk gi rand =
   if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" (length #bytes tbs_bytes)) then error "sign_welcome_group_info: tbs too long"
   else (
     let signature = sign_with_label sign_sk "GroupInfoTBS" tbs_bytes rand in
-    if not (length #bytes signature < pow2 30) then
-      error "sign_welcome_group_info: signature too long"
-    else
-      return ({gi with signature = signature})
+    let? signature = mk_mls_bytes signature "sign_welcome_group_info" "signature" in
+    return ({gi with signature = signature})
   )
 
 val verify_welcome_group_info:
@@ -204,11 +172,8 @@ val verify_welcome_group_info:
   (nat -> result (sign_public_key bytes)) -> group_info_nt bytes ->
   result bool
 let verify_welcome_group_info #bytes #cb get_sign_pk gi =
-  if not (length #bytes gi.signature = sign_signature_length #bytes) then
-    error "verify_welcome_group_info: bad signature size"
-  else (
-    let? sign_pk = get_sign_pk gi.tbs.signer in
-    let tbs_bytes: bytes = serialize (group_info_tbs_nt bytes) gi.tbs in
-    if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" (length #bytes tbs_bytes)) then error "sign_welcome_group_info: tbs too long"
-    else return (verify_with_label sign_pk "GroupInfoTBS" tbs_bytes gi.signature)
-  )
+  let? signature = mk_sign_signature #bytes gi.signature "verify_welcome_group_info" "signature" in
+  let? sign_pk = get_sign_pk gi.tbs.signer in
+  let tbs_bytes: bytes = serialize (group_info_tbs_nt bytes) gi.tbs in
+  if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" (length #bytes tbs_bytes)) then error "sign_welcome_group_info: tbs too long"
+  else return (verify_with_label sign_pk "GroupInfoTBS" tbs_bytes signature)

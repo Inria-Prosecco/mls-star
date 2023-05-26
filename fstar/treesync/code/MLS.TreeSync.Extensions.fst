@@ -1,6 +1,7 @@
 module MLS.TreeSync.Extensions
 
 open Comparse
+open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.Result
 
@@ -48,23 +49,17 @@ val set_extension:
   extension_type_nt -> list (extension_nt bytes) -> bytes ->
   result (mls_list bytes ps_extension_nt )
 let set_extension #bytes #bl t extensions data =
-  if not (length data < pow2 30) then
-    error "set_extension: data is too long"
-  else (
-    let ext = ({extension_type = t; extension_data = data;}) in
-    let new_extensions: list (extension_nt bytes) =
-      match find_extension_index t extensions with
-      | None -> extensions @ [ext]
-      | Some i -> (
-        let (ext_before, _, ext_after) = List.Tot.split3 extensions i in
-        ext_before @ [ext] @ ext_after
-      )
-    in
-    if not (bytes_length #bytes ps_extension_nt new_extensions < pow2 30) then
-      error "set_extension: new_extensions too long"
-    else
-      return new_extensions
-  )
+  let? data = mk_mls_bytes data "set_extension" "data" in
+  let ext = ({extension_type = t; extension_data = data;}) in
+  let new_extensions: list (extension_nt bytes) =
+    match find_extension_index t extensions with
+    | None -> extensions @ [ext]
+    | Some i -> (
+      let (ext_before, _, ext_after) = List.Tot.split3 extensions i in
+      ext_before @ [ext] @ ext_after
+    )
+  in
+  mk_mls_list new_extensions "get_extension" "new_extensions"
 
 val mk_get_extension:
   #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 ->

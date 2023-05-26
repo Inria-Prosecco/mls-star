@@ -301,17 +301,6 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
     };
   } <: authenticated_content_nt bytes)
 
-val get_serializeable_bytes:
-  #bytes:Type0 -> {|bytes_like bytes|} ->
-  bytes ->
-  result (mls_bytes bytes)
-let get_serializeable_bytes #bytes #bl b =
-  if not (length b < pow2 30) then (
-    internal_failure "get_serializeable_bytes: buffer too long"
-  ) else (
-    return b
-  )
-
 val message_to_message_ciphertext:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} ->
@@ -330,22 +319,21 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
     } in
     let ciphertext_content_ad = message_to_ciphertext_content_aad auth_msg.content in
     let? ciphertext = encrypt_ciphertext_content ciphertext_content_ad key patched_nonce ciphertext_content in
-    get_serializeable_bytes ciphertext
+    mk_mls_bytes ciphertext "message_to_message_ciphertext" "encrypted_sender_data"
   ) in
   let? encrypted_sender_data = (
     if not (S_member? auth_msg.content.sender) then
       error "message_to_message_ciphertext: sender is not a member"
-    else if not (ratchet.generation < pow2 32) then
-      internal_failure "message_to_message_ciphertext: ratchet too big"
     else (
+      let? generation = mk_nat_lbytes ratchet.generation "message_to_message_ciphertext" "generation" in
       let sender_data_ad = message_to_sender_data_aad auth_msg.content in
       let sender_data = ({
         leaf_index = S_member?.leaf_index auth_msg.content.sender;
-        generation = ratchet.generation;
-        reuse_guard = reuse_guard;
+        generation;
+        reuse_guard;
       }) in
       let? encrypted_sender_data = encrypt_sender_data sender_data_ad (get_ciphertext_sample ciphertext) sender_data_secret sender_data in
-      get_serializeable_bytes encrypted_sender_data
+      mk_mls_bytes encrypted_sender_data "message_to_message_ciphertext" "encrypted_sender_data"
     )
   ) in
   let? new_ratchet = ratchet_next_state ratchet in
