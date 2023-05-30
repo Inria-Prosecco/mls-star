@@ -437,26 +437,23 @@ let generate_welcome_message st wire_format msg msg_auth include_path_secrets ne
   let? confirmed_transcript_hash = mk_mls_bytes future_state.confirmed_transcript_hash "generate_welcome_message" "confirmed_transcript_hash" in
   let? leaf_index = mk_nat_lbytes future_state.leaf_index "generate_welcome_message" "leaf_index" in
   assert_norm(bytes_length #bytes ps_extension_nt [] == 0);
-  let group_info: group_info_nt bytes = {
-    tbs = {
-      group_context = {
-        version = PV_mls10;
-        cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
-        group_id = future_state.treesync_state.group_id;
-        epoch = epoch;
-        tree_hash = tree_hash;
-        confirmed_transcript_hash = confirmed_transcript_hash;
-        extensions = []; //TODO handle group context extensions
-      };
-      extensions = ratchet_tree_bytes;
-      confirmation_tag = msg_auth.confirmation_tag;
-      signer = leaf_index;
+  let group_info_tbs: group_info_tbs_nt bytes = {
+    group_context = {
+      version = PV_mls10;
+      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
+      group_id = future_state.treesync_state.group_id;
+      epoch = epoch;
+      tree_hash = tree_hash;
+      confirmed_transcript_hash = confirmed_transcript_hash;
+      extensions = []; //TODO handle group context extensions
     };
-    signature = empty #bytes; //Signed afterward
+    extensions = ratchet_tree_bytes;
+    confirmation_tag = msg_auth.confirmation_tag;
+    signer = leaf_index;
   } in
   let? group_info = (
     let? nonce = universal_sign_nonce in
-    sign_welcome_group_info future_state.sign_private_key group_info nonce
+    sign_welcome_group_info future_state.sign_private_key group_info_tbs nonce
   ) in
   let? key_packages_and_path_secrets = mapM (generate_key_package_and_path_secret future_state msg) new_leaf_packages in
   assume (List.Tot.length key_packages_and_path_secrets == List.Tot.length new_leaf_packages);

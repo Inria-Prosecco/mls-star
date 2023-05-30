@@ -156,15 +156,15 @@ let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
 
 val sign_welcome_group_info:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  sign_private_key bytes -> group_info_nt bytes -> sign_nonce bytes ->
+  sign_private_key bytes -> group_info_tbs_nt bytes -> sign_nonce bytes ->
   result (group_info_nt bytes)
-let sign_welcome_group_info #bytes #cb sign_sk gi rand =
-  let tbs_bytes: bytes = serialize (group_info_tbs_nt bytes) gi.tbs in
+let sign_welcome_group_info #bytes #cb sign_sk gi_tbs rand =
+  let tbs_bytes: bytes = serialize (group_info_tbs_nt bytes) gi_tbs in
   if not (length tbs_bytes < pow2 30 && sign_with_label_pre #bytes "GroupInfoTBS" (length #bytes tbs_bytes)) then error "sign_welcome_group_info: tbs too long"
   else (
     let signature = sign_with_label sign_sk "GroupInfoTBS" tbs_bytes rand in
     let? signature = mk_mls_bytes signature "sign_welcome_group_info" "signature" in
-    return ({gi with signature = signature})
+    return ({tbs = gi_tbs; signature;})
   )
 
 val verify_welcome_group_info:
