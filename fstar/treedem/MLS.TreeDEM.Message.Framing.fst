@@ -37,10 +37,10 @@ let compute_tbs #bytes #bl wire_format content group_context =
 
 val compute_tbm:
   #bytes:Type0 -> {|bytes_like bytes|} ->
-  content:framed_content_nt bytes -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  content:framed_content_nt bytes{S_member? content.sender} -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:group_context_nt bytes ->
   authenticated_content_tbm_nt bytes
 let compute_tbm #bytes #bl content auth group_context =
-  let content_tbs = compute_tbs WF_mls_public_message content group_context in
+  let content_tbs = compute_tbs WF_mls_public_message content (Some group_context) in
   ({
     content_tbs;
     auth;
@@ -72,7 +72,7 @@ let check_message_signature #bytes #cb pk signature wire_format msg group_contex
 
 val compute_message_membership_tag:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> content:framed_content_nt bytes -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  bytes -> content:framed_content_nt bytes{S_member? content.sender} -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:group_context_nt bytes ->
   result (lbytes bytes (hmac_length #bytes))
 let compute_message_membership_tag #bytes #cb membership_key msg auth group_context =
   let tbm = compute_tbm msg auth group_context in
@@ -106,26 +106,43 @@ let message_compute_auth #bytes #cb wire_format msg sk rand group_context confir
 
 (*** From/to plaintext ***)
 
-//TODO check membership tag
 val message_plaintext_to_message:
-  #bytes:Type0 -> {|bytes_like bytes|} ->
-  public_message_nt bytes ->
-  authenticated_content_nt bytes
-let message_plaintext_to_message #bytes #bl pt =
-  {
-    wire_format = WF_mls_public_message;
-    content = pt.content;
-    auth = pt.auth;
-  }
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  pt:public_message_nt bytes ->
+  opt_group_context:option (group_context_nt bytes){Some? opt_group_context <==> S_member? pt.content.sender} ->
+  opt_membership_key:option bytes{Some? opt_membership_key <==> S_member? pt.content.sender} ->
+  result (authenticated_content_nt bytes)
+let message_plaintext_to_message #bytes #cb pt opt_group_context opt_membership_key =
+  let? membership_tag_ok =
+    if S_member? pt.content.sender then
+      let Some group_context = opt_group_context in
+      let Some membership_key = opt_membership_key in
+      let? expected_membership_tag = compute_message_membership_tag membership_key pt.content pt.auth group_context in
+      return (pt.membership_tag = expected_membership_tag)
+    else return true
+  in
+  if not membership_tag_ok then
+    error "message_plaintext_to_message: bad membership tag"
+  else (
+    return ({
+      wire_format = WF_mls_public_message;
+      content = pt.content;
+      auth = pt.auth;
+    } <: authenticated_content_nt bytes)
+  )
 
 val message_to_message_plaintext:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  membership_key:bytes -> auth_msg:authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_public_message} -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context auth_msg.content.sender} ->
+  auth_msg:authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_public_message} ->
+  opt_group_context:option (group_context_nt bytes){Some? opt_group_context <==> S_member? auth_msg.content.sender} ->
+  opt_membership_key:option bytes{Some? opt_membership_key <==> S_member? auth_msg.content.sender} ->
   result (public_message_nt bytes)
-let message_to_message_plaintext #bytes #cb membership_key auth_msg group_context =
+let message_to_message_plaintext #bytes #cb auth_msg opt_group_context opt_membership_key =
   let? membership_tag = (
     match auth_msg.content.sender with
     | S_member _ -> (
+      let Some group_context = opt_group_context in
+      let Some membership_key = opt_membership_key in
       let? res = compute_message_membership_tag membership_key auth_msg.content auth_msg.auth group_context in
       return (res <: membership_tag_nt bytes auth_msg.content.sender)
     )

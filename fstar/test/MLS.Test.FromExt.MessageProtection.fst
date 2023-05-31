@@ -36,13 +36,15 @@ let extract_proposal #bl content =
 
 val test_proposal_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_proposal_protection #cb t =
+  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
+  let membership_key = hex_string_to_bytes t.membership_key in
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let proposal = hex_string_to_bytes t.proposal in
   let proposal_pub = extract_public_message t.proposal_pub in
   let proposal_priv = extract_private_message t.proposal_priv in
 
-  let the_proposal_pub = extract_proposal (message_plaintext_to_message proposal_pub) in
+  let the_proposal_pub = extract_proposal (extract_result (message_plaintext_to_message proposal_pub (if S_member? proposal_pub.content.sender then Some group_context else None) (if S_member? proposal_pub.content.sender then Some membership_key else None))) in
   let the_proposal_priv = extract_proposal (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret proposal_priv)) in
 
   check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_pub);
@@ -56,13 +58,15 @@ let extract_commit #bl content =
 
 val test_commit_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_commit_protection #cb t =
+  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
+  let membership_key = hex_string_to_bytes t.membership_key in
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let commit = hex_string_to_bytes t.commit in
   let commit_pub = extract_public_message t.commit_pub in
   let commit_priv = extract_private_message t.commit_priv in
 
-  let the_commit_pub = extract_commit (message_plaintext_to_message commit_pub) in
+  let the_commit_pub = extract_commit (extract_result (message_plaintext_to_message commit_pub (if S_member? commit_pub.content.sender then Some group_context else None) (if S_member? commit_pub.content.sender then Some membership_key else None))) in
   let the_commit_priv = extract_commit (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret commit_priv)) in
 
   check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_pub);

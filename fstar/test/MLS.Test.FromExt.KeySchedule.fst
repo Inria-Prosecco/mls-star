@@ -17,7 +17,7 @@ let gen_epoch_output #cb group_id last_init_secret epoch inp =
   let commit_secret = hex_string_to_bytes inp.commit_secret in
   let psk_secret = hex_string_to_bytes inp.psk_secret in
 
-  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes group_id) epoch (hex_string_to_bytes inp.tree_hash) (hex_string_to_bytes inp.confirmed_transcript_hash) in
+  let group_context = (ps_prefix_to_ps_whole ps_group_context_nt).serialize (gen_group_context (ciphersuite #bytes) (hex_string_to_bytes group_id) epoch (hex_string_to_bytes inp.tree_hash) (hex_string_to_bytes inp.confirmed_transcript_hash)) in
   let last_init_secret = hex_string_to_bytes last_init_secret in
   let joiner_secret = extract_result (secret_init_to_joiner last_init_secret (Some commit_secret) group_context) in
   let welcome_secret = extract_result (secret_joiner_to_welcome #bytes joiner_secret (Some psk_secret)) in

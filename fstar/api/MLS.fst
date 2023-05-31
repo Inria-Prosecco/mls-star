@@ -690,33 +690,35 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
 let process_group_message state msg =
   let? msg = from_option "process_group_message: can't parse group message"
     ((ps_prefix_to_ps_whole ps_mls_message_nt).parse msg) in
-  let? (|wire_format, message, message_auth|) = (
+  let? (wire_format, message) = (
     match msg with
     | M_mls10 (M_public_message msg) ->
-        let auth_msg = message_plaintext_to_message msg in
-        return (|WF_mls_public_message, auth_msg.content, auth_msg.auth|)
+        let? group_context = state_to_group_context state in
+        let? membership_key = MLS.TreeDEM.Keys.secret_epoch_to_membership state.epoch_secret in
+        let? auth_msg = message_plaintext_to_message msg (if S_member? msg.content.sender then Some group_context else None) (if S_member? msg.content.sender then Some membership_key else None) in
+        return (WF_mls_public_message, auth_msg)
     | M_mls10  (M_private_message msg) ->
         let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption state.epoch_secret in
         let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret in
         let? auth_msg = message_ciphertext_to_message state.treesync_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) msg in
-        return ((|WF_mls_private_message, auth_msg.content, auth_msg.auth|) <: (wire_format_nt & msg:framed_content_nt bytes & framed_content_auth_data_nt bytes msg.content.content_type))
+        return (WF_mls_private_message, auth_msg)
     | _ ->
         internal_failure "unknown message type"
   ) in
   // Note: can't do a dependent pair pattern matching, have to nest matches +
   // annotations because of the dependency
-  match message.content.content_type with
+  match message.content.content.content_type with
   | CT_proposal  ->
-      let message_content: proposal_nt bytes = message.content.content in
+      let message_content: proposal_nt bytes = message.content.content.content in
       begin match message_content with
       | P_add _ -> internal_failure "TODO: proposal (add)"
       | _ -> internal_failure "TODO: proposal (other)"
       end
   | CT_commit ->
-      let message_content: commit_nt bytes = message.content.content in
+      let message_content: commit_nt bytes = message.content.content.content in
       begin match message_content with
       | { proposals = [ POR_proposal (P_add {key_package}) ]; path = _ } ->
-          let? (state, _) = process_commit state wire_format message message_auth in
+          let? (state, _) = process_commit state wire_format message.content message.auth in
           let leaf_package = key_package.tbs.leaf_node in
           let? identity = (
             match leaf_package.data.credential with
@@ -730,7 +732,7 @@ let process_group_message state msg =
               from_option "leaf node" (leaf_at state.treesync_state.tree removed)
             else error "process_group_message: leaf index too big"
           in
-          let? (state, _) = process_commit state wire_format message message_auth in
+          let? (state, _) = process_commit state wire_format message.content message.auth in
           let? identity = (
             match leaf_package.data.credential with
             | C_basic identity -> return identity
@@ -740,7 +742,7 @@ let process_group_message state msg =
       | _ -> internal_failure "TODO: commit (general case)"
       end
   | CT_application ->
-      let data: bytes = message.content.content in
+      let data: bytes = message.content.content.content in
       return (state, MsgData data)
   | _ ->
       internal_failure "unknown message content type"
