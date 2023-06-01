@@ -25,14 +25,14 @@ let knows_group_context #bytes #bl sender = S_member? sender || S_new_member_com
 
 val compute_tbs:
   #bytes:Type0 -> {|bytes_like bytes|} ->
-  wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
   framed_content_tbs_nt bytes
 let compute_tbs #bytes #bl wire_format content group_context =
   ({
     version = PV_mls10;
     wire_format;
     content;
-    group_context = (match group_context with | Some gc -> gc | None -> ());
+    group_context;
   } <: framed_content_tbs_nt bytes)
 
 val compute_tbm:
@@ -40,7 +40,7 @@ val compute_tbm:
   content:framed_content_nt bytes{S_member? content.sender} -> framed_content_auth_data_nt bytes content.content.content_type -> group_context:group_context_nt bytes ->
   authenticated_content_tbm_nt bytes
 let compute_tbm #bytes #bl content auth group_context =
-  let content_tbs = compute_tbs WF_mls_public_message content (Some group_context) in
+  let content_tbs = compute_tbs WF_mls_public_message content group_context in
   ({
     content_tbs;
     auth;
@@ -48,7 +48,7 @@ let compute_tbm #bytes #bl content auth group_context =
 
 val compute_message_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  sign_private_key bytes -> sign_nonce bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  sign_private_key bytes -> sign_nonce bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
   result (sign_signature bytes)
 let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
@@ -60,7 +60,7 @@ let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
 
 val check_message_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  sign_public_key bytes -> sign_signature bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:option (group_context_nt bytes){Some? group_context <==> knows_group_context content.sender} ->
+  sign_public_key bytes -> sign_signature bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
   result bool
 let check_message_signature #bytes #cb pk signature wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
@@ -82,41 +82,35 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
 //TODO: this function should be refactored
 val message_auth_data:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  wire_format_nt -> msg:framed_content_nt bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes ->
+  wire_format_nt -> msg:framed_content_nt bytes -> sign_private_key bytes -> sign_nonce bytes -> group_context:static_option (knows_group_context msg.sender) (group_context_nt bytes) -> bytes -> bytes ->
   result (framed_content_auth_data_nt bytes msg.content.content_type)
 let message_auth_data #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
-  if not (Some? group_context = knows_group_context msg.sender) then
-    internal_failure "message_compute_auth: bad optional group context"
-  else (
-    let? signature = compute_message_signature sk rand wire_format msg group_context in
-    let? confirmation_tag = (
-      if msg.content.content_type = CT_commit then (
-        let? confirmed_transcript_hash = compute_confirmed_transcript_hash wire_format msg signature interim_transcript_hash in
-        let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
-        return (confirmation_tag <: static_option (msg.content.content_type = CT_commit) (mac_nt bytes))
-      ) else (
-        return ()
-      )
-    ) in
-    return ({
-      signature = signature;
-      confirmation_tag = confirmation_tag;
-    } <: framed_content_auth_data_nt bytes msg.content.content_type)
-  )
+  let? signature = compute_message_signature sk rand wire_format msg group_context in
+  let? confirmation_tag = (
+    if msg.content.content_type = CT_commit then (
+      let? confirmed_transcript_hash = compute_confirmed_transcript_hash wire_format msg signature interim_transcript_hash in
+      let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
+      return (confirmation_tag <: static_option (msg.content.content_type = CT_commit) (mac_nt bytes))
+    ) else (
+      return ()
+    )
+  ) in
+  return ({
+    signature = signature;
+    confirmation_tag = confirmation_tag;
+  } <: framed_content_auth_data_nt bytes msg.content.content_type)
 
 (*** From/to public message ***)
 
 val public_message_to_authenticated_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   pt:public_message_nt bytes ->
-  opt_group_context:option (group_context_nt bytes){Some? opt_group_context <==> S_member? pt.content.sender} ->
-  opt_membership_key:option bytes{Some? opt_membership_key <==> S_member? pt.content.sender} ->
+  group_context:static_option (S_member? pt.content.sender) (group_context_nt bytes) ->
+  membership_key:static_option (S_member? pt.content.sender) bytes ->
   result (authenticated_content_nt bytes)
-let public_message_to_authenticated_content #bytes #cb pt opt_group_context opt_membership_key =
+let public_message_to_authenticated_content #bytes #cb pt group_context membership_key =
   let? membership_tag_ok =
     if S_member? pt.content.sender then
-      let Some group_context = opt_group_context in
-      let Some membership_key = opt_membership_key in
       let? expected_membership_tag = compute_message_membership_tag membership_key pt.content pt.auth group_context in
       return (pt.membership_tag = expected_membership_tag)
     else return true
@@ -134,15 +128,13 @@ let public_message_to_authenticated_content #bytes #cb pt opt_group_context opt_
 val authenticated_content_to_public_message:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   auth_msg:authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_public_message} ->
-  opt_group_context:option (group_context_nt bytes){Some? opt_group_context <==> S_member? auth_msg.content.sender} ->
-  opt_membership_key:option bytes{Some? opt_membership_key <==> S_member? auth_msg.content.sender} ->
+  group_context:static_option (S_member? auth_msg.content.sender) (group_context_nt bytes) ->
+  membership_key:static_option (S_member? auth_msg.content.sender) bytes ->
   result (public_message_nt bytes)
-let authenticated_content_to_public_message #bytes #cb auth_msg opt_group_context opt_membership_key =
+let authenticated_content_to_public_message #bytes #cb auth_msg group_context membership_key =
   let? membership_tag = (
     match auth_msg.content.sender with
     | S_member _ -> (
-      let Some group_context = opt_group_context in
-      let Some membership_key = opt_membership_key in
       let? res = compute_message_membership_tag membership_key auth_msg.content auth_msg.auth group_context in
       return (res <: static_option (S_member? auth_msg.content.sender) (mac_nt bytes))
     )
