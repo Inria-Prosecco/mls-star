@@ -80,11 +80,11 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
   hmac_hmac membership_key serialized_tbm
 
 //TODO: this function should be refactored
-val message_compute_auth:
+val message_auth_data:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   wire_format_nt -> msg:framed_content_nt bytes -> sign_private_key bytes -> sign_nonce bytes -> option (group_context_nt bytes) -> bytes -> bytes ->
   result (framed_content_auth_data_nt bytes msg.content.content_type)
-let message_compute_auth #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
+let message_auth_data #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
   if not (Some? group_context = knows_group_context msg.sender) then
     internal_failure "message_compute_auth: bad optional group context"
   else (
@@ -104,15 +104,15 @@ let message_compute_auth #bytes #cb wire_format msg sk rand group_context confir
     } <: framed_content_auth_data_nt bytes msg.content.content_type)
   )
 
-(*** From/to plaintext ***)
+(*** From/to public message ***)
 
-val message_plaintext_to_message:
+val public_message_to_authenticated_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   pt:public_message_nt bytes ->
   opt_group_context:option (group_context_nt bytes){Some? opt_group_context <==> S_member? pt.content.sender} ->
   opt_membership_key:option bytes{Some? opt_membership_key <==> S_member? pt.content.sender} ->
   result (authenticated_content_nt bytes)
-let message_plaintext_to_message #bytes #cb pt opt_group_context opt_membership_key =
+let public_message_to_authenticated_content #bytes #cb pt opt_group_context opt_membership_key =
   let? membership_tag_ok =
     if S_member? pt.content.sender then
       let Some group_context = opt_group_context in
@@ -122,7 +122,7 @@ let message_plaintext_to_message #bytes #cb pt opt_group_context opt_membership_
     else return true
   in
   if not membership_tag_ok then
-    error "message_plaintext_to_message: bad membership tag"
+    error "public_message_to_authenticated_content: bad membership tag"
   else (
     return ({
       wire_format = WF_mls_public_message;
@@ -131,13 +131,13 @@ let message_plaintext_to_message #bytes #cb pt opt_group_context opt_membership_
     } <: authenticated_content_nt bytes)
   )
 
-val message_to_message_plaintext:
+val authenticated_content_to_public_message:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   auth_msg:authenticated_content_nt bytes{auth_msg.wire_format == WF_mls_public_message} ->
   opt_group_context:option (group_context_nt bytes){Some? opt_group_context <==> S_member? auth_msg.content.sender} ->
   opt_membership_key:option bytes{Some? opt_membership_key <==> S_member? auth_msg.content.sender} ->
   result (public_message_nt bytes)
-let message_to_message_plaintext #bytes #cb auth_msg opt_group_context opt_membership_key =
+let authenticated_content_to_public_message #bytes #cb auth_msg opt_group_context opt_membership_key =
   let? membership_tag = (
     match auth_msg.content.sender with
     | S_member _ -> (
@@ -154,7 +154,7 @@ let message_to_message_plaintext #bytes #cb auth_msg opt_group_context opt_membe
     membership_tag;
   } <: public_message_nt bytes)
 
-(*** From/to ciphertext ***)
+(*** From/to private message ***)
 
 val get_ciphertext_sample:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -168,11 +168,11 @@ let get_ciphertext_sample #bytes #cb ct =
     fst (unsafe_split ct len)
 
 //Used in decryption
-val message_ciphertext_to_sender_data_aad:
+val private_framed_content_to_sender_data_aad:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   private_message_nt bytes ->
   sender_data_aad_nt bytes
-let message_ciphertext_to_sender_data_aad #bytes #bl ct =
+let private_framed_content_to_sender_data_aad #bytes #bl ct =
   ({
     group_id = ct.group_id;
     epoch = ct.epoch;
@@ -180,11 +180,11 @@ let message_ciphertext_to_sender_data_aad #bytes #bl ct =
   } <: sender_data_aad_nt bytes)
 
 //Used in encryption
-val message_to_sender_data_aad:
+val framed_content_to_sender_data_aad:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   framed_content_nt bytes ->
   sender_data_aad_nt bytes
-let message_to_sender_data_aad #bytes #bl content =
+let framed_content_to_sender_data_aad #bytes #bl content =
   ({
     group_id = content.group_id;
     epoch = content.epoch;
@@ -218,11 +218,11 @@ let encrypt_sender_data #bytes #cb ad ciphertext_sample sender_data_secret sende
   aead_encrypt sender_data_key sender_data_nonce (serialize (sender_data_aad_nt bytes) ad) (serialize (sender_data_nt bytes) sender_data)
 
 // Used in decryption
-val message_ciphertext_to_ciphertext_content_aad:
+val private_message_to_private_content_aad:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   ct:private_message_nt bytes ->
   res:private_content_aad_nt bytes{res.content_type == ct.content_type}
-let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
+let private_message_to_private_content_aad #bytes #bl ct =
   ({
     group_id = ct.group_id;
     epoch = ct.epoch;
@@ -230,20 +230,20 @@ let message_ciphertext_to_ciphertext_content_aad #bytes #bl ct =
     authenticated_data = ct.authenticated_data;
   } <: private_content_aad_nt bytes)
 
-val decrypt_ciphertext_content:
+val decrypt_private_message_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> ct:bytes ->
   result (private_message_content_nt bytes ad.content_type)
-let decrypt_ciphertext_content #bytes #cb ad key nonce ct =
+let decrypt_private_message_content #bytes #cb ad key nonce ct =
   let? ciphertext_content = aead_decrypt key nonce (serialize (private_content_aad_nt bytes) ad) ct in
-  from_option "decrypt_ciphertext_content: malformed ciphertext content" (parse (private_message_content_nt bytes ad.content_type) ciphertext_content)
+  from_option "decrypt_private_message_content: malformed ciphertext content" (parse (private_message_content_nt bytes ad.content_type) ciphertext_content)
 
 // Used in encryption
-val message_to_ciphertext_content_aad:
+val framed_content_to_private_content_aad:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   content:framed_content_nt bytes ->
   res:private_content_aad_nt bytes{res.content_type == content.content.content_type}
-let message_to_ciphertext_content_aad #bytes #bl content =
+let framed_content_to_private_content_aad #bytes #bl content =
   ({
     group_id = content.group_id;
     epoch = content.epoch;
@@ -251,11 +251,11 @@ let message_to_ciphertext_content_aad #bytes #bl content =
     authenticated_data = content.authenticated_data;
   } <: private_content_aad_nt bytes)
 
-val encrypt_ciphertext_content:
+val encrypt_private_message_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   ad:private_content_aad_nt bytes -> aead_key bytes -> aead_nonce bytes -> (private_message_content_nt bytes ad.content_type) ->
   result bytes
-let encrypt_ciphertext_content #bytes #cb ad key nonce pt =
+let encrypt_private_message_content #bytes #cb ad key nonce pt =
   aead_encrypt key nonce (serialize (private_content_aad_nt bytes) ad) (serialize (private_message_content_nt bytes ad.content_type) pt)
 
 val apply_reuse_guard:
@@ -269,19 +269,19 @@ let apply_reuse_guard #bytes #cb reuse_guard nonce =
   let new_nonce_head = xor nonce_head reuse_guard in
   concat #bytes new_nonce_head nonce_tail
 
-val message_ciphertext_to_message:
+val private_message_to_authenticated_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   l:nat -> encryption_secret:bytes -> sender_data_secret:bytes -> private_message_nt bytes ->
   result (authenticated_content_nt bytes)
-let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_secret ct =
+let private_message_to_authenticated_content #bytes #cb l encryption_secret sender_data_secret ct =
   let? sender_data = (
-    let sender_data_ad = message_ciphertext_to_sender_data_aad ct in
+    let sender_data_ad = private_framed_content_to_sender_data_aad ct in
     decrypt_sender_data sender_data_ad (get_ciphertext_sample ct.ciphertext) sender_data_secret ct.encrypted_sender_data
   ) in
   let? rs_output = (
     let? sender_index = (
       if not (sender_data.leaf_index < pow2 l) then
-        error "message_ciphertext_to_message: leaf_index too big"
+        error "private_message_to_authenticated_content: leaf_index too big"
       else
         return sender_data.leaf_index
     ) in
@@ -297,8 +297,8 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
     let nonce = rs_output.nonce in
     let key = rs_output.key in
     let patched_nonce = apply_reuse_guard sender_data.reuse_guard nonce in
-    let ciphertext_content_ad = message_ciphertext_to_ciphertext_content_aad ct in
-    decrypt_ciphertext_content ciphertext_content_ad key patched_nonce ct.ciphertext
+    let ciphertext_content_ad = private_message_to_private_content_aad ct in
+    decrypt_private_message_content ciphertext_content_ad key patched_nonce ct.ciphertext
   ) in
   return ({
     wire_format = WF_mls_private_message;
@@ -318,11 +318,11 @@ let message_ciphertext_to_message #bytes #cb l encryption_secret sender_data_sec
     };
   } <: authenticated_content_nt bytes)
 
-val message_to_message_ciphertext:
+val authenticated_content_to_private_message:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} ->
   result (private_message_nt bytes & ratchet_state bytes)
-let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_secret auth_msg =
+let authenticated_content_to_private_message #bytes #cb ratchet reuse_guard sender_data_secret auth_msg =
   let? ciphertext = (
     let? key_nonce = ratchet_get_key ratchet in
     let key = key_nonce.key in
@@ -334,23 +334,23 @@ let message_to_message_ciphertext #bytes #cb ratchet reuse_guard sender_data_sec
       };
       padding = []; //TODO
     } in
-    let ciphertext_content_ad = message_to_ciphertext_content_aad auth_msg.content in
-    let? ciphertext = encrypt_ciphertext_content ciphertext_content_ad key patched_nonce ciphertext_content in
-    mk_mls_bytes ciphertext "message_to_message_ciphertext" "encrypted_sender_data"
+    let ciphertext_content_ad = framed_content_to_private_content_aad auth_msg.content in
+    let? ciphertext = encrypt_private_message_content ciphertext_content_ad key patched_nonce ciphertext_content in
+    mk_mls_bytes ciphertext "authenticated_content_to_private_message" "encrypted_sender_data"
   ) in
   let? encrypted_sender_data = (
     if not (S_member? auth_msg.content.sender) then
-      error "message_to_message_ciphertext: sender is not a member"
+      error "authenticated_content_to_private_message: sender is not a member"
     else (
-      let? generation = mk_nat_lbytes ratchet.generation "message_to_message_ciphertext" "generation" in
-      let sender_data_ad = message_to_sender_data_aad auth_msg.content in
+      let? generation = mk_nat_lbytes ratchet.generation "authenticated_content_to_private_message" "generation" in
+      let sender_data_ad = framed_content_to_sender_data_aad auth_msg.content in
       let sender_data = ({
         leaf_index = S_member?.leaf_index auth_msg.content.sender;
         generation;
         reuse_guard;
       }) in
       let? encrypted_sender_data = encrypt_sender_data sender_data_ad (get_ciphertext_sample ciphertext) sender_data_secret sender_data in
-      mk_mls_bytes encrypted_sender_data "message_to_message_ciphertext" "encrypted_sender_data"
+      mk_mls_bytes encrypted_sender_data "authenticated_content_to_private_message" "encrypted_sender_data"
     )
   ) in
   let? new_ratchet = ratchet_next_state ratchet in

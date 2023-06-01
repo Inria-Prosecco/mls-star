@@ -44,8 +44,8 @@ let test_proposal_protection #cb t =
   let proposal_pub = extract_public_message t.proposal_pub in
   let proposal_priv = extract_private_message t.proposal_priv in
 
-  let the_proposal_pub = extract_proposal (extract_result (message_plaintext_to_message proposal_pub (if S_member? proposal_pub.content.sender then Some group_context else None) (if S_member? proposal_pub.content.sender then Some membership_key else None))) in
-  let the_proposal_priv = extract_proposal (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret proposal_priv)) in
+  let the_proposal_pub = extract_proposal (extract_result (public_message_to_authenticated_content proposal_pub (if S_member? proposal_pub.content.sender then Some group_context else None) (if S_member? proposal_pub.content.sender then Some membership_key else None))) in
+  let the_proposal_priv = extract_proposal (extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret proposal_priv)) in
 
   check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_pub);
   check_equal "proposal_priv" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_priv)
@@ -66,8 +66,8 @@ let test_commit_protection #cb t =
   let commit_pub = extract_public_message t.commit_pub in
   let commit_priv = extract_private_message t.commit_priv in
 
-  let the_commit_pub = extract_commit (extract_result (message_plaintext_to_message commit_pub (if S_member? commit_pub.content.sender then Some group_context else None) (if S_member? commit_pub.content.sender then Some membership_key else None))) in
-  let the_commit_priv = extract_commit (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret commit_priv)) in
+  let the_commit_pub = extract_commit (extract_result (public_message_to_authenticated_content commit_pub (if S_member? commit_pub.content.sender then Some group_context else None) (if S_member? commit_pub.content.sender then Some membership_key else None))) in
+  let the_commit_priv = extract_commit (extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret commit_priv)) in
 
   check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_pub);
   check_equal "commit_priv" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_priv)
@@ -85,7 +85,7 @@ let test_application_protection #cb t =
   let application = hex_string_to_bytes t.application in
   let application_priv = extract_private_message t.application_priv in
 
-  let the_application_priv = extract_application (extract_result (message_ciphertext_to_message 1 encryption_secret sender_data_secret application_priv)) in
+  let the_application_priv = extract_application (extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret application_priv)) in
 
   check_equal "application_priv" (bytes_to_hex_string) (application) the_application_priv
 

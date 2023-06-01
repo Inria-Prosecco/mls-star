@@ -366,14 +366,14 @@ let send_helper st msg e =
   let? confirmation_secret = MLS.TreeDEM.Keys.secret_epoch_to_confirmation st.epoch_secret in
   let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data st.epoch_secret in
   let wire_format = WF_mls_private_message in
-  let? auth = message_compute_auth wire_format msg st.sign_private_key rand_nonce (Some group_context) confirmation_secret st.interim_transcript_hash in
+  let? auth = message_auth_data wire_format msg st.sign_private_key rand_nonce (Some group_context) confirmation_secret st.interim_transcript_hash in
   let auth_msg: authenticated_content_nt bytes = {
     wire_format;
     content = msg;
     auth = auth;
   } in
   let ratchet = if msg.content.content_type = CT_application then st.application_state else st.handshake_state in
-  let? ct_new_ratchet_state = message_to_message_ciphertext ratchet rand_reuse_guard sender_data_secret auth_msg in
+  let? ct_new_ratchet_state = authenticated_content_to_private_message ratchet rand_reuse_guard sender_data_secret auth_msg in
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
   let msg_bytes = (ps_prefix_to_ps_whole ps_mls_message_nt).serialize (M_mls10 (M_private_message ct)) in
   let new_st = if msg.content.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
@@ -695,12 +695,12 @@ let process_group_message state msg =
     | M_mls10 (M_public_message msg) ->
         let? group_context = state_to_group_context state in
         let? membership_key = MLS.TreeDEM.Keys.secret_epoch_to_membership state.epoch_secret in
-        let? auth_msg = message_plaintext_to_message msg (if S_member? msg.content.sender then Some group_context else None) (if S_member? msg.content.sender then Some membership_key else None) in
+        let? auth_msg = public_message_to_authenticated_content msg (if S_member? msg.content.sender then Some group_context else None) (if S_member? msg.content.sender then Some membership_key else None) in
         return (WF_mls_public_message, auth_msg)
     | M_mls10  (M_private_message msg) ->
         let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption state.epoch_secret in
         let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret in
-        let? auth_msg = message_ciphertext_to_message state.treesync_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) msg in
+        let? auth_msg = private_message_to_authenticated_content state.treesync_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) msg in
         return (WF_mls_private_message, auth_msg)
     | _ ->
         internal_failure "unknown message type"
