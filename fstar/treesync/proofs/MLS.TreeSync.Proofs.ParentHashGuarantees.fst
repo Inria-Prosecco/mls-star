@@ -446,6 +446,7 @@ let rec blank_sibling #bytes #bl #tkt #l #i t p_unmerged_leaves =
     blank_sibling right p_unmerged_leaves
   )
 
+#push-options "--z3rlimit 25"
 val is_subtree_with_blanks_between_d_p_aux:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lc:nat -> #id:tree_index ld -> #ic:tree_index lc ->
@@ -488,6 +489,7 @@ let rec is_subtree_with_blanks_between_d_p_aux #bytes #bl #tkt #ld #lc #id #ic d
       blank_sibling c_sibling p_unmerged_leaves
     )
   )
+#pop-options
 
 /// This theorem can be viewed as a correctness theorem for `last_update_correct`,
 /// that contains an ugly equation involving resolution.

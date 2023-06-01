@@ -24,10 +24,12 @@ val level: x:nat -> Pure nat
 let level x =
   level_aux x 0
 
+#push-options "--fuel 0"
 val left: x:nat{level x <> 0} -> nat
 let left x =
   let k = level x in
   (x - pow2 (k-1))
+#pop-options
 
 val right: x:nat{level x <> 0} -> nat
 let right x =

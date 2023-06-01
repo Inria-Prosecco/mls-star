@@ -40,7 +40,7 @@ type state (bytes:Type0) {|crypto_bytes bytes|} = {
 type op_type = | Add | Update | Remove
 
 val get_secret: #a:Type -> list (nat & a) -> nat -> ML a
-let rec get_secret #a l x =
+let get_secret #a l x =
   extract_result (from_option "" (List.Tot.assoc x l))
 
 #push-options "--fuel 1 --ifuel 1"

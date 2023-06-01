@@ -1,5 +1,6 @@
 module MLS.Test.Bench
 
+open FStar.List.Tot
 open FStar.All
 open Comparse
 open MLS.Crypto

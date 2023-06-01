@@ -428,7 +428,7 @@ let pending_commit_proof
     Some? (leaf_at st.tree li)
   )
 
-#push-options "--fuel 0 --ifuel 1"
+#push-options "--fuel 0 --ifuel 1 --z3rlimit 25"
 type pending_commit
   (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes)
   (st:treesync_state bytes tkt asp) (#li:treesync_index st) (p:pathsync bytes tkt st.levels 0 li) =

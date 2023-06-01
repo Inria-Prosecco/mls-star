@@ -1,5 +1,6 @@
 module MLS.TreeKEM.Operations
 
+open FStar.List.Tot
 open Comparse.Bytes
 open MLS.Crypto
 open MLS.Utils

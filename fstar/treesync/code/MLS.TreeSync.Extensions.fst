@@ -1,5 +1,6 @@
 module MLS.TreeSync.Extensions
 
+open FStar.List.Tot
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes

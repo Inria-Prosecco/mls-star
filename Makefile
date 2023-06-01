@@ -19,7 +19,12 @@ FSTAR = $(FSTAR_EXE) $(MAYBE_ADMIT)
 
 DY_EXTRACT = +CryptoLib +SecrecyLabels +ComparseGlue +LabeledCryptoAPI +CryptoEffect +GlobalRuntimeLib +LabeledRuntimeAPI
 FSTAR_EXTRACT = --extract '-* +MLS +Comparse $(DY_EXTRACT) -Comparse.Tactic'
-FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --warn_error '+241@247+285' --cache_dir cache --odir obj --cmi
+
+# Allowed warnings:
+# - (Warning 242) Definitions of inner let-rec ... and its enclosing top-level letbinding are not encoded to the solver, you will only be able to reason with their types
+# - (Warning 271) Pattern misses at least one bound variable
+# - (Warning 335) Interface ... is admitted without an implementation 
+FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+Prims +FStar' --warn_error '@0..1000' --warn_error '+242+271-335' --cache_dir cache --odir obj --cmi
 
 .PHONY: all clean
 
@@ -58,6 +63,14 @@ obj:
 
 
 %.checked: FSTAR_RULE_FLAGS=
+
+# MLS.Test is the only file allowing "(Warning 272) Top-level let-bindings must be total; this term may have effects"
+cache/MLS.Test.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+272'
+# Allow more warning in dependencies
+cache/Lib.IntTypes.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+288+349'
+cache/SecrecyLabels.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+337'
+cache/GlobalRuntimeLib.fsti.checked: FSTAR_RULE_FLAGS = --warn_error '+331'
+cache/GlobalRuntimeLib.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+331'
 
 %.checked: | hints obj
 	$(FSTAR) $(FSTAR_FLAGS) $(FSTAR_RULE_FLAGS) $< && touch -c $@

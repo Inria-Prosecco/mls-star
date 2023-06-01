@@ -2,7 +2,7 @@ module MLS.Tree
 
 open FStar.Mul
 
-#set-options "--fuel 1 --ifuel 1"
+#set-options "--fuel 1 --ifuel 1 --z3cliopt smt.arith.nl=false"
 
 let divides (m:nat) (n:nat) = exists (k:nat). n = k*m
 
@@ -15,8 +15,8 @@ let left_index #l n =
   returns (pow2 (l-1)) `divides` n
   with _. (
     introduce exists (k':nat). n = k'*(pow2 (l-1))
-    with (2*k)
-    and ()
+    with (k*2)
+    and FStar.Math.Lemmas.paren_mul_right k 2 (pow2 (l-1))
   );
   // End of math proof
   n
@@ -28,8 +28,11 @@ let right_index #l n =
   returns (pow2 (l-1)) `divides` (n + pow2 (l-1))
   with _. (
     introduce exists (k':nat). n + pow2 (l-1) = k'*(pow2 (l-1))
-    with (2*k+1)
-    and ()
+    with (k*2+1)
+    and (
+      FStar.Math.Lemmas.paren_mul_right k 2 (pow2 (l-1));
+      FStar.Math.Lemmas.distributivity_add_left (k*2) 1 (pow2 (l-1))
+    )
   );
   // End of math proof
   n + pow2 (l-1)
