@@ -182,6 +182,18 @@ val ps_option_is_well_formed:
 let ps_option_is_well_formed #bytes #bl #a ps_a pre x =
   reveal_opaque (`%ps_option) (ps_option ps_a)
 
+// Special "option" type, when we know statically whether it is a "Some" or "None"
+
+let static_option (b:bool) (a:Type): Type =
+  if b then a else unit
+
+val ps_static_option:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #a:Type0 ->
+  b:bool -> parser_serializer_prefix bytes a ->
+  parser_serializer_prefix bytes (static_option b a)
+let ps_static_option #bytes #bl #a b ps_a =
+  if b then ps_a else ps_unit
+
 /// struct {
 ///     ProtocolVersion version = mls10;
 ///     CipherSuite cipher_suite;

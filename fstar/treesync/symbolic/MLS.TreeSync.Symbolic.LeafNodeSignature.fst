@@ -663,6 +663,7 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
 
 (*** Proof of individual leaf signature ***)
 
+#push-options "--z3rlimit 25"
 val is_msg_sign_leaf_node_data_key_package:
   #tkt:treekem_types dy_bytes ->
   gu:global_usage -> prin:principal -> label:label -> time:timestamp ->
@@ -687,6 +688,7 @@ let is_msg_sign_leaf_node_data_key_package #tkt gu prin label time ln_data sk no
   parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
   serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_msg gu label time) ln_tbs;
   sign_with_label_valid gu (leaf_node_spred gu.key_usages tkt) "MLS.LeafSignKey" time sk "LeafNodeTBS" ln_tbs_bytes nonce
+#pop-options
 
 #push-options "--z3rlimit 25"
 val is_msg_sign_leaf_node_data_update:

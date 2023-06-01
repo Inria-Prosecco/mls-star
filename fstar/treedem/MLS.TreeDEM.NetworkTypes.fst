@@ -341,20 +341,12 @@ type framed_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 ///     };
 /// } FramedContentTBS;
 
-let framed_content_tbs_group_context_nt (bytes:Type0) {|bytes_like bytes|} (s:sender_nt bytes) =
-  match s with
-  | S_member _
-  | S_new_member_commit -> group_context_nt bytes
-  | S_external _
-  | S_new_member_proposal -> unit
-
-%splice [ps_framed_content_tbs_group_context_nt] (gen_parser_prefix (`framed_content_tbs_group_context_nt))
-
 type framed_content_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   version: protocol_version_nt;
   wire_format: wire_format_nt;
   content: framed_content_nt bytes;
-  group_context: framed_content_tbs_group_context_nt bytes (content.sender);
+  [@@@ with_parser #bytes (ps_static_option (S_member? content.sender || S_new_member_commit? content.sender) ps_group_context_nt)]
+  group_context: static_option (S_member? content.sender || S_new_member_commit? content.sender) (group_context_nt bytes);
 }
 
 %splice [ps_framed_content_tbs_nt] (gen_parser (`framed_content_tbs_nt))
@@ -377,17 +369,10 @@ instance parseable_serializeable_framed_content_tbs_nt (bytes:Type0) {|bytes_lik
 ///     };
 /// } FramedContentAuthData;
 
-val confirmation_tag_nt: bytes:Type0 -> {|bytes_like bytes|} -> content_type_nt -> Type0
-let confirmation_tag_nt bytes #bl content =
-  match content with
-  | CT_commit -> mac_nt bytes
-  | _ -> unit
-
-%splice [ps_confirmation_tag_nt] (gen_parser_prefix (`confirmation_tag_nt))
-
 type framed_content_auth_data_nt (bytes:Type0) {|bl:bytes_like bytes|} (content_type:content_type_nt) = {
   signature: mls_bytes bytes;
-  confirmation_tag: confirmation_tag_nt bytes #bl content_type;
+  [@@@ with_parser #bytes (ps_static_option (content_type = CT_commit) ps_mac_nt)]
+  confirmation_tag: static_option (content_type = CT_commit) (mac_nt bytes);
 }
 
 %splice [ps_framed_content_auth_data_nt] (gen_parser (`framed_content_auth_data_nt))
@@ -433,17 +418,11 @@ instance parseable_serializeable_authenticated_content_tbm_nt (bytes:Type0) {|by
 ///     };
 /// } PublicMessage;
 
-let membership_tag_nt (bytes:Type0) {|bytes_like bytes|} (s:sender_nt bytes) =
-  match s with
-  | S_member _ -> mac_nt bytes
-  | _ -> unit
-
-%splice [ps_membership_tag_nt] (gen_parser_prefix (`membership_tag_nt))
-
 type public_message_nt (bytes:Type0) {|bytes_like bytes|} = {
   content: framed_content_nt bytes;
   auth: framed_content_auth_data_nt bytes content.content.content_type;
-  membership_tag: membership_tag_nt bytes content.sender;
+  [@@@with_parser #bytes (ps_static_option (S_member? content.sender) ps_mac_nt)]
+  membership_tag: static_option (S_member? content.sender) (mac_nt bytes);
 }
 
 %splice [ps_public_message_nt] (gen_parser (`public_message_nt))

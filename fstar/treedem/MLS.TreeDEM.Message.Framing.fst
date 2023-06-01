@@ -93,9 +93,9 @@ let message_auth_data #bytes #cb wire_format msg sk rand group_context confirmat
       if msg.content.content_type = CT_commit then (
         let? confirmed_transcript_hash = compute_confirmed_transcript_hash wire_format msg signature interim_transcript_hash in
         let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
-        return (confirmation_tag <: confirmation_tag_nt bytes msg.content.content_type)
+        return (confirmation_tag <: static_option (msg.content.content_type = CT_commit) (mac_nt bytes))
       ) else (
-        return (() <: confirmation_tag_nt bytes msg.content.content_type)
+        return ()
       )
     ) in
     return ({
@@ -144,7 +144,7 @@ let authenticated_content_to_public_message #bytes #cb auth_msg opt_group_contex
       let Some group_context = opt_group_context in
       let Some membership_key = opt_membership_key in
       let? res = compute_message_membership_tag membership_key auth_msg.content auth_msg.auth group_context in
-      return (res <: membership_tag_nt bytes auth_msg.content.sender)
+      return (res <: static_option (S_member? auth_msg.content.sender) (mac_nt bytes))
     )
     | _ -> return ()
   ) in

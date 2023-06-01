@@ -57,7 +57,8 @@ let ps_tree_is_well_formed #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i pr
 noeq type path_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (node_t:Type0) (l:pos) (i:tree_index l) (li:leaf_index l i) (ps_node_t:parser_serializer_prefix bytes node_t) (ps_next:parser_serializer bytes (path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li)) = {
   [@@@ with_parser #bytes ps_node_t]
   data: node_t;
-  [@@@ with_parser #bytes ps_next]
+  // The full implicits must be given to work in lax mode (hence, in dependency loading)
+  [@@@ with_parser #bytes #_ #(path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li) ps_next]
   next: path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li;
 }
 

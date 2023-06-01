@@ -120,22 +120,6 @@ type lifetime_nt = {
 ///     opaque signature<V>;
 /// } LeafNode;
 
-val leaf_node_lifetime_nt: leaf_node_source_nt -> Type0
-let leaf_node_lifetime_nt source =
-  match source with
-  | LNS_key_package -> lifetime_nt
-  | _ -> unit
-
-%splice [ps_leaf_node_lifetime_nt] (gen_parser_prefix (`leaf_node_lifetime_nt))
-
-val leaf_node_parent_hash_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
-let leaf_node_parent_hash_nt bytes #bl source =
-  match source with
-  | LNS_commit -> mls_bytes bytes
-  | _ -> unit
-
-%splice [ps_leaf_node_parent_hash_nt] (gen_parser_prefix (`leaf_node_parent_hash_nt))
-
 type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   [@@@ with_parser tkt.ps_leaf_content]
   content: tkt.leaf_content; //encryption key
@@ -143,8 +127,10 @@ type leaf_node_data_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byt
   credential: credential_nt bytes;
   capabilities: capabilities_nt bytes;
   source: leaf_node_source_nt;
-  lifetime: leaf_node_lifetime_nt source;
-  parent_hash: leaf_node_parent_hash_nt bytes source;
+  [@@@ with_parser #bytes (ps_static_option (source = LNS_key_package) ps_lifetime_nt)]
+  lifetime: static_option (source = LNS_key_package) lifetime_nt;
+  [@@@ with_parser #bytes (ps_static_option (source = LNS_commit) ps_mls_bytes)]
+  parent_hash: static_option (source = LNS_commit) (mls_bytes bytes);
   extensions: mls_list bytes ps_extension_nt;
 }
 
@@ -194,28 +180,12 @@ instance parseable_serializeable_leaf_node_nt (bytes:Type0) {|bytes_like bytes|}
 ///     }
 /// } LeafNodeTBS;
 
-val leaf_node_tbs_group_id_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
-let leaf_node_tbs_group_id_nt bytes #bl source =
-  match source with
-  | LNS_update
-  | LNS_commit -> mls_bytes bytes
-  | _ -> unit
-
-%splice [ps_leaf_node_tbs_group_id_nt] (gen_parser_prefix (`leaf_node_tbs_group_id_nt))
-
-val leaf_node_tbs_leaf_index_nt: bytes:Type0 -> {|bytes_like bytes|} -> leaf_node_source_nt -> Type0
-let leaf_node_tbs_leaf_index_nt bytes #bl source =
-  match source with
-  | LNS_update
-  | LNS_commit -> nat_lbytes 4
-  | _ -> unit
-
-%splice [ps_leaf_node_tbs_leaf_index_nt] (gen_parser_prefix (`leaf_node_tbs_leaf_index_nt))
-
 type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   data: leaf_node_data_nt bytes tkt;
-  group_id: leaf_node_tbs_group_id_nt bytes data.source;
-  leaf_index: leaf_node_tbs_leaf_index_nt bytes data.source;
+  [@@@ with_parser #bytes (ps_static_option (data.source = LNS_update || data.source = LNS_commit) ps_mls_bytes)]
+  group_id: static_option (data.source = LNS_update || data.source = LNS_commit) (mls_bytes bytes);
+  [@@@ with_parser #bytes (ps_static_option (data.source = LNS_update || data.source = LNS_commit) (ps_nat_lbytes 4))]
+  leaf_index: static_option (data.source = LNS_update || data.source = LNS_commit) (nat_lbytes 4);
 }
 
 %splice [ps_leaf_node_tbs_nt] (gen_parser (`leaf_node_tbs_nt))
