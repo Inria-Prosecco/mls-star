@@ -14,6 +14,8 @@ open MLS.Crypto
 open MLS.TreeDEM.NetworkTypes
 open MLS.TreeDEM.Message.Framing
 
+(*** Utility functions ***)
+
 val extract_public_message: {|bytes_like bytes|} -> string -> ML (public_message_nt bytes)
 let extract_public_message #bl s =
   match parse (mls_message_nt bytes) (hex_string_to_bytes s) with
@@ -28,6 +30,64 @@ let extract_private_message #bl s =
   | Some (M_mls10 (M_private_message res)) -> res
   | Some _ -> failwith "extract_private_message: not a private message"
 
+val get_group_context: {|crypto_bytes bytes|} -> message_protection_test -> ML (group_context_nt bytes)
+let get_group_context #cb t =
+  gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash)
+
+val unprotect_public_message: {|crypto_bytes bytes|} -> string -> message_protection_test -> ML (authenticated_content_nt bytes)
+let unprotect_public_message #bl pub_msg_str t =
+  let pub_msg = extract_public_message pub_msg_str in
+  let group_context = get_group_context t in
+  let membership_key = hex_string_to_bytes t.membership_key in
+  extract_result (public_message_to_authenticated_content pub_msg (mk_static_option group_context) (mk_static_option membership_key))
+
+val unprotect_private_message: {|crypto_bytes bytes|} -> string -> message_protection_test -> ML (authenticated_content_nt bytes)
+let unprotect_private_message #bl priv_msg_str t =
+  let priv_msg = extract_private_message priv_msg_str in
+  let encryption_secret = hex_string_to_bytes t.encryption_secret in
+  let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
+  extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret priv_msg)
+
+val check_signature: {|crypto_bytes bytes|} -> authenticated_content_nt bytes -> message_protection_test -> ML unit
+let check_signature #bl auth_msg t =
+  let group_context = get_group_context t in
+  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "check_signature" "signature_pub") in
+  if not (extract_result (check_authenticated_content_signature auth_msg signature_pub (mk_static_option group_context))) then
+    failwith "check_signature: bad signature"
+
+val check_public_message_roundtrip: {|crypto_bytes bytes|} -> framed_content_nt bytes -> message_protection_test -> ML unit
+let check_public_message_roundtrip #cb msg t =
+  let group_context = get_group_context t in
+  let signature_priv = extract_result (mk_sign_private_key (hex_string_to_bytes t.signature_priv) "check_signature" "signature_priv") in
+  let membership_key = hex_string_to_bytes t.membership_key in
+  let auth = extract_result (compute_framed_content_auth_data WF_mls_public_message msg signature_priv (mk_zero_vector (sign_nonce_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
+  let auth_msg: authenticated_content_nt bytes = {wire_format = WF_mls_public_message; content = msg; auth;} in
+  let pub_msg = extract_result (authenticated_content_to_public_message auth_msg (mk_static_option group_context) (mk_static_option membership_key)) in
+  let auth_msg_roundtrip = extract_result (public_message_to_authenticated_content pub_msg (mk_static_option group_context) (mk_static_option membership_key)) in
+  check_signature auth_msg_roundtrip t;
+  if auth_msg <> auth_msg_roundtrip then failwith "check_public_message_roundtrip: roundtrip is not equal to original value"
+
+val check_private_message_roundtrip: {|crypto_bytes bytes|} -> framed_content_nt bytes -> message_protection_test -> ML unit
+let check_private_message_roundtrip #cb msg t =
+  let group_context = get_group_context t in
+  let signature_priv = extract_result (mk_sign_private_key (hex_string_to_bytes t.signature_priv) "check_signature" "signature_priv") in
+  let encryption_secret = hex_string_to_bytes t.encryption_secret in
+  let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
+  let ratchet = extract_result (
+    let? leaf_tree_secret = MLS.TreeDEM.Keys.leaf_kdf encryption_secret (1 <: MLS.Tree.leaf_index 1 0) in
+    match msg.content.content_type with
+    | CT_application -> MLS.TreeDEM.Keys.init_application_ratchet leaf_tree_secret
+    | _ -> MLS.TreeDEM.Keys.init_handshake_ratchet leaf_tree_secret
+  ) in
+  let auth = extract_result (compute_framed_content_auth_data WF_mls_private_message msg signature_priv (mk_zero_vector (sign_nonce_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
+  let auth_msg: authenticated_content_nt bytes = {wire_format = WF_mls_private_message; content = msg; auth;} in
+  let (priv_msg, _) = extract_result (authenticated_content_to_private_message ratchet (mk_zero_vector 4) sender_data_secret auth_msg) in
+  let auth_msg_roundtrip = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret priv_msg) in
+  check_signature auth_msg_roundtrip t;
+  if auth_msg <> auth_msg_roundtrip then failwith "check_private_message_roundtrip: roundtrip is not equal to original value"
+
+(*** Proposal test ***)
+
 val extract_proposal: {|bytes_like bytes|} -> authenticated_content_nt bytes -> ML (proposal_nt bytes)
 let extract_proposal #bl content =
   match content.content.content.content_type with
@@ -36,23 +96,17 @@ let extract_proposal #bl content =
 
 val test_proposal_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_proposal_protection #cb t =
-  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
-  let membership_key = hex_string_to_bytes t.membership_key in
-  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "test_proposal_protection" "signature_pub") in
-  let encryption_secret = hex_string_to_bytes t.encryption_secret in
-  let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let proposal = hex_string_to_bytes t.proposal in
-  let proposal_pub = extract_public_message t.proposal_pub in
-  let proposal_priv = extract_private_message t.proposal_priv in
-
-  let authenticated_proposal_pub = extract_result (public_message_to_authenticated_content proposal_pub (mk_static_option group_context) (mk_static_option membership_key)) in
-  let authenticated_proposal_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret proposal_priv) in
-
-  if not (extract_result (check_authenticated_content_signature authenticated_proposal_pub signature_pub (mk_static_option group_context))) then failwith "bad proposal pub signature";
-  if not (extract_result (check_authenticated_content_signature authenticated_proposal_priv signature_pub (mk_static_option group_context))) then failwith "bad proposal priv signature";
-
+  let authenticated_proposal_pub = unprotect_public_message t.proposal_pub t in
+  let authenticated_proposal_priv = unprotect_private_message t.proposal_priv t in
+  check_signature authenticated_proposal_pub t;
+  check_signature authenticated_proposal_priv t;
+  check_public_message_roundtrip authenticated_proposal_pub.content t;
+  check_private_message_roundtrip authenticated_proposal_priv.content t;
   check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize (extract_proposal authenticated_proposal_pub));
   check_equal "proposal_priv" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize (extract_proposal authenticated_proposal_priv))
+
+(*** Commit test ***)
 
 val extract_commit: {|bytes_like bytes|} -> authenticated_content_nt bytes -> ML (commit_nt bytes)
 let extract_commit #bl content =
@@ -62,23 +116,17 @@ let extract_commit #bl content =
 
 val test_commit_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_commit_protection #cb t =
-  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
-  let membership_key = hex_string_to_bytes t.membership_key in
-  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "test_commit_protection" "signature_pub") in
-  let encryption_secret = hex_string_to_bytes t.encryption_secret in
-  let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let commit = hex_string_to_bytes t.commit in
-  let commit_pub = extract_public_message t.commit_pub in
-  let commit_priv = extract_private_message t.commit_priv in
-
-  let authenticated_commit_pub = extract_result (public_message_to_authenticated_content commit_pub (mk_static_option group_context) (mk_static_option membership_key)) in
-  let authenticated_commit_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret commit_priv) in
-
-  if not (extract_result (check_authenticated_content_signature authenticated_commit_pub signature_pub (mk_static_option group_context))) then failwith "bad commit pub signature";
-  if not (extract_result (check_authenticated_content_signature authenticated_commit_priv signature_pub (mk_static_option group_context))) then failwith "bad commit priv signature";
-
+  let authenticated_commit_pub = unprotect_public_message t.commit_pub t in
+  let authenticated_commit_priv = unprotect_private_message t.commit_priv t in
+  check_signature authenticated_commit_pub t;
+  check_signature authenticated_commit_priv t;
+  check_public_message_roundtrip authenticated_commit_pub.content t;
+  check_private_message_roundtrip authenticated_commit_priv.content t;
   check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize (extract_commit authenticated_commit_pub));
   check_equal "commit_priv" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize (extract_commit authenticated_commit_priv))
+
+(*** Application test ***)
 
 val extract_application: {|bytes_like bytes|} -> authenticated_content_nt bytes -> ML bytes
 let extract_application #bl content =
@@ -88,18 +136,13 @@ let extract_application #bl content =
 
 val test_application_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_application_protection #cb t =
-  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
-  let encryption_secret = hex_string_to_bytes t.encryption_secret in
-  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "test_application_protection" "signature_pub") in
-  let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let application = hex_string_to_bytes t.application in
-  let application_priv = extract_private_message t.application_priv in
-
-  let authenticated_application_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret application_priv) in
-
-  if not (extract_result (check_authenticated_content_signature authenticated_application_priv signature_pub (mk_static_option group_context))) then failwith "bad application priv signature";
-
+  let authenticated_application_priv = unprotect_private_message t.application_priv t in
+  check_signature authenticated_application_priv t;
+  check_private_message_roundtrip authenticated_application_priv.content t;
   check_equal "application_priv" (bytes_to_hex_string) (application) (extract_application authenticated_application_priv)
+
+(*** Boilerplate ***)
 
 val test_message_protection_one: message_protection_test -> ML bool
 let test_message_protection_one t =
