@@ -194,6 +194,10 @@ val ps_static_option:
 let ps_static_option #bytes #bl #a b ps_a =
   if b then ps_a else ps_unit
 
+val mk_static_option: #b:bool -> #a:Type -> a -> static_option b a
+let mk_static_option #b #a x =
+  if b then x else ()
+
 /// struct {
 ///     ProtocolVersion version = mls10;
 ///     CipherSuite cipher_suite;

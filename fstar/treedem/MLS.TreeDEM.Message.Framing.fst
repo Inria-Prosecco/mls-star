@@ -80,11 +80,11 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
   hmac_hmac membership_key serialized_tbm
 
 //TODO: this function should be refactored
-val message_auth_data:
+val compute_framed_content_auth_data:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   wire_format_nt -> msg:framed_content_nt bytes -> sign_private_key bytes -> sign_nonce bytes -> group_context:static_option (knows_group_context msg.sender) (group_context_nt bytes) -> bytes -> bytes ->
   result (framed_content_auth_data_nt bytes msg.content.content_type)
-let message_auth_data #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
+let compute_framed_content_auth_data #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
   let? signature = compute_message_signature sk rand wire_format msg group_context in
   let? confirmation_tag = (
     if msg.content.content_type = CT_commit then (

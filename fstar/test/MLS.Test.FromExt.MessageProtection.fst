@@ -44,11 +44,11 @@ let test_proposal_protection #cb t =
   let proposal_pub = extract_public_message t.proposal_pub in
   let proposal_priv = extract_private_message t.proposal_priv in
 
-  let the_proposal_pub = extract_proposal (extract_result (public_message_to_authenticated_content proposal_pub (if S_member? proposal_pub.content.sender then group_context else ()) (if S_member? proposal_pub.content.sender then membership_key else ()))) in
-  let the_proposal_priv = extract_proposal (extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret proposal_priv)) in
+  let authenticated_proposal_pub = extract_result (public_message_to_authenticated_content proposal_pub (mk_static_option group_context) (mk_static_option membership_key)) in
+  let authenticated_proposal_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret proposal_priv) in
 
-  check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_pub);
-  check_equal "proposal_priv" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize the_proposal_priv)
+  check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize (extract_proposal authenticated_proposal_pub));
+  check_equal "proposal_priv" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize (extract_proposal authenticated_proposal_priv))
 
 val extract_commit: {|bytes_like bytes|} -> authenticated_content_nt bytes -> ML (commit_nt bytes)
 let extract_commit #bl content =
@@ -66,11 +66,11 @@ let test_commit_protection #cb t =
   let commit_pub = extract_public_message t.commit_pub in
   let commit_priv = extract_private_message t.commit_priv in
 
-  let the_commit_pub = extract_commit (extract_result (public_message_to_authenticated_content commit_pub (if S_member? commit_pub.content.sender then group_context else ()) (if S_member? commit_pub.content.sender then membership_key else ()))) in
-  let the_commit_priv = extract_commit (extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret commit_priv)) in
+  let authenticated_commit_pub = extract_result (public_message_to_authenticated_content commit_pub (mk_static_option group_context) (mk_static_option membership_key)) in
+  let authenticated_commit_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret commit_priv) in
 
-  check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_pub);
-  check_equal "commit_priv" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize the_commit_priv)
+  check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize (extract_commit authenticated_commit_pub));
+  check_equal "commit_priv" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize (extract_commit authenticated_commit_priv))
 
 val extract_application: {|bytes_like bytes|} -> authenticated_content_nt bytes -> ML bytes
 let extract_application #bl content =
@@ -85,9 +85,9 @@ let test_application_protection #cb t =
   let application = hex_string_to_bytes t.application in
   let application_priv = extract_private_message t.application_priv in
 
-  let the_application_priv = extract_application (extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret application_priv)) in
+  let authenticated_application_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret application_priv) in
 
-  check_equal "application_priv" (bytes_to_hex_string) (application) the_application_priv
+  check_equal "application_priv" (bytes_to_hex_string) (application) (extract_application authenticated_application_priv)
 
 val test_message_protection_one: message_protection_test -> ML bool
 let test_message_protection_one t =
