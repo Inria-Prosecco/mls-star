@@ -366,7 +366,7 @@ let send_helper st msg e =
   let? confirmation_secret = MLS.TreeDEM.Keys.secret_epoch_to_confirmation st.epoch_secret in
   let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data st.epoch_secret in
   let wire_format = WF_mls_private_message in
-  let? auth = compute_framed_content_auth_data wire_format msg st.sign_private_key rand_nonce (mk_static_option group_context) confirmation_secret st.interim_transcript_hash in
+  let? auth = compute_framed_content_auth_data wire_format msg st.sign_private_key rand_nonce (mk_static_option group_context) (mk_static_option confirmation_secret) (mk_static_option st.interim_transcript_hash) in
   let auth_msg: authenticated_content_nt bytes = {
     wire_format;
     content = msg;

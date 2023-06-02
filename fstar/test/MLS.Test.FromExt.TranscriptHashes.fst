@@ -35,9 +35,14 @@ let test_transcript_hashes_one t =
       let confirmed_transcript_hash_after = extract_result (compute_confirmed_transcript_hash authenticated_content.wire_format authenticated_content.content authenticated_content.auth.signature interim_transcript_hash_before) in
       let confirmation_tag = extract_result (compute_message_confirmation_tag confirmation_key confirmed_transcript_hash_after) in
       let interim_transcript_hash_after = extract_result (compute_interim_transcript_hash #bytes authenticated_content.auth.confirmation_tag confirmed_transcript_hash_after) in
-      check_equal "confirmation_tag" (bytes_to_hex_string) (authenticated_content.auth.confirmation_tag) (confirmation_tag);
       check_equal "confirmed_transcript_hash_after" (bytes_to_hex_string) (hex_string_to_bytes t.confirmed_transcript_hash_after) (confirmed_transcript_hash_after);
       check_equal "interim_transcript_hash_after" (bytes_to_hex_string) (hex_string_to_bytes t.interim_transcript_hash_after) (interim_transcript_hash_after);
+
+      if not (authenticated_content.content.content.content_type = CT_commit) then
+        failwith "test_transcript_hashes_one: not a commit"
+      else if not (extract_result (check_authenticated_content_confirmation_tag authenticated_content confirmation_key interim_transcript_hash_before)) then
+        failwith "test_transcript_hashes_one: bad confirmation_tag"
+      ;
       true
     )
   end

@@ -38,6 +38,7 @@ val test_proposal_protection: {|crypto_bytes bytes|} -> message_protection_test 
 let test_proposal_protection #cb t =
   let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
   let membership_key = hex_string_to_bytes t.membership_key in
+  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "test_proposal_protection" "signature_pub") in
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let proposal = hex_string_to_bytes t.proposal in
@@ -46,6 +47,9 @@ let test_proposal_protection #cb t =
 
   let authenticated_proposal_pub = extract_result (public_message_to_authenticated_content proposal_pub (mk_static_option group_context) (mk_static_option membership_key)) in
   let authenticated_proposal_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret proposal_priv) in
+
+  if not (extract_result (check_authenticated_content_signature authenticated_proposal_pub signature_pub (mk_static_option group_context))) then failwith "bad proposal pub signature";
+  if not (extract_result (check_authenticated_content_signature authenticated_proposal_priv signature_pub (mk_static_option group_context))) then failwith "bad proposal priv signature";
 
   check_equal "proposal_pub" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize (extract_proposal authenticated_proposal_pub));
   check_equal "proposal_priv" (bytes_to_hex_string) (proposal) ((ps_prefix_to_ps_whole ps_proposal_nt).serialize (extract_proposal authenticated_proposal_priv))
@@ -60,6 +64,7 @@ val test_commit_protection: {|crypto_bytes bytes|} -> message_protection_test ->
 let test_commit_protection #cb t =
   let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
   let membership_key = hex_string_to_bytes t.membership_key in
+  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "test_commit_protection" "signature_pub") in
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let commit = hex_string_to_bytes t.commit in
@@ -68,6 +73,9 @@ let test_commit_protection #cb t =
 
   let authenticated_commit_pub = extract_result (public_message_to_authenticated_content commit_pub (mk_static_option group_context) (mk_static_option membership_key)) in
   let authenticated_commit_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret commit_priv) in
+
+  if not (extract_result (check_authenticated_content_signature authenticated_commit_pub signature_pub (mk_static_option group_context))) then failwith "bad commit pub signature";
+  if not (extract_result (check_authenticated_content_signature authenticated_commit_priv signature_pub (mk_static_option group_context))) then failwith "bad commit priv signature";
 
   check_equal "commit_pub" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize (extract_commit authenticated_commit_pub));
   check_equal "commit_priv" (bytes_to_hex_string) (commit) ((ps_prefix_to_ps_whole ps_commit_nt).serialize (extract_commit authenticated_commit_priv))
@@ -80,12 +88,16 @@ let extract_application #bl content =
 
 val test_application_protection: {|crypto_bytes bytes|} -> message_protection_test -> ML unit
 let test_application_protection #cb t =
+  let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) (hex_string_to_bytes t.tree_hash) (hex_string_to_bytes t.confirmed_transcript_hash) in
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
+  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "test_application_protection" "signature_pub") in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let application = hex_string_to_bytes t.application in
   let application_priv = extract_private_message t.application_priv in
 
   let authenticated_application_priv = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret application_priv) in
+
+  if not (extract_result (check_authenticated_content_signature authenticated_application_priv signature_pub (mk_static_option group_context))) then failwith "bad application priv signature";
 
   check_equal "application_priv" (bytes_to_hex_string) (application) (extract_application authenticated_application_priv)
 

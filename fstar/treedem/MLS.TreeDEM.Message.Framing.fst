@@ -79,17 +79,20 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
   let serialized_tbm = serialize (authenticated_content_tbm_nt bytes) tbm in
   hmac_hmac membership_key serialized_tbm
 
-//TODO: this function should be refactored
 val compute_framed_content_auth_data:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  wire_format_nt -> msg:framed_content_nt bytes -> sign_private_key bytes -> sign_nonce bytes -> group_context:static_option (knows_group_context msg.sender) (group_context_nt bytes) -> bytes -> bytes ->
+  wire_format_nt -> msg:framed_content_nt bytes ->
+  sign_private_key bytes -> sign_nonce bytes ->
+  group_context:static_option (knows_group_context msg.sender) (group_context_nt bytes) ->
+  static_option (msg.content.content_type = CT_commit) bytes ->
+  static_option (msg.content.content_type = CT_commit) bytes ->
   result (framed_content_auth_data_nt bytes msg.content.content_type)
 let compute_framed_content_auth_data #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
   let? signature = compute_message_signature sk rand wire_format msg group_context in
   let? confirmation_tag = (
     if msg.content.content_type = CT_commit then (
       let? confirmed_transcript_hash = compute_confirmed_transcript_hash wire_format msg signature interim_transcript_hash in
-      let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
+      let? confirmation_tag = compute_message_confirmation_tag #bytes confirmation_key confirmed_transcript_hash in
       return (confirmation_tag <: static_option (msg.content.content_type = CT_commit) (mac_nt bytes))
     ) else (
       return ()
@@ -99,6 +102,25 @@ let compute_framed_content_auth_data #bytes #cb wire_format msg sk rand group_co
     signature = signature;
     confirmation_tag = confirmation_tag;
   } <: framed_content_auth_data_nt bytes msg.content.content_type)
+
+val check_authenticated_content_signature:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  msg:authenticated_content_nt bytes ->
+  sign_public_key bytes ->
+  group_context:static_option (knows_group_context msg.content.sender) (group_context_nt bytes) ->
+  result bool
+let check_authenticated_content_signature #bytes #cb msg vk group_context =
+  let? signature = mk_sign_signature msg.auth.signature "check_authenticated_content_signature" "signature" in
+  check_message_signature vk signature msg.wire_format msg.content group_context
+
+val check_authenticated_content_confirmation_tag:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  msg:authenticated_content_nt bytes{msg.content.content.content_type == CT_commit} -> bytes -> bytes ->
+  result bool
+let check_authenticated_content_confirmation_tag #bytes #bl msg confirmation_key interim_transcript_hash =
+  let? confirmed_transcript_hash = compute_confirmed_transcript_hash msg.wire_format msg.content msg.auth.signature interim_transcript_hash in
+  let? expected_confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
+  return ((expected_confirmation_tag <: bytes) = (msg.auth.confirmation_tag <: bytes))
 
 (*** From/to public message ***)
 
