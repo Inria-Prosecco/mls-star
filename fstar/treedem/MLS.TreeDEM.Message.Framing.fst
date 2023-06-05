@@ -285,9 +285,10 @@ let apply_reuse_guard #bytes #cb reuse_guard nonce =
 
 val private_message_to_authenticated_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  l:nat -> encryption_secret:bytes -> sender_data_secret:bytes -> private_message_nt bytes ->
+  private_message_nt bytes ->
+  l:nat -> encryption_secret:bytes -> sender_data_secret:bytes ->
   result (authenticated_content_nt bytes)
-let private_message_to_authenticated_content #bytes #cb l encryption_secret sender_data_secret ct =
+let private_message_to_authenticated_content #bytes #cb ct l encryption_secret sender_data_secret =
   let? sender_data = (
     let sender_data_ad = private_framed_content_to_sender_data_aad ct in
     decrypt_sender_data sender_data_ad (get_ciphertext_sample ct.ciphertext) sender_data_secret ct.encrypted_sender_data
@@ -334,9 +335,9 @@ let private_message_to_authenticated_content #bytes #cb l encryption_secret send
 
 val authenticated_content_to_private_message:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  ratchet_state bytes -> lbytes bytes 4 -> bytes -> msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} ->
+  msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} -> ratchet_state bytes -> lbytes bytes 4 -> bytes ->
   result (private_message_nt bytes & ratchet_state bytes)
-let authenticated_content_to_private_message #bytes #cb ratchet reuse_guard sender_data_secret auth_msg =
+let authenticated_content_to_private_message #bytes #cb auth_msg ratchet reuse_guard sender_data_secret =
   let? ciphertext = (
     let? key_nonce = ratchet_get_key ratchet in
     let key = key_nonce.key in

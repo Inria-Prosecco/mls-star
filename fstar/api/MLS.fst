@@ -373,7 +373,7 @@ let send_helper st msg e =
     auth = auth;
   } in
   let ratchet = if msg.content.content_type = CT_application then st.application_state else st.handshake_state in
-  let? ct_new_ratchet_state = authenticated_content_to_private_message ratchet rand_reuse_guard sender_data_secret auth_msg in
+  let? ct_new_ratchet_state = authenticated_content_to_private_message auth_msg ratchet rand_reuse_guard sender_data_secret in
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
   let msg_bytes = (ps_prefix_to_ps_whole ps_mls_message_nt).serialize (M_mls10 (M_private_message ct)) in
   let new_st = if msg.content.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
@@ -700,7 +700,7 @@ let process_group_message state msg =
     | M_mls10  (M_private_message msg) ->
         let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption state.epoch_secret in
         let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret in
-        let? auth_msg = private_message_to_authenticated_content state.treesync_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) msg in
+        let? auth_msg = private_message_to_authenticated_content msg state.treesync_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) in
         return (WF_mls_private_message, auth_msg)
     | _ ->
         internal_failure "unknown message type"

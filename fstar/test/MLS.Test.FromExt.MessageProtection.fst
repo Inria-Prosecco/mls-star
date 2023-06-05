@@ -46,7 +46,7 @@ let unprotect_private_message #bl priv_msg_str t =
   let priv_msg = extract_private_message priv_msg_str in
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
-  extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret priv_msg)
+  extract_result (private_message_to_authenticated_content priv_msg 1 encryption_secret sender_data_secret)
 
 val check_signature: {|crypto_bytes bytes|} -> authenticated_content_nt bytes -> message_protection_test -> ML unit
 let check_signature #bl auth_msg t =
@@ -81,8 +81,8 @@ let check_private_message_roundtrip #cb msg t =
   ) in
   let auth = extract_result (compute_framed_content_auth_data WF_mls_private_message msg signature_priv (mk_zero_vector (sign_nonce_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
   let auth_msg: authenticated_content_nt bytes = {wire_format = WF_mls_private_message; content = msg; auth;} in
-  let (priv_msg, _) = extract_result (authenticated_content_to_private_message ratchet (mk_zero_vector 4) sender_data_secret auth_msg) in
-  let auth_msg_roundtrip = extract_result (private_message_to_authenticated_content 1 encryption_secret sender_data_secret priv_msg) in
+  let (priv_msg, _) = extract_result (authenticated_content_to_private_message auth_msg ratchet (mk_zero_vector 4) sender_data_secret) in
+  let auth_msg_roundtrip = extract_result (private_message_to_authenticated_content priv_msg 1 encryption_secret sender_data_secret) in
   check_signature auth_msg_roundtrip t;
   if auth_msg <> auth_msg_roundtrip then failwith "check_private_message_roundtrip: roundtrip is not equal to original value"
 
