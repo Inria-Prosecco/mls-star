@@ -14,7 +14,7 @@ open MLS.Result
 val treesync_to_treekem_node_package:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   parent_node_nt bytes tkt ->
-  result (tk_node bytes)
+  result (treekem_node bytes)
 let treesync_to_treekem_node_package #bytes #cb np =
   return ({
     public_key = np.content;
@@ -32,7 +32,7 @@ let rec treesync_to_treekem #bytes #cb #l #i t =
   | TLeaf None ->
     return (TLeaf None)
   | TLeaf (Some lp) ->
-    return (TLeaf (Some ({public_key = lp.data.content} <: tk_leaf bytes)))
+    return (TLeaf (Some ({public_key = lp.data.content} <: treekem_leaf bytes)))
   | TNode onp left right -> begin
     let? tk_left = treesync_to_treekem left in
     let? tk_right = treesync_to_treekem right in

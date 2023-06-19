@@ -20,8 +20,8 @@ val create:
 let create #bytes #cb dec_key enc_key =
   {
     levels = 0;
-    tree = TLeaf (Some ({public_key = enc_key} <: tk_leaf bytes));
-    priv = PLeaf ({private_key = dec_key;})
+    tree = TLeaf (Some ({public_key = enc_key} <: treekem_leaf bytes));
+    priv = PLeaf dec_key
   }
 
 (*** Welcome ***)
@@ -62,7 +62,7 @@ let welcome #bytes #cb #l t leaf_decryption_key opt_path_secret_and_inviter_ind 
 
 val add:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
-  treekem_state bytes leaf_ind -> tk_leaf bytes ->
+  treekem_state bytes leaf_ind -> treekem_leaf bytes ->
   treekem_state bytes leaf_ind & nat
 let add #bytes #cb #leaf_ind st kp =
   match find_empty_leaf st.tree with
@@ -90,7 +90,7 @@ let add #bytes #cb #leaf_ind st kp =
 
 val update:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
-  st:treekem_state bytes leaf_ind -> tk_leaf bytes -> treekem_index st ->
+  st:treekem_state bytes leaf_ind -> treekem_leaf bytes -> treekem_index st ->
   treekem_state bytes leaf_ind
 let update #bytes #cb #leaf_ind st lp i =
   assume(treekem_invariant (tree_update st.tree i lp));
@@ -156,7 +156,7 @@ let prepare_create_commit_entropy_lengths #bytes #cb =
   [hpke_private_key_length #bytes; kdf_length #bytes]
 
 type pending_commit (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) (st:treekem_state bytes leaf_ind) = {
-  path_secrets: path_secrets:path (hpke_private_key bytes) (option bytes) st.levels 0 leaf_ind{forget_path_secrets path_secrets == generate_forgotten_path_secrets st.tree leaf_ind};
+  path_secrets: path_secrets:path_secrets bytes st.levels 0 leaf_ind{forget_path_secrets path_secrets == generate_forgotten_path_secrets st.tree leaf_ind};
   commit_secret: bytes;
 }
 

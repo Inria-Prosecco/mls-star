@@ -8,27 +8,26 @@ open MLS.Tree
 
 #set-options "--fuel 0 --ifuel 0"
 
-type tk_leaf (bytes:Type0) {|bytes_like bytes|} = {
+type treekem_leaf (bytes:Type0) {|bytes_like bytes|} = {
   public_key: bytes;
 }
 
-type tk_node (bytes:Type0) {|bytes_like bytes|} = {
+type treekem_node (bytes:Type0) {|bytes_like bytes|} = {
   public_key: bytes;
   unmerged_leaves: list nat;
 }
 
-type tk_priv (bytes:Type0) {|crypto_bytes bytes|} = {
-  private_key: hpke_private_key bytes;
-}
-
 let treekem (bytes:Type0) {|crypto_bytes bytes|} =
-  tree (option (tk_leaf bytes)) (option (tk_node bytes))
+  tree (option (treekem_leaf bytes)) (option (treekem_node bytes))
+
+let treekem_priv (bytes:Type0) {|crypto_bytes bytes|} =
+  path (hpke_private_key bytes) (option (hpke_private_key bytes))
 
 let pre_pathkem (bytes:Type0) {|crypto_bytes bytes|} =
-  path (tk_leaf bytes) (option (hpke_public_key_nt bytes))
+  path (treekem_leaf bytes) (option (hpke_public_key_nt bytes))
 
 let pathkem (bytes:Type0) {|crypto_bytes bytes|} =
-  path (tk_leaf bytes) (option (update_path_node_nt bytes))
+  path (treekem_leaf bytes) (option (update_path_node_nt bytes))
 
-let pathkem_priv (bytes:Type0) {|crypto_bytes bytes|} =
-  path (tk_priv bytes) (option (tk_priv bytes))
+let path_secrets (bytes:Type0) {|crypto_bytes bytes|} =
+  path (hpke_ikm bytes) (option bytes)

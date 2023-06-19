@@ -39,7 +39,7 @@ val add_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state 
 let add_rand #bytes #cb rng st =
   let (rng, leaf_secret) = gen_rand_bytes #bytes rng (hpke_private_key_length #bytes) in
   let (hpke_sk, hpke_pk) = extract_result (hpke_gen_keypair #bytes leaf_secret) in
-  let leaf: tk_leaf bytes = { public_key = hpke_pk } in
+  let leaf: treekem_leaf bytes = { public_key = hpke_pk } in
   let (add_indices, new_states) = List.Tot.unzip (List.Tot.map (fun (|leaf_ind, state|) ->
     let (new_state, add_index) = MLS.TreeKEM.API.add state leaf in
     (add_index, (|leaf_ind, new_state|))

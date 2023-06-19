@@ -74,7 +74,7 @@ let rec update_path_to_treesync #bytes #cb #l #i #li p =
 val leaf_node_to_treekem:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   leaf_node_nt bytes tkt ->
-  TK.tk_leaf bytes
+  TK.treekem_leaf bytes
 let leaf_node_to_treekem #bytes #cb ln =
   {TK.public_key = ln.data.content;}
 

@@ -74,6 +74,7 @@ class crypto_bytes (bytes:Type0) = {
 type hpke_public_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_public_key_length #bytes)
 type hpke_private_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_private_key_length #bytes)
 type hpke_kem_output (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_kem_output_length #bytes)
+type hpke_ikm (bytes:Type0) {|crypto_bytes bytes|} = b:bytes{length b >= hpke_private_key_length #bytes}
 
 type sign_public_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_public_key_length #bytes)
 type sign_private_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_private_key_length #bytes)
