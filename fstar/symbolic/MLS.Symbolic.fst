@@ -159,6 +159,8 @@ let dy_bytes_has_crypto acs = {
   xor = (fun b1 b2 ->
     admit()
   );
+
+  debug_bytes_to_string = (fun b -> "");
 }
 
 instance crypto_dy_bytes: crypto_bytes dy_bytes = dy_bytes_has_crypto AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519

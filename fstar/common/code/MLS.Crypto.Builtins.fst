@@ -246,6 +246,8 @@ let mk_concrete_crypto_bytes acs =
   xor = (fun b1 b2 ->
     Seq.seq_of_list (map2 (fun x1 x2 -> Lib.IntTypes.logxor #U8 #PUB x1 x2) (Seq.seq_to_list b1) (Seq.seq_to_list b2))
   );
+
+  debug_bytes_to_string = MLS.StringUtils.bytes_to_hex_string;
 }
 
 (*** Randomness ***)

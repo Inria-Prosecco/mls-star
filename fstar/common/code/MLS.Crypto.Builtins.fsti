@@ -62,6 +62,9 @@ class crypto_bytes (bytes:Type0) = {
   //TODO: in symbolic bytes, how do we do this?
   unsafe_split: b:bytes -> i:nat{i <= length b} -> bytes & bytes;
   xor: #n:nat -> lbytes bytes n -> lbytes bytes n -> lbytes bytes n;
+
+  //For debugging purposes
+  debug_bytes_to_string: bytes -> string;
 }
 
 (*** Utility types ***)
