@@ -94,3 +94,17 @@ val leaf_at_tree_extend:
 let leaf_at_tree_extend #leaf_t #node_t #l t li' =
   if li' < pow2 l then ()
   else leaf_at_mk_blank_tree_general #(option leaf_t) #(option node_t) l (right_index #(l+1) 0) None None li'
+
+val is_tree_empty_leaf_at:
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  t:tree (option leaf_t) (option node_t) l i -> li:leaf_index l i ->
+  Lemma
+  (requires is_tree_empty t)
+  (ensures leaf_at t li == None)
+let rec is_tree_empty_leaf_at #leaf_t #node_t #l #i t li =
+  match t with
+  | TLeaf _ -> ()
+  | TNode _ _ _ ->
+    let (child, _) = get_child_sibling t li in
+    is_tree_empty_leaf_at child li

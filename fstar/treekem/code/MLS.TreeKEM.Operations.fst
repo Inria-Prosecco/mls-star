@@ -9,6 +9,7 @@ open MLS.TreeCommon
 open MLS.TreeKEM.Types
 open MLS.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
+open MLS.TreeKEM.Invariants
 open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
@@ -107,87 +108,6 @@ let derive_next_path_secret #bytes #cb path_secret =
   let? res = derive_secret path_secret "path" in
   return (res <: bytes)
 
-val unmerged_leaf_exists:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l -> treekem bytes l i -> nat ->
-  prop
-let unmerged_leaf_exists #bytes #bl #l #i t li =
-  leaf_index_inside l i li && Some? (leaf_at t li)
-
-val treekem_invariant:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i ->
-  prop
-let rec treekem_invariant #bytes #cb #l #i t =
-  match t with
-  | TLeaf oln ->
-    True
-  | TNode opn left right ->
-    let node_ok =
-      match opn with
-      | Some pn ->
-        Comparse.for_allP (unmerged_leaf_exists t) pn.unmerged_leaves
-      | None -> True
-    in
-    node_ok /\ treekem_invariant left /\ treekem_invariant right
-
-val treekem_state_invariant:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  treekem bytes l i -> treekem_priv bytes l i li ->
-  prop
-let rec treekem_state_invariant #bytes #cb #l #i #li t p =
-  match t, p with
-  | TLeaf oln, PLeaf sk ->
-    //TODO: and oln contains sk's public key?
-    Some? oln
-  | TNode opn _ _, PNode osk p_next ->
-    let (child, _) = get_child_sibling t li in
-    treekem_state_invariant child p_next
-
-val treekem_state_invariant_leaf_at:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treekem bytes l i -> p:treekem_priv bytes l i li ->
-  Lemma
-  (requires treekem_state_invariant t p)
-  (ensures Some? (leaf_at t li))
-let rec treekem_state_invariant_leaf_at #bytes #cb #l #i #li t p =
-  match t, p with
-  | TLeaf oln, PLeaf sk -> ()
-  | TNode opn _ _, PNode osk p_next ->
-    let (child, _) = get_child_sibling t li in
-    treekem_state_invariant_leaf_at child p_next
-
-val is_tree_empty_leaf_at:
-  #leaf_t:Type -> #node_t:Type ->
-  #l:nat -> #i:tree_index l ->
-  t:tree (option leaf_t) (option node_t) l i -> li:leaf_index l i ->
-  Lemma
-  (requires is_tree_empty t)
-  (ensures leaf_at t li == None)
-let rec is_tree_empty_leaf_at #leaf_t #node_t #l #i t li =
-  match t with
-  | TLeaf _ -> ()
-  | TNode _ _ _ ->
-    let (child, _) = get_child_sibling t li in
-    is_tree_empty_leaf_at child li
-
-val pathkem_filtering_ok:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  treekem bytes l i -> pathkem bytes l i li ->
-  prop
-let rec pathkem_filtering_ok #bytes #cb #l #i #li t p =
-  match t, p with
-  | TLeaf oln, PLeaf new_oln ->
-    True
-  | TNode _ _ _, PNode new_opn p_next ->
-    let (child, sibling) = get_child_sibling t li in
-    let node_ok = new_opn == None ==> is_tree_empty sibling in
-    node_ok /\ pathkem_filtering_ok child p_next
-
 val un_addP:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l ->
@@ -280,7 +200,7 @@ let rec resolution_index #bytes #cb #l t leaf_index =
 val get_private_key:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treekem bytes l i{treekem_invariant t} -> p_priv:treekem_priv bytes l i li{treekem_state_invariant t p_priv} ->
+  t:treekem bytes l i{treekem_invariant t} -> p_priv:treekem_priv bytes l i li{treekem_priv_invariant t p_priv} ->
   result (hpke_private_key bytes)
 let rec get_private_key #bytes #cb #l #i #li t p_priv =
   match t, p_priv with
@@ -325,8 +245,8 @@ type path_secret_level (l:nat) =
 val get_path_secret:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l -> #my_li:leaf_index l i -> #li:leaf_index l i{my_li <> li} ->
-  t:treekem bytes l i{treekem_invariant t} -> p_priv:treekem_priv bytes l i my_li{treekem_state_invariant t p_priv} ->
-  p_upd:pathkem bytes l i li{check_update_path_ciphertexts_lengthes t p_upd /\ pathkem_filtering_ok t p_upd} -> group_context_nt bytes ->
+  t:treekem bytes l i{treekem_invariant t} -> p_priv:treekem_priv bytes l i my_li{treekem_priv_invariant t p_priv} ->
+  p_upd:pathkem bytes l i li{check_update_path_ciphertexts_lengthes t p_upd /\ path_filtering_weak_ok t p_upd} -> group_context_nt bytes ->
   result (bytes & path_secret_level l)
 let rec get_path_secret #bytes #cb #l #i #my_li #li t p_priv p_upd group_context =
   match t, p_priv, p_upd with
@@ -341,7 +261,7 @@ let rec get_path_secret #bytes #cb #l #i #my_li #li t p_priv p_upd group_context
       match opt_upn with
       | Some upn -> (
         // Obtain the node secret by decryption
-        treekem_state_invariant_leaf_at t p_priv;
+        treekem_priv_invariant_leaf_at t p_priv;
         let (_, sibling) = get_child_sibling t li in
         let my_index = resolution_index sibling my_li in
         let my_ciphertext = List.Tot.index upn.encrypted_path_secret my_index in
@@ -353,8 +273,8 @@ let rec get_path_secret #bytes #cb #l #i #my_li #li t p_priv p_upd group_context
       | None -> (
         // Impossible
         let (_, sibling) = get_child_sibling t li in
-        is_tree_empty_leaf_at sibling my_li;
-        treekem_state_invariant_leaf_at t p_priv;
+        MLS.TreeCommon.Lemmas.is_tree_empty_leaf_at sibling my_li;
+        treekem_priv_invariant_leaf_at t p_priv;
         false_elim ()
       )
     )

@@ -81,7 +81,7 @@ let rec process_update #bytes #cb #leaf_ind #commiter_st l commit_res group_cont
       if leaf_ind = li then
         (commit_res.commit_secret, (|leaf_ind, commit_res.new_state|))
       else (
-        assume(pathkem_filtering_ok tk_state.tree commit_res.update_path);
+        assume(MLS.NetworkBinder.Properties.path_filtering_ok tk_state.tree commit_res.update_path);
         let (new_state, commit_secret) = extract_result (MLS.TreeKEM.API.commit tk_state commit_res.update_path [] group_context) in
         (commit_secret, (|li, new_state|))
       )

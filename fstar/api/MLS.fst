@@ -206,7 +206,7 @@ let process_commit state wire_format message message_auth =
             | Some (new_treekem_state, commit_secret) -> return (new_treekem_state, commit_secret)
             | None -> internal_failure "Can't retrieve pending updatepath"
           ) else (
-            assume(pathkem_filtering_ok state.treekem_state.tree treekem_path);
+            assume(MLS.NetworkBinder.Properties.path_filtering_ok state.treekem_state.tree treekem_path);
             MLS.TreeKEM.API.commit state.treekem_state treekem_path (List.Tot.map snd added_leaves) provisional_group_context
           )
         in

@@ -3,7 +3,7 @@ FSTAR_HOME    ?= $(dir $(shell which fstar.exe))/..
 COMPARSE_HOME ?= $(MLS_HOME)/../comparse
 DY_HOME       ?= $(MLS_HOME)/../dolev-yao-star
 
-INNER_SOURCE_DIRS = api common/code common/proofs glue symbolic test treedem treekem treemath treesync/code treesync/proofs treesync/symbolic
+INNER_SOURCE_DIRS = api common/code common/proofs glue/code glue/proofs symbolic test treedem treekem/code treekem/proofs treemath treesync/code treesync/proofs treesync/symbolic
 
 HACL_SNAPSHOT_DIR = $(MLS_HOME)/hacl-star-snapshot
 SOURCE_DIRS = $(addprefix $(MLS_HOME)/fstar/, $(INNER_SOURCE_DIRS))

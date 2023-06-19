@@ -9,6 +9,8 @@ open MLS.TreeCommon
 open MLS.TreeCommon.Lemmas
 open MLS.TreeKEM.Types
 open MLS.TreeKEM.Operations
+open MLS.TreeKEM.Invariants
+open MLS.NetworkBinder.Properties
 open MLS.TreeKEM.API.Types
 
 (*** Create ***)
@@ -50,7 +52,7 @@ let welcome #bytes #cb #l t leaf_decryption_key opt_path_secret_and_inviter_ind 
           return priv
     in
     assume(treekem_invariant t);
-    assume(treekem_state_invariant t priv);
+    assume(treekem_priv_invariant t priv);
     return {
       levels = l;
       tree = t;
@@ -68,7 +70,7 @@ let add #bytes #cb #leaf_ind st kp =
   match find_empty_leaf st.tree with
   | Some i -> (
     assume(treekem_invariant (tree_add st.tree i kp));
-    assume(treekem_state_invariant (tree_add st.tree i kp) st.priv);
+    assume(treekem_priv_invariant (tree_add st.tree i kp) st.priv);
     ({ st with
       tree = tree_add st.tree i kp;
     }, (i <: nat))
@@ -78,7 +80,7 @@ let add #bytes #cb #leaf_ind st kp =
     let extended_tree = tree_extend st.tree in
     let i = Some?.v (find_empty_leaf extended_tree) in
     assume(treekem_invariant (tree_add extended_tree i kp));
-    assume(treekem_state_invariant (tree_add extended_tree i kp) (path_extend st.priv));
+    assume(treekem_priv_invariant (tree_add extended_tree i kp) (path_extend st.priv));
     ({ st with
       levels = st.levels+1;
       tree = tree_add extended_tree i kp;
@@ -94,7 +96,7 @@ val update:
   treekem_state bytes leaf_ind
 let update #bytes #cb #leaf_ind st lp i =
   assume(treekem_invariant (tree_update st.tree i lp));
-  assume(treekem_state_invariant (tree_update st.tree i lp) st.priv);
+  assume(treekem_priv_invariant (tree_update st.tree i lp) st.priv);
   { st with tree = tree_update st.tree i lp; }
 
 (*** Remove ***)
@@ -108,7 +110,7 @@ let remove #bytes #cb #leaf_ind st i =
   if TNode? blanked_tree && is_tree_empty (TNode?.right blanked_tree) then (
     assume(leaf_ind < pow2 (st.levels-1));
     assume(treekem_invariant (tree_truncate blanked_tree));
-    assume(treekem_state_invariant (tree_truncate blanked_tree) (path_truncate st.priv));
+    assume(treekem_priv_invariant (tree_truncate blanked_tree) (path_truncate st.priv));
     { st with
       levels = st.levels-1;
       tree = tree_truncate blanked_tree;
@@ -116,7 +118,7 @@ let remove #bytes #cb #leaf_ind st i =
     }
   ) else (
     assume(treekem_invariant blanked_tree);
-    assume(treekem_state_invariant blanked_tree st.priv);
+    assume(treekem_priv_invariant blanked_tree st.priv);
     { st with
       tree = blanked_tree;
     }
@@ -126,7 +128,7 @@ let remove #bytes #cb #leaf_ind st i =
 
 val commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
-  st:treekem_state bytes leaf_ind -> #li:treekem_index st{li <> leaf_ind} -> p:pathkem bytes st.levels 0 li{pathkem_filtering_ok st.tree p} -> list nat -> group_context_nt bytes ->
+  st:treekem_state bytes leaf_ind -> #li:treekem_index st{li <> leaf_ind} -> p:pathkem bytes st.levels 0 li{path_filtering_ok st.tree p} -> list nat -> group_context_nt bytes ->
   result (treekem_state bytes leaf_ind & bytes)
 let commit #bytes #cb #leaf_ind st #li p excluded_leaves group_context =
   let un_added_tree = un_add st.tree excluded_leaves in
@@ -134,13 +136,13 @@ let commit #bytes #cb #leaf_ind st #li p excluded_leaves group_context =
   if not (check_update_path_ciphertexts_lengthes un_added_tree p) then (
     error "TreeKEM.commit: bad UpdatePath ciphertext lengths"
   ) else (
-    assume(treekem_state_invariant un_added_tree st.priv);
-    assume(pathkem_filtering_ok un_added_tree p);
+    assume(treekem_priv_invariant un_added_tree st.priv);
+    assume(path_filtering_weak_ok un_added_tree p);
     let? (path_secret, least_common_ancestor_level) = get_path_secret un_added_tree st.priv p group_context in
     let new_tree = tree_apply_path st.tree p in
     let? (new_priv, root_secret) = path_apply_path new_tree st.priv path_secret least_common_ancestor_level in
     assume(treekem_invariant new_tree);
-    assume(treekem_state_invariant new_tree new_priv);
+    assume(treekem_priv_invariant new_tree new_priv);
     return ({ st with
       tree = new_tree;
       priv = new_priv;
@@ -156,7 +158,7 @@ let prepare_create_commit_entropy_lengths #bytes #cb =
   [hpke_private_key_length #bytes; kdf_length #bytes]
 
 type pending_commit (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) (st:treekem_state bytes leaf_ind) = {
-  path_secrets: path_secrets:path_secrets bytes st.levels 0 leaf_ind{forget_path_secrets path_secrets == generate_forgotten_path_secrets st.tree leaf_ind};
+  path_secrets: path_secrets:path_secrets bytes st.levels 0 leaf_ind{path_filtering_ok st.tree path_secrets /\ forget_path_secrets path_secrets == generate_forgotten_path_secrets st.tree leaf_ind};
   commit_secret: bytes;
 }
 
@@ -170,6 +172,7 @@ let prepare_create_commit #bytes #cb #leaf_ind st rand =
   let path_secret_0, rand = dest_randomness rand in
   let? (path_secrets, commit_secret) = generate_path_secrets st.tree leaf_sk path_secret_0 leaf_ind in
   let? pre_upd_path = path_secrets_to_pre_pathkem path_secrets in
+  assume(path_filtering_ok st.tree path_secrets);
   return ({
     path_secrets;
     commit_secret;
@@ -186,7 +189,7 @@ let finalize_create_commit_entropy_lengths #bytes #cb #leaf_ind st added_leaves 
 
 type create_commit_result (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) (st:treekem_state bytes leaf_ind) = {
   new_state: treekem_state bytes leaf_ind;
-  update_path: update_path:pathkem bytes st.levels 0 leaf_ind{pathkem_filtering_ok st.tree update_path};
+  update_path: update_path:pathkem bytes st.levels 0 leaf_ind{path_filtering_ok st.tree update_path};
   commit_secret: bytes;
   added_leaves_path_secrets: list bytes;
 }
@@ -203,9 +206,9 @@ let finalize_create_commit #bytes #cb #leaf_ind #st pending added_leaves group_c
   let? (update_path, new_priv) = encrypt_path_secrets (un_add st.tree added_leaves) pending.path_secrets group_context randomness in
   let? added_leaves_path_secrets = get_path_secret_of_added_leaves pending.path_secrets added_leaves in
   let new_tree = tree_apply_path st.tree update_path in
-  assume(pathkem_filtering_ok st.tree update_path);
+  assume(path_filtering_ok st.tree update_path);
   assume(treekem_invariant new_tree);
-  assume(treekem_state_invariant new_tree new_priv);
+  assume(treekem_priv_invariant new_tree new_priv);
   return ({
     new_state = { st with
       tree = new_tree;
