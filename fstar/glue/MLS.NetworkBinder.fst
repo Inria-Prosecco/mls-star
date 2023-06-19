@@ -8,6 +8,7 @@ open MLS.TreeKEM.NetworkTypes
 open MLS.Crypto
 open MLS.Result
 open MLS.Tree
+open MLS.TreeCommon
 open MLS.MiscLemmas
 module TS = MLS.TreeSync.Types
 module TK = MLS.TreeKEM.Types
@@ -17,19 +18,6 @@ module TK = MLS.TreeKEM.Types
 let sparse_update_path (bytes:Type0) {|bytes_like bytes|} = path (leaf_node_nt bytes tkt) (option (update_path_node_nt bytes))
 
 (*** UpdatePath to MLS* ***)
-
-val tree_resolution_empty:
-  #leaf_t:Type -> #node_t:Type ->
-  #l:nat -> #i:tree_index l ->
-  tree (option leaf_t) (option node_t) l i ->
-  bool
-let rec tree_resolution_empty #leaf_t #node_t #l #i t =
-  match t with
-  | TLeaf None -> true
-  | TLeaf (Some _) -> false
-  | TNode None left right ->
-    tree_resolution_empty left && tree_resolution_empty right
-  | TNode (Some _) _ _ -> false
 
 val uncompress_update_path:
   #bytes:Type0 -> {|bytes_like bytes|} ->
@@ -48,7 +36,7 @@ let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path
   )
   | TNode _ left right -> (
     let (child, sibling) = get_child_sibling t li in
-    if tree_resolution_empty sibling then (
+    if is_tree_empty sibling then (
       let? path_next = uncompress_update_path _ child update_path in
       return (PNode None path_next)
     ) else (
@@ -86,58 +74,17 @@ let rec update_path_to_treesync #bytes #cb #l #i #li p =
 val leaf_node_to_treekem:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   leaf_node_nt bytes tkt ->
-  result (TK.member_info bytes)
+  TK.tk_leaf bytes
 let leaf_node_to_treekem #bytes #cb ln =
-  let? public_key = mk_hpke_public_key #bytes ln.data.content "leaf_node_to_treekem" "public_key" in
-  return ({
-    TK.public_key;
-  } <: TK.member_info bytes)
-
-val update_path_node_to_treekem:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> TK.direction -> update_path_node_nt bytes ->
-  result (TK.key_package bytes)
-let update_path_node_to_treekem #bytes #cb group_context dir update_path_node =
-  let? public_key = mk_hpke_public_key update_path_node.encryption_key "update_path_node_to_treekem" "public_key" in
-  let? path_secret_ciphertext = mapM (fun (hpke_ciphertext: hpke_ciphertext_nt bytes) ->
-    let? kem_output = mk_hpke_kem_output hpke_ciphertext.kem_output "update_path_node_to_treekem" "kem_output" in
-    return ({
-      TK.kem_output;
-      TK.ciphertext = hpke_ciphertext.ciphertext;
-    } <: TK.path_secret_ciphertext bytes)
-  ) update_path_node.encrypted_path_secret in
-  return ({
-    TK.public_key;
-    TK.last_group_context = group_context;
-    TK.unmerged_leaves = [];
-    TK.path_secret_from = dir;
-    TK.path_secret_ciphertext = path_secret_ciphertext;
-  })
+  {TK.public_key = ln.data.content;}
 
 val update_path_to_treekem:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  bytes -> update_path:sparse_update_path bytes l i li ->
-  result (TK.pathkem bytes l i li)
-let rec update_path_to_treekem #bytes #cb #l #i #li group_context p =
-  match p with
-  | PLeaf ln -> (
-    let? leaf_package = leaf_node_to_treekem ln in
-    return (PLeaf leaf_package)
-  )
-  | PNode onp p_next -> (
-    let dir = if is_left_leaf li then TK.Left else TK.Right in
-    let? path_next = update_path_to_treekem group_context p_next in
-    let? path_data = (
-      match onp with
-      | Some np -> (
-        let? res = update_path_node_to_treekem group_context dir np in
-        return (Some res)
-      )
-      | None -> return None
-    ) in
-    return (PNode path_data path_next)
-  )
+  update_path:sparse_update_path bytes l i li ->
+  TK.pathkem bytes l i li
+let update_path_to_treekem #bytes #cb #l #i #li p =
+  set_path_leaf p (leaf_node_to_treekem (get_path_leaf p))
 
 (*** MLS* to UpdatePath ***)
 
@@ -153,7 +100,7 @@ let rec compress_update_path #bytes #bl #leaf_t #node_t #l #i #li t update_path 
     return ({leaf_node = ln; nodes = []})
   | PNode p_opt_data p_next ->
     let (child, sibling) = get_child_sibling t li in
-    if tree_resolution_empty sibling then (
+    if is_tree_empty sibling then (
       compress_update_path child p_next
     ) else (
       let? compressed_p_next = compress_update_path child p_next in
@@ -165,49 +112,13 @@ let rec compress_update_path #bytes #bl #leaf_t #node_t #l #i #li t update_path 
       )
     )
 
-val encrypted_path_secret_tk_to_nt:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  TK.path_secret_ciphertext bytes ->
-  result (hpke_ciphertext_nt bytes)
-let encrypted_path_secret_tk_to_nt #bytes #cb x =
-  let? kem_output = mk_mls_bytes x.kem_output "encrypted_path_secret_tk_to_nt" "kem_output" in
-  let? ciphertext = mk_mls_bytes x.ciphertext "encrypted_path_secret_tk_to_nt" "ciphertext" in
-  return ({
-    kem_output;
-    ciphertext;
-  } <: hpke_ciphertext_nt bytes)
-
-val treekem_to_update_path_node:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  TK.key_package bytes ->
-  result (update_path_node_nt bytes)
-let treekem_to_update_path_node #bytes #cb kp =
-  let? encrypted_path_secret = mapM encrypted_path_secret_tk_to_nt kp.path_secret_ciphertext in
-  let? encrypted_path_secret = mk_mls_list encrypted_path_secret "treekem_to_update_path_node" "encrypted_path_secret" in
-  return ({
-    encryption_key = kp.public_key;
-    encrypted_path_secret;
-  } <: update_path_node_nt bytes)
-
 val mls_star_paths_to_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
   TS.pathsync bytes tkt l i li -> TK.pathkem bytes l i li ->
-  result (sparse_update_path bytes l i li)
-let rec mls_star_paths_to_update_path #bytes #cb #l #i #li psync pkem =
-  match psync, pkem with
-  | PLeaf lp, PLeaf _ -> return (PLeaf lp)
-  | PNode _ psync_next, PNode onp pkem_next ->
-    let? res_next = mls_star_paths_to_update_path psync_next pkem_next in
-    let? opt_upn = (
-      match onp with
-      | None -> return None
-      | Some np -> (
-        let? upn = treekem_to_update_path_node np in
-        return (Some upn)
-      )
-    ) in
-    return (PNode opt_upn res_next)
+  (sparse_update_path bytes l i li)
+let mls_star_paths_to_update_path #bytes #cb #l #i #li psync pkem =
+  set_path_leaf pkem (get_path_leaf psync)
 
 (*** ratchet_tree extension (13.4.3.3) ***)
 

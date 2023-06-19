@@ -220,7 +220,7 @@ type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 %splice [ps_group_context_nt] (gen_parser (`group_context_nt))
 
-
+instance parseable_serializeable_group_context_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_context_nt bytes) = mk_parseable_serializeable ps_group_context_nt
 
 (*** Proposals ***)
 

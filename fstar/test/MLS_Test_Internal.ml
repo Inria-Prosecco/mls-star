@@ -24,6 +24,7 @@ let dummy32 =
 let dummy64 = dummy32 @ dummy32
 let dummy96 = dummy32 @ dummy32 @ dummy32
 let dummy128 = dummy64 @ dummy64
+let dummy256 = dummy128 @ dummy128
 
 let bytes_of_list l =
   FStar_Seq_Properties.seq_of_list (List.map (fun x ->
@@ -61,6 +62,7 @@ let test () =
   let dummy64 = bytes_of_list dummy64 in
   let dummy96 = bytes_of_list dummy96 in
   let dummy128 = bytes_of_list dummy128 in
+  let dummy256 = bytes_of_list dummy256 in
   let s = extract (MLS_Crypto_Derived.derive_secret cb dummy32 "dummy") in
   debug_buffer s;
   let s1, _, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32) in
@@ -106,7 +108,7 @@ let test () =
 
   print_endline "\n\n*** a adds b and the server echoes the message back (add, process_group_message)";
   (* Assume s is immediately accepted by the server *)
-  let s, (msg, welcome_msg) = extract (MLS.add s package_b dummy128) in
+  let s, (msg, welcome_msg) = extract (MLS.add s package_b dummy256) in
   (* Instead rely on the server echoing our changes back to us to process them *)
   let s, outcome = extract (MLS.process_group_message s (snd msg)) in
   match outcome with
@@ -165,7 +167,7 @@ let test () =
 
   (* a adds c and the server echoes the message back *)
   (* Assume s is immediately accepted by the server *)
-  let s, (msg, _) = extract (MLS.add s package_c dummy128) in
+  let s, (msg, _) = extract (MLS.add s package_c dummy256) in
   (* Instead rely on the server echoing our changes back to us to process them *)
   let s, outcome = extract (MLS.process_group_message s (snd msg)) in
   match outcome with

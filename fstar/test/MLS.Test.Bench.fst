@@ -149,7 +149,7 @@ let remove_one_odd rng i l =
   guard (i%2 = 1);
   guard (Cons? l);
   let first_st::_ = l in
-  let (rng, e) = gen_rand_bytes #bytes rng (4+256) in
+  let (rng, e) = gen_rand_bytes #bytes rng 512 in
   let (first_st, (_, msg)) = extract_result (remove first_st (mk_id i) e) in
   let l = update l 0 first_st in
   guard (i < List.Tot.length l);

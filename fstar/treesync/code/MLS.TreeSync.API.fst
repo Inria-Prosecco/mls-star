@@ -185,7 +185,7 @@ let rec tokens_from_list #bytes #bl asp l i tokens =
   )
 #pop-options
 
-#push-options "--fuel 2 --ifuel 2"
+#push-options "--fuel 1"
 val leaf_at_token_from_list:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   asp:as_parameters bytes -> l:nat -> i:tree_index l -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 l} -> li:leaf_index l i ->

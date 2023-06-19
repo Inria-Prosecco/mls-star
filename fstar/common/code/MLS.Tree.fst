@@ -134,6 +134,26 @@ let rec leaf_at #leaf_t #node_t #l #i t li =
     else
       leaf_at right li
 
+val get_path_leaf:
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  path leaf_t node_t l i li ->
+  leaf_t
+let rec get_path_leaf #leaf_t #node_t #i #li p =
+  match p with
+  | PLeaf lp -> lp
+  | PNode _ p_next -> get_path_leaf p_next
+
+val set_path_leaf:
+  #leaf_t_in:Type -> #leaf_t_out:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  path leaf_t_in node_t l i li -> leaf_t_out ->
+  path leaf_t_out node_t l i li
+let rec set_path_leaf #leaf_t_in #leaf_t_out #node_t #l #i #li p lp =
+  match p with
+  | PLeaf _ -> PLeaf lp
+  | PNode p_content p_next -> PNode p_content (set_path_leaf p_next lp)
+
 val print_tree:
   #leaf_t:Type -> #node_t:Type ->
   #l:nat -> #i:tree_index l ->

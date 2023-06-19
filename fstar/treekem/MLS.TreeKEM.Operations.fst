@@ -1,23 +1,22 @@
 module MLS.TreeKEM.Operations
 
 open FStar.List.Tot
-open Comparse.Bytes
+open Comparse
 open MLS.Crypto
 open MLS.Utils
 open MLS.Tree
 open MLS.TreeCommon
 open MLS.TreeKEM.Types
+open MLS.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
 open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 
-(*** TreeKEM operations ***)
-
 val tree_add:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> li:leaf_index l i -> member_info bytes ->
+  treekem bytes l i -> li:leaf_index l i -> tk_leaf bytes ->
   treekem bytes l i
 let rec tree_add #bytes #cb #l #i t li lp =
   match t with
@@ -45,95 +44,149 @@ val tree_apply_path:
 let rec tree_apply_path #bytes #cb #l #i #li t p =
   match t, p with
   | TLeaf _, PLeaf mi -> TLeaf (Some mi)
-  | TNode _ left right, PNode onp p_next -> (
+  | TNode _ left right, PNode oupn p_next -> (
+    let new_opt_content = (
+      match oupn with
+      | None -> None
+      | Some upn -> Some {
+        public_key = upn.encryption_key;
+        unmerged_leaves = [];
+      }
+    ) in
     if is_left_leaf li then
-      TNode onp (tree_apply_path left p_next) right
+      TNode new_opt_content (tree_apply_path left p_next) right
     else
-      TNode onp left (tree_apply_path right p_next)
+      TNode new_opt_content left (tree_apply_path right p_next)
   )
 
-(*** TreeKEM path generation ***)
-
-val leaf_public_key:
+val path_blank:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> leaf_index l i ->
-  option (hpke_public_key bytes)
-let leaf_public_key #bytes #cb #l #i t leaf_index =
-  match leaf_at t leaf_index with
-  | None -> None
-  | Some mi -> Some (mi.public_key)
-
-val unmerged_leaves_resolution:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> list nat ->
-  list (hpke_public_key bytes)
-let unmerged_leaves_resolution #bytes #cb #l #i t indexes =
-  List.Tot.concatMap (fun (index:nat) ->
-    if leaf_index_inside l i index  then
-      match leaf_public_key t index with
-      | None -> []
-      | Some res -> [res]
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  pathkem_priv bytes l i li -> blank_li:leaf_index l i{blank_li <> li} ->
+  pathkem_priv bytes l i li
+let rec path_blank #bytes #cb #l #i #li p blank_li =
+  match p with
+  | PNode _ p_next -> (
+    if is_left_leaf li = is_left_leaf blank_li then
+      let new_p_next = path_blank p_next blank_li in
+      PNode None new_p_next
     else
-      []
-  ) indexes
+      PNode None p_next
+  )
 
-val tree_resolution:
+val path_extend:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #li:leaf_index l 0 ->
+  pathkem_priv bytes l 0 li ->
+  pathkem_priv bytes (l+1) 0 li
+let path_extend #bytes #cb #l #i p =
+  PNode None p
+
+val path_truncate:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:pos -> #li:leaf_index (l-1) 0 ->
+  pathkem_priv bytes l 0 li ->
+  pathkem_priv bytes (l-1) 0 li
+let path_truncate #bytes #cb #l #i p =
+  let PNode _ p_next = p in
+  p_next
+
+val derive_keypair_from_path_secret:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  result (hpke_private_key bytes & hpke_public_key bytes)
+let derive_keypair_from_path_secret #bytes #cb path_secret =
+  let? node_secret = derive_secret path_secret "node" in
+  hpke_gen_keypair (node_secret <: bytes)
+
+val derive_next_path_secret:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  result bytes
+let derive_next_path_secret #bytes #cb path_secret =
+  let? res = derive_secret path_secret "path" in
+  return (res <: bytes)
+
+val unmerged_leaf_exists:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> treekem bytes l i -> nat ->
+  prop
+let unmerged_leaf_exists #bytes #bl #l #i t li =
+  leaf_index_inside l i li && Some? (leaf_at t li)
+
+val treekem_invariant:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l ->
   treekem bytes l i ->
-  list (hpke_public_key bytes)
-let rec tree_resolution #bytes #cb #l #i t =
+  prop
+let rec treekem_invariant #bytes #cb #l #i t =
   match t with
-  | TLeaf None -> []
-  | TLeaf (Some mi) -> [mi.public_key]
-  | TNode (Some kp) left right -> (kp.public_key)::(unmerged_leaves_resolution t kp.unmerged_leaves)
-  | TNode None left right -> (tree_resolution left)@(tree_resolution right)
+  | TLeaf oln ->
+    True
+  | TNode opn left right ->
+    let node_ok =
+      match opn with
+      | Some pn ->
+        Comparse.for_allP (unmerged_leaf_exists t) pn.unmerged_leaves
+      | None -> True
+    in
+    node_ok /\ treekem_invariant left /\ treekem_invariant right
 
-val find_index:
-  #a:eqtype ->
-  a -> l:list a ->
-  option (nat_less (List.Tot.length l))
-let rec find_index #a x l =
-  match l with
-  | [] -> None
-  | h::t ->
-    if x=h then (
-      Some 0
-    ) else (
-      match find_index x t with
-      | Some res -> Some (res+1)
-      | None -> None
-    )
-
-val resolution_index:
+val treekem_state_invariant:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  treekem bytes l i -> pathkem_priv bytes l i li ->
+  prop
+let rec treekem_state_invariant #bytes #cb #l #i #li t p =
+  match t, p with
+  | TLeaf oln, PLeaf sk ->
+    //TODO: and oln contains sk's public key?
+    Some? oln
+  | TNode opn _ _, PNode osk p_next ->
+    let (child, _) = get_child_sibling t li in
+    treekem_state_invariant child p_next
+
+val treekem_state_invariant_leaf_at:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treekem bytes l i -> p:pathkem_priv bytes l i li ->
+  Lemma
+  (requires treekem_state_invariant t p)
+  (ensures Some? (leaf_at t li))
+let rec treekem_state_invariant_leaf_at #bytes #cb #l #i #li t p =
+  match t, p with
+  | TLeaf oln, PLeaf sk -> ()
+  | TNode opn _ _, PNode osk p_next ->
+    let (child, _) = get_child_sibling t li in
+    treekem_state_invariant_leaf_at child p_next
+
+val is_tree_empty_leaf_at:
+  #leaf_t:Type -> #node_t:Type ->
   #l:nat -> #i:tree_index l ->
-  t:treekem bytes l i -> leaf_index l i ->
-  nat_less (List.Tot.length (tree_resolution t))
-let rec resolution_index #bytes #cb #l t leaf_index =
+  t:tree (option leaf_t) (option node_t) l i -> li:leaf_index l i ->
+  Lemma
+  (requires is_tree_empty t)
+  (ensures leaf_at t li == None)
+let rec is_tree_empty_leaf_at #leaf_t #node_t #l #i t li =
   match t with
-  | TLeaf (Some mi) -> (
-    0
-  )
-  | TLeaf None -> admit() //TODO: There should be a precondition that prevent this case
-  | TNode (Some kp) left right -> (
-    match find_index leaf_index kp.unmerged_leaves with
-    | Some res ->
-      //That is currently not provable because a node might contain an unmerged leaf which is actually blanked
-      assume (1+res < List.Tot.length (tree_resolution t));
-      1+res
-    | None -> 0
-  )
-  | TNode None left right ->
-    let (child, _) = get_child_sibling t leaf_index in
-    let child_resolution_index = resolution_index child leaf_index in
-    List.Tot.Properties.append_length (tree_resolution left) (tree_resolution right);
-    if is_left_leaf leaf_index then
-      child_resolution_index
-    else
-      (List.Tot.length (tree_resolution left)) + child_resolution_index
+  | TLeaf _ -> ()
+  | TNode _ _ _ ->
+    let (child, _) = get_child_sibling t li in
+    is_tree_empty_leaf_at child li
+
+val pathkem_filtering_ok:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  treekem bytes l i -> pathkem bytes l i li ->
+  prop
+let rec pathkem_filtering_ok #bytes #cb #l #i #li t p =
+  match t, p with
+  | TLeaf oln, PLeaf new_oln ->
+    True
+  | TNode _ _ _, PNode new_opn p_next ->
+    let (child, sibling) = get_child_sibling t li in
+    let node_ok = new_opn == None ==> is_tree_empty sibling in
+    node_ok /\ pathkem_filtering_ok child p_next
 
 val un_addP:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -152,29 +205,247 @@ let rec un_addP #bytes #cb #l #i t pre =
     TNode new_okp (un_addP left pre) (un_addP right pre)
   )
 
-val forbidden_pre: list nat -> nat -> bool
-let forbidden_pre l i =
+val excluded_pre: list nat -> nat -> bool
+let excluded_pre l i =
   not (List.Tot.mem i l)
 
-val original_tree_resolution:
+val un_add:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l ->
-  list nat -> treekem bytes l i ->
-  list (hpke_public_key bytes)
-let original_tree_resolution #bytes #cb #l #i forbidden_leaves t =
-  tree_resolution (un_addP t (forbidden_pre forbidden_leaves))
+  treekem bytes l i -> list nat ->
+  treekem bytes l i
+let un_add #bytes #cb #l #i t excluded_leaves =
+  un_addP t (excluded_pre excluded_leaves)
 
-val original_resolution_index:
+val unmerged_leaves_resolution:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l ->
-  forbidden_leaves:list nat -> t:treekem bytes l i -> leaf_index l i ->
-  nat_less (List.Tot.length (original_tree_resolution forbidden_leaves t))
-let original_resolution_index #bytes #cb #l forbidden_leaves t leaf_index =
-  resolution_index (un_addP t (forbidden_pre forbidden_leaves)) leaf_index
+  t:treekem bytes l i -> unmerged_leaves:list nat{Comparse.for_allP (unmerged_leaf_exists t) unmerged_leaves}  ->
+  res:list bytes{List.Tot.length res == List.Tot.length unmerged_leaves}
+let rec unmerged_leaves_resolution #bytes #cb #l #i t unmerged_leaves =
+  match unmerged_leaves with
+  | [] -> []
+  | h_ul::t_ul -> (Some?.v (leaf_at t h_ul)).public_key::(unmerged_leaves_resolution t t_ul)
+
+val tree_resolution:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l ->
+  t:treekem bytes l i{treekem_invariant t} ->
+  list bytes
+let rec tree_resolution #bytes #cb #l #i t =
+  match t with
+  | TLeaf None -> []
+  | TLeaf (Some mi) -> [mi.public_key]
+  | TNode (Some kp) left right -> (kp.public_key)::(unmerged_leaves_resolution t kp.unmerged_leaves)
+  | TNode None left right -> (tree_resolution left)@(tree_resolution right)
+
+val find_index:
+  #a:eqtype -> #b:eqtype{b `subtype_of` a} -> #c:eqtype{c `subtype_of` a} ->
+  b -> l:list c ->
+  option (nat_less (List.Tot.length l))
+let rec find_index #a #b #c x l =
+  match l with
+  | [] -> None
+  | h::t ->
+    if (x <: a) = (h <: a) then (
+      Some 0
+    ) else (
+      match find_index #a x t with
+      | Some res -> Some (res+1)
+      | None -> None
+    )
+
+val resolution_index:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l ->
+  t:treekem bytes l i{treekem_invariant t} -> li:leaf_index l i{Some? (leaf_at t li)} ->
+  nat_less (List.Tot.length (tree_resolution t))
+let rec resolution_index #bytes #cb #l t leaf_index =
+  match t with
+  | TLeaf (Some _) -> 0
+  | TNode (Some kp) left right -> (
+    match find_index #nat leaf_index kp.unmerged_leaves with
+    | None -> 0
+    | Some res -> 1+res
+  )
+  | TNode None left right ->
+    let (child, _) = get_child_sibling t leaf_index in
+    let child_resolution_index = resolution_index child leaf_index in
+    List.Tot.Properties.append_length (tree_resolution left) (tree_resolution right);
+    if is_left_leaf leaf_index then
+      child_resolution_index
+    else
+      (List.Tot.length (tree_resolution left)) + child_resolution_index
+
+val get_private_key:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treekem bytes l i{treekem_invariant t} -> p_priv:pathkem_priv bytes l i li{treekem_state_invariant t p_priv} ->
+  result (hpke_private_key bytes)
+let rec get_private_key #bytes #cb #l #i #li t p_priv =
+  match t, p_priv with
+  | TLeaf (Some _), PLeaf sk ->
+    return sk.private_key
+  | TNode (Some pn) _ _, PNode opt_sk _ ->
+    if li < pow2 32 && List.Tot.mem li pn.unmerged_leaves then (
+      return (get_path_leaf p_priv).private_key
+    ) else (
+      match opt_sk with
+      | None -> error "get_private_key: private key not in private state"
+      | Some sk ->
+        return sk.private_key
+    )
+  | TNode None left right, PNode _ p_next ->
+    let (child, _) = get_child_sibling t li in
+    get_private_key child p_next
+
+val check_update_path_ciphertexts_lengthes:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treekem bytes l i{treekem_invariant t} -> p_upd:pathkem bytes l i li ->
+  bool
+let rec check_update_path_ciphertexts_lengthes #bytes #cb #l #i #li t p =
+  match t, p with
+  | TLeaf _, PLeaf _ -> true
+  | TNode _ _ _, PNode opt_upn p_next ->
+    let cur_ok =
+      match opt_upn with
+      | None -> true
+      | Some upn ->
+        let (_, sibling) = get_child_sibling t li in
+        List.Tot.length (tree_resolution sibling) = List.Tot.length upn.encrypted_path_secret
+    in
+    let (child, _) = get_child_sibling t li in
+    cur_ok && check_update_path_ciphertexts_lengthes child p_next
+
+type path_secret_level (l:nat) =
+  x:nat{0 < x /\ x <= l}
+
+// Obtain a path secret from a Commit
+val get_path_secret:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #my_li:leaf_index l i -> #li:leaf_index l i{my_li <> li} ->
+  t:treekem bytes l i{treekem_invariant t} -> p_priv:pathkem_priv bytes l i my_li{treekem_state_invariant t p_priv} ->
+  p_upd:pathkem bytes l i li{check_update_path_ciphertexts_lengthes t p_upd /\ pathkem_filtering_ok t p_upd} -> group_context_nt bytes ->
+  result (bytes & path_secret_level l)
+let rec get_path_secret #bytes #cb #l #i #my_li #li t p_priv p_upd group_context =
+  match t, p_priv, p_upd with
+  | TNode _ _ _, PNode _ p_priv_next, PNode opt_upn p_upd_next ->
+    if is_left_leaf my_li = is_left_leaf li then (
+      // The update path and the path to our leaf continue to the same node, recurse
+      let (child, _) = get_child_sibling t li in
+      let? (path_secret, path_level) = get_path_secret child (p_priv_next <: pathkem_priv bytes (l-1) _ my_li) (p_upd_next <: pathkem bytes (l-1) _ li) group_context in
+      return ((path_secret, path_level) <: bytes & path_secret_level l)
+    ) else (
+      // We are at a branching point
+      match opt_upn with
+      | Some upn -> (
+        // Obtain the node secret by decryption
+        treekem_state_invariant_leaf_at t p_priv;
+        let (_, sibling) = get_child_sibling t li in
+        let my_index = resolution_index sibling my_li in
+        let my_ciphertext = List.Tot.index upn.encrypted_path_secret my_index in
+        let? my_private_key = get_private_key sibling (PNode?.next p_priv) in
+        let? kem_output = mk_hpke_kem_output #bytes my_ciphertext.kem_output "get_path_secret" "kem_output" in
+        let? path_secret = decrypt_with_label #bytes my_private_key "UpdatePathNode" (serialize _ group_context) kem_output my_ciphertext.ciphertext in
+        return ((path_secret, l) <: bytes & path_secret_level l)
+      )
+      | None -> (
+        // Impossible
+        let (_, sibling) = get_child_sibling t li in
+        is_tree_empty_leaf_at sibling my_li;
+        treekem_state_invariant_leaf_at t p_priv;
+        false_elim ()
+      )
+    )
+
+// This function can be used in two situations:
+// - when processing a Commit
+// - when processing a Welcome
+// When processing a Commit,
+// the tree `t` shoud already have the UpdatePath applied.
+val path_apply_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treekem bytes l i -> p_priv:pathkem_priv bytes l i li ->
+  path_secret:bytes -> path_node_level:path_secret_level l ->
+  result (pathkem_priv bytes l i li & bytes)
+let rec path_apply_path #bytes #cb #l #i #li t p_priv path_secret path_node_level =
+  match t, p_priv with
+  | TNode opt_pn _ _, PNode _ p_priv_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    let? (new_p_priv_next, path_secret) = (
+      if path_node_level = l  then (
+        return (p_priv_next, path_secret)
+      ) else (
+        path_apply_path child p_priv_next path_secret path_node_level
+      )
+    ) in
+    if not (is_tree_empty sibling) then (
+      let? (sk, pk) = derive_keypair_from_path_secret path_secret in
+      let? new_path_secret = derive_next_path_secret path_secret in
+      if not (Some? opt_pn && (pk <: bytes) = (Some?.v opt_pn).public_key) then
+        error "path_apply_path: wrong public key"
+      else
+        return (PNode (Some {private_key = sk}) new_p_priv_next, new_path_secret)
+    ) else (
+      // The node was filtered, transfer the path secret up in the tree
+      return (PNode None new_p_priv_next, path_secret)
+    )
+  )
+
+val forget_path_secrets:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  path (hpke_private_key bytes) (option bytes) l i li ->
+  path unit bool l i li
+let rec forget_path_secrets #bytes #cb #l #i #li p =
+  match p with
+  | PLeaf _ -> PLeaf ()
+  | PNode (Some _) p_next -> PNode true (forget_path_secrets p_next)
+  | PNode None p_next -> PNode false (forget_path_secrets p_next)
+
+val generate_forgotten_path_secrets:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l ->
+  t:treekem bytes l i -> li:leaf_index l i ->
+  path unit bool l i li
+let rec generate_forgotten_path_secrets #bytes #cb #l #i t li =
+  match t with
+  | TLeaf _ -> PLeaf ()
+  | TNode _ _ _ -> (
+    let (child, sibling) = get_child_sibling t li in
+    if not (is_tree_empty sibling) then (
+      PNode true (generate_forgotten_path_secrets child li)
+    ) else (
+      PNode false (generate_forgotten_path_secrets child li)
+    )
+  )
+
+val generate_path_secrets:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l ->
+  t:treekem bytes l i ->
+  hpke_private_key bytes -> path_secret_0:bytes -> li:leaf_index l i ->
+  result (p:path (hpke_private_key bytes) (option bytes) l i li{forget_path_secrets p == generate_forgotten_path_secrets t li} * bytes)
+let rec generate_path_secrets #bytes #cb #l #i t leaf_sk path_secret_0 li =
+  match t with
+  | TLeaf _ -> return (PLeaf leaf_sk, path_secret_0)
+  | TNode _ _ _ -> (
+    let (child, sibling) = get_child_sibling t li in
+    let? (p_next, my_path_secret) = generate_path_secrets child leaf_sk path_secret_0 li in
+    if not (is_tree_empty sibling) then (
+      let? next_path_secret = derive_next_path_secret my_path_secret in
+      return #((p:path (hpke_private_key bytes) (option bytes) l i li{forget_path_secrets p == generate_forgotten_path_secrets t li} * bytes)) ((PNode (Some my_path_secret) p_next), next_path_secret)
+    ) else (
+      // The node was filtered, transfer the path secret up in the tree
+      return #((p:path (hpke_private_key bytes) (option bytes) l i li{forget_path_secrets p == generate_forgotten_path_secrets t li} * bytes)) ((PNode None p_next), (my_path_secret <: bytes))
+    )
+  )
 
 val multi_encrypt_with_label_entropy_lengths:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  list (hpke_public_key bytes) ->
+  list bytes ->
   list nat
 let rec multi_encrypt_with_label_entropy_lengths #bytes #cb pks =
   match pks with
@@ -183,243 +454,144 @@ let rec multi_encrypt_with_label_entropy_lengths #bytes #cb pks =
 
 val multi_encrypt_with_label:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  pks:list (hpke_public_key bytes) -> label:valid_label -> context:bytes -> plaintext:bytes -> randomness bytes (multi_encrypt_with_label_entropy_lengths pks) ->
-  result (list (path_secret_ciphertext bytes))
+  pks:list bytes -> label:valid_label -> context:bytes -> plaintext:bytes -> randomness bytes (multi_encrypt_with_label_entropy_lengths pks) ->
+  result (list (hpke_ciphertext_nt bytes))
 let rec multi_encrypt_with_label #bytes #cb public_keys label context plaintext rand =
   match public_keys with
   | [] -> return []
   | pk::pks ->
     let (rand_cur, rand_next) = dest_randomness rand in
-    let? res_hd = encrypt_with_label pk label context plaintext rand_cur in
+    let? pk = mk_hpke_public_key #bytes pk "multi_encrypt_with_label" "pk" in
+    let? (kem_output, ciphertext) = encrypt_with_label pk label context plaintext rand_cur in
+    let? kem_output = mk_mls_bytes #bytes kem_output "multi_encrypt_with_label" "kem_output" in
+    let? ciphertext = mk_mls_bytes #bytes ciphertext "multi_encrypt_with_label" "ciphertext" in
     let? res_tl = multi_encrypt_with_label pks label context plaintext rand_next in
-    return (({kem_output = fst res_hd; ciphertext = snd res_hd} <: path_secret_ciphertext bytes)::res_tl)
+    return (({kem_output; ciphertext;} <: hpke_ciphertext_nt bytes)::res_tl)
 
-val derive_keypair_from_path_secret:
+val encrypt_path_secrets_entropy_lengths:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes ->
-  result (hpke_private_key bytes & hpke_public_key bytes)
-let derive_keypair_from_path_secret #bytes #cb path_secret =
-  let? node_secret = derive_secret path_secret "node" in
-  hpke_gen_keypair (node_secret <: bytes)
-
-val derive_next_path_secret:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes ->
-  result bytes
-let derive_next_path_secret #bytes #cb path_secret =
-  let? res = derive_secret path_secret "path" in
-  return (res <: bytes)
-
-val node_encap:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  child_secret:bytes -> hpke_info:bytes -> direction -> pks:list (hpke_public_key bytes) -> randomness bytes (multi_encrypt_with_label_entropy_lengths pks) ->
-  result (key_package bytes & bytes)
-let node_encap #bytes #cb child_secret hpke_info dir pks rand =
-  let? node_secret = derive_next_path_secret child_secret in
-  let? node_keys = derive_keypair_from_path_secret node_secret in
-  let? ciphertext = multi_encrypt_with_label pks "UpdatePathNode" hpke_info node_secret rand in
-  return (
-    {
-      public_key = snd node_keys;
-      last_group_context = hpke_info;
-      unmerged_leaves = [];
-      path_secret_from = dir;
-      path_secret_ciphertext = ciphertext;
-    },
-    node_secret
-  )
-
-val node_decap:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  child_secret:bytes -> i:nat -> dir:direction -> kp:key_package bytes{dir <> kp.path_secret_from ==> i < List.Tot.length kp.path_secret_ciphertext} ->
-  result bytes
-let node_decap #bytes #cb child_secret i dir kp =
-  if dir = kp.path_secret_from then (
-    if i <> 0 then
-      internal_failure "node_decap"
-    else
-      derive_next_path_secret child_secret
-  ) else (
-    let ciphertext = List.Tot.index kp.path_secret_ciphertext i in
-    let? child_keys = derive_keypair_from_path_secret child_secret in
-    let child_sk = fst child_keys in
-    decrypt_with_label child_sk "UpdatePathNode" (kp.last_group_context) ciphertext.kem_output ciphertext.ciphertext
-  )
-
-val update_path_entropy_lengths:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> leaf_index l i ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treekem bytes l i{treekem_invariant t} -> path unit bool l i li ->
   list nat
-let rec update_path_entropy_lengths #bytes #cb #l #i t leaf_index =
-  match t with
-  | TLeaf _ -> []
-  | TNode _ left right ->
-    let (child, sibling) = get_child_sibling t leaf_index in
-    if tree_resolution sibling = [] then
-      update_path_entropy_lengths child leaf_index
-    else
-      multi_encrypt_with_label_entropy_lengths (tree_resolution sibling) @ update_path_entropy_lengths child leaf_index
-
-val update_path:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  t:treekem bytes l i -> leaf_index:leaf_index l i -> leaf_secret:bytes -> ad:bytes -> randomness bytes (update_path_entropy_lengths t leaf_index) ->
-  Pure (result (pathkem bytes l i leaf_index & bytes))
-  (requires length leaf_secret >= hpke_private_key_length #bytes)
-  (ensures fun res -> match res with
-    | Success (_, node_secret) -> length leaf_secret >= hpke_private_key_length #bytes
-    | _ -> True
-  )
-let rec update_path #bytes #cb #l #i t leaf_index leaf_secret ad rand =
-  match t with
-  | TLeaf None -> admit() //TODO: in the previous code, it fails in this case
-  | TLeaf (Some mi) ->
-    //TODO: in the previous code, it does some credential check here
-    let? leaf_keys = derive_keypair_from_path_secret leaf_secret in
-    return (PLeaf ({public_key=snd leaf_keys;} <: member_info bytes), leaf_secret)
-  | TNode okp left right ->
-    let (child, sibling) = get_child_sibling t leaf_index in
-    if tree_resolution sibling = [] then (
-      let next_rand: randomness bytes (update_path_entropy_lengths #_ #_ #(l-1) child leaf_index) = rand in
-      let? recursive_call = update_path child leaf_index leaf_secret ad next_rand in
-      let (child_path, child_path_secret) = recursive_call in
-      return (PNode None child_path, child_path_secret)
-    ) else (
-      let (rand_cur, rand_next) = split_randomness rand in
-      let? recursive_call = update_path child leaf_index leaf_secret ad rand_next in
-      let (child_path, child_path_secret) = recursive_call in
-      let dir = (if is_left_leaf leaf_index then Left else Right) in
-      let? node_encap_call = node_encap child_path_secret ad dir (tree_resolution sibling) rand_cur in
-      let (node_kp, node_path_secret) = node_encap_call in
-      return (PNode (Some node_kp) child_path, node_path_secret)
-    )
-
-(*** TreeKEM compute root secret ***)
-
-val root_secret:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  t:treekem bytes l i -> leaf_index l i -> leaf_secret:bytes ->
-  result bytes
-let rec root_secret #bytes #cb #l #i t leaf_index leaf_secret =
-  match t with
-  | TLeaf None -> internal_failure "root_secret: leaf_index corresponds to an empty leaf"
-  | TLeaf (Some _) -> return leaf_secret
-  | TNode (Some kp) left right -> begin
-    if List.Tot.mem leaf_index kp.unmerged_leaves then (
-      return leaf_secret
-    ) else (
-      let dir = if is_left_leaf leaf_index then Left else Right in
-      let (child, _) = get_child_sibling t leaf_index in
-      let? child_path_secret = root_secret child leaf_index leaf_secret in
-      //The condition is here becaus the `i` argument has not sense when dir = kp.path_secret_from.
-      //Maybe we should refactor `node_decap`?
-      let i = if dir = kp.path_secret_from then 0 else original_resolution_index kp.unmerged_leaves child leaf_index in
-      assume (dir <> kp.path_secret_from ==> List.Tot.length (original_tree_resolution kp.unmerged_leaves child) == List.Tot.length kp.path_secret_ciphertext);
-      node_decap child_path_secret i dir kp
-    )
-  end
-  | TNode None left right -> begin
-    let (child, _) = get_child_sibling t leaf_index in
-    root_secret child leaf_index leaf_secret
-  end
-
-(*** TreeKEM initialization ***)
-
-val find_least_common_ancestor:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> my_ind:leaf_index l i -> other_ind:leaf_index l i{my_ind <> other_ind} ->
-  (res_l:nat & res_i:tree_index res_l & treekem bytes res_l res_i & squash (leaf_index_inside res_l res_i my_ind))
-let rec find_least_common_ancestor #bytes #cb #l #i t my_ind other_ind =
-  match t with
-  | TNode _ left right ->
-      if is_left_leaf my_ind = is_left_leaf other_ind then (
-        let (child, sibling) = get_child_sibling t my_ind in
-        find_least_common_ancestor child my_ind other_ind
-      ) else (
-        (|l, i, t, ()|)
-      )
-
-val path_secret_at_least_common_ancestor:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> my_ind:leaf_index l i -> other_ind:leaf_index l i{my_ind <> other_ind} -> leaf_secret:bytes ->
-  result bytes
-let path_secret_at_least_common_ancestor #bytes #cb #l t my_ind other_ind leaf_secret =
-  let (|_, _, lca, _|) = find_least_common_ancestor t my_ind other_ind in
-  root_secret lca my_ind leaf_secret
-
-val empty_path_secret_ciphertext:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  path_secret_ciphertext bytes
-let empty_path_secret_ciphertext #bytes #cb = {
-    kem_output = mk_zero_vector (hpke_kem_output_length #bytes);
-    ciphertext = empty;
-  }
-
-val mk_init_path_aux:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> update_index:leaf_index l i ->
-  result (pathkem bytes l i update_index)
-let rec mk_init_path_aux #bytes #cb #l t update_index =
-  match t with
-  | TLeaf None -> error "mk_init_path_aux: update leaf cannot be blanked"
-  | TLeaf (Some mi) -> return (PLeaf mi)
-  | TNode okp left right -> begin
-    let update_dir = if is_left_leaf update_index then Left else Right in
-    let (child, _) = get_child_sibling t update_index in
-    let new_okp =
-      match okp with
-      | Some kp -> Some ({ kp with
-          path_secret_from = update_dir;
-        })
-      | None -> None
+let rec encrypt_path_secrets_entropy_lengths #bytes #cb #l #i #li t p =
+  match t, p with
+  | TLeaf _, PLeaf _ -> []
+  | TNode _ _ _, PNode is_not_filtered p_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    let my_randomness =
+      if is_not_filtered then
+        multi_encrypt_with_label_entropy_lengths (tree_resolution sibling)
+      else
+        []
     in
-    let? next = mk_init_path_aux child update_index in
-    return (PNode okp next)
-  end
+    let next_randomness = encrypt_path_secrets_entropy_lengths child p_next in
+    my_randomness@next_randomness
+  )
 
-val mk_init_path:
+val encrypt_path_secrets:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l ->
-  treekem bytes l i -> my_index:leaf_index l i -> update_index:leaf_index l i{my_index <> update_index} -> path_secret:bytes -> hpke_info:bytes ->
-  result (pathkem bytes l i update_index)
-let rec mk_init_path #bytes #cb #l t my_index update_index path_secret hpke_info =
-  match t with
-  | TNode okp left right -> begin
-    let update_dir = if is_left_leaf update_index then Left else Right in
-    let (child, sibling) = get_child_sibling t update_index in
-    if is_left_leaf my_index = is_left_leaf update_index then (
-      let new_okp =
-        match okp with
-        | Some kp -> Some ({ kp with
-          path_secret_from = update_dir;
-        })
-        | None -> None
-      in
-      let? next = mk_init_path child my_index update_index path_secret hpke_info in
-      return (PNode new_okp next)
-    ) else (
-      if not (Some? okp && (Some?.v okp).unmerged_leaves = []) then
-        error "mk_init_path: the lowest common ancestor must be non-blank and have empty unmerged leaves"
-      else (
-        let kp = Some?.v okp in
-        let resol_size = List.Tot.length (original_tree_resolution [] sibling) in
-        let resol_index = original_resolution_index [] sibling my_index in
-        let fake_randomness = mk_zero_vector (hpke_private_key_length #bytes) in
-        let? my_pk = from_option "leaf at my_index is empty!" (leaf_public_key t my_index) in
-        let? my_path_secret_ciphertext = encrypt_with_label my_pk "UpdatePathNode" hpke_info path_secret fake_randomness in
-        let new_kp = { kp with
-          path_secret_from = update_dir;
-          last_group_context = hpke_info;
-          //TODO: put the {kem_output = ...; ...} in a separate function
-          path_secret_ciphertext = Seq.seq_to_list (Seq.upd (Seq.create resol_size (empty_path_secret_ciphertext)) resol_index (({kem_output=fst my_path_secret_ciphertext; ciphertext = snd my_path_secret_ciphertext} <: path_secret_ciphertext bytes)));
-        } in
-        let? next = mk_init_path_aux child update_index in
-        return (PNode (Some new_kp) next)
-      )
-    )
-  end
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  t:treekem bytes l i{treekem_invariant t} -> p:path (hpke_private_key bytes) (option bytes) l i li ->
+  group_context_nt bytes ->
+  randomness bytes (encrypt_path_secrets_entropy_lengths t (forget_path_secrets p)) ->
+  result (pathkem bytes l i li & pathkem_priv bytes l i li)
+let rec encrypt_path_secrets #bytes #cb #l #i #li t p group_context rand =
+  match t, p with
+  | TLeaf _, PLeaf leaf_sk -> (
+    let? (sk, pk) = hpke_gen_keypair (leaf_sk <: bytes) in
+    return (PLeaf ({public_key = pk;} <: tk_leaf bytes), PLeaf {private_key = sk;})
+  )
+  | TNode _ _ _, PNode None p_next -> (
+    let (child, _) = get_child_sibling t li in
+    let? (res_p_next, res_p_priv_next)= encrypt_path_secrets child p_next group_context rand in
+    return (PNode None res_p_next, PNode None res_p_priv_next)
+  )
+  | TNode _ _ _, PNode (Some path_secret) p_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    let rand_cur, rand_next = split_randomness rand in
+    let? (res_p_next, res_p_priv_next) = encrypt_path_secrets child p_next group_context rand_next in
+    let? ciphertexts = multi_encrypt_with_label (tree_resolution sibling) "UpdatePathNode" (serialize _ group_context) path_secret rand_cur in
+    let? ciphertexts = mk_mls_list #bytes ciphertexts "multi_encrypt_with_label" "ciphertexts" in
+    let? (sk, pk) = derive_keypair_from_path_secret path_secret in
+    return (PNode (Some {encryption_key = pk; encrypted_path_secret = ciphertexts;}) res_p_next, PNode (Some {private_key = sk;}) res_p_priv_next)
+  )
+
+// TODO: this function could have more preconditions and not fail
+// leaf_li <> li
+// leaf_li is a leaf index
+// some property about p, that is it filtered correctly
+val get_path_secret_of_added_leaf:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  p:path (hpke_private_key bytes) (option bytes) l i li ->
+  leaf_li:nat ->
+  result bytes
+let rec get_path_secret_of_added_leaf #bytes #cb #l #i #li p leaf_li =
+  match p with
+  | PLeaf _ -> internal_failure "get_path_secret_of_added_leaf: leaf case"
+  | PNode opt_path_secret p_next ->
+    if not (leaf_index_inside l i leaf_li) then
+      internal_failure "get_path_secret_of_added_leaf: bad leaf index"
+    else if is_left_leaf li = is_left_leaf #l #i leaf_li then
+      get_path_secret_of_added_leaf p_next leaf_li
+    else
+      match opt_path_secret with
+      | None -> internal_failure "get_path_secret_of_added_leaf: no path secret"
+      | Some path_secret -> return path_secret
+
+// TODO: same for this function
+val get_path_secret_of_added_leaves:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  p:path (hpke_private_key bytes) (option bytes) l i li ->
+  leaves_li:list nat ->
+  result (list bytes)
+let get_path_secret_of_added_leaves #bytes #cb #l #i #li p leaves_li =
+  let? res = mapM (get_path_secret_of_added_leaf p) leaves_li in
+  return (res <: list bytes)
+
+// TODO: do some computations also done by encrypt_path_secrets
+val path_secrets_to_pre_pathkem:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  path (hpke_private_key bytes) (option bytes) l i li ->
+  result (pre_pathkem bytes l i li)
+let rec path_secrets_to_pre_pathkem #bytes #cb #l #i #li p =
+  match p with
+  | PLeaf leaf_sk -> (
+    let? (sk, pk) = hpke_gen_keypair (leaf_sk <: bytes) in
+    return (PLeaf ({public_key = pk;} <: tk_leaf bytes))
+  )
+  | PNode None p_next -> (
+    let? res_p_next =  path_secrets_to_pre_pathkem p_next in
+    return (PNode None res_p_next)
+  )
+  | PNode (Some path_secret) p_next -> (
+    let? res_p_next = path_secrets_to_pre_pathkem p_next in
+    let? (sk, pk) = derive_keypair_from_path_secret path_secret in
+    return (PNode (Some pk) res_p_next)
+  )
+
+val create_empty_priv:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  hpke_private_key bytes ->
+  pathkem_priv bytes l i li
+let rec create_empty_priv #bytes #cb #l #i #li leaf_decryption_key =
+  if l = 0 then
+    PLeaf {private_key = leaf_decryption_key}
+  else
+    PNode None (create_empty_priv leaf_decryption_key)
+
+val compute_least_common_ancestor_level:
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  path leaf_t node_t l i li -> leaf_ind:leaf_index l i{leaf_ind <> li} ->
+  path_secret_level l
+let rec compute_least_common_ancestor_level #leaf_t #node_t #l #i #li p leaf_ind =
+  match p with
+  | PNode _ p_next ->
+    if is_left_leaf li = is_left_leaf leaf_ind then
+      compute_least_common_ancestor_level p_next leaf_ind
+    else
+      l

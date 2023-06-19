@@ -15,14 +15,9 @@ open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"
 
-type participant_secrets (bytes:Type0) {|crypto_bytes bytes|} = {
-  leaf_secret: lbytes bytes (hpke_private_key_length #bytes);
-}
-
 type mls_state (bytes:Type0) {|crypto_bytes bytes|} = {
-  public: treekem_state bytes;
+  states: list (leaf_ind:nat & treekem_state bytes leaf_ind);
   epoch: nat;
-  secrets: list (nat & participant_secrets bytes);
 }
 
 type test_state = {
@@ -39,100 +34,133 @@ type state (bytes:Type0) {|crypto_bytes bytes|} = {
 
 type op_type = | Add | Update | Remove
 
-val get_secret: #a:Type -> list (nat & a) -> nat -> ML a
-let get_secret #a l x =
-  extract_result (from_option "" (List.Tot.assoc x l))
-
-#push-options "--fuel 1 --ifuel 1"
-val update_secret: #a:Type -> list (nat & a) -> (nat & a) -> ML (list (nat & a))
-let rec update_secret #a l (x, s) =
-  match l with
-  | [] -> failwith "remove_secret: couldn't find index"
-  | (hx, hs)::t ->
-    if hx = x then
-      (x,s)::t
-    else
-      (hx,hs)::(update_secret t (x,s))
-#pop-options
-
-#push-options "--fuel 1 --ifuel 1"
-val remove_secret: #a:Type -> list (nat & a) -> nat -> ML (list (nat & a))
-let rec remove_secret #a l x =
-  match l with
-  | [] -> failwith "remove_secret: couldn't find index"
-  | (hx, hs)::t ->
-    if hx = x then
-      t
-    else
-      (hx,hs)::(remove_secret t x)
-#pop-options
-
-val create_participant: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> ML (rand_state & member_info bytes & participant_secrets bytes)
-let create_participant #bytes #cb rng =
-  let (rng, leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
-  let (hpke_sk, hpke_pk) = extract_result (derive_keypair_from_path_secret leaf_secret) in
-  let my_secrets = {leaf_secret} in
-  let leaf_package: member_info bytes = {public_key = hpke_pk} in
-  (rng, leaf_package, my_secrets)
-
-#push-options "--fuel 1 --ifuel 1"
+#push-options "--fuel 0 --ifuel 1"
 val add_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> ML (rand_state & mls_state bytes)
 let add_rand #bytes #cb rng st =
-  let (rng, leaf_package, my_secrets) = create_participant #bytes #cb rng in
-  let (new_public_state, leaf_index) = MLS.TreeKEM.API.add st.public leaf_package in
+  let (rng, leaf_secret) = gen_rand_bytes #bytes rng (hpke_private_key_length #bytes) in
+  let (hpke_sk, hpke_pk) = extract_result (hpke_gen_keypair #bytes leaf_secret) in
+  let leaf: tk_leaf bytes = { public_key = hpke_pk } in
+  let (add_indices, new_states) = List.Tot.unzip (List.Tot.map (fun (|leaf_ind, state|) ->
+    let (new_state, add_index) = MLS.TreeKEM.API.add state leaf in
+    (add_index, (|leaf_ind, new_state|))
+  ) st.states) in
+  let (add_index, (|tree_levels, tree|)): nat & (l:nat & treekem bytes l 0) =
+    match add_indices, new_states with
+    | i::_, (|leaf_ind, st|)::_ -> (i, (|st.levels, st.tree|))
+    | _, _ -> failwith "add_rand: no add index?"
+  in
+  if not (List.Tot.for_all ((=) add_index) add_indices) then failwith "add_rand: inconsistent add indices";
+  if not (List.Tot.for_all ((=) ((|tree_levels, tree|) <: (l:nat & treekem bytes l 0))) (List.Tot.map #_ #(l:nat & treekem bytes l 0) (fun (|_, st|) -> (|st.levels, st.tree|)) new_states)) then failwith "add_rand: inconsistent trees";
+  let new_state = extract_result(MLS.TreeKEM.API.welcome tree hpke_sk None add_index) in
   (rng, {
-    public = new_public_state;
+    states = (|_, new_state|)::new_states;
     epoch = st.epoch+1;
-    secrets = (leaf_index, my_secrets) :: st.secrets;
   })
 #pop-options
 
-//TODO: the group context is replaced with only the tree hash
-#push-options "--z3rlimit 50 --ifuel 1 --fuel 0"
+#push-options "--fuel 1 --ifuel 1"
+val get_state: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (leaf_ind:nat & treekem_state bytes leaf_ind) -> leaf_ind:nat -> ML (treekem_state bytes leaf_ind)
+let rec get_state #bytes #cb l leaf_ind =
+  match l with
+  | [] -> failwith "get_state: no corresponding state"
+  | (|li, st|)::t ->
+    if leaf_ind = li then st
+    else get_state t leaf_ind
+#pop-options
+
+#push-options "--fuel 1 --ifuel 1"
+val process_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat -> #commiter_st:treekem_state bytes leaf_ind -> list (leaf_ind:nat & treekem_state bytes leaf_ind) -> create_commit_result commiter_st -> group_context_nt bytes -> ML (list (bytes & (leaf_ind:nat & treekem_state bytes leaf_ind)))
+let rec process_update #bytes #cb #leaf_ind #commiter_st l commit_res group_context =
+  match l with
+  | [] -> []
+  | (|li, tk_state|)::t ->
+    let new_tail = process_update t commit_res group_context in
+    let new_head =
+      if not (leaf_ind < pow2 tk_state.levels) then failwith "process_update: bad leaf index" else
+      if not (commiter_st.levels = tk_state.levels) then failwith "process_update: levels" else
+      if leaf_ind = li then
+        (commit_res.commit_secret, (|leaf_ind, commit_res.new_state|))
+      else (
+        assume(pathkem_filtering_ok tk_state.tree commit_res.update_path);
+        let (new_state, commit_secret) = extract_result (MLS.TreeKEM.API.commit tk_state commit_res.update_path [] group_context) in
+        (commit_secret, (|li, new_state|))
+      )
+    in
+    new_head::new_tail
+#pop-options
+
+#push-options " --ifuel 1 --fuel 1"
 val update_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> nat -> ML (rand_state & mls_state bytes)
 let update_leaf #bytes #cb rng st leaf_index =
-  let leaf_secrets = get_secret st.secrets leaf_index in
-  if not (leaf_index < pow2 st.public.levels) then failwith "" else
-  let (rng, new_leaf_secret) = gen_rand_bytes rng (hpke_private_key_length #bytes) in
-  let ad = (ps_prefix_to_ps_whole ps_nat).serialize st.epoch in
-  let rand_length = (update_path_entropy_lengths st.public.tree leaf_index) in
-  let (rng, rand) = gen_rand_randomness rng rand_length in
-  let (path_tk, _) = extract_result (update_path st.public.tree leaf_index new_leaf_secret ad rand) in
-  let new_public = commit st.public path_tk in
+  let commiter_state = get_state st.states leaf_index in
+  let (rng, prepare_rand) = gen_rand_randomness rng (prepare_create_commit_entropy_lengths #bytes) in
+  let (rng, finalize_rand) = gen_rand_randomness rng (finalize_create_commit_entropy_lengths commiter_state []) in
+  let group_context: group_context_nt bytes =
+    if not (st.epoch < pow2 64) then failwith "update_leaf: epoch too big" else {
+    version = PV_mls10;
+    cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);
+    group_id = empty #bytes;
+    epoch = st.epoch;
+    tree_hash = empty #bytes;
+    confirmed_transcript_hash = empty #bytes;
+    extensions = [];
+  } in
+  let commit_result =
+    let (pending, _) = extract_result (prepare_create_commit commiter_state prepare_rand) in
+    extract_result (finalize_create_commit pending [] group_context finalize_rand)
+  in
+  let commit_secrets, new_states = List.Tot.unzip (process_update st.states commit_result group_context) in
+  let first_commit_secret = List.hd commit_secrets in
+  if not (List.Tot.for_all ((=) first_commit_secret) commit_secrets) then
+    failwith "update_leaf: inconsistent commit_secrets"
+  ;
   (rng, {
-    public = new_public;
     epoch = st.epoch+1;
-    secrets = update_secret st.secrets (leaf_index, {leaf_secrets with leaf_secret = new_leaf_secret});
+    states = new_states;
   })
 #pop-options
 
 val update_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> ML (rand_state & mls_state bytes)
 let update_rand #bytes #cb rng st =
-  let (rng, i) = gen_rand_num_ml rng (List.Tot.length st.secrets) in
-  let (leaf_index, _) = List.Tot.index st.secrets i in
+  let (rng, i) = gen_rand_num_ml rng (List.Tot.length st.states) in
+  let (|leaf_index, _|) = List.Tot.index st.states i in
   update_leaf rng st leaf_index
 
-val remove_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> nat -> ML (rand_state & mls_state bytes)
-let remove_leaf #bytes #cb rng st leaf_index =
-  if not (leaf_index < pow2 st.public.levels) then failwith "" else
-  (rng, {
-    public = remove st.public leaf_index;
+#push-options " --ifuel 1 --fuel 1"
+val do_remove_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> list (leaf_ind:nat & treekem_state bytes leaf_ind) -> ML (list (leaf_ind:nat & treekem_state bytes leaf_ind))
+let rec do_remove_leaf #bytes #cb removed_ind l =
+  match l with
+  | [] -> []
+  | (|leaf_ind, tk_state|)::t ->
+    let new_tail = do_remove_leaf removed_ind t in
+    if not (removed_ind < pow2 tk_state.levels) then failwith "do_remove_leaf: bad remove index" else
+    if leaf_ind = removed_ind then
+      new_tail
+    else
+      (|leaf_ind, MLS.TreeKEM.API.remove tk_state removed_ind|)::new_tail
+#pop-options
+
+#push-options " --ifuel 1"
+val remove_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> mls_state bytes -> nat -> ML (mls_state bytes)
+let remove_leaf #bytes #cb st leaf_index =
+  {
     epoch = st.epoch+1;
-    secrets = List.Tot.filter (fun (x, _) -> x <> leaf_index) st.secrets;
-  })
+    states = do_remove_leaf leaf_index st.states;
+  }
+#pop-options
 
 val remove_rand: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> ML (rand_state & mls_state bytes)
 let remove_rand #bytes #cb rng st =
-  let (rng, i) = gen_rand_num_ml rng (List.Tot.length st.secrets) in
-  let (leaf_index, _) = List.Tot.index st.secrets i in
-  remove_leaf rng st leaf_index
+  let (rng, i) = gen_rand_num_ml rng (List.Tot.length st.states) in
+  let (|leaf_index, _|) = List.Tot.index st.states i in
+  (rng, remove_leaf st leaf_index)
 
 #push-options "--fuel 0 --ifuel 1"
-val apply_random_operation: #bytes:Type0 -> {|crypto_bytes bytes|} -> state bytes -> ML (state bytes & bool)
+val apply_random_operation: #bytes:Type0 -> {|crypto_bytes bytes|} -> state bytes -> ML (state bytes)
 let apply_random_operation #bytes #cb st =
   let rng = st.rng in
   let (rng, op) =
-    if 2 <= List.Tot.length st.mls.secrets then (
+    if 2 <= List.Tot.length st.mls.states then (
       let (rng, choice) = gen_rand_num_ml rng (st.test.n_add + st.test.n_update + st.test.n_remove) in
       (rng, (
         if choice < st.test.n_add then Add
@@ -153,44 +181,16 @@ let apply_random_operation #bytes #cb st =
   match op with
   | Add -> (
     let (rng, mls) = add_rand rng st.mls in
-    ({rng; mls; test={st.test with n_add = st.test.n_add - 1}}, false)
+    {rng; mls; test={st.test with n_add = st.test.n_add - 1}}
   )
   | Update -> (
     let (rng, mls) = update_rand rng st.mls in
-    ({rng; mls; test={st.test with n_update = st.test.n_update - 1}}, true)
+    {rng; mls; test={st.test with n_update = st.test.n_update - 1}}
   )
   | Remove -> (
     let (rng, mls) = remove_rand rng st.mls in
-    ({rng; mls; test={st.test with n_remove = st.test.n_remove - 1}}, false)
+    {rng; mls; test={st.test with n_remove = st.test.n_remove - 1}}
   )
-#pop-options
-
-#push-options "--fuel 0 --ifuel 1"
-val check_root_secret: {|crypto_bytes bytes|} -> mls_state bytes -> ML unit
-let check_root_secret #cb st =
-  let open MLS.TreeKEM.Types in
-  let (first_index, first_secret) = List.hd st.secrets in
-  //IO.print_string (
-  //  print_tree
-  //    (fun leaf -> match leaf with
-  //      | None -> "_"
-  //      | Some _ -> "L")
-  //    (fun node -> match node with
-  //      | None -> "_"
-  //      | Some np -> "N[" ^ list_to_string nat_to_string np.unmerged_leaves ^ ", " ^ (if np.path_secret_from = Left then "Left" else "Right") ^ ", " ^ nat_to_string (List.Tot.length np.path_secret_ciphertext) ^ "]")
-  //    tree_tk
-  //);
-  //IO.print_string "\n";
-  if not (first_index < pow2 st.public.levels) then failwith "" else
-  let first_root_secret = extract_result (root_secret st.public.tree first_index first_secret.leaf_secret) in
-  List.iter #(nat & participant_secrets bytes) (fun (index, secret) ->
-    if not (index < pow2 st.public.levels) then failwith "" else
-    let cur_root_secret = extract_result (root_secret st.public.tree index secret.leaf_secret) in
-    if not (first_root_secret = cur_root_secret) then
-      failwith ("check_root_secret: " ^ nat_to_string first_index ^ " has " ^ bytes_to_hex_string first_root_secret ^ ", " ^ nat_to_string index ^ " has " ^ bytes_to_hex_string cur_root_secret)
-    else
-      ()
-  ) (List.tail st.secrets)
 #pop-options
 
 #push-options "--fuel 1 --ifuel 1"
@@ -208,15 +208,11 @@ val create_init_state: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> ML (rand
 let create_init_state #bytes #cb seed =
   let rng = init_rand_state seed in
   let (rng, _) = gen_rand_bytes #bytes rng 64 in // Avoid the first bad number generation (might not be useful, but doesn't hurt)
-  let (rng, group_id) = gen_rand_bytes #bytes rng 16 in
-  let (rng, first_leaf_package, first_secrets) = create_participant rng in
+  let (rng, leaf_secret) = gen_rand_bytes #bytes rng (hpke_private_key_length #bytes) in
+  let (hpke_sk, hpke_pk) = extract_result (hpke_gen_keypair #bytes leaf_secret) in
   (rng, ({
-    public = {
-      levels = 0;
-      tree = TLeaf (Some first_leaf_package);
-    };
     epoch = 0;
-    secrets = [(0, first_secrets)];
+    states = [(|0, MLS.TreeKEM.API.create hpke_sk hpke_pk|)]
   }))
 #pop-options
 
@@ -239,17 +235,13 @@ let run_one_self_treekem_test #cb seed avg_n_participant n_remove n_update =
       n_remove;
     };
   } in
-  let (_: state bytes) = foldn (avg_n_participant + n_remove + n_update + n_remove) (fun st ->
-    let (st, check) = apply_random_operation st in
-    (if check then check_root_secret st.mls else ());
-    st
-  ) init_state in
+  let (_: state bytes) = foldn (avg_n_participant + n_remove + n_update + n_remove) apply_random_operation init_state in
   ()
 #pop-options
 
 val custom_test_1: {|crypto_bytes bytes|} -> ML unit
 let custom_test_1 #cb =
-  let (rng, st) = create_init_state 0 in
+  let (rng, st) = create_init_state #bytes 0 in
   let (rng, st) = add_rand rng st in
   let (rng, st) = add_rand rng st in
   let (rng, st) = add_rand rng st in
@@ -258,11 +250,11 @@ let custom_test_1 #cb =
   let (rng, st) = update_leaf rng st 2 in
   let (rng, st) = update_leaf rng st 3 in
   let (rng, st) = update_leaf rng st 4 in
-  let (rng, st) = remove_leaf rng st 2 in
+  let st = remove_leaf st 2 in
   let (rng, st) = update_leaf rng st 1 in
   let (rng, st) = add_rand rng st in
   let (rng, st) = update_leaf rng st 4 in
-  check_root_secret st
+  ()
 
 val run_self_treekem_test: unit -> ML unit
 let run_self_treekem_test () =

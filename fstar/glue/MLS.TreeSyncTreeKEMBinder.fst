@@ -14,16 +14,11 @@ open MLS.Result
 val treesync_to_treekem_node_package:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   parent_node_nt bytes tkt ->
-  result (key_package bytes)
+  result (tk_node bytes)
 let treesync_to_treekem_node_package #bytes #cb np =
-  let? public_key = mk_hpke_public_key np.content "treesync_to_treekem_node_package" "public_key" in
-  let unmerged_leaves = List.Tot.map #(nat_lbytes 4) #nat (fun x -> x) np.unmerged_leaves in
   return ({
-    public_key;
-    last_group_context = empty;
-    unmerged_leaves = unmerged_leaves;
-    path_secret_from = Left;
-    path_secret_ciphertext = [];
+    public_key = np.content;
+    unmerged_leaves = List.Tot.map #(nat_lbytes 4) #nat (fun x -> x) np.unmerged_leaves;
   })
 
 // This does not contain any internal TreeKEM data. To be used then joining a new group.
@@ -37,8 +32,7 @@ let rec treesync_to_treekem #bytes #cb #l #i t =
   | TLeaf None ->
     return (TLeaf None)
   | TLeaf (Some lp) ->
-    let? public_key = mk_hpke_public_key lp.data.content "treesync_to_treekem" "public_key" in
-    return (TLeaf (Some ({public_key} <: member_info bytes)))
+    return (TLeaf (Some ({public_key = lp.data.content} <: tk_leaf bytes)))
   | TNode onp left right -> begin
     let? tk_left = treesync_to_treekem left in
     let? tk_right = treesync_to_treekem right in
@@ -54,21 +48,16 @@ let rec treesync_to_treekem #bytes #cb #l #i t =
 val treekem_to_treesync:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  leaf_node_data_nt bytes tkt -> pathkem bytes l i li ->
+  leaf_node_data_nt bytes tkt -> pre_pathkem bytes l i li ->
   result (external_pathsync bytes tkt l i li)
 let rec treekem_to_treesync #bytes #cb #l #i #li new_leaf_package pk =
   match pk with
   | PLeaf mi ->
+    let? content = mk_mls_bytes mi.public_key "treekem_to_treesync" "content" in
     return (PLeaf ({
       new_leaf_package with
-      content = mi.public_key;
+      content;
     } <: leaf_node_data_nt bytes tkt))
   | PNode okp pk_next ->
     let? next = treekem_to_treesync new_leaf_package pk_next in
-    match okp with
-    | Some kp -> (
-      return (PNode (Some kp.public_key) next)
-    )
-    | None -> (
-      return (PNode None next)
-    )
+    return (PNode okp next)

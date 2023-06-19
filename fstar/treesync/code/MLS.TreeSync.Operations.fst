@@ -143,26 +143,6 @@ let rec compute_leaf_parent_hash_from_path #bytes #cb #tkt #path_leaf_t #l #i #l
     let (_,  new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
     compute_leaf_parent_hash_from_path child p_next new_parent_parent_hash
 
-val get_path_leaf:
-  #leaf_t:Type -> #node_t:Type ->
-  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  path leaf_t node_t l i li ->
-  leaf_t
-let rec get_path_leaf #leaf_t #node_t #i #li p =
-  match p with
-  | PLeaf lp -> lp
-  | PNode _ p_next -> get_path_leaf p_next
-
-val set_path_leaf:
-  #leaf_t_in:Type -> #leaf_t_out:Type -> #node_t:Type ->
-  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  path leaf_t_in node_t l i li -> leaf_t_out ->
-  path leaf_t_out node_t l i li
-let rec set_path_leaf #leaf_t_in #leaf_t_out #node_t #l #i #li p lp =
-  match p with
-  | PLeaf _ -> PLeaf lp
-  | PNode p_content p_next -> PNode p_content (set_path_leaf p_next lp)
-
 val get_leaf_tbs:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   leaf_node_nt bytes tkt -> mls_bytes bytes -> nat_lbytes 4 ->

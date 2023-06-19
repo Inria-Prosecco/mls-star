@@ -1,32 +1,34 @@
 module MLS.TreeKEM.Types
 
 open Comparse
+open MLS.NetworkTypes
+open MLS.TreeKEM.NetworkTypes
 open MLS.Crypto
 open MLS.Tree
 
 #set-options "--fuel 0 --ifuel 0"
 
-type member_info (bytes:Type0) {|crypto_bytes bytes|} = {
-  public_key: hpke_public_key bytes;
+type tk_leaf (bytes:Type0) {|bytes_like bytes|} = {
+  public_key: bytes;
 }
 
-//TODO: move this in Crypto.fsti?
-type path_secret_ciphertext (bytes:Type0) {|crypto_bytes bytes|} = {
-  kem_output: hpke_kem_output bytes;
-  ciphertext: bytes;
-}
-
-type direction = | Left | Right
-
-type key_package (bytes:Type0) {|crypto_bytes bytes|} = {
-  public_key: hpke_public_key bytes;
-  last_group_context: bytes; //Related to version, correspond to the info used in the ciphertexts
+type tk_node (bytes:Type0) {|bytes_like bytes|} = {
+  public_key: bytes;
   unmerged_leaves: list nat;
-  path_secret_from: direction;
-  path_secret_ciphertext: list (path_secret_ciphertext bytes);
+}
+
+type tk_priv (bytes:Type0) {|crypto_bytes bytes|} = {
+  private_key: hpke_private_key bytes;
 }
 
 let treekem (bytes:Type0) {|crypto_bytes bytes|} =
-  tree (option (member_info bytes)) (option (key_package bytes))
+  tree (option (tk_leaf bytes)) (option (tk_node bytes))
+
+let pre_pathkem (bytes:Type0) {|crypto_bytes bytes|} =
+  path (tk_leaf bytes) (option (hpke_public_key_nt bytes))
+
 let pathkem (bytes:Type0) {|crypto_bytes bytes|} =
-  path (member_info bytes) (option (key_package bytes))
+  path (tk_leaf bytes) (option (update_path_node_nt bytes))
+
+let pathkem_priv (bytes:Type0) {|crypto_bytes bytes|} =
+  path (tk_priv bytes) (option (tk_priv bytes))
