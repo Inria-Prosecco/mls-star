@@ -105,17 +105,17 @@ let has_treesync_public_state_invariant tkt pr =
 val treesync_state_to_session_bytes:
   #tkt:treekem_types dy_bytes ->
   pr:preds -> p:principal -> time:timestamp -> si:nat -> vi:nat ->
-  st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) ->
+  group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id ->
   Pure dy_bytes
   (requires
-    is_publishable pr.global_usage time st.group_id /\
+    is_publishable pr.global_usage time group_id /\
     is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun res -> treesync_public_state_pred tkt pr.global_usage p time si vi res)
-let treesync_state_to_session_bytes #tkt pr p time si vi st =
+let treesync_state_to_session_bytes #tkt pr p time si vi group_id st =
   let bare_st: bare_treesync_state tkt = {
-    group_id = st.group_id;
+    group_id = group_id;
     levels = st.levels;
     tree = st.tree;
     tokens = st.tokens;
@@ -126,59 +126,58 @@ let treesync_state_to_session_bytes #tkt pr p time si vi st =
 val new_public_treesync_state:
   #tkt:treekem_types dy_bytes ->
   pr:preds -> p:principal -> time:timestamp ->
-  st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) ->
+  group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id ->
   LCrypto nat pr
   (requires fun t0 ->
     time == trace_len t0 /\
-    is_publishable pr.global_usage time st.group_id /\
+    is_publishable pr.global_usage time group_id /\
     is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun t0 si t1 -> trace_len t1 == trace_len t0 + 1)
-let new_public_treesync_state #tkt pr p time st =
+let new_public_treesync_state #tkt pr p time group_id st =
   let si = new_session_number pr p in
-  let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 st in
+  let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 group_id st in
   new_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si 0 bare_st_bytes;
   si
 
 val set_public_treesync_state:
   #tkt:treekem_types dy_bytes ->
   pr:preds -> p:principal -> si:nat -> time:timestamp ->
-  st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) ->
+  group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id ->
   LCrypto unit pr
   (requires fun t0 ->
     time == trace_len t0 /\
-    is_publishable pr.global_usage time st.group_id /\
+    is_publishable pr.global_usage time group_id /\
     is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     has_treesync_public_state_invariant tkt pr
   )
   (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
-let set_public_treesync_state #tkt pr p si time st =
-  let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 st in
+let set_public_treesync_state #tkt pr p si time group_id st =
+  let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 group_id st in
   update_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si 0 bare_st_bytes
 
 val get_public_treesync_state:
   #tkt:treekem_types dy_bytes ->
   pr:preds -> p:principal -> si:nat -> time:timestamp ->
-  LCrypto (treesync_state dy_bytes tkt (dy_asp pr.global_usage time)) pr
+  LCrypto (group_id:mls_bytes dy_bytes & treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id) pr
   (requires fun t0 ->
     time == trace_len t0 /\
     has_treesync_public_state_invariant tkt pr
   )
-  (ensures fun t0 st t1 ->
-    is_publishable pr.global_usage time st.group_id /\
+  (ensures fun t0 (|group_id, st|) t1 ->
+    is_publishable pr.global_usage time group_id /\
     is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
     t1 == t0
   )
 let get_public_treesync_state #tkt pr p si time =
   let (_, st_bytes) = get_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si in
   let st = Some?.v (parse (bare_treesync_state tkt) st_bytes) in
-  {
-    group_id = st.group_id;
+  (|st.group_id, ({
     levels = st.levels;
     tree = st.tree;
     tokens = st.tokens;
-  }
+  } <: treesync_state dy_bytes tkt (dy_asp pr.global_usage time) st.group_id)|)
 
 (*** Session predicate for private state ***)
 

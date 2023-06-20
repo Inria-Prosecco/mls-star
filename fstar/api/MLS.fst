@@ -42,8 +42,9 @@ let asp: as_parameters bytes = {
 }
 
 noeq type state = {
+  group_id:mls_bytes bytes;
   leaf_index: nat;
-  treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt asp;
+  treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt asp group_id;
   treekem_state: treekem_state bytes leaf_index;
   epoch: nat;
   sign_private_key: sign_private_key bytes;
@@ -80,7 +81,7 @@ let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
 
 val state_to_group_context: state -> result (group_context_nt bytes)
 let state_to_group_context st =
-  compute_group_context st.treesync_state.group_id st.epoch st.treesync_state.tree st.confirmed_transcript_hash
+  compute_group_context st.group_id st.epoch st.treesync_state.tree st.confirmed_transcript_hash
 
 val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
@@ -340,6 +341,7 @@ let create e cred private_sign_key group_id =
   let? handshake_state = MLS.TreeDEM.Keys.init_handshake_ratchet leaf_dem_secret in
   let? application_state = MLS.TreeDEM.Keys.init_application_ratchet leaf_dem_secret in
   return ({
+    group_id;
     treesync_state;
     treekem_state;
     epoch = 0;
@@ -377,7 +379,7 @@ let send_helper st msg e =
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
   let msg_bytes = (ps_prefix_to_ps_whole ps_mls_message_nt).serialize (M_mls10 (M_private_message ct)) in
   let new_st = if msg.content.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
-  let g:group_message = (st.treesync_state.group_id, msg_bytes) in
+  let g:group_message = (st.group_id, msg_bytes) in
   return (new_st, auth, g)
 
 #push-options "--ifuel 1 --fuel 1"
@@ -413,7 +415,7 @@ let generate_welcome_message st wire_format msg msg_auth new_key_packages e =
     group_context = {
       version = PV_mls10;
       cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
-      group_id = future_state.treesync_state.group_id;
+      group_id = future_state.group_id;
       epoch = epoch;
       tree_hash = tree_hash;
       confirmed_transcript_hash = confirmed_transcript_hash;
@@ -492,10 +494,10 @@ let generate_update_path st e proposals =
       let? ext_update_path = treekem_to_treesync my_new_leaf_package_data pre_update_path in
       let? sign_nonce, e = chop_entropy e (sign_nonce_length #bytes) in
       assume(length #bytes sign_nonce == Seq.length sign_nonce);
-      if not (MLS.TreeSync.Operations.external_path_to_path_pre st.treesync_state.tree ext_update_path st.treesync_state.group_id) then
+      if not (MLS.TreeSync.Operations.external_path_to_path_pre st.treesync_state.tree ext_update_path st.group_id) then
         error "generate_update_path: bad precondition"
       else
-        return (MLS.TreeSync.Operations.external_path_to_path st.treesync_state.tree ext_update_path st.treesync_state.group_id st.sign_private_key sign_nonce)
+        return (MLS.TreeSync.Operations.external_path_to_path st.treesync_state.tree ext_update_path st.group_id st.sign_private_key sign_nonce)
     ) in
     let? provisional_group_context = (
       let? group_context = state_to_group_context st in
@@ -542,7 +544,7 @@ let generate_commit state e proposals =
   let? proposals = mk_mls_list (List.Tot.map POR_proposal proposals) "generate_commit" "proposals" in
   let state = { state with pending_updatepath = (update_path, pending_state)::state.pending_updatepath} in
   let msg: framed_content_nt bytes = {
-    group_id = state.treesync_state.group_id;
+    group_id = state.group_id;
     epoch;
     sender = S_member leaf_index;
     authenticated_data = empty #bytes; //TODO?
@@ -590,7 +592,7 @@ let send state e data =
   let? leaf_index = mk_nat_lbytes state.leaf_index "generate_commit" "leaf_index" in
   let? data = mk_mls_bytes data "generate_commit" "data" in
   let msg: framed_content_nt bytes = {
-    group_id = state.treesync_state.group_id;
+    group_id = state.group_id;
     epoch;
     sender = S_member leaf_index;
     authenticated_data = empty #bytes; //TODO?
@@ -675,6 +677,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     generation = 0;
   } in
   let st: state = {
+    group_id;
     treesync_state;
     treekem_state;
     epoch = group_info.tbs.group_context.epoch;

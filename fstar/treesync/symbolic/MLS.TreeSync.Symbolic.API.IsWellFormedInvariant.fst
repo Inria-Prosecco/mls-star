@@ -44,8 +44,8 @@ let is_well_formed_finalize_welcome #bytes #cb #tkt #asp #l #group_id #t pre pen
   ()
 
 val is_well_formed_finalize_add:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
-  #st:treesync_state bytes tkt asp -> #ln:leaf_node_nt bytes tkt ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  #st:treesync_state bytes tkt asp group_id -> #ln:leaf_node_nt bytes tkt ->
   pre:bytes_compatible_pre bytes ->
   pend:pending_add st ln -> token:token_for_add pend ->
   Lemma
@@ -54,7 +54,7 @@ val is_well_formed_finalize_add:
     let (new_state, _) = finalize_add pend token in
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
-let is_well_formed_finalize_add #bytes #cb #tkt #asp #st #ln pre pend token =
+let is_well_formed_finalize_add #bytes #cb #tkt #asp #group_id #st #ln pre pend token =
   match find_empty_leaf st.tree with
   | Some li -> (
     is_well_formed_tree_add pre st.tree li ln
@@ -68,8 +68,8 @@ let is_well_formed_finalize_add #bytes #cb #tkt #asp #st #ln pre pend token =
   )
 
 val is_well_formed_finalize_update:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
-  #st:treesync_state bytes tkt asp -> #ln:leaf_node_nt bytes tkt -> #li:treesync_index st ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  #st:treesync_state bytes tkt asp group_id -> #ln:leaf_node_nt bytes tkt -> #li:treesync_index st ->
   pre:bytes_compatible_pre bytes ->
   pend:pending_update st ln li -> token:token_for_update pend ->
   Lemma
@@ -78,12 +78,12 @@ val is_well_formed_finalize_update:
     let new_state = finalize_update pend token in
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
-let is_well_formed_finalize_update #bytes #cb #tkt #asp #st #ln #li pre pend token =
+let is_well_formed_finalize_update #bytes #cb #tkt #asp #group_id #st #ln #li pre pend token =
   is_well_formed_tree_update pre st.tree li ln
 
 val is_well_formed_finalize_remove:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
-  #st:treesync_state bytes tkt asp -> #li:treesync_index st ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  #st:treesync_state bytes tkt asp group_id -> #li:treesync_index st ->
   pre:bytes_compatible_pre bytes ->
   pend:pending_remove st li ->
   Lemma
@@ -92,13 +92,13 @@ val is_well_formed_finalize_remove:
     let new_state = finalize_remove pend in
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
-let is_well_formed_finalize_remove #bytes #cb #tkt #asp #st #li pre pend =
+let is_well_formed_finalize_remove #bytes #cb #tkt #asp #group_id #st #li pre pend =
   //No need to prove for `truncate`? Looks like F* do it automatically
   is_well_formed_tree_remove pre st.tree li
 
 val is_well_formed_finalize_commit:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
-  #st:treesync_state bytes tkt asp -> #li:treesync_index st -> #p:pathsync bytes tkt st.levels 0 li ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  #st:treesync_state bytes tkt asp group_id -> #li:treesync_index st -> #p:pathsync bytes tkt st.levels 0 li ->
   pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
   pend:pending_commit st p -> token:token_for_commit pend ->
   Lemma
@@ -107,5 +107,5 @@ val is_well_formed_finalize_commit:
     let new_state = finalize_commit pend token in
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
-let is_well_formed_finalize_commit #bytes #cb #tkt #asp #st #li #p pre pend token =
+let is_well_formed_finalize_commit #bytes #cb #tkt #asp #group_id #st #li #p pre pend token =
   is_well_formed_apply_path pre st.tree p

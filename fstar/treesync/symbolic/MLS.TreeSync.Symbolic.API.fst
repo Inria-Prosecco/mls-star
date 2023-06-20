@@ -121,7 +121,7 @@ let create #tkt pr p as_session gmgr_session group_id ln secret_session =
   let token: as_token_for (dy_asp pr.global_usage now) create_pend.as_input = token in
   let st = finalize_create create_pend token in
   is_well_formed_finalize_create (is_publishable pr.global_usage now) create_pend token;
-  let si_public = new_public_treesync_state pr p now st in
+  let si_public = new_public_treesync_state pr p now _ st in
   let group_sessions = { si_public; si_private = secret_session; } in
   add_new_group_sessions pr p gmgr_session group_id group_sessions
 
@@ -145,7 +145,7 @@ let welcome #tkt pr p as_session gmgr_session kpmgr_session my_key_package group
   let tokens: tokens_for_welcome (dy_asp pr.global_usage now) welcome_pend = tokens in
   let st = finalize_welcome welcome_pend tokens in
   is_well_formed_finalize_welcome (is_publishable pr.global_usage now) welcome_pend tokens;
-  let si_public = new_public_treesync_state pr p now st in
+  let si_public = new_public_treesync_state pr p now _ st in
   let si_private = (find_key_package_secret_session tkt pr p kpmgr_session my_key_package).si_private in
   let group_sessions = { si_public; si_private; } in
   add_new_group_sessions pr p gmgr_session group_id group_sessions
@@ -163,13 +163,13 @@ val add:
 let add #tkt pr p as_session gmgr_session group_id ln =
   let now = global_timestamp () in
   let group_session = find_group_sessions pr p gmgr_session group_id in
-  let st = get_public_treesync_state #tkt pr p group_session.si_public now in
+  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
 
   let add_pend = extract_result pr (prepare_add st ln) in
   let token = get_token_for pr p as_session add_pend.as_input in
   let (new_st, new_leaf_index) = finalize_add add_pend token in
   is_well_formed_finalize_add (is_publishable pr.global_usage now) add_pend token;
-  set_public_treesync_state pr p group_session.si_public now new_st;
+  set_public_treesync_state pr p group_session.si_public now _ new_st;
   new_leaf_index
 
 val update:
@@ -185,13 +185,13 @@ val update:
 let update #tkt pr p as_session gmgr_session group_id ln li =
   let now = global_timestamp () in
   let group_session = find_group_sessions pr p gmgr_session group_id in
-  let st = get_public_treesync_state #tkt pr p group_session.si_public now in
+  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
   guard pr (li < pow2 st.levels);
   let update_pend = extract_result pr (prepare_update st ln li) in
   let token = get_token_for pr p as_session update_pend.as_input in
   let new_st = finalize_update update_pend token in
   is_well_formed_finalize_update (is_publishable pr.global_usage now) update_pend token;
-  set_public_treesync_state pr p group_session.si_public now new_st
+  set_public_treesync_state pr p group_session.si_public now _ new_st
 
 val remove:
   #tkt:treekem_types dy_bytes ->
@@ -205,12 +205,12 @@ val remove:
 let remove #tkt pr p as_session gmgr_session group_id li =
   let now = global_timestamp () in
   let group_session = find_group_sessions pr p gmgr_session group_id in
-  let st = get_public_treesync_state #tkt pr p group_session.si_public now in
+  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
   guard pr (li < pow2 st.levels);
   let remove_pend = extract_result pr (prepare_remove st li) in
   let new_st = finalize_remove remove_pend in
   is_well_formed_finalize_remove (is_publishable pr.global_usage now) remove_pend;
-  set_public_treesync_state pr p group_session.si_public now new_st
+  set_public_treesync_state pr p group_session.si_public now _ new_st
 
 #push-options "--z3rlimit 25"
 val commit:
@@ -226,13 +226,13 @@ val commit:
 let commit #tkt #l #li pr p as_session gmgr_session group_id path =
   let now = global_timestamp () in
   let group_session = find_group_sessions pr p gmgr_session group_id in
-  let st = get_public_treesync_state #tkt pr p group_session.si_public now in
+  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
   guard pr (l = st.levels);
   let commit_pend = extract_result pr (prepare_commit st path) in
   let token = get_token_for pr p as_session commit_pend.as_input in
   let new_st = finalize_commit commit_pend token in
   is_well_formed_finalize_commit (is_publishable pr.global_usage now) commit_pend token;
-  set_public_treesync_state pr p group_session.si_public now new_st
+  set_public_treesync_state pr p group_session.si_public now _ new_st
 #pop-options
 
 (*** Create signature keypair ***)
@@ -296,10 +296,10 @@ let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
   let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
   let now1 = global_timestamp () in
   let group_session = find_group_sessions pr p gmgr_session group_id in
-  let st = get_public_treesync_state #tkt pr p group_session.si_public now1 in
+  let (|group_id', st|) = get_public_treesync_state #tkt pr p group_session.si_public now1 in
   let private_st = get_private_treesync_state pr p group_session.si_private in
   guard pr (
-    (group_id = st.group_id) &&
+    (group_id = group_id') &&
     (l = st.levels) &&
     (tree = st.tree) &&
     (external_path_to_path_pre tree path group_id) &&

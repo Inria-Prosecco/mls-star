@@ -431,15 +431,15 @@ let rec all_credentials_ok_subtree #bytes #cb #tkt #asp #lp #ld #ip #id d p ast_
 /// - or the principal at the leaf is corrupt.
 /// This theorem is mostly a wrapper around `parent_hash_implies_event`.
 val state_implies_event:
-  #tkt:treekem_types dy_bytes -> #l:nat -> #i:tree_index l ->
+  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> #l:nat -> #i:tree_index l ->
   gu:global_usage -> time:timestamp ->
-  st:treesync_state dy_bytes tkt (dy_asp gu time) -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i ->
+  st:treesync_state dy_bytes tkt (dy_asp gu time) group_id -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp gu time).token_t l i ->
   Lemma
   (requires
     has_leaf_node_tbs_invariant tkt gu /\
     node_has_parent_hash t /\
     is_well_formed _ (is_valid gu time) (st.tree <: treesync _ _ _ _) /\
-    is_valid gu time st.group_id /\
+    is_valid gu time group_id /\
     is_subtree_of t st.tree /\
     is_subtree_of ast st.tokens
   )
@@ -449,19 +449,19 @@ val state_implies_event:
       let authentifier_li = get_authentifier_index t in
       let authentifier = (Some?.v (leaf_at ast authentifier_li)).who in
       (
-        tree_has_event authentifier time st.group_id (|l, i, (canonicalize t authentifier_li)|)
+        tree_has_event authentifier time group_id (|l, i, (canonicalize t authentifier_li)|)
       ) \/ (
         is_corrupt time (p_id authentifier)
       )
     )
   ))
-let state_implies_event #tkt #l #i gu time st t ast =
+let state_implies_event #tkt #group_id #l #i gu time st t ast =
   unmerged_leaves_ok_subtree t st.tree;
   parent_hash_invariant_subtree t st.tree;
-  valid_leaves_invariant_subtree st.group_id t st.tree;
+  valid_leaves_invariant_subtree group_id t st.tree;
   is_well_formed_treesync_subtree (is_valid gu time) t st.tree;
   all_credentials_ok_subtree t st.tree ast st.tokens;
-  parent_hash_implies_event gu time st.group_id t ast
+  parent_hash_implies_event gu time group_id t ast
 
 (*** Proof of path signature ***)
 
