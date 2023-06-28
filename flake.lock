@@ -26,11 +26,11 @@
     "dolev-yao-star-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1682000512,
-        "narHash": "sha256-hW7ugRgVWIFg2N/2AKDeXtgY8JC50LvZWcSdkw54Irw=",
+        "lastModified": 1686590979,
+        "narHash": "sha256-it1o4J9/j31lPKM7nP9X4lUqSjOmG895bQU62K5rp04=",
         "ref": "comparse",
-        "rev": "42bd3fccd85bd549ccb9427143d6b3beab94cc77",
-        "revCount": 1163,
+        "rev": "2fb30204de95947f332cf3ad7287a518478b691a",
+        "revCount": 1165,
         "type": "git",
         "url": "ssh://git@github.com/prosecco/dolev-yao-star.git"
       },
