@@ -39,11 +39,10 @@ let parse_uint64 (json:Yojson.Safe.t): FStar_UInt64.t =
   | `Intlit x -> FStar_UInt64.uint_to_t (Z.of_string x)
   | _ -> failwith "parse_uint64: not an int"
 
-let parse_optional_uint32 (json:Yojson.Safe.t): FStar_UInt32.t option =
+let parse_option (parse:Yojson.Safe.t -> 'a) (json:Yojson.Safe.t): 'a option =
   match json with
-  | `Int x -> Some (int_to_uint32 x)
   | `Null -> None
-  | _ -> failwith "parse_optional_uint32: not an int or null"
+  | _ -> Some (parse json)
 
 let map_json (f:Yojson.Safe.t -> 'b) (json:Yojson.Safe.t): 'b list =
   match json with
@@ -67,10 +66,10 @@ let parse_treemath_test (json:Yojson.Safe.t): treemath_test =
       n_leaves=int_to_uint32 n_leaves;
       n_nodes=int_to_uint32 n_nodes;
       root=int_to_uint32 root;
-      left=List.map parse_optional_uint32 left;
-      right=List.map parse_optional_uint32 right;
-      parent=List.map parse_optional_uint32 parent;
-      sibling=List.map parse_optional_uint32 sibling;
+      left=List.map (parse_option parse_uint32) left;
+      right=List.map (parse_option parse_uint32) right;
+      parent=List.map (parse_option parse_uint32) parent;
+      sibling=List.map (parse_option parse_uint32) sibling;
     })
   | _ -> failwith "parse_treemath_test: incorrect test vector format"
 
@@ -469,6 +468,76 @@ let parse_tree_validation_test (json:Yojson.Safe.t): tree_validation_test =
     }
   | _ -> failwith "parse_tree_validation_test: incorrect test vector format"
 
+(*** TreeKEM ***)
+
+let parse_treekem_leaf_path_secret (json:Yojson.Safe.t): treekem_leaf_path_secret =
+  match json with
+  | `Assoc [
+    ("node", `Int node);
+    ("path_secret", `String path_secret);
+  ] ->
+    {
+      node = int_to_uint32 node;
+      path_secret = path_secret;
+    }
+  | _ -> failwith "parse_treekem_leaf_path_secret: incorrect test vector format"
+
+let parse_treekem_leaf_private (json:Yojson.Safe.t): treekem_leaf_private =
+  match json with
+  | `Assoc [
+    ("encryption_priv", `String encryption_priv);
+    ("index", `Int index);
+    ("path_secrets", `List path_secrets);
+    ("signature_priv", `String signature_priv);
+  ] ->
+    {
+      index = int_to_uint32 index;
+      encryption_priv = encryption_priv;
+      signature_priv1 = signature_priv;
+      path_secrets = List.map parse_treekem_leaf_path_secret path_secrets;
+    }
+  | _ -> failwith "parse_treekem_leaf_private: incorrect test vector format"
+
+let parse_treekem_update_path (json:Yojson.Safe.t): treekem_update_path =
+  match json with
+  | `Assoc [
+    ("commit_secret", `String commit_secret);
+    ("path_secrets", `List path_secrets);
+    ("sender", `Int sender);
+    ("tree_hash_after", `String tree_hash_after);
+    ("update_path", `String update_path);
+  ] ->
+    {
+      sender = int_to_uint32 sender;
+      update_path = update_path;
+      path_secrets1 = List.map (parse_option parse_string) path_secrets;
+      commit_secret1 = commit_secret;
+      tree_hash_after = tree_hash_after;
+    }
+  | _ -> failwith "parse_treekem_update_path: incorrect test vector format"
+
+let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
+  match json with
+  | `Assoc [
+    ("cipher_suite", `Int cipher_suite);
+    ("confirmed_transcript_hash", `String confirmed_transcript_hash);
+    ("epoch", `Int epoch);
+    ("group_id", `String group_id);
+    ("leaves_private", `List leaves_private);
+    ("ratchet_tree", `String ratchet_tree);
+    ("update_paths", `List update_paths);
+  ] ->
+    {
+      cipher_suite8 = int_to_uint16 cipher_suite;
+      group_id3 = group_id;
+      epoch1 = int_to_uint64 epoch;
+      confirmed_transcript_hash2 = confirmed_transcript_hash;
+      ratchet_tree = ratchet_tree;
+      leaves_private = List.map parse_treekem_leaf_private leaves_private;
+      update_paths = List.map parse_treekem_update_path update_paths;
+    }
+  | _ -> failwith "parse_treekem_test: incorrect test vector format"
+
 (*** Messages ***)
 
 let parse_messages_test (json:Yojson.Safe.t): messages_test =
@@ -496,7 +565,7 @@ let parse_messages_test (json:Yojson.Safe.t): messages_test =
       mls_welcome = mls_welcome;
       mls_group_info = mls_group_info;
       mls_key_package = mls_key_package;
-      ratchet_tree = ratchet_tree;
+      ratchet_tree1 = ratchet_tree;
       group_secrets = group_secrets;
       add_proposal = add_proposal;
       update_proposal = update_proposal;
@@ -513,48 +582,6 @@ let parse_messages_test (json:Yojson.Safe.t): messages_test =
     }
   | _ -> failwith "parse_messages_test: incorrect test vector format"
 
-(*** Old ***)
-
-let parse_treekem_test (json:Yojson.Safe.t): treekem_test =
-  match json with
-  | `Assoc [
-    ("add_sender", `Int add_sender);
-    ("cipher_suite", `Int cipher_suite);
-    ("my_key_package", `String my_key_package);
-    ("my_leaf_secret", `String my_leaf_secret);
-    ("my_path_secret", `String my_path_secret);
-    ("ratchet_tree_after", `String ratchet_tree_after);
-    ("ratchet_tree_before", `String ratchet_tree_before);
-    ("root_secret_after_add", `String root_secret_after_add);
-    ("root_secret_after_update", `String root_secret_after_update);
-    ("tree_hash_after", `String tree_hash_after);
-    ("tree_hash_before", `String tree_hash_before);
-    ("update_group_context", `String update_group_context);
-    ("update_path", `String update_path);
-    ("update_sender", `Int update_sender);
-  ] ->
-    ({
-      cipher_suite8 = int_to_uint16 cipher_suite;
-      input = {
-        ratchet_tree_before = ratchet_tree_before;
-        add_sender = int_to_uint32 add_sender;
-        my_leaf_secret = my_leaf_secret;
-        my_key_package = my_key_package;
-        my_path_secret = my_path_secret;
-        update_sender = int_to_uint32 update_sender;
-        update_path = update_path;
-        update_group_context = update_group_context;
-      };
-      output = {
-        tree_hash_before = tree_hash_before;
-        root_secret_after_add = root_secret_after_add;
-        root_secret_after_update = root_secret_after_update;
-        ratchet_tree_after = ratchet_tree_after;
-        tree_hash_after = tree_hash_after;
-      };
-    })
-  | _ -> failwith "parse_treekem_test: incorrect test vector format"
-
 (*** Final functions ***)
 
 let get_filename (typ:test_type): string =
@@ -569,8 +596,8 @@ let get_filename (typ:test_type): string =
   | Welcome -> "test_vectors/data/welcome.json"
   | TreeOperations -> "test_vectors/data/tree-operations.json"
   | TreeValidation -> "test_vectors/data/tree-validation.json"
-  | Messages -> "test_vectors/data/messages.json"
   | TreeKEM -> "test_vectors/data/treekem.json"
+  | Messages -> "test_vectors/data/messages.json"
 
 let get_filename t =
   let f = get_filename t in
@@ -643,16 +670,15 @@ let get_testsuite (typ:test_type): testsuite =
       (TreeValidation_test (List.map parse_tree_validation_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
-  | Messages -> begin
-    match json with
-    | `List l ->
-      (Messages_test (List.map parse_messages_test l))
-    | _ -> failwith "get_testsuite: incorrect test vector format"
-  end
   | TreeKEM -> begin
     match json with
     | `List l ->
       (TreeKEM_test (List.map parse_treekem_test l))
     | _ -> failwith "get_testsuite: incorrect test vector format"
   end
-
+  | Messages -> begin
+    match json with
+    | `List l ->
+      (Messages_test (List.map parse_messages_test l))
+    | _ -> failwith "get_testsuite: incorrect test vector format"
+  end

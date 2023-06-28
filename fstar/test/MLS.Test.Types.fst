@@ -223,6 +223,38 @@ type tree_validation_test = {
   tree_hashes: list string;
 }
 
+(*** TreeKEM ***)
+
+type treekem_leaf_path_secret = {
+  node: U32.t;
+  path_secret: string;
+}
+
+type treekem_leaf_private = {
+  index: U32.t;
+  encryption_priv: string;
+  signature_priv: string;
+  path_secrets: list treekem_leaf_path_secret;
+}
+
+type treekem_update_path = {
+  sender: U32.t;
+  update_path: string;
+  path_secrets: list (option string);
+  commit_secret: string;
+  tree_hash_after: string;
+}
+
+type treekem_test = {
+  cipher_suite: U16.t;
+  group_id: string;
+  epoch: U64.t;
+  confirmed_transcript_hash: string;
+  ratchet_tree: string;
+  leaves_private: list treekem_leaf_private;
+  update_paths: list treekem_update_path;
+}
+
 (*** Messages ***)
 
 type messages_test = {
@@ -249,35 +281,6 @@ type messages_test = {
   private_message: string;
 }
 
-(*** Old ***)
-
-type treekem_test_input = {
-  ratchet_tree_before: string;
-
-  add_sender: U32.t;
-  my_leaf_secret: string;
-  my_key_package: string;
-  my_path_secret: string;
-
-  update_sender: U32.t;
-  update_path: string;
-  update_group_context: string;
-}
-
-type treekem_test_output = {
-  tree_hash_before: string;
-  root_secret_after_add: string;
-  root_secret_after_update: string;
-  ratchet_tree_after: string;
-  tree_hash_after: string;
-}
-
-type treekem_test = {
-  cipher_suite: U16.t;
-  input: treekem_test_input;
-  output: treekem_test_output;
-}
-
 type test_type =
   | TreeMath
   | CryptoBasics
@@ -289,8 +292,8 @@ type test_type =
   | Welcome
   | TreeOperations
   | TreeValidation
-  | Messages
   | TreeKEM
+  | Messages
 
 type testsuite =
   | TreeMath_test: list treemath_test -> testsuite
@@ -303,5 +306,5 @@ type testsuite =
   | Welcome_test: list welcome_test -> testsuite
   | TreeOperations_test: list tree_operations_test -> testsuite
   | TreeValidation_test: list tree_validation_test -> testsuite
-  | Messages_test: list messages_test -> testsuite
   | TreeKEM_test: list treekem_test -> testsuite
+  | Messages_test: list messages_test -> testsuite

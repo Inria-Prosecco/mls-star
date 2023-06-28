@@ -102,7 +102,7 @@ copy_tests: extract_tests
 
 # Test vectors
 
-ALL_TEST_VECTORS = tree-math crypto-basics secret-tree message-protection key-schedule psk_secret transcript-hashes welcome tree-operations tree-validation messages
+ALL_TEST_VECTORS = tree-math crypto-basics secret-tree message-protection key-schedule psk_secret transcript-hashes welcome tree-operations tree-validation treekem messages
 ALL_TEST_VECTORS_JSON = $(addprefix test_vectors/data/, $(addsuffix .json, $(ALL_TEST_VECTORS)))
 
 test_vectors/data:
@@ -121,7 +121,7 @@ build: copy_lib
 	OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune build --profile=release
 
 check: copy_lib copy_tests $(ALL_TEST_VECTORS_JSON)
-	OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune runtest --force --no-buffer --display=quiet --profile=release
+	OCAMLRUNPARAM=b OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune runtest --force --no-buffer --display=quiet --profile=release
 
 release:
 	tar cjvf mls-js-$(shell date +%Y%m%d%H%M%z).tar.bz2 js/index.html js/index.js _build/default/js/MLS_JS.bc.js

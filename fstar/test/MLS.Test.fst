@@ -14,8 +14,8 @@ open MLS.Test.FromExt.TranscriptHashes
 open MLS.Test.FromExt.Welcome
 open MLS.Test.FromExt.TreeOperations
 open MLS.Test.FromExt.TreeValidation
-open MLS.Test.FromExt.Messages
 open MLS.Test.FromExt.TreeKEM
+open MLS.Test.FromExt.Messages
 open MLS.Test.Self.TreeKEM
 open MLS.Test.Utils
 open MLS.Test.Bench
@@ -63,6 +63,9 @@ let run_tree_operations_tests () =
 let run_tree_validation_tests () =
   run_tests "Tree Validation" TreeValidation TreeValidation_test? TreeValidation_test?._0 test_tree_validation
 
+let run_treekem_tests () =
+  run_tests "TreeKEM" TreeKEM TreeKEM_test? TreeKEM_test?._0 test_treekem
+
 let run_messages_tests () =
   run_tests "Messages" Messages Messages_test? Messages_test?._0 test_messages
 
@@ -78,6 +81,7 @@ let main =
   run_welcome_tests ();
   run_tree_operations_tests ();
   run_tree_validation_tests ();
+  run_treekem_tests ();
   run_messages_tests ();
   run_self_treekem_test ();
   bench {name = "adds"; n_message_rounds = 20; max_n_members = 10; do_removes = false;};
