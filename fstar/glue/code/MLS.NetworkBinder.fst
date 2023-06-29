@@ -176,6 +176,7 @@ let rec ratchet_tree_to_treesync_aux #bytes #bl #tkt l i nodes =
   )
 #pop-options
 
+#push-options "--ifuel 0 --fuel 0"
 val ratchet_tree_to_treesync:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   ratchet_tree_nt bytes tkt ->
@@ -184,6 +185,7 @@ let ratchet_tree_to_treesync #bytes #bl #tkt nodes =
   let? (|new_nodes, l|) = ratchet_tree_l nodes in
   let? res = ratchet_tree_to_treesync_aux l 0 new_nodes in
   return #((l:nat & TS.treesync bytes tkt l 0)) (|l, res|)
+#pop-options
 
 val treesync_to_ratchet_tree_aux:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->

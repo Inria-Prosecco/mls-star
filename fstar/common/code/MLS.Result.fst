@@ -20,7 +20,7 @@ let error #a s = ProtocolError s
 //TODO unfold? (to remove all the lambdas in the spec and in the generated code)
 val (let?):
   #a:Type -> #b:Type ->
-  result a -> (a -> result b) ->
+  rx:result a -> (x:a -> Pure (result b) (requires rx == Success x) (ensures fun _ -> True)) ->
   result b
 let (let?) #a #b rx f =
   match rx with
