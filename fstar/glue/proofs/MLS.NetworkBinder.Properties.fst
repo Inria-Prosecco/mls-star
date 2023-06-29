@@ -3,6 +3,10 @@ module MLS.NetworkBinder.Properties
 open MLS.Tree
 open MLS.TreeCommon
 
+#set-options "--fuel 1 --ifuel 1"
+
+(*** Path filtering definition ***)
+
 val path_filtering_ok:
   #tree_leaf_t:Type -> #tree_node_t:Type ->
   #path_leaf_t:Type -> #path_node_t:Type ->

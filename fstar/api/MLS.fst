@@ -523,7 +523,7 @@ let generate_update_path st e proposals =
     let? (finalize_create_commit_rand, e) = unsafe_mk_randomness e in
     let? create_commit_result = MLS.TreeKEM.API.finalize_create_commit pending_create_commit (List.Tot.map snd added_leaves) provisional_group_context finalize_create_commit_rand in
     let uncompressed_update_path = mls_star_paths_to_update_path update_path_sync create_commit_result.update_path in
-    let? update_path = compress_update_path st.treesync_state.tree uncompressed_update_path in
+    let? update_path = compress_update_path uncompressed_update_path in
     assume(List.Tot.length (List.Tot.map fst added_leaves) == List.Tot.length create_commit_result.added_leaves_path_secrets);
     let path_secrets = zip (List.Tot.map fst added_leaves) create_commit_result.added_leaves_path_secrets in
     return (({

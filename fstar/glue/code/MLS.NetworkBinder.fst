@@ -9,7 +9,6 @@ open MLS.Crypto
 open MLS.Result
 open MLS.Tree
 open MLS.TreeCommon
-open MLS.MiscLemmas
 module TS = MLS.TreeSync.Types
 module TK = MLS.TreeKEM.Types
 
@@ -19,44 +18,51 @@ let sparse_update_path (bytes:Type0) {|bytes_like bytes|} = path (leaf_node_nt b
 
 (*** UpdatePath to MLS* ***)
 
+
+val uncompress_update_path_aux:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #leaf_t:Type -> #node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  li:leaf_index l i -> tree (option leaf_t) (option node_t) l i -> (leaf_node_nt bytes tkt & list (update_path_node_nt bytes)) ->
+  result (sparse_update_path bytes l i li)
+let rec uncompress_update_path_aux #bytes #bl #leaf_t #node_t #l #i li t (leaf_node, nodes) =
+  match t with
+  | TLeaf _ -> (
+    if not (List.length nodes = 0) then
+      error "uncompress_update_path: update_path.nodes is too long"
+    else (
+      return (PLeaf leaf_node)
+    )
+  )
+  | TNode _ left right -> (
+    let (child, sibling) = get_child_sibling t li in
+    if is_tree_empty sibling then (
+      let? path_next = uncompress_update_path_aux _ child (leaf_node, nodes) in
+      return (PNode None path_next)
+    ) else (
+      if not (List.length nodes > 0) then
+        error "uncompress_update_path: update_path.nodes is too short"
+      else (
+        let (tail_nodes, head_nodes) = List.unsnoc nodes in
+        let? path_next = uncompress_update_path_aux _ child (leaf_node, tail_nodes) in
+        return (PNode (Some head_nodes) path_next)
+      )
+    )
+  )
+
 val uncompress_update_path:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   #leaf_t:Type -> #node_t:Type ->
   #l:nat -> #i:tree_index l ->
   li:leaf_index l i -> tree (option leaf_t) (option node_t) l i -> update_path_nt bytes ->
   result (sparse_update_path bytes l i li)
-let rec uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path =
-  match t with
-  | TLeaf _ -> (
-    if not (List.length update_path.nodes = 0) then
-      error "uncompress_update_path: update_path.nodes is too long"
-    else (
-      return (PLeaf update_path.leaf_node)
-    )
-  )
-  | TNode _ left right -> (
-    let (child, sibling) = get_child_sibling t li in
-    if is_tree_empty sibling then (
-      let? path_next = uncompress_update_path _ child update_path in
-      return (PNode None path_next)
-    ) else (
-      if not (List.length update_path.nodes > 0) then
-        error "uncompress_update_path: update_path.nodes is too short"
-      else (
-        let update_path_length = (List.length update_path.nodes) in
-        let (tail_update_path_nodes, head_update_path_nodes) = List.unsnoc update_path.nodes in
-        bytes_length_unsnoc ps_update_path_node_nt update_path.nodes;
-        let next_update_path = { update_path with nodes = tail_update_path_nodes } in
-        let? path_next = uncompress_update_path _ child next_update_path in
-        return (PNode (Some head_update_path_nodes) path_next)
-      )
-    )
-  )
+let uncompress_update_path #bytes #bl #leaf_t #node_t #l #i li t update_path =
+  uncompress_update_path_aux li t (update_path.leaf_node, update_path.nodes)
 
 val update_path_to_treesync:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  update_path:sparse_update_path bytes l i li ->
+  sparse_update_path bytes l i li ->
   TS.pathsync bytes tkt l i li
 let rec update_path_to_treesync #bytes #cb #l #i #li p =
   match p with
@@ -81,36 +87,39 @@ let leaf_node_to_treekem #bytes #cb ln =
 val update_path_to_treekem:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  update_path:sparse_update_path bytes l i li ->
+  sparse_update_path bytes l i li ->
   TK.pathkem bytes l i li
 let update_path_to_treekem #bytes #cb #l #i #li p =
   set_path_leaf p (leaf_node_to_treekem (get_path_leaf p))
 
-(*** MLS* to UpdatePath ***)
+  (*** MLS* to UpdatePath ***)
+
+val compress_update_path_aux:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  sparse_update_path bytes l i li ->
+  (leaf_node_nt bytes tkt & list (update_path_node_nt bytes))
+let rec compress_update_path_aux #bytes #bl #l #i #li p =
+  match p with
+  | PLeaf ln ->
+    (ln, [])
+  | PNode p_opt_data p_next ->
+    let (ln, nodes) = compress_update_path_aux p_next in
+    match p_opt_data with
+    | None -> (ln, nodes)
+    | Some p_data -> (
+      (ln, List.Tot.snoc (nodes, p_data))
+    )
 
 val compress_update_path:
   #bytes:Type0 -> {|bytes_like bytes|} ->
-  #leaf_t:Type -> #node_t:Type ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  (tree (option leaf_t) (option node_t) l i) -> sparse_update_path bytes l i li ->
+  sparse_update_path bytes l i li ->
   result (update_path_nt bytes)
-let rec compress_update_path #bytes #bl #leaf_t #node_t #l #i #li t update_path =
-  match update_path with
-  | PLeaf ln ->
-    return ({leaf_node = ln; nodes = []})
-  | PNode p_opt_data p_next ->
-    let (child, sibling) = get_child_sibling t li in
-    if is_tree_empty sibling then (
-      compress_update_path child p_next
-    ) else (
-      let? compressed_p_next = compress_update_path child p_next in
-      match p_opt_data with
-      | None -> return compressed_p_next
-      | Some p_data -> (
-        let? new_nodes = mk_mls_list (List.Tot.snoc (compressed_p_next.nodes, p_data)) "compress_update_path" "new_nodes" in
-        return ({ compressed_p_next with nodes = new_nodes; })
-      )
-    )
+let compress_update_path #bytes #bl #l #i #li p =
+  let (leaf_node, nodes) = compress_update_path_aux p in
+  let? nodes = mk_mls_list nodes "compress_update_path" "update_path" in
+  return {leaf_node; nodes;}
 
 val mls_star_paths_to_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->

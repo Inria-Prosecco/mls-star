@@ -138,7 +138,7 @@ let generate_my_update_path #cb #l group_context tsync st =
   let (rand, finalize_create_commit_rand) = gen_rand_randomness rand _ in
   let create_commit_result = extract_result (MLS.TreeKEM.API.finalize_create_commit pending_create_commit [] group_context finalize_create_commit_rand) in
   let uncompressed_update_path = mls_star_paths_to_update_path update_path_sync create_commit_result.update_path in
-  (extract_result (compress_update_path tsync uncompressed_update_path), create_commit_result.commit_secret)
+  (extract_result (compress_update_path uncompressed_update_path), create_commit_result.commit_secret)
 
 val check_one_my_update_path: {|crypto_bytes bytes|} -> #l:nat -> group_context_nt bytes -> treesync bytes tkt l 0 -> participant_state -> nat -> update_path_nt bytes -> bytes -> ML unit
 let check_one_my_update_path #cb #l group_context tsync st sender update_path expected_commit_secret =
