@@ -10,6 +10,7 @@ open MLS.TreeCommon.Lemmas
 open MLS.TreeKEM.Types
 open MLS.TreeKEM.Operations
 open MLS.TreeKEM.Invariants
+open MLS.TreeKEM.Invariants.Proofs
 open MLS.NetworkBinder.Properties
 open MLS.TreeKEM.API.Types
 
@@ -137,7 +138,8 @@ let commit #bytes #cb #leaf_ind st #li p excluded_leaves group_context =
     error "TreeKEM.commit: bad UpdatePath ciphertext lengths"
   ) else (
     assume(treekem_priv_invariant un_added_tree st.priv);
-    assume(path_filtering_weak_ok un_added_tree p);
+    weaken_path_filtering_ok st.tree p;
+    path_filtering_weak_ok_un_add st.tree p excluded_leaves;
     let? (path_secret, least_common_ancestor_level) = get_path_secret un_added_tree st.priv p group_context in
     let new_tree = tree_apply_path st.tree p in
     let? (new_priv, root_secret) = path_apply_path new_tree st.priv path_secret least_common_ancestor_level in
