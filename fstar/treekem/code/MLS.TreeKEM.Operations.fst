@@ -261,7 +261,6 @@ let rec get_path_secret #bytes #cb #l #i #my_li #li t p_priv p_upd group_context
       match opt_upn with
       | Some upn -> (
         // Obtain the node secret by decryption
-        treekem_priv_invariant_leaf_at t p_priv;
         let (_, sibling) = get_child_sibling t li in
         let my_index = resolution_index sibling my_li in
         let my_ciphertext = List.Tot.index upn.encrypted_path_secret my_index in
@@ -274,7 +273,6 @@ let rec get_path_secret #bytes #cb #l #i #my_li #li t p_priv p_upd group_context
         // Impossible
         let (_, sibling) = get_child_sibling t li in
         MLS.TreeCommon.Lemmas.is_tree_empty_leaf_at sibling my_li;
-        treekem_priv_invariant_leaf_at t p_priv;
         false_elim ()
       )
     )

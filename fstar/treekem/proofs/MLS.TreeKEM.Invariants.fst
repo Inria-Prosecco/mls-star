@@ -36,28 +36,10 @@ val treekem_priv_invariant:
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
   treekem bytes l i -> treekem_priv bytes l i li ->
   prop
-let rec treekem_priv_invariant #bytes #cb #l #i #li t p =
-  match t, p with
-  | TLeaf oln, PLeaf sk ->
-    //TODO: and oln contains sk's public key?
-    Some? oln
-  | TNode opn _ _, PNode osk p_next ->
-    let (child, _) = get_child_sibling t li in
-    treekem_priv_invariant child p_next
-
-val treekem_priv_invariant_leaf_at:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treekem bytes l i -> p:treekem_priv bytes l i li ->
-  Lemma
-  (requires treekem_priv_invariant t p)
-  (ensures Some? (leaf_at t li))
-let rec treekem_priv_invariant_leaf_at #bytes #cb #l #i #li t p =
-  match t, p with
-  | TLeaf oln, PLeaf sk -> ()
-  | TNode opn _ _, PNode osk p_next ->
-    let (child, _) = get_child_sibling t li in
-    treekem_priv_invariant_leaf_at child p_next
+let treekem_priv_invariant #bytes #cb #l #i #li t p =
+  match leaf_at t li with
+  | None -> False
+  | Some ln -> True // and contain public key of (get_path_leaf p) ?
 
 /// Weaker variant of MLS.NetworkBinder.Properties.path_filtering_ok,
 /// where a sibling can be empty but the corresponding path node is non-empty.
