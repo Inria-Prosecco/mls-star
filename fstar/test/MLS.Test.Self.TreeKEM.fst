@@ -51,6 +51,7 @@ let add_rand #bytes #cb rng st =
   in
   if not (List.Tot.for_all ((=) add_index) add_indices) then failwith "add_rand: inconsistent add indices";
   if not (List.Tot.for_all ((=) ((|tree_levels, tree|) <: (l:nat & treekem bytes l 0))) (List.Tot.map #_ #(l:nat & treekem bytes l 0) (fun (|_, st|) -> (|st.levels, st.tree|)) new_states)) then failwith "add_rand: inconsistent trees";
+  if not (add_index < pow2 tree_levels && Some? (leaf_at tree add_index)) then failwith "add_rand: bad add index";
   let new_state = extract_result(MLS.TreeKEM.API.welcome tree hpke_sk None add_index) in
   (rng, {
     states = (|_, new_state|)::new_states;

@@ -208,6 +208,7 @@ let process_commit state wire_format message message_auth =
             | None -> internal_failure "Can't retrieve pending updatepath"
           ) else (
             assume(MLS.NetworkBinder.Properties.path_filtering_ok state.treekem_state.tree treekem_path);
+            assume(~(List.Tot.memP state.leaf_index (List.Tot.map snd added_leaves)));
             MLS.TreeKEM.API.commit state.treekem_state treekem_path (List.Tot.map snd added_leaves) provisional_group_context
           )
         in
@@ -668,6 +669,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   ) in
   let opt_path_secret_and_inviter_ind: option (bytes & nat) = match secrets.path_secret with | None -> None | Some {path_secret} -> Some (path_secret, group_info.tbs.signer) in
   let? treekem = treesync_to_treekem treesync in
+  assume(leaf_index < pow2 l /\ Some? (leaf_at treekem leaf_index));
+  assume(MLS.TreeKEM.Invariants.treekem_invariant treekem);
   let? treekem_state = MLS.TreeKEM.API.welcome treekem leaf_decryption_key opt_path_secret_and_inviter_ind leaf_index in
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash #bytes group_info.tbs.confirmation_tag group_info.tbs.group_context.confirmed_transcript_hash in
   let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch treesync group_info.tbs.group_context.confirmed_transcript_hash in
