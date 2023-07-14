@@ -8,6 +8,7 @@ open MLS.TreeCommon.Lemmas
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
+open MLS.TreeSync.Refined.Operations
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.API.Types
@@ -81,6 +82,27 @@ val is_well_formed_finalize_update:
 let is_well_formed_finalize_update #bytes #cb #tkt #asp #group_id #st #ln #li pre pend token =
   is_well_formed_tree_update pre st.tree li ln
 
+val is_well_formed_fully_truncate_state:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  st:treesync_state bytes tkt asp group_id ->
+  pre:bytes_compatible_pre bytes ->
+  Lemma
+  (requires is_well_formed _ pre (st.tree <: treesync _ _ _ _))
+  (ensures (
+    let new_state = fully_truncate_state st in
+    is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
+  ))
+  (decreases st.levels)
+let rec is_well_formed_fully_truncate_state #bytes #cb #tkt #asp #group_id st pre =
+  if 1 <= st.levels && is_tree_empty (TNode?.right st.tree) then (
+    MLS.TreeSync.Invariants.AuthService.Proofs.all_credentials_ok_tree_truncate st.tree st.tokens;
+    is_well_formed_fully_truncate_state ({
+      levels = st.levels-1;
+      tree = tree_truncate st.tree;
+      tokens = as_truncate st.tokens;
+    } <: treesync_state bytes tkt asp group_id) pre
+  ) else ()
+
 val is_well_formed_finalize_remove:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
   #st:treesync_state bytes tkt asp group_id -> #li:treesync_index st ->
@@ -93,8 +115,9 @@ val is_well_formed_finalize_remove:
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
 let is_well_formed_finalize_remove #bytes #cb #tkt #asp #group_id #st #li pre pend =
-  //No need to prove for `truncate`? Looks like F* do it automatically
-  is_well_formed_tree_remove pre st.tree li
+  MLS.TreeSync.Invariants.AuthService.Proofs.all_credentials_ok_tree_remove st.tree st.tokens li;
+  is_well_formed_tree_remove pre st.tree li;
+  is_well_formed_fully_truncate_state (state_update_tree st (tree_remove st.tree li) (as_remove st.tokens li)) pre
 
 val is_well_formed_finalize_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->

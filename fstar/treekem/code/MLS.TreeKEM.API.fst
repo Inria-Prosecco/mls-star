@@ -98,32 +98,39 @@ let update #bytes #cb #leaf_ind st lp i =
 
 (*** Remove ***)
 
+val fully_truncate:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  st:treekem_state bytes leaf_ind ->
+  Tot (treekem_state bytes leaf_ind)
+  (decreases st.levels)
+let rec fully_truncate #bytes #cb #leaf_ind st =
+  if 1 <= st.levels && is_tree_empty (TNode?.right st.tree) then (
+    if leaf_ind >= pow2 (st.levels-1) then (
+      MLS.TreeCommon.Lemmas.is_tree_empty_leaf_at (TNode?.right st.tree) leaf_ind;
+      false_elim ()
+    ) else (
+      treekem_invariant_truncate st.tree;
+      treekem_priv_invariant_truncate st.tree st.priv;
+      fully_truncate {
+        levels = st.levels-1;
+        tree = tree_truncate st.tree;
+        priv = path_truncate st.priv;
+      }
+    )
+  ) else (
+    st
+  )
+
 val remove:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_state bytes leaf_ind -> i:treekem_index st{i <> leaf_ind} ->
   treekem_state bytes leaf_ind
 let remove #bytes #cb #leaf_ind st i =
-  let blanked_tree = (tree_remove st.tree i) in
   treekem_invariant_remove st.tree i;
   treekem_priv_invariant_remove st.tree st.priv i;
-  if TNode? blanked_tree && is_tree_empty (TNode?.right blanked_tree) then (
-    if leaf_ind >= pow2 (st.levels-1) then (
-      MLS.TreeCommon.Lemmas.is_tree_empty_leaf_at (TNode?.right blanked_tree) leaf_ind;
-      false_elim ()
-    ) else (
-      treekem_invariant_truncate blanked_tree;
-      treekem_priv_invariant_truncate blanked_tree st.priv;
-      { st with
-        levels = st.levels-1;
-        tree = tree_truncate blanked_tree;
-        priv = path_truncate st.priv;
-      }
-    )
-  ) else (
-    { st with
-      tree = blanked_tree;
-    }
-  )
+  fully_truncate { st with
+    tree = tree_remove st.tree i;
+  }
 
 (*** Process Commit ***)
 

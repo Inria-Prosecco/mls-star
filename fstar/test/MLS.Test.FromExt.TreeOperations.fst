@@ -22,6 +22,18 @@ open MLS.TreeSync.Operations
 
 #set-options "--fuel 1 --ifuel 1"
 
+val fully_truncate_tree:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat ->
+  treesync bytes tkt l 0 ->
+  new_l:nat & treesync bytes tkt new_l 0
+let rec fully_truncate_tree #bytes #bl #tkt #l t =
+  if TNode? t && is_tree_empty (TNode?.right t) then (
+    fully_truncate_tree (tree_truncate t)
+  ) else (
+    (|_, t|)
+  )
+
 #push-options "--z3rlimit 50"
 val test_tree_operations_one: tree_operations_test -> ML bool
 let test_tree_operations_one t =
@@ -62,12 +74,7 @@ let test_tree_operations_one t =
       if not (leaf_index_inside l 0 remove.removed) then
         failwith "test_tree_operation_one: removed too big"
       else
-        let blanked_tree = tree_remove treesync_before remove.removed in
-        if TNode? blanked_tree && is_tree_empty (TNode?.right blanked_tree) then (
-          (|_, tree_truncate blanked_tree|)
-        ) else (
-          (|_, blanked_tree|)
-        )
+        fully_truncate_tree (tree_remove treesync_before remove.removed)
     )
     | _ -> failwith "test_tree_operations_one: bad proposal"
   in

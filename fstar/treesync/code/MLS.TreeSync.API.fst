@@ -398,6 +398,24 @@ let prepare_remove #bytes #cb #tkt #asp #group_id st li =
   )
 
 #push-options "--fuel 0 --ifuel 1"
+val fully_truncate_state:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  st:treesync_state bytes tkt asp group_id ->
+  Tot (treesync_state bytes tkt asp group_id)
+  (decreases st.levels)
+let rec fully_truncate_state #bytes #cb #tkt #asp #group_id st =
+  if 1 <= st.levels && is_tree_empty (TNode?.right st.tree) then (
+    all_credentials_ok_tree_truncate st.tree st.tokens;
+    fully_truncate_state {
+      levels = st.levels-1;
+      tree = tree_truncate st.tree;
+      tokens = as_truncate st.tokens;
+    }
+  ) else (
+    st
+  )
+#pop-options
+
 val finalize_remove:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
   #st:treesync_state bytes tkt asp group_id -> #li:treesync_index st ->
@@ -407,13 +425,7 @@ let finalize_remove #bytes #cb #tkt #asp #group_id #st #li pend =
   let blanked_tree = tree_remove st.tree li in
   let blanked_tokens = as_remove st.tokens li in
   all_credentials_ok_tree_remove st.tree st.tokens li;
-  if TNode? blanked_tree && is_tree_empty (TNode?.right blanked_tree) then (
-    all_credentials_ok_tree_truncate blanked_tree blanked_tokens;
-    state_update_tree st (tree_truncate blanked_tree) (as_truncate blanked_tokens)
-  ) else (
-    state_update_tree st blanked_tree blanked_tokens
-  )
-#pop-options
+  fully_truncate_state (state_update_tree st blanked_tree blanked_tokens)
 
 (*** Commit ***)
 
