@@ -10,6 +10,7 @@ open MLS.Tree.Lemmas
 open MLS.TreeCommon
 open MLS.TreeCommon.Lemmas
 open MLS.TreeSync.Types
+open MLS.TreeSync.TreeHash
 open MLS.TreeSync.Operations
 open MLS.TreeSync.Refined.Types
 open MLS.TreeSync.Refined.Operations
@@ -496,3 +497,47 @@ let weaken_asp #bytes #cb #tkt #asp #group_id asp_weak st =
   { st with
     tokens = all_credentials_ok_weaken asp_weak st.tree st.tokens;
   }
+
+(*** Authenticate external path ***)
+
+#push-options "--fuel 0 --ifuel 1"
+val authenticate_external_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  st:treesync_state bytes tkt asp group_id ->
+  #li:treesync_index st -> external_pathsync bytes tkt st.levels 0 li ->
+  sign_private_key bytes -> sign_nonce bytes ->
+  result (pathsync bytes tkt st.levels 0 li)
+let authenticate_external_path #bytes #cb #tkt #asp #group_id st #li p sign_private_key sign_nonce =
+  if not (external_path_to_path_pre st.tree p group_id) then
+    error "authenticate_external_path: bad precondition"
+  else
+    return (external_path_to_path st.tree p group_id sign_private_key sign_nonce)
+#pop-options
+
+(*** Compute tree hashes ***)
+
+val compute_tree_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  treesync_state bytes tkt asp group_id ->
+  result (lbytes bytes (hash_length #bytes))
+let compute_tree_hash #bytes #cb #tkt #asp #group_id st =
+  if not (tree_hash_pre st.tree) then
+    error "compute_tree_hash: can't do tree hash"
+  else
+    return (tree_hash st.tree)
+
+val compute_provisional_tree_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
+  st:treesync_state bytes tkt asp group_id ->
+  #li:treesync_index st -> pathsync bytes tkt st.levels 0 li ->
+  result (lbytes bytes (hash_length #bytes))
+let compute_provisional_tree_hash #bytes #cb #tkt #asp #group_id st #li p =
+  if not (apply_path_pre st.tree p) then
+    error "compute_provisional_tree_hash: bad precondition"
+  else (
+    let provisional_tree = MLS.TreeSync.Operations.apply_path st.tree p in
+    if not (tree_hash_pre provisional_tree) then
+      error "compute_provisional_tree_hash: can't do tree hash"
+    else
+      return (tree_hash provisional_tree)
+  )

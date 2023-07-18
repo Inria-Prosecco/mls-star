@@ -57,14 +57,8 @@ noeq type state = {
 }
 
 #push-options "--fuel 1"
-val compute_group_context: #l:nat -> bytes -> nat -> treesync bytes #cb.base tkt l 0 -> bytes -> result (group_context_nt bytes)
-let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
-  let? tree_hash = (
-    if not (MLS.TreeSync.TreeHash.tree_hash_pre tree) then
-      internal_failure "state_to_group_context: tree_hash precondition false"
-    else
-      mk_mls_bytes (MLS.TreeSync.TreeHash.tree_hash #bytes #cb tree) "compute_group_context" "tree_hash"
-  ) in
+val compute_group_context: bytes -> nat -> bytes -> bytes -> result (group_context_nt bytes)
+let compute_group_context group_id epoch tree_hash confirmed_transcript_hash =
   let? group_id = mk_mls_bytes group_id "compute_group_context" "group_id" in
   let? epoch = mk_nat_lbytes epoch "compute_group_context" "epoch" in
   let? confirmed_transcript_hash = mk_mls_bytes tree_hash "compute_group_context" "confirmed_transcript_hash" in
@@ -81,7 +75,8 @@ let compute_group_context #l group_id epoch tree confirmed_transcript_hash =
 
 val state_to_group_context: state -> result (group_context_nt bytes)
 let state_to_group_context st =
-  compute_group_context st.group_id st.epoch st.treesync_state.tree st.confirmed_transcript_hash
+  let? tree_hash = MLS.TreeSync.API.compute_tree_hash st.treesync_state in
+  compute_group_context st.group_id st.epoch tree_hash st.confirmed_transcript_hash
 
 val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
@@ -185,22 +180,17 @@ let process_commit state wire_format message message_auth =
         let? uncompressed_path = uncompress_update_path sender_id state.treesync_state.tree path in
         let treesync_path = update_path_to_treesync uncompressed_path in
         let treekem_path = update_path_to_treekem uncompressed_path in
-        let? commit_pend = MLS.TreeSync.API.prepare_commit state.treesync_state treesync_path in
-        // TODO AS check
-        let treesync_state = MLS.TreeSync.API.finalize_commit commit_pend () in
         let? provisional_group_context =
-          let? new_tree_hash = (
-            if not (MLS.TreeSync.TreeHash.tree_hash_pre treesync_state.tree) then
-              error "generate_welcome_message: bad tree hash pre"
-            else
-              mk_mls_bytes (MLS.TreeSync.TreeHash.tree_hash treesync_state.tree) "generate_welcome_message" "tree_hash"
-          ) in
+          let? new_tree_hash = MLS.TreeSync.API.compute_provisional_tree_hash state.treesync_state treesync_path in
           let? new_epoch = mk_nat_lbytes (state.epoch + 1) "process_commit" "new_epoch" in
           return ({ group_context with
             epoch = new_epoch;
             tree_hash = new_tree_hash;
           } <: group_context_nt bytes)
         in
+        let? commit_pend = MLS.TreeSync.API.prepare_commit state.treesync_state treesync_path in
+        // TODO AS check
+        let treesync_state = MLS.TreeSync.API.finalize_commit commit_pend () in
         let? (treekem_state, commit_secret) =
           if state.leaf_index = sender_id && (Some? message_content.path) then (
             match List.Tot.assoc (Some?.v message_content.path) state.pending_updatepath with
@@ -399,12 +389,8 @@ val generate_welcome_message: state -> wire_format_nt -> msg:framed_content_nt b
 let generate_welcome_message st wire_format msg msg_auth new_key_packages e =
   let? (future_state, joiner_secret) = process_commit st wire_format msg msg_auth in
   let? joiner_secret = mk_mls_bytes joiner_secret "generate_welcome_message" "joiner_secret" in
-  let? tree_hash = (
-    if not (MLS.TreeSync.TreeHash.tree_hash_pre future_state.treesync_state.tree) then
-      error "generate_welcome_message: bad tree hash pre"
-    else
-      mk_mls_bytes (MLS.TreeSync.TreeHash.tree_hash future_state.treesync_state.tree) "generate_welcome_message" "tree_hash"
-  ) in
+  let? tree_hash = MLS.TreeSync.API.compute_tree_hash future_state.treesync_state in
+  let? tree_hash = mk_mls_bytes tree_hash "generate_welcome_message" "tree_hash" in
   let? ratchet_tree = treesync_to_ratchet_tree future_state.treesync_state.tree in
   let? ratchet_tree = mk_mls_list ratchet_tree "generate_welcome_message" "ratchet_tree" in
   let? ratchet_tree_bytes = mk_mls_bytes ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree) "generate_welcome_message" "ratchet_tree" in
@@ -495,25 +481,11 @@ let generate_update_path st e proposals =
       let? ext_update_path = treekem_to_treesync my_new_leaf_package_data pre_update_path in
       let? sign_nonce, e = chop_entropy e (sign_nonce_length #bytes) in
       assume(length #bytes sign_nonce == Seq.length sign_nonce);
-      if not (MLS.TreeSync.Operations.external_path_to_path_pre st.treesync_state.tree ext_update_path st.group_id) then
-        error "generate_update_path: bad precondition"
-      else
-        return (MLS.TreeSync.Operations.external_path_to_path st.treesync_state.tree ext_update_path st.group_id st.sign_private_key sign_nonce)
+      MLS.TreeSync.API.authenticate_external_path st.treesync_state ext_update_path st.sign_private_key sign_nonce
     ) in
     let? provisional_group_context = (
       let? group_context = state_to_group_context st in
-      let? new_treesync =
-        if not (MLS.TreeSync.Operations.apply_path_pre st.treesync_state.tree update_path_sync) then
-          error "generate_update_path: can't apply path"
-        else
-          return #(treesync bytes tkt st.treesync_state.levels 0) (MLS.TreeSync.Operations.apply_path st.treesync_state.tree update_path_sync)
-      in
-      let? new_tree_hash =
-        if not (MLS.TreeSync.TreeHash.tree_hash_pre new_treesync) then
-          error "generate_update_path: can't do tree hash"
-        else
-          return (MLS.TreeSync.TreeHash.tree_hash new_treesync)
-      in
+      let? new_tree_hash = MLS.TreeSync.API.compute_provisional_tree_hash st.treesync_state update_path_sync in
       let? new_epoch = mk_nat_lbytes (st.epoch + 1) "generate_update_path" "new_epoch" in
       return ({ group_context with
         epoch = new_epoch;
@@ -673,7 +645,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   assume(MLS.TreeKEM.Invariants.treekem_invariant treekem);
   let? treekem_state = MLS.TreeKEM.API.welcome treekem leaf_decryption_key opt_path_secret_and_inviter_ind leaf_index in
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash #bytes group_info.tbs.confirmation_tag group_info.tbs.group_context.confirmed_transcript_hash in
-  let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch treesync group_info.tbs.group_context.confirmed_transcript_hash in
+  let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
+  let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch tree_hash group_info.tbs.group_context.confirmed_transcript_hash in
   let? epoch_secret = MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context) in
   let dumb_ratchet_state: MLS.TreeDEM.Keys.ratchet_state bytes = {
     secret = mk_zero_vector (kdf_length #bytes);
