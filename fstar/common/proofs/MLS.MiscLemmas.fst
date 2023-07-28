@@ -76,3 +76,12 @@ let rec bytes_length_filter #bytes #bl #a ps_a pred l =
   match l with
   | [] -> ()
   | h::t -> bytes_length_filter ps_a pred t
+
+val filter_append:
+  #a:Type ->
+  p:(a -> bool) -> l1:list a -> l2:list a ->
+  Lemma (List.Tot.filter p (l1@l2) == (List.Tot.filter p l1)@(List.Tot.filter p l2))
+let rec filter_append #a p l1 l2 =
+  match l1 with
+  | [] -> ()
+  | h::t -> filter_append p t l2

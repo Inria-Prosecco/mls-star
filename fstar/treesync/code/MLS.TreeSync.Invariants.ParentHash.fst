@@ -147,6 +147,13 @@ val last_update_correct:
   d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} ->
   bool
 let last_update_correct #bytes #bl #tkt #ld #lp #id #ip d p =
+  // As proved in MLS.TreeSync.Invariants.ParentHash.Proofs.last_update_set_eqP_imply_eq,
+  // set equality could be replaced by a true equality, because both lists are sorted.
+  // This is not done here both for historical and technical reasons:
+  // - (history) the proof was originally written with set equality
+  // - (technical) using an equality means that some parent-hash invariant proofs
+  //   now rely on unmerged leaves invariant proofs, such as MLS.TreeSync.Invariants.ParentHash.Proofs.add_inside_last_update
+  // The RFC does not state clearly whether it is a set equality or a list equality.
   last_update_d_in_res_c d p && set_eq (last_update_lhs d p) (last_update_rhs d p)
 
 /// The `parent-hash link` relationship between a "parent" tree P, and a "descendant" D.
