@@ -10,7 +10,7 @@
     };
 
     dolev-yao-star-src = {
-      url = "git+ssh://git@github.com/prosecco/dolev-yao-star.git?ref=comparse";
+      url = "git+ssh://git@github.com/prosecco/dolev-yao-star.git";
       flake = false;
     };
   };

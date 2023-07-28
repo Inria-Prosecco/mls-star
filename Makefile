@@ -17,7 +17,7 @@ MAYBE_ADMIT = $(if $(ADMIT),--admit_smt_queries true)
 FSTAR_EXE ?= $(FSTAR_HOME)/bin/fstar.exe
 FSTAR = $(FSTAR_EXE) $(MAYBE_ADMIT)
 
-DY_EXTRACT = +CryptoLib +SecrecyLabels +ComparseGlue +LabeledCryptoAPI +CryptoEffect +GlobalRuntimeLib +LabeledRuntimeAPI
+DY_EXTRACT = +CryptoLib +SecrecyLabels +ComparseGlue +LabeledCryptoAPI +CryptoEffect +GlobalRuntimeLib +LabeledRuntimeAPI +Ord +AttackerAPI
 FSTAR_EXTRACT = --extract '-* +MLS +Comparse $(DY_EXTRACT) -Comparse.Tactic'
 
 # Allowed warnings:
