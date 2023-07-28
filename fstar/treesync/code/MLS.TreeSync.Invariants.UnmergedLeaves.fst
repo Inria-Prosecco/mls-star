@@ -37,11 +37,8 @@ let rec unmerged_leaf_consistent #bytes #bl #tkt #l #i t li =
 
 /// Check that the unmerged leaves are sorted
 val unmerged_leaves_sorted: list (nat_lbytes 4) -> bool
-let rec unmerged_leaves_sorted l =
-  match l with
-  | [] -> true
-  | [_] -> true
-  | x::y::t -> x < y && unmerged_leaves_sorted (y::t)
+let unmerged_leaves_sorted l =
+  List.Tot.Properties.sorted (<) l
 
 /// The unmerged leaves invariant:
 /// every non-blank node has unmerged leaves satisfying the three properties above.

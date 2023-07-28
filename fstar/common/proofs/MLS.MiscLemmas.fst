@@ -85,3 +85,78 @@ let rec filter_append #a p l1 l2 =
   match l1 with
   | [] -> ()
   | h::t -> filter_append p t l2
+
+val sorted_filter_lemma:
+  #a:Type ->
+  lt:(a -> a -> bool) -> p:(a -> bool) -> l:list a ->
+  Lemma
+  (requires
+    sorted lt l /\
+    (forall x y z. x `lt` y /\ y `lt` z ==> x `lt` z)
+  )
+  (ensures (
+    match l, List.Tot.filter p l with
+    | h1::_, h2::_ -> lt h1 h2 \/ h1 == h2
+    | _, _ -> True
+  ))
+let rec sorted_filter_lemma #a lt p l =
+  match l with
+  | [] -> ()
+  | h::t -> sorted_filter_lemma lt p t
+
+val sorted_filter:
+  #a:Type ->
+  lt:(a -> a -> bool) -> p:(a -> bool) -> l:list a ->
+  Lemma
+  (requires
+    sorted lt l /\
+    (forall x y z. x `lt` y /\ y `lt` z ==> x `lt` z)
+  )
+  (ensures sorted lt (filter p l))
+let rec sorted_filter #a lt p l =
+  match l with
+  | [] -> ()
+  | h::t ->
+    sorted_filter lt p t;
+    if p h then sorted_filter_lemma lt p t
+    else ()
+
+// `lt` is made to be a strict order (such as `(<)`),
+// not necessarily anti-symetric (i.e. x < y \/ x == y \/ x > y)
+#push-options "--fuel 2"
+val sorted_append:
+  #a:Type ->
+  lt:(a -> a -> bool) -> cutoff:a -> l1:list a -> l2:list a ->
+  Lemma
+  (requires
+    sorted lt l1 /\
+    sorted lt l2 /\
+    (forall x. List.Tot.memP x l1 ==> x `lt` cutoff) /\
+    (forall x. List.Tot.memP x l2 ==> (forall y. y `lt` cutoff ==> y `lt` x)) /\
+    (forall x y z. x `lt` y /\ y `lt` z ==> x `lt` z)
+  )
+  (ensures sorted lt (l1@l2))
+let rec sorted_append #a lt cutoff l1 l2 =
+  match l1 with
+  | [] -> ()
+  | [h] -> ()
+  | h::t -> sorted_append lt cutoff t l2
+#pop-options
+
+val sorted_lt_head:
+  #a:Type ->
+  lt:(a -> a -> bool) -> x:a -> l:list a ->
+  Lemma
+  (requires
+    (match l with
+    | [] -> True
+    | h::t -> x `lt` h
+    ) /\
+    sorted lt l /\
+    (forall x y z. x `lt` y /\ y `lt` z ==> x `lt` z)
+  )
+  (ensures forall y. List.Tot.memP y l ==> x `lt` y)
+let rec sorted_lt_head #a lt x l =
+  match l with
+  | [] -> ()
+  | h::t -> sorted_lt_head lt x t

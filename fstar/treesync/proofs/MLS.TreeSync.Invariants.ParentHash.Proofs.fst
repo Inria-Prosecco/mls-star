@@ -203,53 +203,21 @@ let mem_last_update_rhs_eq #bytes #bl #tkt #ld #lp #id #ip d p x =
 
 (*** last_update set equality imply equality ***)
 
-val unmerged_leaves_sorted_filter_head:
-  p:(nat_lbytes 4 -> bool) -> l:list(nat_lbytes 4) ->
-  Lemma
-  (requires unmerged_leaves_sorted l)
-  (ensures (
-    match l, List.Tot.filter p l with
-    | h1::_, h2::_ -> h1 <= h2
-    | _, _ -> True
-  ))
-let rec unmerged_leaves_sorted_filter_head p l =
-  match l with
-  | [] -> ()
-  | h::t -> unmerged_leaves_sorted_filter_head p t
-
-val unmerged_leaves_sorted_filter:
-  p:(nat_lbytes 4 -> bool) -> l:list(nat_lbytes 4) ->
-  Lemma
-  (requires unmerged_leaves_sorted l)
-  (ensures unmerged_leaves_sorted (List.Tot.filter p l))
-let rec unmerged_leaves_sorted_filter p l =
-  match l with
-  | [] -> ()
-  | h::t ->
-    unmerged_leaves_sorted_filter p t;
-    if p h then unmerged_leaves_sorted_filter_head p t
-    else ()
-
 val node_indices_are_leaf_indices:
   list node_index ->
   prop
 let node_indices_are_leaf_indices ll =
   forall l i. List.Tot.memP (|l, i|) ll ==> l == 0
 
-val node_index_to_tree_index: node_index -> nat
-let node_index_to_tree_index (|_, i|) = i
+val node_index_lt: node_index -> node_index -> bool
+let node_index_lt (|_, x|) (|_, y|) =
+  x < y
 
 val node_indices_are_sorted:
   list node_index ->
   bool
-let rec node_indices_are_sorted l =
-  match l with
-  | [] -> true
-  | [_] -> true
-  | h1::h2::t -> (
-    node_index_to_tree_index h1 < node_index_to_tree_index h2 &&
-    node_indices_are_sorted (h2::t)
-  )
+let node_indices_are_sorted l =
+  sorted node_index_lt l
 
 #push-options "--fuel 2 --ifuel 1"
 val unmerged_resolution_unmerged_leaves_sorted:
@@ -266,56 +234,6 @@ let rec unmerged_resolution_unmerged_leaves_sorted l =
   | [_] -> ()
   | h1::h2::t -> unmerged_resolution_unmerged_leaves_sorted (h2::t)
 #pop-options
-
-#push-options "--fuel 2 --ifuel 1"
-val node_indices_are_sorted_append:
-  l1:list node_index -> l2:list node_index -> cutoff: nat ->
-  Lemma
-  (requires
-    node_indices_are_sorted l1 /\
-    node_indices_are_sorted l2 /\
-    (forall xl xi. List.Tot.memP (|xl, xi|) l1 ==> xi < cutoff) /\
-    (forall xl xi. List.Tot.memP (|xl, xi|) l2 ==> cutoff <= xi)
-  )
-  (ensures node_indices_are_sorted (l1@l2))
-let rec node_indices_are_sorted_append l1 l2 cutoff =
-  match l1 with
-  | [] -> ()
-  | [h] -> (
-    match l2 with
-    | [] -> ()
-    | h2::t2 -> ()
-  )
-  | h1::h2::t ->
-    node_indices_are_sorted_append (h2::t) l2 cutoff
-#pop-options
-
-val node_indices_are_sorted_filter_head:
-  p:(node_index -> bool) -> l:list node_index ->
-  Lemma
-  (requires node_indices_are_sorted l)
-  (ensures (
-    match l, List.Tot.filter p l with
-    | h1::_, h2::_ -> node_index_to_tree_index h1 <= node_index_to_tree_index h2
-    | _, _ -> True
-  ))
-let rec node_indices_are_sorted_filter_head p l =
-  match l with
-  | [] -> ()
-  | h::t -> node_indices_are_sorted_filter_head p t
-
-val node_indices_are_sorted_filter:
-  p:(node_index -> bool) -> l:list(node_index) ->
-  Lemma
-  (requires node_indices_are_sorted l)
-  (ensures node_indices_are_sorted (List.Tot.filter p l))
-let rec node_indices_are_sorted_filter p l =
-  match l with
-  | [] -> ()
-  | h::t ->
-    node_indices_are_sorted_filter p t;
-    if p h then node_indices_are_sorted_filter_head p t
-    else ()
 
 #push-options "--fuel 2 --ifuel 1"
 val filtered_resolution_are_leaves_imply_are_sorted:
@@ -340,11 +258,11 @@ let rec filtered_resolution_are_leaves_imply_are_sorted #bytes #bl #tkt #l #i p 
     FStar.Classical.forall_intro (mem_filter p (resolution right));
     FStar.Classical.forall_intro (FStar.Classical.move_requires (resolution_inside_tree left));
     FStar.Classical.forall_intro (FStar.Classical.move_requires (resolution_inside_tree right));
-    node_indices_are_sorted_append (List.Tot.filter p (resolution left)) (List.Tot.filter p (resolution right)) (i + pow2 (l-1))
+    sorted_append node_index_lt (|0, (i + pow2 (l-1))|) (List.Tot.filter p (resolution left)) (List.Tot.filter p (resolution right))
   )
   | TNode (Some content) _ _ -> (
     unmerged_resolution_unmerged_leaves_sorted content.unmerged_leaves;
-    node_indices_are_sorted_filter p (unmerged_resolution content.unmerged_leaves)
+    sorted_filter node_index_lt p (unmerged_resolution content.unmerged_leaves)
   )
 #pop-options
 
@@ -377,24 +295,8 @@ val last_update_rhs_sorted:
 let last_update_rhs_sorted #bytes #bl #tkt #ld #lp #id #ip d p =
   let (c, _) = get_child_sibling p id in
   let p_unmerged_leaves = (Some?.v (TNode?.data p)).unmerged_leaves in
-  unmerged_leaves_sorted_filter (leaf_index_inside_tree c) p_unmerged_leaves;
+  sorted_filter (<) (leaf_index_inside_tree c) p_unmerged_leaves;
   unmerged_resolution_unmerged_leaves_sorted (List.Tot.filter (leaf_index_inside_tree c) p_unmerged_leaves)
-
-val node_indices_are_sorted_less_than_head:
-  x:node_index -> l:list node_index ->
-  Lemma
-  (requires
-    node_indices_are_sorted l /\ (
-      match l with
-      | [] -> True
-      | h::t -> node_index_to_tree_index x < node_index_to_tree_index h
-    )
-  )
-  (ensures forall y. List.Tot.memP y l ==> node_index_to_tree_index x < node_index_to_tree_index y)
-let rec node_indices_are_sorted_less_than_head x l =
-  match l with
-  | [] -> ()
-  | h::t -> node_indices_are_sorted_less_than_head x t
 
 val node_indices_are_leaf_indices_and_sorted_set_eqP_imply_eq:
   l1:list node_index -> l2:list node_index ->
@@ -413,8 +315,8 @@ let rec node_indices_are_leaf_indices_and_sorted_set_eqP_imply_eq l1 l2 =
   | [], h2::t2 -> assert(False)
   | h1::t1, [] -> assert(False)
   | h1::t1, h2::t2 -> (
-    node_indices_are_sorted_less_than_head h1 t1;
-    node_indices_are_sorted_less_than_head h2 t2;
+    sorted_lt_head node_index_lt h1 t1;
+    sorted_lt_head node_index_lt h2 t2;
     node_indices_are_leaf_indices_and_sorted_set_eqP_imply_eq t1 t2
   )
 
@@ -855,6 +757,7 @@ let rec un_add_new_leaf_not_in_tree #bytes #bl #tkt #l #i t leaves leaf =
     )
   )
 
+#push-options "--fuel 1 --ifuel 0"
 val add_inside_parent_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp{leaf_index_inside lp ip id} ->
@@ -872,6 +775,7 @@ let add_inside_parent_hash #bytes #cb #tkt #ld #lp #id #ip d p li content =
   let (p_child, p_sibling) = get_child_sibling p id in
   leaf_index_same_side ld lp id ip li;
   un_add_new_leaf_not_in_tree p_sibling p_content.unmerged_leaves li
+#pop-options
 
 (*** Parent-hash invariant: adding outside ***)
 
