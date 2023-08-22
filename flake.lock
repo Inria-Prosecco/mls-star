@@ -10,11 +10,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1685131747,
-        "narHash": "sha256-25bC/RW425+fJHvrqTPTXudbY25GlXQJCeX8xM+P/RA=",
+        "lastModified": 1692654626,
+        "narHash": "sha256-KgI5Sy5uPGdniDjMrQrfLLqJWGWJkdzO2sBmndDoNVo=",
         "ref": "refs/heads/main",
-        "rev": "57996a3521babf130c0d2227d2c6503c89daeb83",
-        "revCount": 112,
+        "rev": "f9a7a48bf27e1b3df0e89465f5ff2a83a4f0692a",
+        "revCount": 117,
         "type": "git",
         "url": "ssh://git@github.com/TWal/comparse.git"
       },
@@ -62,11 +62,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1685565253,
-        "narHash": "sha256-lkbjdFsMObGx853BR46GMjCcwTOkCR903IP0bo/l+gk=",
+        "lastModified": 1692551178,
+        "narHash": "sha256-MiQbzqXYj8/t7I5ANa8w+d7s15u7ROsLxAHnBpzpx5o=",
         "owner": "FStarLang",
         "repo": "FStar",
-        "rev": "b0e9734cfad2bf2535d2ad0003757186497f1dde",
+        "rev": "f020d2ac6e7d217d30f85e4361b2eb0b0dde7096",
         "type": "github"
       },
       "original": {
