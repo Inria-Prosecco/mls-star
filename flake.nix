@@ -4,13 +4,13 @@
     nixpkgs.follows = "fstar-flake/nixpkgs";
 
     comparse-flake = {
-      url = "git+ssh://git@github.com/TWal/comparse.git";
+      url = "github:TWal/comparse";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fstar-flake.follows = "fstar-flake";
     };
 
     dolev-yao-star-src = {
-      url = "git+ssh://git@github.com/prosecco/dolev-yao-star.git";
+      url = "github:prosecco/dolev-yao-star";
       flake = false;
     };
   };
@@ -38,9 +38,9 @@
       ++ (fstar.buildInputs);
     };
     defaultPackage.${system} = mls-star;
-    hydraJobs = {
-      mls-build.${system} = mls-star;
-      mls-tests.${system} = mls-star.tests;
+    checks.${system} = {
+      mls-build = mls-star;
+      mls-tests = mls-star.tests;
     };
   };
 }
