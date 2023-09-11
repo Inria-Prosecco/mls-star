@@ -27,6 +27,7 @@
     mls-star = pkgs.callPackage ./default.nix {inherit fstar fstar-dune z3 comparse dolev-yao-star; ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_14;};
   in {
     packages.${system} = {
+      default = mls-star;
       inherit mls-star;
     };
     devShells.${system}.default = pkgs.mkShell {
@@ -37,7 +38,6 @@
       ])
       ++ (fstar.buildInputs);
     };
-    defaultPackage.${system} = mls-star;
     checks.${system} = {
       mls-build = mls-star;
       mls-tests = mls-star.tests;
