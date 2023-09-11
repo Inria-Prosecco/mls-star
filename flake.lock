@@ -12,15 +12,15 @@
       "locked": {
         "lastModified": 1692654626,
         "narHash": "sha256-KgI5Sy5uPGdniDjMrQrfLLqJWGWJkdzO2sBmndDoNVo=",
-        "ref": "refs/heads/main",
+        "owner": "TWal",
+        "repo": "comparse",
         "rev": "f9a7a48bf27e1b3df0e89465f5ff2a83a4f0692a",
-        "revCount": 117,
-        "type": "git",
-        "url": "ssh://git@github.com/TWal/comparse.git"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/TWal/comparse.git"
+        "owner": "TWal",
+        "repo": "comparse",
+        "type": "github"
       }
     },
     "dolev-yao-star-src": {
@@ -28,15 +28,15 @@
       "locked": {
         "lastModified": 1687449833,
         "narHash": "sha256-3I1EcchMry61OBztOg6O+tyIJ1/4/ya7nkOjW/k2KUc=",
-        "ref": "refs/heads/master",
+        "owner": "prosecco",
+        "repo": "dolev-yao-star",
         "rev": "f1cdcc6f9ccfe7e9f62565a6fd00de45a8749cb9",
-        "revCount": 1719,
-        "type": "git",
-        "url": "ssh://git@github.com/prosecco/dolev-yao-star.git"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/prosecco/dolev-yao-star.git"
+        "owner": "prosecco",
+        "repo": "dolev-yao-star",
+        "type": "github"
       }
     },
     "flake-utils": {
