@@ -5,8 +5,8 @@ open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.Tree
-open MLS.TreeKEM.API.Types
-open MLS.TreeKEM.API
+open MLS.TreeKEM.API.Tree.Types
+open MLS.TreeKEM.API.Tree
 open MLS.TreeKEM.Types
 open MLS.TreeKEM.Operations
 open MLS.Test.Utils
@@ -16,7 +16,7 @@ open MLS.Result
 #set-options "--fuel 0 --ifuel 0"
 
 type mls_state (bytes:Type0) {|crypto_bytes bytes|} = {
-  states: list (leaf_ind:nat & treekem_state bytes leaf_ind);
+  states: list (leaf_ind:nat & treekem_tree_state bytes leaf_ind);
   epoch: nat;
 }
 
@@ -41,7 +41,7 @@ let add_rand #bytes #cb rng st =
   let (hpke_sk, hpke_pk) = extract_result (hpke_gen_keypair #bytes leaf_secret) in
   let leaf: treekem_leaf bytes = { public_key = hpke_pk } in
   let (add_indices, new_states) = List.Tot.unzip (List.Tot.map (fun (|leaf_ind, state|) ->
-    let (new_state, add_index) = MLS.TreeKEM.API.add state leaf in
+    let (new_state, add_index) = MLS.TreeKEM.API.Tree.add state leaf in
     (add_index, (|leaf_ind, new_state|))
   ) st.states) in
   let (add_index, (|tree_levels, tree|)): nat & (l:nat & treekem bytes l 0) =
@@ -52,7 +52,7 @@ let add_rand #bytes #cb rng st =
   if not (List.Tot.for_all ((=) add_index) add_indices) then failwith "add_rand: inconsistent add indices";
   if not (List.Tot.for_all ((=) ((|tree_levels, tree|) <: (l:nat & treekem bytes l 0))) (List.Tot.map #_ #(l:nat & treekem bytes l 0) (fun (|_, st|) -> (|st.levels, st.tree|)) new_states)) then failwith "add_rand: inconsistent trees";
   if not (add_index < pow2 tree_levels && Some? (leaf_at tree add_index)) then failwith "add_rand: bad add index";
-  let new_state = extract_result(MLS.TreeKEM.API.welcome tree hpke_sk None add_index) in
+  let new_state = extract_result(MLS.TreeKEM.API.Tree.welcome tree hpke_sk None add_index) in
   (rng, {
     states = (|_, new_state|)::new_states;
     epoch = st.epoch+1;
@@ -60,7 +60,7 @@ let add_rand #bytes #cb rng st =
 #pop-options
 
 #push-options "--fuel 1 --ifuel 1"
-val get_state: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (leaf_ind:nat & treekem_state bytes leaf_ind) -> leaf_ind:nat -> ML (treekem_state bytes leaf_ind)
+val get_state: #bytes:Type0 -> {|crypto_bytes bytes|} -> list (leaf_ind:nat & treekem_tree_state bytes leaf_ind) -> leaf_ind:nat -> ML (treekem_tree_state bytes leaf_ind)
 let rec get_state #bytes #cb l leaf_ind =
   match l with
   | [] -> failwith "get_state: no corresponding state"
@@ -70,7 +70,7 @@ let rec get_state #bytes #cb l leaf_ind =
 #pop-options
 
 #push-options "--fuel 1 --ifuel 1"
-val process_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat -> #commiter_st:treekem_state bytes leaf_ind -> list (leaf_ind:nat & treekem_state bytes leaf_ind) -> create_commit_result commiter_st -> group_context_nt bytes -> ML (list (bytes & (leaf_ind:nat & treekem_state bytes leaf_ind)))
+val process_update: #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat -> #commiter_st:treekem_tree_state bytes leaf_ind -> list (leaf_ind:nat & treekem_tree_state bytes leaf_ind) -> create_commit_result commiter_st -> group_context_nt bytes -> ML (list (bytes & (leaf_ind:nat & treekem_tree_state bytes leaf_ind)))
 let rec process_update #bytes #cb #leaf_ind #commiter_st l commit_res group_context =
   match l with
   | [] -> []
@@ -83,7 +83,7 @@ let rec process_update #bytes #cb #leaf_ind #commiter_st l commit_res group_cont
         (commit_res.commit_secret, (|leaf_ind, commit_res.new_state|))
       else (
         assume(MLS.NetworkBinder.Properties.path_filtering_ok tk_state.tree commit_res.update_path);
-        let (new_state, commit_secret) = extract_result (MLS.TreeKEM.API.commit tk_state commit_res.update_path [] group_context) in
+        let (new_state, commit_secret) = extract_result (MLS.TreeKEM.API.Tree.commit tk_state commit_res.update_path [] group_context) in
         (commit_secret, (|li, new_state|))
       )
     in
@@ -94,7 +94,7 @@ let rec process_update #bytes #cb #leaf_ind #commiter_st l commit_res group_cont
 val update_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> rand_state -> mls_state bytes -> nat -> ML (rand_state & mls_state bytes)
 let update_leaf #bytes #cb rng st leaf_index =
   let commiter_state = get_state st.states leaf_index in
-  let (rng, prepare_rand) = gen_rand_randomness rng (prepare_create_commit_entropy_lengths #bytes) in
+  let (rng, prepare_rand) = gen_rand_randomness rng (prepare_create_commit_entropy_lengths bytes) in
   let (rng, finalize_rand) = gen_rand_randomness rng (finalize_create_commit_entropy_lengths commiter_state []) in
   let group_context: group_context_nt bytes =
     if not (st.epoch < pow2 64) then failwith "update_leaf: epoch too big" else {
@@ -128,7 +128,7 @@ let update_rand #bytes #cb rng st =
   update_leaf rng st leaf_index
 
 #push-options " --ifuel 1 --fuel 1"
-val do_remove_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> list (leaf_ind:nat & treekem_state bytes leaf_ind) -> ML (list (leaf_ind:nat & treekem_state bytes leaf_ind))
+val do_remove_leaf: #bytes:Type0 -> {|crypto_bytes bytes|} -> nat -> list (leaf_ind:nat & treekem_tree_state bytes leaf_ind) -> ML (list (leaf_ind:nat & treekem_tree_state bytes leaf_ind))
 let rec do_remove_leaf #bytes #cb removed_ind l =
   match l with
   | [] -> []
@@ -138,7 +138,7 @@ let rec do_remove_leaf #bytes #cb removed_ind l =
     if leaf_ind = removed_ind then
       new_tail
     else
-      (|leaf_ind, MLS.TreeKEM.API.remove tk_state removed_ind|)::new_tail
+      (|leaf_ind, MLS.TreeKEM.API.Tree.remove tk_state removed_ind|)::new_tail
 #pop-options
 
 #push-options " --ifuel 1"
@@ -213,7 +213,7 @@ let create_init_state #bytes #cb seed =
   let (hpke_sk, hpke_pk) = extract_result (hpke_gen_keypair #bytes leaf_secret) in
   (rng, ({
     epoch = 0;
-    states = [(|0, MLS.TreeKEM.API.create hpke_sk hpke_pk|)]
+    states = [(|0, MLS.TreeKEM.API.Tree.create hpke_sk hpke_pk|)]
   }))
 #pop-options
 

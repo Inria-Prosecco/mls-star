@@ -50,7 +50,7 @@ noeq type state = {
   sign_private_key: sign_private_key bytes;
   handshake_state: MLS.TreeDEM.Keys.ratchet_state bytes;
   application_state: MLS.TreeDEM.Keys.ratchet_state bytes;
-  epoch_secret: bytes;
+  encryption_secret: bytes;
   confirmed_transcript_hash: bytes;
   interim_transcript_hash: bytes;
   pending_updatepath: list (update_path_nt bytes & (MLS.TreeKEM.API.Types.treekem_state bytes leaf_index & bytes));
@@ -61,14 +61,15 @@ val compute_group_context: bytes -> nat -> bytes -> bytes -> result (group_conte
 let compute_group_context group_id epoch tree_hash confirmed_transcript_hash =
   let? group_id = mk_mls_bytes group_id "compute_group_context" "group_id" in
   let? epoch = mk_nat_lbytes epoch "compute_group_context" "epoch" in
-  let? confirmed_transcript_hash = mk_mls_bytes tree_hash "compute_group_context" "confirmed_transcript_hash" in
+  let? tree_hash = mk_mls_bytes tree_hash "compute_group_context" "tree_hash" in
+  let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "compute_group_context" "confirmed_transcript_hash" in
   return ({
     version = PV_mls10;
     cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
-    group_id = group_id;
-    epoch = epoch;
-    tree_hash = tree_hash;
-    confirmed_transcript_hash = confirmed_transcript_hash;
+    group_id;
+    epoch;
+    tree_hash;
+    confirmed_transcript_hash;
     extensions = []; //TODO
   } <: group_context_nt bytes)
 #pop-options
@@ -90,8 +91,7 @@ let reset_ratchet_states st =
   if not (st.leaf_index < pow2 st.treesync_state.levels) then
      internal_failure "reset_ratchet_states: leaf_index too big"
   else (
-    let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption st.epoch_secret in
-    let? leaf_secret = MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #st.treesync_state.levels #0 encryption_secret st.leaf_index in
+    let? leaf_secret = MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #st.treesync_state.levels #0 st.encryption_secret st.leaf_index in
     let? handshake_state = MLS.TreeDEM.Keys.init_handshake_ratchet leaf_secret in
     let? application_state = MLS.TreeDEM.Keys.init_application_ratchet leaf_secret in
     return ({st with handshake_state; application_state})
@@ -117,7 +117,7 @@ let process_proposal sender_id (st, added_leaves) p =
       // TODO AS check
       let treesync_state = MLS.TreeSync.API.finalize_update pend_update () in
       assume (length #bytes leaf_node.data.content = hpke_public_key_length #bytes);
-      assume(st.treesync_state.levels == st.treekem_state.levels);
+      assume(st.treesync_state.levels == st.treekem_state.tree_state.levels);
       let treekem_state = MLS.TreeKEM.API.update st.treekem_state ({public_key = leaf_node.data.content}) sender_id in
       return ({ st with treesync_state; treekem_state }, added_leaves)
     )
@@ -127,7 +127,7 @@ let process_proposal sender_id (st, added_leaves) p =
     else if not (removed <> st.leaf_index) then
       error "process_proposal: I am removed from the group (TODO shouldn't be an error)"
     else (
-      assume(st.treesync_state.levels == st.treekem_state.levels);
+      assume(st.treesync_state.levels == st.treekem_state.tree_state.levels);
       let? remove_pend = MLS.TreeSync.API.prepare_remove st.treesync_state removed in
       let treesync_state = MLS.TreeSync.API.finalize_remove remove_pend in
       let treekem_state = MLS.TreeKEM.API.remove st.treekem_state removed in
@@ -153,7 +153,7 @@ let proposal_or_ref_to_proposal st prop_or_ref =
   | POR_reference ref -> error "proposal_or_ref_to_proposal: don't handle references for now (TODO)"
 #pop-options
 
-val process_commit: state -> wire_format_nt -> msg:framed_content_nt bytes{msg.content.content_type = CT_commit} -> framed_content_auth_data_nt bytes CT_commit -> result (state & bytes)
+val process_commit: state -> wire_format_nt -> msg:framed_content_nt bytes{msg.content.content_type = CT_commit} -> framed_content_auth_data_nt bytes CT_commit -> result state
 let process_commit state wire_format message message_auth =
   let message_content: commit_nt bytes = message.content.content in
   let? sender_id = (
@@ -163,68 +163,87 @@ let process_commit state wire_format message message_auth =
       return #nat (S_member?.leaf_index message.sender)
     )
   ) in
+  let? old_group_context = state_to_group_context state in
   // 0. Process proposals
   let? proposals = mapM (proposal_or_ref_to_proposal state) message_content.proposals in
   let? (state, added_leaves) = process_proposals state sender_id proposals in
+  // Create the provisional group context
+  let? provisional_group_context =
+    let? new_tree_hash =
+      match message_content.path with
+      | None -> return old_group_context.tree_hash
+      | Some path ->
+        if not (sender_id < pow2 state.treesync_state.levels) then
+          error "process_commit: sender_id is greater than treesize"
+        else (
+          let? uncompressed_path = uncompress_update_path sender_id state.treesync_state.tree path in
+          let treesync_path = update_path_to_treesync uncompressed_path in
+          MLS.TreeSync.API.compute_provisional_tree_hash state.treesync_state treesync_path
+        )
+    in
+    let? new_epoch = mk_nat_lbytes (state.epoch + 1) "process_commit" "new_epoch" in
+    return ({ old_group_context with
+      epoch = new_epoch;
+      tree_hash = new_tree_hash;
+    } <: group_context_nt bytes)
+  in
+  // Compute the new transcript hash
+  let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
+    wire_format message message_auth.signature state.interim_transcript_hash in
+  let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
+    (message_auth.confirmation_tag <: bytes) confirmed_transcript_hash in
+  // Compute the new group context
+  let new_group_context = {
+    provisional_group_context with
+    confirmed_transcript_hash;
+  } in
   // 1. Process update path
-  let? (state, opt_commit_secret) = (
+  let? (state, encryption_secret) = (
     match message_content.path with
-    | None -> return (state, None)
+    | None -> (
+      let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.commit state.treekem_state None None provisional_group_context new_group_context in
+      return ({ state with treekem_state;}, encryption_secret)
+    )
     | Some path ->
       let? group_context = state_to_group_context state in
-      //It is not possible to move this `if` inside the definition of `update_pathkem`, because we need the information it gives to write the type of `update_pathkem`
-      if not (sender_id < pow2 state.treesync_state.levels) then
-        error "process_commit: sender_id is greater than treesize"
-      else (
-        assume(state.treesync_state.levels == state.treekem_state.levels);
-        let? uncompressed_path = uncompress_update_path sender_id state.treesync_state.tree path in
-        let treesync_path = update_path_to_treesync uncompressed_path in
-        let treekem_path = update_path_to_treekem uncompressed_path in
-        let? provisional_group_context =
-          let? new_tree_hash = MLS.TreeSync.API.compute_provisional_tree_hash state.treesync_state treesync_path in
-          let? new_epoch = mk_nat_lbytes (state.epoch + 1) "process_commit" "new_epoch" in
-          return ({ group_context with
-            epoch = new_epoch;
-            tree_hash = new_tree_hash;
-          } <: group_context_nt bytes)
-        in
-        let? commit_pend = MLS.TreeSync.API.prepare_commit state.treesync_state treesync_path in
-        // TODO AS check
-        let treesync_state = MLS.TreeSync.API.finalize_commit commit_pend () in
-        let? (treekem_state, commit_secret) =
-          if state.leaf_index = sender_id && (Some? message_content.path) then (
-            match List.Tot.assoc (Some?.v message_content.path) state.pending_updatepath with
-            | Some (new_treekem_state, commit_secret) -> return (new_treekem_state, commit_secret)
-            | None -> internal_failure "Can't retrieve pending updatepath"
-          ) else (
-            assume(MLS.NetworkBinder.Properties.path_filtering_ok state.treekem_state.tree treekem_path);
-            assume(~(List.Tot.memP state.leaf_index (List.Tot.map snd added_leaves)));
-            MLS.TreeKEM.API.commit state.treekem_state treekem_path (List.Tot.map snd added_leaves) provisional_group_context
+      assume(state.treesync_state.levels == state.treekem_state.tree_state.levels);
+      let? uncompressed_path = uncompress_update_path sender_id state.treesync_state.tree path in
+      let treesync_path = update_path_to_treesync uncompressed_path in
+      let treekem_path = update_path_to_treekem uncompressed_path in
+      let? commit_pend = MLS.TreeSync.API.prepare_commit state.treesync_state treesync_path in
+      // TODO AS check
+      let treesync_state = MLS.TreeSync.API.finalize_commit commit_pend () in
+      let? (treekem_state, encryption_secret) =
+        if state.leaf_index = sender_id && (Some? message_content.path) then (
+          match List.Tot.assoc (Some?.v message_content.path) state.pending_updatepath with
+          | Some (treekem_state, encryption_secret) -> (
+            return (treekem_state, encryption_secret)
           )
-        in
-        return ({ state with treesync_state; treekem_state;}, Some commit_secret)
-      )
+          | None -> internal_failure "Can't retrieve pending updatepath"
+        ) else (
+          assume(MLS.NetworkBinder.Properties.path_filtering_ok state.treekem_state.tree_state.tree treekem_path);
+          assume(~(List.Tot.memP state.leaf_index (List.Tot.map snd added_leaves)));
+          let open MLS.TreeKEM.API in
+          MLS.TreeKEM.API.commit state.treekem_state (Some {
+            commit_leaf_ind = _;
+            path = treekem_path;
+            excluded_leaves = (List.Tot.map snd added_leaves);
+          }) None provisional_group_context new_group_context
+        )
+      in
+      return ({ state with treesync_state; treekem_state;}, encryption_secret)
   ) in
   // 2. Increase epoch
   let state = { state with epoch = state.epoch + 1 } in
   // 3. Update transcript
-  let confirmation_tag = message_auth.confirmation_tag in
-  let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
-    wire_format message message_auth.signature state.interim_transcript_hash in
-  let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
-    (confirmation_tag <: bytes) confirmed_transcript_hash in
   let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
   // 4. New group context
   let? group_context = state_to_group_context state in
   // 5. Ratchet.
-  let? init_secret = MLS.TreeDEM.Keys.secret_epoch_to_init state.epoch_secret in
-  let serialized_group_context = (ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context in
-  let? joiner_secret = MLS.TreeDEM.Keys.secret_init_to_joiner init_secret opt_commit_secret serialized_group_context in
-  let? epoch_secret = MLS.TreeDEM.Keys.secret_joiner_to_epoch #bytes joiner_secret None serialized_group_context in
-  let state = { state with epoch_secret; pending_updatepath = [];} in
+  let state = { state with encryption_secret; pending_updatepath = [];} in
   let? state = reset_ratchet_states state in
   // TODO: check confirmation tag
-  return (state, (joiner_secret <: bytes))
+  return state
 
 let fresh_key_pair e =
   if not (length #bytes e = sign_private_key_length #bytes) then
@@ -322,12 +341,11 @@ let create e cred private_sign_key group_id =
     return (MLS.TreeSync.API.finalize_create create_pend ())
   ) in
   let? treekem = treesync_to_treekem treesync_state.tree in
-  let treekem_state: treekem_state bytes 0 = MLS.TreeKEM.API.create leaf_decryption_key key_package.tbs.leaf_node.data.content in
   // 10. In principle, the above process could be streamlined by having the
   // creator directly create a tree and choose a random value for first epoch's
   // epoch secret.
   let? epoch_secret, e = chop_entropy e 32 in
-  let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption #bytes epoch_secret in
+  let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.create leaf_decryption_key key_package.tbs.leaf_node.data.content epoch_secret in
   let? leaf_dem_secret = MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 #0 encryption_secret 0 in
   let? handshake_state = MLS.TreeDEM.Keys.init_handshake_ratchet leaf_dem_secret in
   let? application_state = MLS.TreeDEM.Keys.init_application_ratchet leaf_dem_secret in
@@ -340,14 +358,14 @@ let create e cred private_sign_key group_id =
     sign_private_key = private_sign_key;
     handshake_state;
     application_state;
-    epoch_secret;
+    encryption_secret;
     confirmed_transcript_hash = Seq.empty;
     interim_transcript_hash = Seq.empty;
     pending_updatepath = [];
   })
 #pop-options
 
-val send_helper: state -> msg:framed_content_nt bytes → e:entropy { Seq.length e == 4 } → result (state & framed_content_auth_data_nt bytes msg.content.content_type & group_message)
+val send_helper: state -> msg:framed_content_nt bytes → e:entropy { Seq.length e == 4 } → result (state & framed_content_auth_data_nt bytes msg.content.content_type & mls_message_nt bytes)
 let send_helper st msg e =
   //FIXME
   assume (sign_nonce_length #bytes == 0);
@@ -356,22 +374,18 @@ let send_helper st msg e =
   assume(Seq.length rand_reuse_guard == length #bytes rand_reuse_guard);
   assume(Seq.length rand_nonce == length #bytes rand_nonce);
   let? group_context = state_to_group_context st in
-  let? confirmation_secret = MLS.TreeDEM.Keys.secret_epoch_to_confirmation st.epoch_secret in
-  let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data st.epoch_secret in
   let wire_format = WF_mls_private_message in
-  let? auth = compute_framed_content_auth_data wire_format msg st.sign_private_key rand_nonce (mk_static_option group_context) (mk_static_option confirmation_secret) (mk_static_option st.interim_transcript_hash) in
+  let? auth = compute_framed_content_auth_data wire_format msg st.sign_private_key rand_nonce (mk_static_option group_context) (mk_static_option st.treekem_state.keyschedule_state.epoch_keys.confirmation_key) (mk_static_option st.interim_transcript_hash) in
   let auth_msg: authenticated_content_nt bytes = {
     wire_format;
     content = msg;
     auth = auth;
   } in
   let ratchet = if msg.content.content_type = CT_application then st.application_state else st.handshake_state in
-  let? ct_new_ratchet_state = authenticated_content_to_private_message auth_msg ratchet rand_reuse_guard sender_data_secret in
+  let? ct_new_ratchet_state = authenticated_content_to_private_message auth_msg ratchet rand_reuse_guard st.treekem_state.keyschedule_state.epoch_keys.sender_data_secret in
   let (ct, new_ratchet_state) = ct_new_ratchet_state in
-  let msg_bytes = (ps_prefix_to_ps_whole ps_mls_message_nt).serialize (M_mls10 (M_private_message ct)) in
   let new_st = if msg.content.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
-  let g:group_message = (st.group_id, msg_bytes) in
-  return (new_st, auth, g)
+  return (new_st, auth, (M_mls10 (M_private_message ct)))
 
 #push-options "--ifuel 1 --fuel 1"
 val unsafe_mk_randomness: #l:list nat -> bytes -> result (randomness bytes l & bytes)
@@ -385,36 +399,21 @@ let rec unsafe_mk_randomness #l e =
     return (mk_randomness #bytes #_ #h (rand_head, rand_tail), e)
 #pop-options
 
-val generate_welcome_message: state -> wire_format_nt -> msg:framed_content_nt bytes{msg.content.content_type == CT_commit} -> framed_content_auth_data_nt bytes CT_commit -> new_key_packages:list (key_package_nt bytes tkt & bytes) -> bytes -> result (welcome_nt bytes)
-let generate_welcome_message st wire_format msg msg_auth new_key_packages e =
-  let? (future_state, joiner_secret) = process_commit st wire_format msg msg_auth in
+val generate_welcome_message: state -> ratchet_tree_nt bytes tkt -> group_context_nt bytes -> mac_nt bytes -> bytes -> new_key_packages:list (key_package_nt bytes tkt & bytes) -> bytes -> result (welcome_nt bytes)
+let generate_welcome_message st ratchet_tree new_group_context confirmation_tag joiner_secret new_key_packages e =
   let? joiner_secret = mk_mls_bytes joiner_secret "generate_welcome_message" "joiner_secret" in
-  let? tree_hash = MLS.TreeSync.API.compute_tree_hash future_state.treesync_state in
-  let? tree_hash = mk_mls_bytes tree_hash "generate_welcome_message" "tree_hash" in
-  let? ratchet_tree = treesync_to_ratchet_tree future_state.treesync_state.tree in
-  let? ratchet_tree = mk_mls_list ratchet_tree "generate_welcome_message" "ratchet_tree" in
   let? ratchet_tree_bytes = mk_mls_bytes ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree) "generate_welcome_message" "ratchet_tree" in
-  let? epoch = mk_nat_lbytes future_state.epoch "generate_welcome_message" "epoch" in
-  let? confirmed_transcript_hash = mk_mls_bytes future_state.confirmed_transcript_hash "generate_welcome_message" "confirmed_transcript_hash" in
-  let? leaf_index = mk_nat_lbytes future_state.leaf_index "generate_welcome_message" "leaf_index" in
+  let? leaf_index = mk_nat_lbytes st.leaf_index "generate_welcome_message" "leaf_index" in
   assert_norm(bytes_length #bytes ps_extension_nt [] == 0);
   let group_info_tbs: group_info_tbs_nt bytes = {
-    group_context = {
-      version = PV_mls10;
-      cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
-      group_id = future_state.group_id;
-      epoch = epoch;
-      tree_hash = tree_hash;
-      confirmed_transcript_hash = confirmed_transcript_hash;
-      extensions = []; //TODO handle group context extensions
-    };
+    group_context = new_group_context;
     extensions = ratchet_tree_bytes;
-    confirmation_tag = msg_auth.confirmation_tag;
+    confirmation_tag;
     signer = leaf_index;
   } in
   let? group_info = (
     let? nonce = universal_sign_nonce in
-    sign_welcome_group_info future_state.sign_private_key group_info_tbs nonce
+    sign_welcome_group_info st.sign_private_key group_info_tbs nonce
   ) in
   let? key_packages_and_path_secrets = mapM (fun (kp, ps) ->
     let? ps = mk_mls_bytes ps "" "" in
@@ -426,7 +425,9 @@ let generate_welcome_message st wire_format msg msg_auth new_key_packages e =
 
 type generate_update_path_result (leaf_index:nat) = {
   update_path: update_path_nt bytes;
-  pending_state: MLS.TreeKEM.API.Types.treekem_state bytes leaf_index & bytes;
+  pending_commit: MLS.TreeKEM.API.pending_commit_2 bytes leaf_index;
+  provisional_group_context: group_context_nt bytes;
+  ratchet_tree: ratchet_tree_nt bytes tkt;
   path_secrets: list (key_package_nt bytes tkt & bytes);
 }
 
@@ -453,7 +454,6 @@ val zip (#a1 #a2:Type) (l1:list a1) (l2:list a2)
 let zip #a1 #a2 l1 l2 = map2 (fun x y -> x, y) l1 l2
 #pop-options
 
-//TODO: added leaves path secrets
 #push-options "--ifuel 2 --fuel 2 --z3rlimit 30"
 val generate_update_path: st:state -> bytes -> list (proposal_nt bytes) -> result (generate_update_path_result st.leaf_index & bytes)
 let generate_update_path st e proposals =
@@ -463,8 +463,8 @@ let generate_update_path st e proposals =
   if not (st.leaf_index < pow2 st.treesync_state.levels) then
     internal_failure "generate_update_path: leaf index is too big"
   else (
-    assume(st.treesync_state.levels == st.treekem_state.levels);
-    let prepare_create_commit_entropy = MLS.TreeKEM.API.prepare_create_commit_entropy_lengths #bytes in
+    assume(st.treesync_state.levels == st.treekem_state.tree_state.levels);
+    let prepare_create_commit_entropy = MLS.TreeKEM.API.prepare_create_commit_entropy_lengths bytes in
     let? (prepare_create_commit_rand, e) = unsafe_mk_randomness e in
     let? (pending_create_commit, pre_update_path) = MLS.TreeKEM.API.prepare_create_commit st.treekem_state prepare_create_commit_rand in
     let? update_path_sync = (
@@ -492,30 +492,47 @@ let generate_update_path st e proposals =
         tree_hash = new_tree_hash;
       } <: group_context_nt bytes)
     ) in
-    let finalize_create_commit_entropy = MLS.TreeKEM.API.finalize_create_commit_entropy_lengths st.treekem_state (List.Tot.map snd added_leaves) in
-    let? (finalize_create_commit_rand, e) = unsafe_mk_randomness e in
-    let? create_commit_result = MLS.TreeKEM.API.finalize_create_commit pending_create_commit (List.Tot.map snd added_leaves) provisional_group_context finalize_create_commit_rand in
-    let uncompressed_update_path = mls_star_paths_to_update_path update_path_sync create_commit_result.update_path in
+    let continue_create_commit_entropy = MLS.TreeKEM.API.continue_create_commit_entropy_lengths st.treekem_state (List.Tot.map snd added_leaves) in
+    let? (continue_create_commit_rand, e) = unsafe_mk_randomness e in
+    let? (pending_commit, commit_result) = MLS.TreeKEM.API.continue_create_commit pending_create_commit (List.Tot.map snd added_leaves) provisional_group_context continue_create_commit_rand in
+    let uncompressed_update_path = mls_star_paths_to_update_path update_path_sync commit_result.update_path in
     let? update_path = compress_update_path uncompressed_update_path in
-    assume(List.Tot.length (List.Tot.map fst added_leaves) == List.Tot.length create_commit_result.added_leaves_path_secrets);
-    let path_secrets = zip (List.Tot.map fst added_leaves) create_commit_result.added_leaves_path_secrets in
+    assume(List.Tot.length (List.Tot.map fst added_leaves) == List.Tot.length commit_result.added_leaves_path_secrets);
+    let path_secrets = zip (List.Tot.map fst added_leaves) commit_result.added_leaves_path_secrets in
+    let? ratchet_tree = (
+      if not (MLS.TreeSync.Operations.apply_path_pre st.treesync_state.tree update_path_sync) then
+        error "generate_update_path: bad pre"
+      else
+        treesync_to_ratchet_tree (MLS.TreeSync.Operations.apply_path st.treesync_state.tree update_path_sync)
+    ) in
     return (({
       update_path;
-      pending_state = (create_commit_result.new_state, create_commit_result.commit_secret);
+      pending_commit;
+      provisional_group_context;
       path_secrets;
+      ratchet_tree;
     } <: generate_update_path_result first_st.leaf_index), e)
   )
 #pop-options
 
 let message_commit = m:framed_content_nt bytes{m.content.content_type == CT_commit}
 
-val generate_commit: state -> entropy -> list (proposal_nt bytes) -> result (message_commit & state & list (key_package_nt bytes tkt & bytes) & entropy)
+type generate_commit_result = {
+  group_msg: group_message;
+  path_secrets: list (key_package_nt bytes tkt & bytes);
+  joiner_secret: bytes;
+  ratchet_tree: ratchet_tree_nt bytes tkt;
+  new_group_context: group_context_nt bytes;
+  confirmation_tag: mac_nt bytes;
+}
+
+#push-options "--z3rlimit 50"
+val generate_commit: state -> entropy -> list (proposal_nt bytes) -> result (state & generate_commit_result & entropy)
 let generate_commit state e proposals =
-  let? ({update_path; pending_state; path_secrets}, e) = generate_update_path state e proposals in
+  let? ({update_path; pending_commit; provisional_group_context; ratchet_tree; path_secrets}, e) = generate_update_path state e proposals in
   let? epoch = mk_nat_lbytes state.epoch "generate_commit" "epoch" in
   let? leaf_index = mk_nat_lbytes state.leaf_index "generate_commit" "leaf_index" in
   let? proposals = mk_mls_list (List.Tot.map POR_proposal proposals) "generate_commit" "proposals" in
-  let state = { state with pending_updatepath = (update_path, pending_state)::state.pending_updatepath} in
   let msg: framed_content_nt bytes = {
     group_id = state.group_id;
     epoch;
@@ -526,20 +543,33 @@ let generate_commit state e proposals =
       content = { proposals; path = Some update_path };
     };
   } in
-  return ((msg <: message_commit), state, path_secrets, e)
+  let? fresh, e = chop_entropy e 4 in
+  let? (state, msg_auth, encap_msg) = send_helper state msg fresh in
+  let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash WF_mls_private_message msg msg_auth.signature state.interim_transcript_hash in
+  let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "generate_commit" "confirmed_transcipt_hash" in
+  let new_group_context = { provisional_group_context with confirmed_transcript_hash } in
+  let? commit_result = MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context None in
+  let state = { state with pending_updatepath = (update_path, (commit_result.new_state, commit_result.encryption_secret))::state.pending_updatepath } in
+  return (state, {
+    group_msg = (state.group_id, serialize _ encap_msg);
+    path_secrets;
+    joiner_secret = commit_result.joiner_secret;
+    ratchet_tree;
+    new_group_context;
+    confirmation_tag = msg_auth.confirmation_tag;
+  }, e)
+#pop-options
 
 let add state key_package e =
   let? key_package = from_option "error message if it is malformed" ((ps_prefix_to_ps_whole (ps_key_package_nt tkt)).parse key_package) in
   let proposals = [ (P_add {key_package}) ] in
-  let? (msg, state, new_key_packages_and_path_secrets, e) = generate_commit state e proposals in
-  let? fresh, e = chop_entropy e 4 in
-  let? (state, msg_auth, g) = send_helper state msg fresh in
+  let? (state, {group_msg; path_secrets; joiner_secret; ratchet_tree; new_group_context; confirmation_tag}, e) = generate_commit state e proposals in
   let? fresh, e = chop_entropy e 32 in
   let rand = fresh in
   assume (hpke_private_key_length #bytes == 32);
-  let? welcome_msg = generate_welcome_message state WF_mls_private_message msg msg_auth new_key_packages_and_path_secrets rand in
+  let? welcome_msg = generate_welcome_message state ratchet_tree new_group_context confirmation_tag joiner_secret path_secrets rand in
   let w:welcome_message = (empty #bytes, (ps_prefix_to_ps_whole ps_welcome_nt).serialize welcome_msg) in
-  return (state, (g,w))
+  return (state, (group_msg,w))
 
 let remove state p e =
   match find_first #(option (leaf_node_nt bytes tkt)) (fun olp -> match olp with | Some lp -> lp.data.credential = C_basic p | None -> false) (get_leaf_list state.treesync_state.tree) with
@@ -547,18 +577,14 @@ let remove state p e =
   | Some removed -> (
     let? removed = mk_nat_lbytes removed "remove" "removed" in
     let proposals = [P_remove {removed}] in
-    let? (msg, state, _, e) = generate_commit state e proposals in
-    let? fresh, e = chop_entropy e 4 in
-    let? (state, _, g) = send_helper state msg fresh in
-    return (state, g)
+    let? (state, {group_msg}, e) = generate_commit state e proposals in
+    return (state, group_msg)
   )
 
 let update state e =
   let proposals = [] in
-  let? (msg, state, _, e) = generate_commit state e proposals in
-  let? fresh, e = chop_entropy e 4 in
-  let? (state, _, g) = send_helper state msg fresh in
-  return (state, g)
+  let? (state, {group_msg}, e) = generate_commit state e proposals in
+  return (state, group_msg)
 
 let send state e data =
   let? epoch = mk_nat_lbytes state.epoch "generate_commit" "epoch" in
@@ -574,8 +600,8 @@ let send state e data =
       content = data;
     };
   } in
-  let? (new_state, msg_auth, g) = send_helper state msg e in
-  return (new_state, g)
+  let? (new_state, msg_auth, msg) = send_helper state msg e in
+  return (new_state, ((state.group_id <: group_id), serialize _ msg))
 
 
 val find_my_index: #l:nat -> treesync bytes tkt l 0 -> bytes -> result (res:nat{res<pow2 l})
@@ -643,11 +669,11 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let? treekem = treesync_to_treekem treesync in
   assume(leaf_index < pow2 l /\ Some? (leaf_at treekem leaf_index));
   assume(MLS.TreeKEM.Invariants.treekem_invariant treekem);
-  let? treekem_state = MLS.TreeKEM.API.welcome treekem leaf_decryption_key opt_path_secret_and_inviter_ind leaf_index in
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash #bytes group_info.tbs.confirmation_tag group_info.tbs.group_context.confirmed_transcript_hash in
   let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
   let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch tree_hash group_info.tbs.group_context.confirmed_transcript_hash in
-  let? epoch_secret = MLS.TreeDEM.Keys.secret_joiner_to_epoch secrets.joiner_secret None ((ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context) in
+  let? epoch_secret = MLS.TreeKEM.KeySchedule.secret_joiner_to_epoch secrets.joiner_secret None ((ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context) in
+  let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.welcome treekem leaf_decryption_key opt_path_secret_and_inviter_ind leaf_index epoch_secret in
   let dumb_ratchet_state: MLS.TreeDEM.Keys.ratchet_state bytes = {
     secret = mk_zero_vector (kdf_length #bytes);
     generation = 0;
@@ -661,7 +687,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     sign_private_key = sign_sk;
     handshake_state = dumb_ratchet_state;
     application_state = dumb_ratchet_state;
-    epoch_secret;
+    encryption_secret;
     confirmed_transcript_hash = group_info.tbs.group_context.confirmed_transcript_hash;
     interim_transcript_hash;
     pending_updatepath = [];
@@ -677,13 +703,10 @@ let process_group_message state msg =
     match msg with
     | M_mls10 (M_public_message msg) ->
         let? group_context = state_to_group_context state in
-        let? membership_key = MLS.TreeDEM.Keys.secret_epoch_to_membership state.epoch_secret in
-        let? auth_msg = public_message_to_authenticated_content msg (mk_static_option group_context) (mk_static_option membership_key) in
+        let? auth_msg = public_message_to_authenticated_content msg (mk_static_option group_context) (mk_static_option state.treekem_state.keyschedule_state.epoch_keys.membership_key) in
         return (WF_mls_public_message, auth_msg)
     | M_mls10  (M_private_message msg) ->
-        let? encryption_secret = MLS.TreeDEM.Keys.secret_epoch_to_encryption state.epoch_secret in
-        let? sender_data_secret = MLS.TreeDEM.Keys.secret_epoch_to_sender_data state.epoch_secret in
-        let? auth_msg = private_message_to_authenticated_content msg state.treesync_state.levels (encryption_secret <: bytes) (sender_data_secret <: bytes) in
+        let? auth_msg = private_message_to_authenticated_content msg state.treesync_state.levels (state.encryption_secret <: bytes) (state.treekem_state.keyschedule_state.epoch_keys.sender_data_secret <: bytes) in
         return (WF_mls_private_message, auth_msg)
     | _ ->
         internal_failure "unknown message type"
@@ -701,7 +724,7 @@ let process_group_message state msg =
       let message_content: commit_nt bytes = message.content.content.content in
       begin match message_content with
       | { proposals = [ POR_proposal (P_add {key_package}) ]; path = _ } ->
-          let? (state, _) = process_commit state wire_format message.content message.auth in
+          let? state = process_commit state wire_format message.content message.auth in
           let leaf_package = key_package.tbs.leaf_node in
           let? identity = (
             match leaf_package.data.credential with
@@ -715,7 +738,7 @@ let process_group_message state msg =
               from_option "leaf node" (leaf_at state.treesync_state.tree removed)
             else error "process_group_message: leaf index too big"
           in
-          let? (state, _) = process_commit state wire_format message.content message.auth in
+          let? state = process_commit state wire_format message.content message.auth in
           let? identity = (
             match leaf_package.data.credential with
             | C_basic identity -> return identity

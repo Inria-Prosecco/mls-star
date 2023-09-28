@@ -10,7 +10,7 @@ open MLS.StringUtils
 open MLS.Result
 open MLS.NetworkTypes
 open MLS.Crypto
-open MLS.TreeDEM.Keys
+open MLS.TreeKEM.KeySchedule
 
 val gen_epoch_output: {|crypto_bytes bytes|} -> string -> string -> nat -> keyschedule_test_epoch_input -> ML keyschedule_test_epoch_output
 let gen_epoch_output #cb group_id last_init_secret epoch inp =

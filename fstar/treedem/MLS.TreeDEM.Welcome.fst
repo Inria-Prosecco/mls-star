@@ -9,7 +9,7 @@ open MLS.Crypto
 open MLS.Tree
 open MLS.TreeSync.Types
 open MLS.TreeDEM.KeyPackageRef
-open MLS.TreeDEM.Keys
+open MLS.TreeKEM.KeySchedule
 open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"

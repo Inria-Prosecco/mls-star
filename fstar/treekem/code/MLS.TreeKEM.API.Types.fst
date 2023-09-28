@@ -2,13 +2,12 @@ module MLS.TreeKEM.API.Types
 
 open Comparse
 open MLS.Crypto
-open MLS.Tree
-open MLS.TreeKEM.Types
+open MLS.TreeKEM.API.KeySchedule.Types
+open MLS.TreeKEM.API.Tree.Types
 
 type treekem_state (bytes:Type0) {|crypto_bytes bytes|} (leaf_ind:nat) = {
-  levels: levels:nat{leaf_ind < pow2 levels};
-  tree: tree:treekem bytes levels 0{MLS.TreeKEM.Invariants.treekem_invariant tree};
-  priv: priv:treekem_priv bytes levels 0 leaf_ind{MLS.TreeKEM.Invariants.treekem_priv_invariant tree priv};
+  tree_state: treekem_tree_state bytes leaf_ind;
+  keyschedule_state: treekem_keyschedule_state bytes;
 }
 
-type treekem_index (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) (st:treekem_state bytes leaf_ind) = i:nat{i < pow2 st.levels}
+type treekem_index (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) (st:treekem_state bytes leaf_ind) = treekem_index st.tree_state

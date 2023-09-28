@@ -17,8 +17,8 @@ open MLS.TreeSync.API.Types
 open MLS.TreeSync.API
 open MLS.TreeKEM.NetworkTypes
 open MLS.TreeKEM.Types
-open MLS.TreeKEM.API.Types
-open MLS.TreeKEM.API
+open MLS.TreeKEM.API.Tree.Types
+open MLS.TreeKEM.API.Tree
 open MLS.Result
 open MLS.StringUtils
 open MLS.Utils
@@ -28,7 +28,7 @@ open MLS.Crypto
 
 type participant_state {|crypto_bytes bytes|} = {
   leaf_ind: nat;
-  state: treekem_state bytes leaf_ind;
+  state: treekem_tree_state bytes leaf_ind;
   signature_key: bytes;
 }
 
@@ -51,11 +51,11 @@ let rec set_path_secret #cb #l #i #li path_secret height t p =
         PNode priv (set_path_secret path_secret height child p_next)
       )
 
-val get_leaf_treekem_state: {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l 0 -> treekem_leaf_private -> ML participant_state
-let get_leaf_treekem_state #cb #l tree leaf_priv =
+val get_leaf_treekem_tree_state: {|crypto_bytes bytes|} -> #l:nat -> treekem bytes l 0 -> treekem_leaf_private -> ML participant_state
+let get_leaf_treekem_tree_state #cb #l tree leaf_priv =
   let leaf_ind = UInt32.v leaf_priv.index in
-  if not (leaf_ind < pow2 l) then failwith "get_leaf_treekem_state: leaf_ind too big";
-  let encryption_priv = extract_result (mk_hpke_private_key (hex_string_to_bytes leaf_priv.encryption_priv) "get_leaf_treekem_state" "encryption_priv") in
+  if not (leaf_ind < pow2 l) then failwith "get_leaf_treekem_tree_state: leaf_ind too big";
+  let encryption_priv = extract_result (mk_hpke_private_key (hex_string_to_bytes leaf_priv.encryption_priv) "get_leaf_treekem_tree_state" "encryption_priv") in
   let priv = List.fold_right (fun path_secret priv -> set_path_secret (hex_string_to_bytes path_secret.path_secret) (level (UInt32.v path_secret.node)) tree priv) leaf_priv.path_secrets (MLS.TreeKEM.Operations.create_empty_priv encryption_priv) in
   assume(MLS.TreeKEM.Invariants.treekem_invariant tree);
   assume(MLS.TreeKEM.Invariants.treekem_priv_invariant tree priv);
@@ -89,7 +89,7 @@ let check_one_update_path #cb #l #li group_context tsync treekem_path expected_c
   )
 
 val check_update_path: {|crypto_bytes bytes|} -> #l:nat -> group_context_nt bytes -> treesync bytes tkt l 0 -> list participant_state -> treekem_update_path -> ML unit
-let check_update_path #cb #l group_context tsync treekem_states t =
+let check_update_path #cb #l group_context tsync treekem_tree_states t =
   let sender = UInt32.v t.sender in
   let commit_secret = hex_string_to_bytes t.commit_secret in
   if not (sender < pow2 l) then failwith "check_update_path: sender too big";
@@ -102,7 +102,7 @@ let check_update_path #cb #l group_context tsync treekem_states t =
   let group_context = { group_context with tree_hash = tree_hash_after; } in
   if not (MLS.TreeSync.Operations.apply_path_pre tsync treesync_path) then failwith "check_update_path: bad apply_path precondition";
   if not (MLS.TreeSync.Operations.path_is_valid group_context.group_id tsync treesync_path) then failwith "check_update_path: invalid path";
-  List.iter (check_one_update_path group_context tsync treekem_path commit_secret t.path_secrets) treekem_states;
+  List.iter (check_one_update_path group_context tsync treekem_path commit_secret t.path_secrets) treekem_tree_states;
   List.iteri (fun i opt_path_secret ->
     if not (0 <= i && i < pow2 l) then failwith "check_update_path: bad i";
     if not ((i = sender || leaf_at tsync i = None) = (opt_path_secret = None)) then failwith "check_update_path: incoherent null path secret"
@@ -136,7 +136,7 @@ let generate_my_update_path #cb #l group_context tsync st =
       return (MLS.TreeSync.Operations.external_path_to_path tsync ext_update_path group_context.group_id signature_key sign_nonce)
   ) in
   let (rand, finalize_create_commit_rand) = gen_rand_randomness rand _ in
-  let create_commit_result = extract_result (MLS.TreeKEM.API.finalize_create_commit pending_create_commit [] group_context finalize_create_commit_rand) in
+  let create_commit_result = extract_result (MLS.TreeKEM.API.Tree.finalize_create_commit pending_create_commit [] group_context finalize_create_commit_rand) in
   let uncompressed_update_path = mls_star_paths_to_update_path update_path_sync create_commit_result.update_path in
   (extract_result (compress_update_path uncompressed_update_path), create_commit_result.commit_secret)
 
@@ -150,7 +150,7 @@ let check_one_my_update_path #cb #l group_context tsync st sender update_path ex
     let treekem_path = update_path_to_treekem uncompressed_path in
     if not (MLS.TreeSync.Operations.path_is_valid group_context.group_id tsync treesync_path) then failwith "check_one_my_update_path: invalid path";
     assume(MLS.NetworkBinder.Properties.path_filtering_ok st.state.tree treekem_path);
-    let (new_tkem_state, commit_secret) = extract_result (MLS.TreeKEM.API.commit st.state treekem_path [] group_context) in
+    let (new_tkem_state, commit_secret) = extract_result (MLS.TreeKEM.API.Tree.commit st.state treekem_path [] group_context) in
     check_equal "commit_secret" (bytes_to_hex_string) (expected_commit_secret) (commit_secret)
   )
 
@@ -180,7 +180,7 @@ let test_treekem_one t =
     let tkem = extract_result (treesync_to_treekem tsync) in
     let tree_hash = if not (tree_hash_pre tsync) then failwith "test_treekem_one: bad tree hash pre" else tree_hash tsync in
     let group_context = gen_group_context (ciphersuite #bytes) (hex_string_to_bytes t.group_id) (UInt64.v t.epoch) tree_hash (hex_string_to_bytes t.confirmed_transcript_hash) in
-    let states = List.map (get_leaf_treekem_state tkem) t.leaves_private in
+    let states = List.map (get_leaf_treekem_tree_state tkem) t.leaves_private in
     List.iter (check_update_path group_context tsync states) t.update_paths;
     check_my_update_path group_context tsync states;
     true

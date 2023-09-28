@@ -15,7 +15,7 @@ open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
 open MLS.TreeDEM.Welcome
 open MLS.TreeDEM.Message.Framing
-open MLS.TreeDEM.Keys
+open MLS.TreeKEM.KeySchedule
 
 val test_welcome_one: welcome_test -> ML bool
 let test_welcome_one t =

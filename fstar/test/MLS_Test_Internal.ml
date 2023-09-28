@@ -98,8 +98,8 @@ let test () =
       debug_ascii data;
   | _ ->
       failwith "could not parse back application data"; ;
-  print_endline "... a's epoch secret:";
-  debug_buffer s.MLS.epoch_secret;
+  print_endline "... a's encryption secret:";
+  debug_buffer s.MLS.encryption_secret;
 
   print_endline "\n\n*** new user: b (fresh_key_pair, fresh_key_package)";
   let sign_pub_b, sign_priv_b = extract (MLS.fresh_key_pair (bytes_of_list dummy_sign_b)) in
@@ -117,8 +117,8 @@ let test () =
       debug_ascii somebody;
   | _ ->
       failwith "could not parse back add message"; ;
-  print_endline "... a's epoch secret:";
-  debug_buffer s.MLS.epoch_secret;
+  print_endline "... a's encryption secret:";
+  debug_buffer s.MLS.encryption_secret;
   Printf.printf "... a's epoch: %d\n" (Z.to_int s.MLS.epoch);
 
   print_endline "\n\n*** We create b's state from the welcome message (process_welcome_message)";
@@ -129,16 +129,16 @@ let test () =
       (* Shortcut: only one person added to the group so this works *)
       if true then Some priv_b else None)) in
   print_endline "... b processed welcome message";
-  print_endline "... b's epoch secret:";
-  debug_buffer s_b.MLS.epoch_secret;
+  print_endline "... b's encryption secret:";
+  debug_buffer s_b.MLS.encryption_secret;
   Printf.printf "... b's epoch: %d\n" (Z.to_int s.MLS.epoch);
   print_endline "... b's group id:";
   debug_ascii group_id;
 
   print_endline "\n\n*** b says hello (send)";
   let s_b, (group_id, msg) = extract (MLS.send s_b dummy4 (bytes_of_list dummy_data)) in
-  print_endline "... b's epoch secret:";
-  debug_buffer s_b.MLS.epoch_secret;
+  print_endline "... b's encryption secret:";
+  debug_buffer s_b.MLS.encryption_secret;
   print_endline "... b's group id (again):";
   debug_ascii group_id;
 
