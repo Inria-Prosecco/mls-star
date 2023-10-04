@@ -12,6 +12,7 @@ open MLS.TreeSync.Operations
 open MLS.TreeSync.TreeHash
 open MLS.TreeSync.ParentHash
 open MLS.TreeSync.Symbolic.Parsers
+open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
@@ -22,7 +23,7 @@ val pre_is_hash_compatible:
   pre:(bytes -> prop) ->
   prop
 let pre_is_hash_compatible #bytes #cb pre =
-  forall b. (pre b /\ length b < hash_max_input_length #bytes) ==> pre (hash_hash b)
+  forall b. (pre b /\ Success? (hash_hash b)) ==> pre (Success?.v (hash_hash b))
 
 (*** Invariant proofs ***)
 
@@ -112,9 +113,9 @@ val is_well_formed_tree_add:
   (requires
     is_well_formed _ pre t /\
     is_well_formed _ pre ln /\
-    tree_add_pre t li
+    Success? (tree_add t li ln)
   )
-  (ensures is_well_formed _ pre (tree_add t li ln))
+  (ensures is_well_formed _ pre (Success?.v (tree_add t li ln)))
 let rec is_well_formed_tree_add #bytes #bl pre #tkt #l #i t li ln =
   match t with
   | TLeaf _ -> ()
@@ -133,8 +134,8 @@ val pre_tree_hash:
   #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
   t:treesync bytes tkt l i ->
   Lemma
-  (requires is_well_formed _ pre t /\ tree_hash_pre t)
-  (ensures pre (tree_hash t))
+  (requires is_well_formed _ pre t /\ Success? (tree_hash t))
+  (ensures pre (Success?.v (tree_hash t)))
 let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
   match t with
   | TLeaf oln -> (
@@ -146,8 +147,8 @@ let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
   | TNode opn left right -> (
     pre_tree_hash pre left;
     pre_tree_hash pre right;
-    let left_hash = tree_hash left in
-    let right_hash = tree_hash right in
+    let Success left_hash = tree_hash left in
+    let Success right_hash = tree_hash right in
     serialize_wf_lemma (tree_hash_input_nt bytes tkt) pre (ParentTreeHashInput ({
       parent_node = opn;
       left_hash = left_hash;
@@ -166,12 +167,12 @@ val pre_compute_parent_hash:
     is_well_formed_prefix tkt.ps_node_content pre content /\
     pre parent_hash /\
     is_well_formed _ pre original_sibling /\
-    compute_parent_hash_pre content (length #bytes parent_hash) original_sibling
+    Success? (compute_parent_hash content parent_hash original_sibling)
   )
-  (ensures pre (compute_parent_hash content parent_hash original_sibling))
+  (ensures pre (Success?.v (compute_parent_hash content parent_hash original_sibling)))
 let pre_compute_parent_hash #bytes #cb pre #tkt #l #i content parent_hash original_sibling =
   pre_tree_hash pre original_sibling;
-  let original_sibling_tree_hash = tree_hash original_sibling in
+  let Success original_sibling_tree_hash = tree_hash original_sibling in
   serialize_wf_lemma (parent_hash_input_nt bytes tkt) pre ({
     content;
     parent_hash = parent_hash;
@@ -183,21 +184,21 @@ val is_well_formed_apply_path_aux:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
   #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:bytes ->
   Lemma
   (requires
     is_well_formed _ pre t /\
     is_well_formed _ pre p /\
     pre parent_parent_hash /\
-    apply_path_aux_pre t p (length #bytes parent_parent_hash)
+    Success? (apply_path_aux t p parent_parent_hash)
   )
-  (ensures is_well_formed _ pre (apply_path_aux t p parent_parent_hash))
+  (ensures is_well_formed _ pre (Success?.v (apply_path_aux t p parent_parent_hash)))
 let rec is_well_formed_apply_path_aux #bytes #cb pre #tkt #l #i #li t p parent_parent_hash =
   match t, p with
   | TLeaf _, PLeaf _ -> ()
   | TNode _ left right, PNode opt_ext_content p_next -> (
     let (child, sibling) = get_child_sibling t li in
-    let (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+    let Success (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
     (match opt_ext_content with
     | None -> ()
     | Some ext_content -> pre_compute_parent_hash pre ext_content parent_parent_hash sibling
@@ -213,8 +214,8 @@ val is_well_formed_apply_path:
   #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 ->
   t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
   Lemma
-  (requires is_well_formed _ pre t /\ is_well_formed _ pre p /\ apply_path_pre t p)
-  (ensures is_well_formed _ pre (apply_path t p))
+  (requires is_well_formed _ pre t /\ is_well_formed _ pre p /\ Success? (apply_path t p))
+  (ensures is_well_formed _ pre (Success?.v (apply_path t p)))
 let is_well_formed_apply_path #bytes #cb pre #tkt #l #li t p =
   is_well_formed_apply_path_aux pre t p (root_parent_hash #bytes)
 
@@ -223,21 +224,21 @@ val pre_compute_leaf_parent_hash_from_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
   #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li -> parent_parent_hash:bytes ->
   Lemma
   (requires
     is_well_formed _ pre t /\
     is_well_formed _ pre p /\
     pre parent_parent_hash /\
-    compute_leaf_parent_hash_from_path_pre t p (length #bytes parent_parent_hash)
+    Success? (compute_leaf_parent_hash_from_path t p parent_parent_hash)
   )
-  (ensures pre (compute_leaf_parent_hash_from_path t p parent_parent_hash))
+  (ensures pre (Success?.v (compute_leaf_parent_hash_from_path t p parent_parent_hash)))
 let rec pre_compute_leaf_parent_hash_from_path #bytes #cb pre #tkt #l #i #li t p parent_parent_hash =
   match t, p with
   | TLeaf _, PLeaf _ -> ()
   | TNode _ left right, PNode opt_ext_content p_next -> (
     let (child, sibling) = get_child_sibling t li in
-    let (_,  new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+    let Success (_,  new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
     (match opt_ext_content with
     | None -> ()
     | Some ext_content -> pre_compute_parent_hash pre ext_content parent_parent_hash sibling
@@ -280,9 +281,9 @@ val pre_is_hash_compatible_is_msg:
   (pre_is_hash_compatible (is_msg p l i))
   [SMTPat (pre_is_hash_compatible (is_msg p l i))]
 let pre_is_hash_compatible_is_msg p l i =
-  introduce forall b. (is_msg p l i b /\ length b < hash_max_input_length #dy_bytes) ==> is_msg p l i (hash_hash b)
+  introduce forall b. (is_msg p l i b /\ Success? (hash_hash b)) ==> is_msg p l i (Success?.v (hash_hash b))
   with (
-    introduce  (is_msg p l i b /\ length b < hash_max_input_length #dy_bytes) ==> is_msg p l i (hash_hash b)
+    introduce _ ==> _
     with _. (
       LabeledCryptoAPI.hash_lemma #p #i #l b
     )

@@ -48,20 +48,12 @@ let test_tree_operations_one t =
       let ln = add.key_package.tbs.leaf_node in
       match find_empty_leaf treesync_before with
       | Some li ->
-        if not (tree_add_pre treesync_before li) then
-          failwith "test_tree_operation_one: tree_add_pre is false"
-        else (
-          (|_, tree_add treesync_before li ln|)
-        )
+        (|_, extract_result (tree_add treesync_before li ln)|)
       | None -> (
         let extended_tree = tree_extend treesync_before in
         match find_empty_leaf extended_tree with
         | Some li ->
-          if not (tree_add_pre extended_tree li) then
-            failwith "test_tree_operation_one: tree_add_pre is false"
-          else (
-            (|_, tree_add extended_tree li ln|)
-          )
+            (|_, extract_result (tree_add extended_tree li ln)|)
         | None -> failwith "test_tree_operation_one: couldn't find empty leaf (impossible?)"
       )
     )

@@ -6,39 +6,33 @@ open MLS.Tree
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
 open MLS.TreeSync.TreeHash
+open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
 val get_tree_hash_input:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
-  t:treesync bytes tkt l i{tree_hash_pre t} ->
-  tree_hash_input_nt bytes tkt
+  t:treesync bytes tkt l i ->
+  result (tree_hash_input_nt bytes tkt)
 let get_tree_hash_input #bytes #cb #tkt #l #i t =
   match t with
   | TLeaf olp ->
-    LeafTreeHashInput ({
+    let? i = mk_nat_lbytes i "tree_hash" "i" in
+    return (LeafTreeHashInput ({
       leaf_index = i;
       leaf_node = olp;
-    })
+    }))
   | TNode onp left right ->
-    let left_hash = tree_hash left in
-    let right_hash = tree_hash right in
-    ParentTreeHashInput ({
+    let? left_hash = tree_hash left in
+    let? left_hash = mk_mls_bytes left_hash "tree_hash" "left_bytes" in
+    let? right_hash = tree_hash right in
+    let? right_hash = mk_mls_bytes right_hash "tree_hash" "right_bytes" in
+    return (ParentTreeHashInput ({
       parent_node = onp;
       left_hash = left_hash;
       right_hash = right_hash;
-    })
-
-#push-options "--z3rlimit 50"
-val length_get_tree_hash_input:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  #l:nat -> #i:tree_index l ->
-  t:treesync bytes tkt l i{tree_hash_pre t} ->
-  Lemma
-  (length (serialize #bytes (tree_hash_input_nt bytes tkt) (get_tree_hash_input t)) < hash_max_input_length #bytes)
-let length_get_tree_hash_input #bytes #cb #tkt #l #i t = ()
-#pop-options
+    }))
 
 /// The tree hash injectivity theorem.
 /// Since hash functions are not injective, we can't exactly prove injectivity,
@@ -51,28 +45,28 @@ val tree_hash_inj:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l1:nat -> #i1:tree_index l1 ->
   #l2:nat -> #i2:tree_index l2 ->
-  t1:treesync bytes tkt l1 i1{tree_hash_pre t1} -> t2:treesync bytes tkt l2 i2{tree_hash_pre t2} ->
+  t1:treesync bytes tkt l1 i1 -> t2:treesync bytes tkt l2 i2 ->
   // The lemma is actually a function computing a pair of bytes with the following property:
   Pure (bytes & bytes)
   // if the trees `t1` and `t2` have equal tree hash,
-  (requires tree_hash t1 == tree_hash t2)
+  (requires (
+    match tree_hash t1, tree_hash t2 with
+    | Success th1, Success th2 -> th1 == th2
+    | _, _ -> False
+  ))
   (ensures fun (b1, b2) ->
     // then either they are equal,
     l1 == l2 /\ i1 == i2 /\ t1 == t2 \/
     // or the two bytes computed by the function are a hash collision.
-    length b1 < hash_max_input_length #bytes /\
-    length b2 < hash_max_input_length #bytes /\
-    hash_hash b1 == hash_hash b2 /\ ~(b1 == b2)
+    is_hash_collision b1 b2
   )
 let rec tree_hash_inj #bytes #sb #tkt #l1 #i1 #l2 #i2 t1 t2 =
-  let hash_input1 = get_tree_hash_input t1 in
-  let hash_input2 = get_tree_hash_input t2 in
+  let Success hash_input1 = get_tree_hash_input t1 in
+  let Success hash_input2 = get_tree_hash_input t2 in
   let serialized_hash_input1 = serialize #bytes (tree_hash_input_nt bytes tkt) hash_input1 in
   let serialized_hash_input2 = serialize #bytes (tree_hash_input_nt bytes tkt) hash_input2 in
   parse_serialize_inv_lemma #bytes (tree_hash_input_nt bytes tkt) hash_input1;
   parse_serialize_inv_lemma #bytes (tree_hash_input_nt bytes tkt) hash_input2;
-  length_get_tree_hash_input t1;
-  length_get_tree_hash_input t2;
   if l1 = l2 && i1 = i2 && t1 = t2 then
     (empty, empty)
   else if not (hash_input1 = hash_input2) then (

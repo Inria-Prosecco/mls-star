@@ -229,15 +229,16 @@ let pending_add_proof
   (st:treesync_state bytes tkt asp group_id) (ln:leaf_node_nt bytes tkt) =
   squash (
     ln.data.source == LNS_key_package /\ ( //TODO: check key package signature
+      // TODO this match is a bit useless:
+      // its purpose is to compute `li`, but it is not included in the signature
+      // (because source = key_package)
       match find_empty_leaf st.tree with
       | Some li ->
-        tree_add_pre st.tree li /\
         leaf_is_valid ln group_id li
       | None ->
         find_empty_leaf_tree_extend st.tree;
         let extended_tree = tree_extend st.tree in
         let li = Some?.v (find_empty_leaf extended_tree) in
-        tree_add_pre extended_tree li /\
         leaf_is_valid ln group_id li
     )
   )
@@ -266,9 +267,7 @@ let prepare_add #bytes #cb #tkt #asp #group_id st ln =
   else (
     match find_empty_leaf st.tree with
     | Some li ->
-      if not (tree_add_pre st.tree li) then
-        error "prepare_add: tree_add_pre is false"
-      else if not (leaf_is_valid ln group_id li) then
+      if not (leaf_is_valid ln group_id li) then
         error "prepare_add: invalid leaf node"
       else (
         return ({
@@ -280,9 +279,7 @@ let prepare_add #bytes #cb #tkt #asp #group_id st ln =
       find_empty_leaf_tree_extend st.tree;
       let extended_tree = tree_extend st.tree in
       let li = Some?.v (find_empty_leaf extended_tree) in
-      if not (tree_add_pre extended_tree li) then
-        error "prepare_add: tree_add_pre is false (after extension)"
-      else if not (leaf_is_valid ln group_id li) then
+      if not (leaf_is_valid ln group_id li) then
         error "prepare_add: invalid leaf node"
       else (
         return ({
@@ -296,22 +293,24 @@ val finalize_add:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
   #st:treesync_state bytes tkt asp group_id -> #ln:leaf_node_nt bytes tkt ->
   pend:pending_add st ln -> token:token_for_add pend ->
-  treesync_state bytes tkt asp group_id & nat
+  result (treesync_state bytes tkt asp group_id & nat)
 let finalize_add #bytes #cb #tkt #asp #group_id #st #ln pend token =
   pend.can_add_proof;
   match find_empty_leaf st.tree with
   | Some li -> (
+    let? new_tree = tree_add st.tree li ln in
     all_credentials_ok_tree_add st.tree st.tokens li ln token;
-    (state_update_tree st (tree_add st.tree li ln) (as_add_update st.tokens li token), (li <: nat))
+    return (state_update_tree st new_tree (as_add_update st.tokens li token), (li <: nat))
   )
   | None -> (
     find_empty_leaf_tree_extend st.tree;
     let extended_tree = tree_extend st.tree in
     let extended_tokens = as_extend st.tokens in
     let li = Some?.v (find_empty_leaf extended_tree) in
+    let? new_tree = tree_add extended_tree li ln in
     all_credentials_ok_tree_extend st.tree st.tokens;
     all_credentials_ok_tree_add extended_tree extended_tokens li ln token;
-    (state_update_tree st (tree_add extended_tree li ln) (as_add_update extended_tokens li token), (li <: nat))
+    return (state_update_tree st new_tree (as_add_update extended_tokens li token), (li <: nat))
 )
 
 (*** Update ***)
@@ -434,7 +433,6 @@ let pending_commit_proof
   (#bytes:Type0) {|crypto_bytes bytes|} (#tkt:treekem_types bytes) (#asp:as_parameters bytes) (#group_id:mls_bytes bytes)
   (st:treesync_state bytes tkt asp group_id) (#li:treesync_index st) (p:pathsync bytes tkt st.levels 0 li) =
   squash (
-    apply_path_pre st.tree p /\
     path_is_valid group_id st.tree p /\
     Some? (leaf_at st.tree li)
   )
@@ -461,9 +459,7 @@ val prepare_commit:
   st:treesync_state bytes tkt asp group_id -> #li:treesync_index st -> p:pathsync bytes tkt st.levels 0 li ->
   result (pending_commit st p)
 let prepare_commit #bytes #cb #tkt #asp #group_id st #li p =
-  if not (apply_path_pre st.tree p) then
-    error "prepare_commit: bad precondition"
-  else if not (path_is_valid group_id st.tree p) then
+  if not (path_is_valid group_id st.tree p) then
     error "prepare_commit: invalid path"
   else if not (Some? (leaf_at st.tree li)) then
     error "prepare_commit: comitter is blank"
@@ -480,11 +476,12 @@ val finalize_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
   #st:treesync_state bytes tkt asp group_id -> #li:treesync_index st -> #p:pathsync bytes tkt st.levels 0 li ->
   pend:pending_commit st p -> token:token_for_commit pend ->
-  treesync_state bytes tkt asp group_id
+  result (treesync_state bytes tkt asp group_id)
 let finalize_commit #bytes #cb #tkt #asp #group_id #st #li #p pend token =
   pend.can_commit_proof;
+  let? new_tree = apply_path st.tree p in
   all_credentials_ok_apply_path st.tree st.tokens p token;
-  state_update_tree st (apply_path st.tree p) (as_add_update st.tokens li token)
+  return (state_update_tree st new_tree (as_add_update st.tokens li token))
 #pop-options
 
 (*** Weaken ***)
@@ -504,14 +501,12 @@ let weaken_asp #bytes #cb #tkt #asp #group_id asp_weak st =
 val authenticate_external_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
   st:treesync_state bytes tkt asp group_id ->
-  #li:treesync_index st -> external_pathsync bytes tkt st.levels 0 li ->
+  #li:treesync_index st ->
+  p:external_pathsync bytes tkt st.levels 0 li{(get_path_leaf p).source == LNS_update} ->
   sign_private_key bytes -> sign_nonce bytes ->
   result (pathsync bytes tkt st.levels 0 li)
 let authenticate_external_path #bytes #cb #tkt #asp #group_id st #li p sign_private_key sign_nonce =
-  if not (external_path_to_path_pre st.tree p group_id) then
-    error "authenticate_external_path: bad precondition"
-  else
-    return (external_path_to_path st.tree p group_id sign_private_key sign_nonce)
+  external_path_to_path st.tree p group_id sign_private_key sign_nonce
 #pop-options
 
 (*** Compute tree hashes ***)
@@ -519,25 +514,15 @@ let authenticate_external_path #bytes #cb #tkt #asp #group_id st #li p sign_priv
 val compute_tree_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
   treesync_state bytes tkt asp group_id ->
-  result (lbytes bytes (hash_length #bytes))
+  result bytes
 let compute_tree_hash #bytes #cb #tkt #asp #group_id st =
-  if not (tree_hash_pre st.tree) then
-    error "compute_tree_hash: can't do tree hash"
-  else
-    return (tree_hash st.tree)
+  tree_hash st.tree
 
 val compute_provisional_tree_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes -> #group_id:mls_bytes bytes ->
   st:treesync_state bytes tkt asp group_id ->
   #li:treesync_index st -> pathsync bytes tkt st.levels 0 li ->
-  result (lbytes bytes (hash_length #bytes))
+  result bytes
 let compute_provisional_tree_hash #bytes #cb #tkt #asp #group_id st #li p =
-  if not (apply_path_pre st.tree p) then
-    error "compute_provisional_tree_hash: bad precondition"
-  else (
-    let provisional_tree = MLS.TreeSync.Operations.apply_path st.tree p in
-    if not (tree_hash_pre provisional_tree) then
-      error "compute_provisional_tree_hash: can't do tree hash"
-    else
-      return (tree_hash provisional_tree)
-  )
+  let? provisional_tree = MLS.TreeSync.Operations.apply_path st.tree p in
+  tree_hash provisional_tree

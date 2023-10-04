@@ -12,6 +12,7 @@ open MLS.TreeSync.Invariants.UnmergedLeaves.Proofs
 open MLS.TreeSync.Invariants.ParentHash.Proofs
 open MLS.TreeSync.Invariants.ValidLeaves.Proofs
 open MLS.TreeSync.Refined.Types
+open MLS.Result
 
 #push-options "--fuel 0 --ifuel 0"
 
@@ -33,14 +34,15 @@ val tree_add:
   #l:nat -> #i:tree_index l ->
   #group_id:mls_bytes bytes ->
   t:treesync_valid bytes tkt l i group_id -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt ->
-  Pure (treesync_valid bytes tkt l i group_id)
-  (requires leaf_at t li == None /\ ln.data.source == LNS_key_package /\ leaf_is_valid ln group_id li /\ tree_add_pre t li)
+  Pure (result (treesync_valid bytes tkt l i group_id))
+  (requires leaf_at t li == None /\ ln.data.source == LNS_key_package /\ leaf_is_valid ln group_id li)
   (ensures fun _ -> True)
 let tree_add #bytes #cb #tkt #l #i #group_id t li ln =
+  let? res = tree_add t li ln in
   unmerged_leaves_ok_tree_add t li ln;
   parent_hash_invariant_tree_add t li ln;
   valid_leaves_invariant_tree_add group_id t li ln;
-  tree_add t li ln
+  return (res <: treesync_valid bytes tkt l i group_id)
 
 val tree_update:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
@@ -71,14 +73,15 @@ val apply_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 -> #group_id:mls_bytes bytes ->
   t:treesync_valid bytes tkt l 0 group_id -> p:pathsync bytes tkt l 0 li ->
-  Pure (treesync_valid bytes tkt l 0 group_id)
-  (requires apply_path_pre t p /\ path_is_valid group_id t p)
+  Pure (result (treesync_valid bytes tkt l 0 group_id))
+  (requires path_is_valid group_id t p)
   (ensures fun _ -> True)
 let apply_path #bytes #cb #tkt #l #li #group_id t p =
+  let? res = apply_path t p in
   unmerged_leaves_ok_apply_path t p;
   parent_hash_invariant_apply_path t p;
   valid_leaves_invariant_apply_path group_id t p;
-  apply_path t p
+  return (res <: treesync_valid bytes tkt l 0 group_id)
 #pop-options
 
 #push-options "--ifuel 1"

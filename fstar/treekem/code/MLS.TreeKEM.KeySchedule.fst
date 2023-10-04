@@ -113,7 +113,5 @@ val mls_exporter:
   result (lbytes bytes len)
 let mls_exporter #bytes #cb exporter_secret label context len =
   let? derived_secret: bytes = derive_secret exporter_secret label in
-  if not (length context < hash_max_input_length #bytes) then
-    internal_failure "mls_exporter: context too long"
-  else
-    expand_with_label #bytes derived_secret "exported" (hash_hash context) len
+  let? hashed_context = hash_hash context in
+  expand_with_label #bytes derived_secret "exported" hashed_context len

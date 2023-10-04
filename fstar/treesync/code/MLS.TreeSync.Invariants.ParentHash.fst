@@ -10,6 +10,7 @@ open MLS.Tree.Lemmas
 open MLS.TreeSync.ParentHash
 open MLS.TreeSync.Types
 open MLS.TreeSync.Operations
+open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
@@ -77,8 +78,7 @@ let parent_hash_correct #bytes #cb #tkt #ld #lp #id #ip d p =
   let expected_parent_hash = get_parent_hash_of d in
   let (_, sibling) = get_child_sibling p id in
   let original_sibling = un_add sibling p_content.unmerged_leaves in
-  compute_parent_hash_pre p_content.content (length #bytes p_content.parent_hash) original_sibling &&
-  expected_parent_hash = compute_parent_hash p_content.content p_content.parent_hash original_sibling
+  Success (expected_parent_hash <: bytes) = compute_parent_hash p_content.content p_content.parent_hash original_sibling
 
 val set_equal_mem: #a:eqtype -> list a -> a -> bool
 let set_equal_mem #a l x =

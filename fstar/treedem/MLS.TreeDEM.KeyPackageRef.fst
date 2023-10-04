@@ -15,4 +15,4 @@ val compute_key_package_ref:
 let compute_key_package_ref #bytes #cb kp =
   let kp_bytes: bytes = serialize (key_package_nt bytes tkt) kp in
   let? res = make_keypackage_ref kp_bytes in
-  return (res <: mls_bytes bytes)
+  mk_mls_bytes res "compute_key_package_ref" "res"

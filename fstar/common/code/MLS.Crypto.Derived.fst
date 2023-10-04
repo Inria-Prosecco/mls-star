@@ -349,20 +349,16 @@ instance parseable_serializeable_ref_hash_input_nt (bytes:Type0) {|bytes_like by
 val ref_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   mls_ascii_string -> bytes ->
-  result (lbytes bytes (hash_length #bytes))
+  result bytes
 let ref_hash #bytes #cb label value =
   let? value = mk_mls_bytes value "ref_hash" "value" in
   let hash_content = (serialize (ref_hash_input_nt bytes) ({label; value;})) in
-  if not (length #bytes hash_content < hash_max_input_length #bytes) then
-    internal_failure "ref_hash: hash_pre failed"
-  else (
-    return (hash_hash hash_content)
-  )
+  hash_hash hash_content
 
 val make_keypackage_ref:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
-  result (lbytes bytes (hash_length #bytes))
+  result bytes
 let make_keypackage_ref #bytes #cb buf =
   normalize_term_spec (String.strlen "MLS 1.0 KeyPackage Reference");
   ref_hash "MLS 1.0 KeyPackage Reference" buf
@@ -370,7 +366,7 @@ let make_keypackage_ref #bytes #cb buf =
 val make_proposal_ref:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
-  result (lbytes bytes (hash_length #bytes))
+  result bytes
 let make_proposal_ref #bytes #cb buf =
   normalize_term_spec (String.strlen "MLS 1.0 Proposal Reference");
   ref_hash "MLS 1.0 Proposal Reference" buf
@@ -405,3 +401,16 @@ val zero_vector:
   bytes
 let zero_vector #bytes #cb =
   mk_zero_vector #bytes (kdf_length #bytes)
+
+(*** Hash collision ***)
+
+val is_hash_collision:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> bytes ->
+  bool
+let is_hash_collision #bytes #cb b1 b2 =
+  bytes_hasEq #bytes;
+  b1 <> b2 &&
+  Success? (hash_hash b1) &&
+  Success? (hash_hash b2) &&
+  Success?.v (hash_hash b1) = (Success?.v (hash_hash b2))

@@ -13,6 +13,7 @@ open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.API.Types
 open MLS.TreeSync.API
+open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
@@ -50,9 +51,13 @@ val is_well_formed_finalize_add:
   pre:bytes_compatible_pre bytes ->
   pend:pending_add st ln -> token:token_for_add pend ->
   Lemma
-  (requires is_well_formed _ pre (st.tree <: treesync _ _ _ _) /\ is_well_formed _ pre ln)
+  (requires
+    is_well_formed _ pre (st.tree <: treesync _ _ _ _) /\
+    is_well_formed _ pre ln /\
+    Success? (finalize_add pend token)
+  )
   (ensures (
-    let (new_state, _) = finalize_add pend token in
+    let Success (new_state, _) = finalize_add pend token in
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
 let is_well_formed_finalize_add #bytes #cb #tkt #asp #group_id #st #ln pre pend token =
@@ -125,9 +130,13 @@ val is_well_formed_finalize_commit:
   pre:bytes_compatible_pre bytes{pre_is_hash_compatible pre} ->
   pend:pending_commit st p -> token:token_for_commit pend ->
   Lemma
-  (requires is_well_formed _ pre (st.tree <: treesync _ _ _ _) /\ is_well_formed _ pre p)
+  (requires
+    is_well_formed _ pre (st.tree <: treesync _ _ _ _) /\
+    is_well_formed _ pre p /\
+    Success? (finalize_commit pend token)
+  )
   (ensures (
-    let new_state = finalize_commit pend token in
+    let Success new_state = finalize_commit pend token in
     is_well_formed _ pre (new_state.tree <: treesync _ _ _ _)
   ))
 let is_well_formed_finalize_commit #bytes #cb #tkt #asp #group_id #st #li #p pre pend token =

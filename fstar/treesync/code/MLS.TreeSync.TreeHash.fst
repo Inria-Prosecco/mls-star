@@ -61,43 +61,29 @@ type tree_hash_input_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types by
 instance parseable_serializeable_tree_hash_input (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (tree_hash_input_nt bytes tkt) =
   mk_parseable_serializeable (ps_tree_hash_input_nt tkt)
 
-val tree_hash_pre:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  #l:nat -> #i:tree_index l ->
-  treesync bytes tkt l i ->
-  bool
-let rec tree_hash_pre #bytes #cb #tkt #l #i t =
-  match t with
-  | TLeaf olp ->
-    i < pow2 32 && (1 + 4 + (prefixes_length ((ps_option (ps_leaf_node_nt tkt)).serialize olp)) < hash_max_input_length #bytes)
-  | TNode onp left right ->
-    tree_hash_pre left &&
-    tree_hash_pre right &&
-    (1 + prefixes_length ((ps_option (ps_parent_node_nt tkt)).serialize onp)) + 2 + hash_length #bytes + 2 + hash_length #bytes < hash_max_input_length #bytes
-
 /// Compute the tree hash of a tree.
-/// The precondition checks that the hash inputs will fit in the hash maximum allowed size.
-#push-options "--z3rlimit 50"
 val tree_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
-  t:treesync bytes tkt l i{tree_hash_pre t} ->
-  lbytes bytes (hash_length #bytes)
+  t:treesync bytes tkt l i ->
+  result bytes
 let rec tree_hash #bytes #cb #tkt #l #i t =
   match t with
   | TLeaf olp ->
+    let? i = mk_nat_lbytes i "tree_hash" "i" in
     let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (LeafTreeHashInput ({
       leaf_index = i;
       leaf_node = olp;
     })) in
     hash_hash hash_input
   | TNode onp left right ->
-    let left_hash = tree_hash left in
-    let right_hash = tree_hash right in
+    let? left_hash = tree_hash left in
+    let? left_hash = mk_mls_bytes left_hash "tree_hash" "left_bytes" in
+    let? right_hash = tree_hash right in
+    let? right_hash = mk_mls_bytes right_hash "tree_hash" "right_bytes" in
     let hash_input: bytes = serialize (tree_hash_input_nt bytes tkt) (ParentTreeHashInput ({
       parent_node = onp;
       left_hash = left_hash;
       right_hash = right_hash;
     })) in
     hash_hash hash_input
-#pop-options

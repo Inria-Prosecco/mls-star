@@ -10,6 +10,7 @@ open MLS.TreeCommon
 open MLS.TreeSync.Operations
 open MLS.TreeSync.ParentHash
 open MLS.TreeSync.Invariants.ValidLeaves
+open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
@@ -30,9 +31,9 @@ val valid_leaves_invariant_tree_add:
     ln.data.source == LNS_key_package /\
     leaf_is_valid ln group_id li /\
     valid_leaves_invariant group_id t /\
-    tree_add_pre t li
+    Success? (tree_add t li ln)
   )
-  (ensures valid_leaves_invariant group_id (tree_add t li ln))
+  (ensures valid_leaves_invariant group_id (Success?.v (tree_add t li ln)))
 let rec valid_leaves_invariant_tree_add #bytes #cb #tkt #l #i group_id t li ln =
   match t with
   | TLeaf _ -> ()
@@ -76,20 +77,20 @@ let rec valid_leaves_invariant_tree_remove #bytes #cb #tkt #l #i group_id t li =
 val valid_leaves_invariant_apply_path_aux:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:mls_bytes bytes ->
+  group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:bytes ->
   Lemma
   (requires
     leaf_is_valid (get_path_leaf p) group_id li /\
     valid_leaves_invariant group_id t /\
-    apply_path_aux_pre t p (length #bytes parent_parent_hash)
+    Success? (apply_path_aux t p parent_parent_hash)
   )
-  (ensures valid_leaves_invariant group_id (apply_path_aux t p parent_parent_hash))
+  (ensures valid_leaves_invariant group_id (Success?.v (apply_path_aux t p parent_parent_hash)))
 let rec valid_leaves_invariant_apply_path_aux #bytes #cb #tkt #l #i #li group_id t p parent_parent_hash =
   match t, p with
   | TLeaf _, PLeaf _ -> ()
   | TNode _ _ _, PNode opt_ext_content p_next ->
     let (child, sibling) = get_child_sibling t li in
-    let (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+    let Success (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
     valid_leaves_invariant_apply_path_aux group_id child p_next new_parent_parent_hash
 #pop-options
 
@@ -101,9 +102,9 @@ val valid_leaves_invariant_apply_path:
   (requires
     leaf_is_valid (get_path_leaf p) group_id li /\
     valid_leaves_invariant group_id t /\
-    apply_path_pre t p
+    Success? (apply_path t p)
   )
-  (ensures valid_leaves_invariant group_id (apply_path t p))
+  (ensures valid_leaves_invariant group_id (Success?.v (apply_path t p)))
 let valid_leaves_invariant_apply_path #bytes #cb #tkt #l #li group_id t p =
   valid_leaves_invariant_apply_path_aux group_id t p (root_parent_hash #bytes)
 

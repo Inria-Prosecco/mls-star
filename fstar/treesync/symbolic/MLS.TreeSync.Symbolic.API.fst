@@ -1,6 +1,7 @@
 module MLS.TreeSync.Symbolic.API
 
 open Comparse
+open MLS.Result
 open MLS.Crypto
 open GlobalRuntimeLib
 open LabeledRuntimeAPI
@@ -34,9 +35,9 @@ let guard pr b =
   else error "guard failed"
 
 #push-options "--ifuel 1"
-val extract_result: #a:Type -> pr:preds -> MLS.Result.result a -> LCrypto a pr
+val extract_result: #a:Type -> pr:preds -> x:MLS.Result.result a -> LCrypto a pr
   (requires fun t0 -> True)
-  (ensures fun t0 _ t1 -> t1 == t0)
+  (ensures fun t0 res t1 -> t1 == t0 /\ x == Success res)
 let extract_result #a pr x =
   match x with
   | MLS.Result.Success y -> y
@@ -116,7 +117,7 @@ val create:
   (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 2)
 let create #tkt pr p as_session gmgr_session group_id ln secret_session =
   let now = global_timestamp () in
-  let create_pend = extract_result pr (prepare_create group_id ln) in
+  let create_pend = extract_result pr (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) in
   let token = get_token_for pr p as_session create_pend.as_input in
   let token: as_token_for (dy_asp pr.global_usage now) create_pend.as_input = token in
   let st = finalize_create create_pend token in
@@ -139,7 +140,7 @@ val welcome:
   (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 2)
 let welcome #tkt pr p as_session gmgr_session kpmgr_session my_key_package group_id l t =
   let now = global_timestamp () in
-  let welcome_pend = extract_result pr (prepare_welcome group_id t) in
+  let welcome_pend = extract_result pr (prepare_welcome #dy_bytes #crypto_dy_bytes group_id t) in
   welcome_pend.as_inputs_proof;
   let tokens = get_tokens_for pr p as_session welcome_pend.as_inputs in
   let tokens: tokens_for_welcome (dy_asp pr.global_usage now) welcome_pend = tokens in
@@ -167,7 +168,7 @@ let add #tkt pr p as_session gmgr_session group_id ln =
 
   let add_pend = extract_result pr (prepare_add st ln) in
   let token = get_token_for pr p as_session add_pend.as_input in
-  let (new_st, new_leaf_index) = finalize_add add_pend token in
+  let (new_st, new_leaf_index) = extract_result pr (finalize_add add_pend token) in
   is_well_formed_finalize_add (is_publishable pr.global_usage now) add_pend token;
   set_public_treesync_state pr p group_session.si_public now _ new_st;
   new_leaf_index
@@ -230,7 +231,7 @@ let commit #tkt #l #li pr p as_session gmgr_session group_id path =
   guard pr (l = st.levels);
   let commit_pend = extract_result pr (prepare_commit st path) in
   let token = get_token_for pr p as_session commit_pend.as_input in
-  let new_st = finalize_commit commit_pend token in
+  let new_st = extract_result pr (finalize_commit commit_pend token) in
   is_well_formed_finalize_commit (is_publishable pr.global_usage now) commit_pend token;
   set_public_treesync_state pr p group_session.si_public now _ new_st
 #pop-options
@@ -265,16 +266,19 @@ val external_path_has_event_later:
   t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
   Lemma
   (requires
-    external_path_to_path_pre t p group_id /\
+    (get_path_leaf p).source == LNS_update /\
+    li < pow2 32 /\
+    Success? (external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id) /\
     external_path_has_event prin time0 t p group_id /\
     time0 <$ time1
   )
   (ensures external_path_has_event prin time1 t p group_id)
 let external_path_has_event_later #tkt #l #li prin time0 time1 t p group_id =
-  let auth_p = external_path_to_path_nosig t p group_id in
-  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
-  for_allP_eq (tree_has_event prin time0 group_id) (path_to_tree_list t auth_p);
-  for_allP_eq (tree_has_event prin time1 group_id) (path_to_tree_list t auth_p)
+  let Success auth_p = external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id in
+  path_is_parent_hash_valid_external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id;
+  apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #dy_bytes #crypto_dy_bytes t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #dy_bytes);
+  for_allP_eq (tree_has_event prin time0 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p);
+  for_allP_eq (tree_has_event prin time1 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p)
 
 #push-options "--z3rlimit 25"
 val authenticate_path:
@@ -283,7 +287,9 @@ val authenticate_path:
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
   LCrypto (pathsync dy_bytes tkt l 0 li) pr
   (requires fun t0 ->
-    external_path_to_path_pre tree path group_id /\
+    (get_path_leaf path).source == LNS_update /\
+    li < pow2 32 /\
+    Success? (external_path_to_path_nosig #dy_bytes #crypto_dy_bytes tree path group_id) /\
     external_path_has_event p (trace_len t0) tree path group_id /\
     is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) path /\
     has_treesync_invariants tkt pr
@@ -302,12 +308,11 @@ let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
     (group_id = group_id') &&
     (l = st.levels) &&
     (tree = st.tree) &&
-    (external_path_to_path_pre tree path group_id) &&
-    (path_is_filter_valid tree path) &&
+    (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path) &&
     (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
     (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
   );
-  let auth_path = external_path_to_path tree path group_id private_st.signature_key signature_nonce in
+  let auth_path = extract_result pr (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id private_st.signature_key signature_nonce) in
   wf_weaken_lemma _ (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) path;
   external_path_has_event_later p now0 now1 tree path group_id;
   is_msg_external_path_to_path pr.global_usage p SecrecyLabels.public now1 tree path group_id private_st.signature_key signature_nonce;
@@ -335,13 +340,13 @@ let authenticate_leaf_node_data_from_key_package #tkt pr p si_private ln_data =
   let now1 = global_timestamp () in
   let private_st = get_private_treesync_state pr p si_private in
   guard pr (
-    sign_leaf_node_data_key_package_pre ln_data &&
+    sign_leaf_node_data_key_package_pre #dy_bytes #crypto_dy_bytes ln_data &&
     (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
     (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
   );
   is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
   is_msg_sign_leaf_node_data_key_package pr.global_usage p SecrecyLabels.public now1 ln_data private_st.signature_key signature_nonce;
-  sign_leaf_node_data_key_package ln_data private_st.signature_key signature_nonce
+  sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce
 
 val authenticate_leaf_node_data_from_update:
   #tkt:treekem_types dy_bytes ->
@@ -366,13 +371,13 @@ let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_i
   let now1 = global_timestamp () in
   let private_st = get_private_treesync_state pr p si_private in
   guard pr (
-    sign_leaf_node_data_update_pre ln_data group_id &&
+    sign_leaf_node_data_update_pre #dy_bytes #crypto_dy_bytes ln_data group_id &&
     (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
     (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
   );
   is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
   is_msg_sign_leaf_node_data_update pr.global_usage p SecrecyLabels.public now1 ln_data group_id leaf_index private_st.signature_key signature_nonce;
-  sign_leaf_node_data_update ln_data group_id leaf_index private_st.signature_key signature_nonce
+  sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce
 
 (*** Trigger events ***)
 
@@ -394,7 +399,22 @@ val trigger_one_tree_event:
 let trigger_one_tree_event #tkt pr p now group_id t proof =
   trigger_event #pr p (tree_to_event group_id t)
 
-#push-options "--fuel 1 --ifuel 1"
+val trigger_tree_list_event_lemma:
+  #tkt:treekem_types dy_bytes ->
+  p:principal -> now:timestamp ->
+  group_id:mls_bytes dy_bytes -> h:(l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> t:tree_list dy_bytes tkt ->
+  Lemma(tree_list_has_event p now group_id (h::t) <==> (tree_has_event p now group_id h /\ tree_list_has_event p now group_id t))
+let trigger_tree_list_event_lemma #tkt p now group_id h t =
+  let open FStar.Tactics in
+  assert(tree_list_has_event p now group_id (h::t) == (
+    tree_has_event p now group_id h /\
+    tree_list_has_event p now group_id t
+  )) by (
+    norm [delta_only [`%tree_list_has_event; `%for_allP]; zeta; iota];
+    trefl()
+  )
+
+#push-options "--fuel 1 --ifuel 1 --z3rlimit 25"
 val trigger_tree_list_event:
   #tkt:treekem_types dy_bytes ->
   pr:preds -> p:principal -> now:timestamp ->
@@ -419,10 +439,7 @@ let rec trigger_tree_list_event #tkt pr p now group_id tl event_tl_proof =
     trigger_one_tree_event pr p now group_id h (event_tl_proof 0);
     trigger_tree_list_event pr p (now+1) group_id t (fun i -> event_tl_proof (i+1));
     let now_end = now + List.Tot.length tl in
-    assert_norm(tree_list_has_event p now_end group_id tl <==> (
-      tree_has_event p now_end group_id h /\
-      tree_list_has_event p now_end group_id t
-    ))
+    trigger_tree_list_event_lemma p now_end group_id h t
   )
 #pop-options
 

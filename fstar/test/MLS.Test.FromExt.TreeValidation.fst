@@ -23,12 +23,7 @@ open MLS.TreeSync.TreeHash
 
 val compute_tree_hashes: {|crypto_bytes bytes|} -> #l:nat -> #i:tree_index l -> treesync bytes tkt l i -> ML (list bytes)
 let rec compute_tree_hashes #cb #l #i t =
-  let my_hash =
-    if tree_hash_pre t then
-      tree_hash t
-    else
-      failwith "compute_tree_hashes: bad tree hash precondition"
-  in
+  let my_hash = extract_result (tree_hash t) in
   match t with
   | TLeaf _ -> [my_hash]
   | TNode _ left right ->

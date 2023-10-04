@@ -115,12 +115,15 @@ let mk_concrete_crypto_bytes acs =
 
   ciphersuite = acs;
 
-  hash_length = Hash.hash_length cs.kdf_hash;
-  hash_length_bound = ();
-  hash_max_input_length =  Hash.max_input_length (cs.kdf_hash) + 1;
   hash_hash = (fun buf ->
-    Hash.hash cs.kdf_hash buf
+    if not (Seq.length buf < Hash.max_input_length (cs.kdf_hash) + 1) then
+      internal_failure "hash_hash: input too long"
+    else
+      return (Hash.hash cs.kdf_hash buf)
   );
+  hash_max_input_length =  Hash.max_input_length (cs.kdf_hash) + 1;
+  hash_hash_pre = (fun buf -> ());
+  hash_output_length_bound = (fun buf -> ());
 
   kdf_length = Hash.hash_length cs.kdf_hash;
   kdf_extract = (fun key data ->

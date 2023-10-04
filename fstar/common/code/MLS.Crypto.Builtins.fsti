@@ -19,10 +19,11 @@ class crypto_bytes (bytes:Type0) = {
 
   ciphersuite: available_ciphersuite;
 
-  hash_length: nat;
-  hash_length_bound: squash (1 <= hash_length /\ hash_length < 256);
+  hash_hash: buf:bytes -> result bytes;
   hash_max_input_length: nat;
-  hash_hash: buf:bytes{length buf < hash_max_input_length} -> lbytes bytes hash_length;
+  hash_hash_pre: buf:bytes -> Lemma (requires length buf < hash_max_input_length) (ensures Success? (hash_hash buf));
+  // Condition necessary for TreeSync's security theorem
+  hash_output_length_bound: buf:bytes -> Lemma (hash_hash buf <> Success empty);
 
   kdf_length: nat;
   kdf_extract: key:bytes -> data:bytes -> result (lbytes bytes kdf_length);

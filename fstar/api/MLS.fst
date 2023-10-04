@@ -82,8 +82,7 @@ let state_to_group_context st =
 val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
   let leaf_package = (ps_prefix_to_ps_whole (ps_leaf_node_nt _)).serialize leaf_package in
-  if not (length leaf_package < hash_max_input_length #bytes) then error "hash_leaf_package: leaf_package too long"
-  else return (hash_hash leaf_package)
+  hash_hash leaf_package
 
 #push-options "--z3rlimit 50 --fuel 1"
 val reset_ratchet_states: state -> result state
@@ -105,7 +104,7 @@ let process_proposal sender_id (st, added_leaves) p =
     //TODO key package signature check
     let? add_pend = MLS.TreeSync.API.prepare_add st.treesync_state key_package.tbs.leaf_node in
     // TODO AS check
-    let (treesync_state, _) = MLS.TreeSync.API.finalize_add add_pend () in
+    let? (treesync_state, _) = MLS.TreeSync.API.finalize_add add_pend () in
     assume (length #bytes key_package.tbs.leaf_node.data.content = hpke_public_key_length #bytes);
     let (treekem_state, add_index) = MLS.TreeKEM.API.add st.treekem_state ({public_key = key_package.tbs.leaf_node.data.content;}) in
     return ({ st with treesync_state; treekem_state }, (key_package, add_index)::added_leaves)
@@ -178,7 +177,8 @@ let process_commit state wire_format message message_auth =
         else (
           let? uncompressed_path = uncompress_update_path sender_id state.treesync_state.tree path in
           let treesync_path = update_path_to_treesync uncompressed_path in
-          MLS.TreeSync.API.compute_provisional_tree_hash state.treesync_state treesync_path
+          let? new_tree_hash = MLS.TreeSync.API.compute_provisional_tree_hash state.treesync_state treesync_path in
+          mk_mls_bytes new_tree_hash "process_commit" "new_tree_hash"
         )
     in
     let? new_epoch = mk_nat_lbytes (state.epoch + 1) "process_commit" "new_epoch" in
@@ -192,6 +192,7 @@ let process_commit state wire_format message message_auth =
     wire_format message message_auth.signature state.interim_transcript_hash in
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
     (message_auth.confirmation_tag <: bytes) confirmed_transcript_hash in
+  let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "process_commit" "confirmed_transcript_hash" in
   // Compute the new group context
   let new_group_context = {
     provisional_group_context with
@@ -212,7 +213,7 @@ let process_commit state wire_format message message_auth =
       let treekem_path = update_path_to_treekem uncompressed_path in
       let? commit_pend = MLS.TreeSync.API.prepare_commit state.treesync_state treesync_path in
       // TODO AS check
-      let treesync_state = MLS.TreeSync.API.finalize_commit commit_pend () in
+      let? treesync_state = MLS.TreeSync.API.finalize_commit commit_pend () in
       let? (treekem_state, encryption_secret) =
         if state.leaf_index = sender_id && (Some? message_content.path) then (
           match List.Tot.assoc (Some?.v message_content.path) state.pending_updatepath with
@@ -481,11 +482,13 @@ let generate_update_path st e proposals =
       let? ext_update_path = treekem_to_treesync my_new_leaf_package_data pre_update_path in
       let? sign_nonce, e = chop_entropy e (sign_nonce_length #bytes) in
       assume(length #bytes sign_nonce == Seq.length sign_nonce);
+      assume((get_path_leaf ext_update_path).source == LNS_update);
       MLS.TreeSync.API.authenticate_external_path st.treesync_state ext_update_path st.sign_private_key sign_nonce
     ) in
     let? provisional_group_context = (
       let? group_context = state_to_group_context st in
       let? new_tree_hash = MLS.TreeSync.API.compute_provisional_tree_hash st.treesync_state update_path_sync in
+      let? new_tree_hash = mk_mls_bytes new_tree_hash "generate_update_path" "new_tree_hash" in
       let? new_epoch = mk_nat_lbytes (st.epoch + 1) "generate_update_path" "new_epoch" in
       return ({ group_context with
         epoch = new_epoch;
@@ -500,10 +503,8 @@ let generate_update_path st e proposals =
     assume(List.Tot.length (List.Tot.map fst added_leaves) == List.Tot.length commit_result.added_leaves_path_secrets);
     let path_secrets = zip (List.Tot.map fst added_leaves) commit_result.added_leaves_path_secrets in
     let? ratchet_tree = (
-      if not (MLS.TreeSync.Operations.apply_path_pre st.treesync_state.tree update_path_sync) then
-        error "generate_update_path: bad pre"
-      else
-        treesync_to_ratchet_tree (MLS.TreeSync.Operations.apply_path st.treesync_state.tree update_path_sync)
+      let? tree = MLS.TreeSync.Operations.apply_path st.treesync_state.tree update_path_sync in
+      treesync_to_ratchet_tree tree
     ) in
     return (({
       update_path;

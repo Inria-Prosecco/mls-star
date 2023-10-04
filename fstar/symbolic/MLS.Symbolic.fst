@@ -18,11 +18,6 @@ let dy_bytes = CryptoLib.bytes
 /// Assuming them is sound since no similar properties are exposed by DY*.
 /// This will have to be cleaned up the day DY* exposes lengths for cryptographic functions.
 
-assume val dy_hash_length: n:nat{1 <= n /\ n < 256}
-assume val dy_hash_length_lemma:
-  b:dy_bytes ->
-  Lemma (length (CryptoLib.hash b) == dy_hash_length)
-
 assume val dy_kdf_length: nat
 assume val dy_kdf_length_lemma:
   key:dy_bytes -> data:dy_bytes ->
@@ -64,13 +59,12 @@ let dy_bytes_has_crypto acs = {
 
   ciphersuite = acs;
 
-  hash_length = dy_hash_length;
-  hash_length_bound = ();
-  hash_max_input_length = pow2 256; //infinity!
   hash_hash = (fun buf ->
-    dy_hash_length_lemma buf;
-    CryptoLib.hash buf
+    return (CryptoLib.hash buf)
   );
+  hash_max_input_length = pow2 256; //infinity!
+  hash_hash_pre = (fun buf -> ());
+  hash_output_length_bound = (fun buf -> assume(CryptoLib.hash buf <> empty));
 
   kdf_length = dy_kdf_length;
   kdf_extract = (fun key data ->

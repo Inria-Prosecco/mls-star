@@ -10,6 +10,7 @@ open MLS.TreeSync.Types
 open MLS.TreeSync.Operations
 open MLS.TreeSync.Operations.Lemmas
 open MLS.TreeSync.Invariants.AuthService
+open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
@@ -40,11 +41,11 @@ val all_credentials_ok_tree_add:
   (requires
     asp.credential_ok (ln.data.signature_key, ln.data.credential) token /\
     all_credentials_ok ts ast /\
-    tree_add_pre ts li
+    Success? (tree_add ts li ln)
   )
-  (ensures all_credentials_ok (tree_add ts li ln) (as_add_update ast li token))
+  (ensures all_credentials_ok (Success?.v (tree_add ts li ln)) (as_add_update ast li token))
 let all_credentials_ok_tree_add #bytes #bl #tkt #asp #l #i ts ast li ln token =
-  intro_all_credentials_ok (tree_add ts li ln) (as_add_update ast li token) (fun li' ->
+  intro_all_credentials_ok (Success?.v (tree_add ts li ln)) (as_add_update ast li token) (fun li' ->
     leaf_at_tree_add ts li ln li';
     leaf_at_tree_change_path ast li (Some token) () li'
   )
@@ -86,11 +87,11 @@ val all_credentials_ok_apply_path:
   (requires
     asp.credential_ok ((get_path_leaf p).data.signature_key, (get_path_leaf p).data.credential) token /\
     all_credentials_ok ts ast /\
-    apply_path_pre ts p
+    Success? (apply_path ts p)
   )
-  (ensures all_credentials_ok (apply_path ts p) (as_add_update ast li token))
+  (ensures all_credentials_ok (Success?.v (apply_path ts p)) (as_add_update ast li token))
 let all_credentials_ok_apply_path #bytes #cb #tkt #asp #l #li ts ast p token =
-  intro_all_credentials_ok (apply_path ts p) (as_add_update ast li token) (fun li' ->
+  intro_all_credentials_ok (Success?.v (apply_path ts p)) (as_add_update ast li token) (fun li' ->
     leaf_at_apply_path ts p li';
     leaf_at_tree_change_path ast li (Some token) () li'
   )
