@@ -638,7 +638,7 @@ val is_msg_external_path_to_path:
   #l:nat -> #li:leaf_index l 0 ->
   gu:global_usage -> prin:principal -> label:label -> time:timestamp ->
   t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
-  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
+  sk:dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
     (get_path_leaf p).source == LNS_update /\
@@ -662,7 +662,7 @@ let is_msg_external_path_to_path #tkt #l #li gu prin label time t p group_id sk 
   let new_ln_data = { ln_data with source = LNS_commit; parent_hash = computed_parent_hash; } in
   let new_ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = new_ln_data; group_id; leaf_index = li;}) in
   let new_ln_tbs_bytes: dy_bytes = serialize (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs in
-  let new_signature = sign_with_label sk "LeafNodeTBS" new_ln_tbs_bytes nonce in
+  let Success new_signature = sign_with_label sk "LeafNodeTBS" new_ln_tbs_bytes nonce in
   let new_ln = ({ data = new_ln_data; signature = new_signature; } <: leaf_node_nt dy_bytes tkt) in
   let new_unsigned_ln = ({ data = new_ln_data; signature = empty #dy_bytes; } <: leaf_node_nt dy_bytes tkt) in
   let unsigned_path = set_path_leaf p new_unsigned_ln in
@@ -699,11 +699,11 @@ val is_msg_sign_leaf_node_data_key_package:
   #tkt:treekem_types dy_bytes ->
   gu:global_usage -> prin:principal -> label:label -> time:timestamp ->
   ln_data:leaf_node_data_nt dy_bytes tkt ->
-  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
+  sk:dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
     ln_data.source == LNS_key_package /\
-    sign_leaf_node_data_key_package_pre ln_data /\
+    Success? (sign_leaf_node_data_key_package ln_data sk nonce) /\
     leaf_node_has_event prin time ({data = ln_data; group_id = (); leaf_index = ();}) /\
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
     is_valid gu time sk /\ get_usage gu sk == Some (sig_usage "MLS.LeafSignKey") /\
@@ -712,7 +712,7 @@ val is_msg_sign_leaf_node_data_key_package:
     get_label gu nonce == readers [p_id prin] /\
     has_leaf_node_tbs_invariant tkt gu
   )
-  (ensures is_well_formed _ (is_msg gu label time) (sign_leaf_node_data_key_package ln_data sk nonce))
+  (ensures is_well_formed _ (is_msg gu label time) (Success?.v (sign_leaf_node_data_key_package ln_data sk nonce)))
 let is_msg_sign_leaf_node_data_key_package #tkt gu prin label time ln_data sk nonce =
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id = (); leaf_index = ();}) in
   let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
@@ -726,11 +726,11 @@ val is_msg_sign_leaf_node_data_update:
   #tkt:treekem_types dy_bytes ->
   gu:global_usage -> prin:principal -> label:label -> time:timestamp ->
   ln_data:leaf_node_data_nt dy_bytes tkt -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
-  sk:sign_private_key dy_bytes -> nonce:sign_nonce dy_bytes ->
+  sk:dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
     ln_data.source == LNS_update /\
-    sign_leaf_node_data_update_pre ln_data group_id /\
+    Success? (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce) /\
     leaf_node_has_event prin time ({data = ln_data; group_id; leaf_index;}) /\
     tree_has_event prin time group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_msg gu label time) ln_data /\
@@ -741,7 +741,7 @@ val is_msg_sign_leaf_node_data_update:
     get_label gu nonce == readers [p_id prin] /\
     has_leaf_node_tbs_invariant tkt gu
   )
-  (ensures is_well_formed _ (is_msg gu label time) (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce))
+  (ensures is_well_formed _ (is_msg gu label time) (Success?.v (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce)))
 let is_msg_sign_leaf_node_data_update #tkt gu prin label time ln_data group_id leaf_index sk nonce =
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id; leaf_index;}) in
   let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in

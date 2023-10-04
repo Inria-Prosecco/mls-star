@@ -1,7 +1,5 @@
 module MLS.Crypto.Builtins
 
-open FStar.Mul
-
 open Lib.IntTypes
 
 open Comparse
@@ -39,35 +37,40 @@ let concrete_ciphersuite_to_hpke_ciphersuite cs =
 
 //Copy-pasted from `crypto_bytes` typeclass
 noeq type signature_functions (bytes:Type0) {|bytes_like bytes|} = {
-  sign_public_key_length: nat;
-  sign_private_key_length: nat;
-  sign_nonce_length: nat;
-  sign_signature_length: nat;
-  sign_signature_length_bound: squash (sign_signature_length < 256);
-  sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length;
-  sign_max_input_length: nat;
-  sign_sign: lbytes bytes sign_private_key_length -> buf:bytes{length buf < sign_max_input_length} -> entropy:lbytes bytes sign_nonce_length -> lbytes bytes sign_signature_length;
-  sign_verify: lbytes bytes sign_public_key_length -> buf:bytes{length buf < sign_max_input_length} -> lbytes bytes sign_signature_length -> bool;
+  sign_gen_keypair_min_entropy_length: nat;
+  sign_gen_keypair: entropy:bytes{length entropy >= sign_gen_keypair_min_entropy_length} -> result (verification:bytes * signature:bytes);
+  sign_sign_min_entropy_length: nat;
+  sign_sign: signature_key:bytes -> buf:bytes -> entropy:bytes{length entropy >= sign_sign_min_entropy_length} -> result bytes;
+  sign_verify: verification_key:bytes -> buf:bytes -> signature:bytes -> bool;
 }
 
 let bytes_like_hacl_star_bytes = seq_u8_bytes_like
 
 val ed25519_signature_functions: signature_functions hacl_star_bytes #bytes_like_hacl_star_bytes
 let ed25519_signature_functions = {
-  sign_public_key_length = 32;
-  sign_private_key_length = 32;
-  sign_nonce_length = 0;
-  sign_signature_length = 64;
-  sign_signature_length_bound = ();
+  sign_gen_keypair_min_entropy_length = 32;
   sign_gen_keypair = (fun rand ->
-    (Ed25519.secret_to_public rand, rand)
+    let rand_slice = Seq.slice rand 0 32 in
+    return (Ed25519.secret_to_public rand_slice, rand_slice)
   );
-  sign_max_input_length = max_size_t + 1 - 64;
+  sign_sign_min_entropy_length = 0;
   sign_sign = (fun sk msg rand ->
-    Ed25519.sign sk (msg <: hacl_star_bytes)
+    if not (Seq.length sk = 32) then
+      error "sign_sign: bad signature key size"
+    else if not (Seq.length msg < max_size_t - 64) then
+      error "sign_sign: input too long"
+    else
+      return (Ed25519.sign sk (msg <: hacl_star_bytes))
   );
   sign_verify = (fun pk msg signature ->
-    Ed25519.verify pk msg signature
+    if not (Seq.length pk = 32) then
+      false
+    else if not (Seq.length msg < max_size_t - 64) then
+      false
+    else if not (Seq.length signature = 64) then
+      false
+    else
+      Ed25519.verify pk msg signature
   );
 }
 
@@ -141,7 +144,7 @@ let mk_concrete_crypto_bytes acs =
       internal_failure "kdf_expand: prk too long"
     else if not (Hash.hash_length cs.kdf_hash + Seq.length info + 1 + Hash.block_length cs.kdf_hash <= Hash.max_input_length cs.kdf_hash) then
       internal_failure "kdf_expand: info too long"
-    else if not (len <= 255 * Hash.hash_length cs.kdf_hash) then
+    else if not (len <= 255 `op_Multiply` Hash.hash_length cs.kdf_hash) then
       internal_failure "kdf_expand: len too high"
     else
       return (HKDF.expand cs.kdf_hash prk info len)
@@ -195,13 +198,9 @@ let mk_concrete_crypto_bytes acs =
     )
   );
 
-  sign_public_key_length = sign.sign_public_key_length;
-  sign_private_key_length = sign.sign_private_key_length;
-  sign_nonce_length = sign.sign_nonce_length;
-  sign_signature_length = sign.sign_signature_length;
-  sign_signature_length_bound = sign.sign_signature_length_bound;
+  sign_gen_keypair_min_entropy_length = sign.sign_gen_keypair_min_entropy_length;
   sign_gen_keypair = sign.sign_gen_keypair;
-  sign_max_input_length = sign.sign_max_input_length;
+  sign_sign_min_entropy_length = sign.sign_sign_min_entropy_length;
   sign_sign = sign.sign_sign;
   sign_verify = sign.sign_verify;
 

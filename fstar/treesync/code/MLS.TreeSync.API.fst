@@ -503,7 +503,7 @@ val authenticate_external_path:
   st:treesync_state bytes tkt asp group_id ->
   #li:treesync_index st ->
   p:external_pathsync bytes tkt st.levels 0 li{(get_path_leaf p).source == LNS_update} ->
-  sign_private_key bytes -> sign_nonce bytes ->
+  sign_key:bytes -> sign_nonce bytes ->
   result (pathsync bytes tkt st.levels 0 li)
 let authenticate_external_path #bytes #cb #tkt #asp #group_id st #li p sign_private_key sign_nonce =
   external_path_to_path st.tree p group_id sign_private_key sign_nonce

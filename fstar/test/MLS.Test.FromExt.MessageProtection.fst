@@ -51,16 +51,16 @@ let unprotect_private_message #bl priv_msg_str t =
 val check_signature: {|crypto_bytes bytes|} -> authenticated_content_nt bytes -> message_protection_test -> ML unit
 let check_signature #bl auth_msg t =
   let group_context = get_group_context t in
-  let signature_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signature_pub) "check_signature" "signature_pub") in
-  if not (extract_result (check_authenticated_content_signature auth_msg signature_pub (mk_static_option group_context))) then
+  let signature_pub = hex_string_to_bytes t.signature_pub in
+  if not (check_authenticated_content_signature auth_msg signature_pub (mk_static_option group_context)) then
     failwith "check_signature: bad signature"
 
 val check_public_message_roundtrip: {|crypto_bytes bytes|} -> framed_content_nt bytes -> message_protection_test -> ML unit
 let check_public_message_roundtrip #cb msg t =
   let group_context = get_group_context t in
-  let signature_priv = extract_result (mk_sign_private_key (hex_string_to_bytes t.signature_priv) "check_signature" "signature_priv") in
+  let signature_priv = hex_string_to_bytes t.signature_priv in
   let membership_key = hex_string_to_bytes t.membership_key in
-  let auth = extract_result (compute_framed_content_auth_data WF_mls_public_message msg signature_priv (mk_zero_vector (sign_nonce_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
+  let auth = extract_result (compute_framed_content_auth_data WF_mls_public_message msg signature_priv (mk_zero_vector #bytes (sign_sign_min_entropy_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
   let auth_msg: authenticated_content_nt bytes = {wire_format = WF_mls_public_message; content = msg; auth;} in
   let pub_msg = extract_result (authenticated_content_to_public_message auth_msg (mk_static_option group_context) (mk_static_option membership_key)) in
   let auth_msg_roundtrip = extract_result (public_message_to_authenticated_content pub_msg (mk_static_option group_context) (mk_static_option membership_key)) in
@@ -70,7 +70,7 @@ let check_public_message_roundtrip #cb msg t =
 val check_private_message_roundtrip: {|crypto_bytes bytes|} -> framed_content_nt bytes -> message_protection_test -> ML unit
 let check_private_message_roundtrip #cb msg t =
   let group_context = get_group_context t in
-  let signature_priv = extract_result (mk_sign_private_key (hex_string_to_bytes t.signature_priv) "check_signature" "signature_priv") in
+  let signature_priv = hex_string_to_bytes t.signature_priv in
   let encryption_secret = hex_string_to_bytes t.encryption_secret in
   let sender_data_secret = hex_string_to_bytes t.sender_data_secret in
   let ratchet = extract_result (
@@ -79,7 +79,7 @@ let check_private_message_roundtrip #cb msg t =
     | CT_application -> MLS.TreeDEM.Keys.init_application_ratchet leaf_tree_secret
     | _ -> MLS.TreeDEM.Keys.init_handshake_ratchet leaf_tree_secret
   ) in
-  let auth = extract_result (compute_framed_content_auth_data WF_mls_private_message msg signature_priv (mk_zero_vector (sign_nonce_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
+  let auth = extract_result (compute_framed_content_auth_data WF_mls_private_message msg signature_priv (mk_zero_vector #bytes (sign_sign_min_entropy_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
   let auth_msg: authenticated_content_nt bytes = {wire_format = WF_mls_private_message; content = msg; auth;} in
   let (priv_msg, _) = extract_result (authenticated_content_to_private_message auth_msg ratchet (mk_zero_vector 4) sender_data_secret) in
   let auth_msg_roundtrip = extract_result (private_message_to_authenticated_content priv_msg 1 encryption_secret sender_data_secret) in

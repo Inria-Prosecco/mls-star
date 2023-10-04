@@ -27,7 +27,7 @@ let cb = mk_concrete_crypto_bytes AC_mls_128_dhkemx25519_chacha20poly1305_sha256
 
 val universal_sign_nonce: result (sign_nonce bytes)
 let universal_sign_nonce =
-  if not (sign_nonce_length #bytes = 0) then
+  if not (sign_sign_min_entropy_length #bytes = 0) then
     internal_failure "universal_sign_nonce: nonce length is > 0"
   else (
     return (empty #bytes)
@@ -47,7 +47,7 @@ noeq type state = {
   treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt asp group_id;
   treekem_state: treekem_state bytes leaf_index;
   epoch: nat;
-  sign_private_key: sign_private_key bytes;
+  sign_private_key: bytes;
   handshake_state: MLS.TreeDEM.Keys.ratchet_state bytes;
   application_state: MLS.TreeDEM.Keys.ratchet_state bytes;
   encryption_secret: bytes;
@@ -247,10 +247,10 @@ let process_commit state wire_format message message_auth =
   return state
 
 let fresh_key_pair e =
-  if not (length #bytes e = sign_private_key_length #bytes) then
+  if not (length #bytes e >= sign_gen_keypair_min_entropy_length #bytes) then
     internal_failure "fresh_key_pair: entropy length is wrong"
   else
-    return (sign_gen_keypair e)
+    sign_gen_keypair e
 
 // TODO: switch to randomness rather than this
 let chop_entropy (e: bytes) (l: nat): (result ((fresh:bytes{Seq.length fresh == l}) * bytes))
@@ -270,7 +270,7 @@ let default_capabilities =
   let? credentials = mk_mls_list [CT_basic] "default_capabilities" "credentials" in
   return ({versions; ciphersuites; extensions; proposals; credentials;} <: capabilities_nt bytes)
 
-val fresh_key_package_internal: e:entropy { Seq.length e == 64 } -> credential -> MLS.Crypto.sign_private_key bytes -> result (key_package_nt bytes tkt & (hpke_private_key bytes))
+val fresh_key_package_internal: e:entropy { Seq.length e == 64 } -> credential -> bytes -> result (key_package_nt bytes tkt & (hpke_private_key bytes))
 let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   let? leaf_secret, e = chop_entropy e (hpke_private_key_length #bytes) in
   assume(length #bytes leaf_secret == Seq.length leaf_secret);
@@ -294,13 +294,10 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
       group_id = ();
       leaf_index = ();
     }) in
-    if not (length tbs < pow2 30 && sign_with_label_pre #bytes "LeafNodeTBS" (length #bytes tbs)) then error "fresh_key_package: tbs too long"
-    else (
-      let? nonce = universal_sign_nonce in
-      return (sign_with_label private_sign_key "LeafNodeTBS" tbs nonce)
-    )
+    let? nonce = universal_sign_nonce in
+    let? signature = sign_with_label private_sign_key "LeafNodeTBS" tbs nonce in
+    mk_mls_bytes signature "fresh_key_package_internal" "signature"
   ) in
-  sign_signature_length_bound #bytes;
   let leaf_node: leaf_node_nt bytes tkt = {
     data = leaf_data;
     signature;
@@ -314,14 +311,12 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   } <: key_package_tbs_nt bytes tkt) in
   let? nonce = universal_sign_nonce in
   let tbs: bytes = (ps_prefix_to_ps_whole (ps_key_package_tbs_nt _)).serialize kp_tbs in
-  if not (length tbs < pow2 30 && sign_with_label_pre #bytes "KeyPackageTBS" (length #bytes tbs)) then error "fresh_key_package: tbs too long"
-  else (
-    let signature: bytes = sign_with_label private_sign_key "KeyPackageTBS" tbs nonce in
-    return (({
-      tbs = kp_tbs;
-      signature;
-    } <: key_package_nt bytes tkt), decryption_key)
-  )
+  let? signature: bytes = sign_with_label private_sign_key "KeyPackageTBS" tbs nonce in
+  let? signature = mk_mls_bytes signature "fresh_key_package_internal" "signature" in
+  return (({
+    tbs = kp_tbs;
+    signature;
+  } <: key_package_nt bytes tkt), decryption_key)
 
 let fresh_key_package e cred private_sign_key =
   let? key_package, leaf_secret = fresh_key_package_internal e cred private_sign_key in
@@ -368,12 +363,9 @@ let create e cred private_sign_key group_id =
 
 val send_helper: state -> msg:framed_content_nt bytes → e:entropy { Seq.length e == 4 } → result (state & framed_content_auth_data_nt bytes msg.content.content_type & mls_message_nt bytes)
 let send_helper st msg e =
-  //FIXME
-  assume (sign_nonce_length #bytes == 0);
   let? (rand_reuse_guard, e) = chop_entropy e 4 in
-  let? (rand_nonce, e) = chop_entropy e (sign_nonce_length #bytes) in
+  let? rand_nonce = universal_sign_nonce in
   assume(Seq.length rand_reuse_guard == length #bytes rand_reuse_guard);
-  assume(Seq.length rand_nonce == length #bytes rand_nonce);
   let? group_context = state_to_group_context st in
   let wire_format = WF_mls_private_message in
   let? auth = compute_framed_content_auth_data wire_format msg st.sign_private_key rand_nonce (mk_static_option group_context) (mk_static_option st.treekem_state.keyschedule_state.epoch_keys.confirmation_key) (mk_static_option st.interim_transcript_hash) in
@@ -480,7 +472,7 @@ let generate_update_path st e proposals =
         })
       ) in
       let? ext_update_path = treekem_to_treesync my_new_leaf_package_data pre_update_path in
-      let? sign_nonce, e = chop_entropy e (sign_nonce_length #bytes) in
+      let? sign_nonce = universal_sign_nonce in
       assume(length #bytes sign_nonce == Seq.length sign_nonce);
       assume((get_path_leaf ext_update_path).source == LNS_update);
       MLS.TreeSync.API.authenticate_external_path st.treesync_state ext_update_path st.sign_private_key sign_nonce
@@ -648,8 +640,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
         error "process_welcome_message: leaf_ind too big"
       else (
         let? sender_leaf_package = from_option "process_welcome_message: signer leaf is blanked (1)" (leaf_at treesync leaf_ind) in
-        let result = sender_leaf_package.data.signature_key in
-        mk_sign_public_key #bytes sender_leaf_package.data.signature_key "process_welcome_message" "signature_key"
+        return (sender_leaf_package.data.signature_key <: bytes)
       )
     ) group_info in
     return ()

@@ -49,8 +49,8 @@ let gen_key_package rng i =
   let (rng, e_sign) = gen_rand_bytes #bytes rng 32 in
   let (rng, e_kp) = gen_rand_bytes #bytes rng 64 in
   assume(forall b. length #bytes b == Seq.length b);
-  assume(sign_public_key_length #bytes < pow2 30);
   let (sign_pub, sign_priv) = extract_result (fresh_key_pair e_sign) in
+  assume(length sign_pub < pow2 30);
   assume(string_is_ascii (nat_to_string i));
   let cred = {signature_key = sign_pub; identity = mk_id i} in
   let (key_package, key_package_hash, leaf_secret) = extract_result (fresh_key_package e_kp cred sign_priv) in
@@ -123,8 +123,6 @@ let add_one rng l =
   let (last_st, ((_, msg), welcome_msg)) = extract_result (add last_st new_id.key_package e) in
   let l = update l (List.Tot.length l - 1) last_st in
   let l = receive_message (MsgAdd?) l msg in
-  guard (length new_id.sign_pub = sign_public_key_length #bytes);
-  guard (length new_id.sign_priv = sign_private_key_length #bytes);
   let (_, new_st) = extract_result (process_welcome_message welcome_msg (new_id.sign_pub, new_id.sign_priv) (fun _ -> Some (new_id.leaf_secret))) in
   let l = l@[new_st] in
   (rng, l)
@@ -182,7 +180,6 @@ let bench conf =
   let (rng, e) = gen_rand_bytes #bytes rng 96 in
   let (rng, gid) = gen_rand_bytes #bytes rng 16 in
   let (rng, id) = gen_key_package rng 0 in
-  guard (length id.sign_priv = sign_private_key_length #bytes);
   let init_state = extract_result (create e id.cred id.sign_priv gid) in
   let (rng, l) = n_bench_rounds conf rng [init_state] in
   let (rng, l) =

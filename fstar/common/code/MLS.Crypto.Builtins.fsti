@@ -38,15 +38,11 @@ class crypto_bytes (bytes:Type0) = {
   hpke_encrypt: pkR:lbytes bytes hpke_public_key_length -> info:bytes -> ad:bytes -> plaintext:bytes -> entropy:lbytes bytes hpke_private_key_length -> result (lbytes bytes hpke_kem_output_length & bytes);
   hpke_decrypt: enc:lbytes bytes hpke_kem_output_length -> skR:lbytes bytes hpke_private_key_length -> info:bytes -> ad:bytes -> ciphertext:bytes -> result bytes;
 
-  sign_public_key_length: nat;
-  sign_private_key_length: nat;
-  sign_nonce_length: nat;
-  sign_signature_length: nat;
-  sign_signature_length_bound: squash (sign_signature_length < 256);
-  sign_gen_keypair: entropy:lbytes bytes sign_private_key_length -> lbytes bytes sign_public_key_length & lbytes bytes sign_private_key_length;
-  sign_max_input_length: nat;
-  sign_sign: lbytes bytes sign_private_key_length -> buf:bytes{length buf < sign_max_input_length} -> entropy:lbytes bytes sign_nonce_length -> lbytes bytes sign_signature_length;
-  sign_verify: lbytes bytes sign_public_key_length -> buf:bytes{length buf < sign_max_input_length} -> lbytes bytes sign_signature_length -> bool;
+  sign_gen_keypair_min_entropy_length: nat;
+  sign_gen_keypair: entropy:bytes{length entropy >= sign_gen_keypair_min_entropy_length} -> result (verification:bytes * signature:bytes);
+  sign_sign_min_entropy_length: nat;
+  sign_sign: signature_key:bytes -> buf:bytes -> entropy:bytes{length entropy >= sign_sign_min_entropy_length} -> result bytes;
+  sign_verify: verification_key:bytes -> buf:bytes -> signature:bytes -> bool;
 
   aead_nonce_length: nat;
   aead_nonce_length_bound: squash (4 <= aead_nonce_length);
@@ -77,10 +73,7 @@ type hpke_private_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_
 type hpke_kem_output (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (hpke_kem_output_length #bytes)
 type hpke_ikm (bytes:Type0) {|crypto_bytes bytes|} = b:bytes{length b >= hpke_private_key_length #bytes}
 
-type sign_public_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_public_key_length #bytes)
-type sign_private_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_private_key_length #bytes)
-type sign_nonce (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_nonce_length #bytes)
-type sign_signature (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (sign_signature_length #bytes)
+type sign_nonce (bytes:Type0) {|crypto_bytes bytes|} = b:bytes{length b >= sign_sign_min_entropy_length #bytes}
 
 type aead_nonce (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (aead_nonce_length #bytes)
 type aead_key (bytes:Type0) {|crypto_bytes bytes|} = lbytes bytes (aead_key_length #bytes)

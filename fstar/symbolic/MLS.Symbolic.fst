@@ -28,19 +28,6 @@ assume val dy_sign_public_key_length: nat
 assume val dy_sign_private_key_length: nat
 assume val dy_sign_nonce_length: nat
 assume val dy_sign_signature_length: n:nat{n < 256}
-assume val dy_sign_signture_length_lemma:
-  sk:dy_bytes -> rand:dy_bytes -> msg:dy_bytes ->
-  Lemma
-  (requires
-    length sk == dy_sign_private_key_length /\
-    length rand == dy_sign_nonce_length
-  )
-  (ensures length (CryptoLib.sign sk rand msg) == dy_sign_signature_length)
-assume val dy_sign_public_key_length_lemma:
-  sk:dy_bytes ->
-  Lemma
-  (requires length sk == dy_sign_private_key_length)
-  (ensures length (CryptoLib.vk sk) == dy_sign_public_key_length)
 
 assume val dy_aead_nonce_length: n:nat{4 <= n}
 assume val dy_aead_key_length: nat
@@ -105,19 +92,13 @@ let dy_bytes_has_crypto acs = {
     | SecrecyLabels.Error e -> error e
   );
 
-  sign_public_key_length = dy_sign_public_key_length;
-  sign_private_key_length = dy_sign_private_key_length;
-  sign_nonce_length = dy_sign_nonce_length;
-  sign_signature_length = dy_sign_signature_length;
-  sign_signature_length_bound = ();
+  sign_gen_keypair_min_entropy_length = dy_sign_private_key_length;
   sign_gen_keypair = (fun rand ->
-    dy_sign_public_key_length_lemma rand;
-    (CryptoLib.vk rand, rand)
+    return (CryptoLib.vk rand, rand)
   );
-  sign_max_input_length = pow2 256; //infinity!
+  sign_sign_min_entropy_length = dy_sign_nonce_length;
   sign_sign = (fun sk msg rand ->
-    dy_sign_signture_length_lemma sk rand msg;
-    CryptoLib.sign sk rand msg
+    return (CryptoLib.sign sk rand msg)
   );
   sign_verify = (fun pk msg signature ->
     CryptoLib.verify pk msg signature
@@ -347,10 +328,9 @@ let has_sign_pred gu lab spred =
 #push-options "--z3rlimit 25"
 val sign_with_label_valid:
   gu:global_usage -> spred:sign_pred -> usg:string -> time:timestamp ->
-  sk:sign_private_key dy_bytes -> lab:valid_label -> msg:mls_bytes dy_bytes -> nonce:sign_nonce dy_bytes ->
+  sk:dy_bytes -> lab:valid_label -> msg:mls_bytes dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
-    sign_with_label_pre #dy_bytes lab (length #dy_bytes msg) /\
     is_valid gu time sk /\ ( (* is_publishable gu time sk \/ *) get_usage gu sk == Some (sig_usage usg)) /\
     is_valid gu time nonce /\
     get_label gu sk == get_label gu nonce /\
@@ -358,8 +338,8 @@ val sign_with_label_valid:
     has_sign_pred gu lab spred /\ (exists time_sig. time_sig <$ time /\ spred usg time_sig (CryptoLib.vk sk) msg)
   )
   (ensures
-    is_valid gu time (sign_with_label sk lab msg nonce) /\
-    can_flow time (get_label gu (sign_with_label sk lab msg nonce)) (get_label gu msg)
+    is_valid gu time (Success?.v (sign_with_label sk lab msg nonce)) /\
+    can_flow time (get_label gu (Success?.v (sign_with_label sk lab msg nonce))) (get_label gu msg)
   )
 let sign_with_label_valid gu spred usg time sk lab msg nonce =
   assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
@@ -377,14 +357,13 @@ let sign_with_label_valid gu spred usg time sk lab msg nonce =
 
 val verify_with_label_is_valid:
   gu:global_usage -> spred:sign_pred -> usg:string -> sk_label:label -> time:timestamp ->
-  vk:sign_public_key dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:sign_signature dy_bytes ->
+  vk:dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:dy_bytes ->
   Lemma
   (requires
     has_sign_pred gu lab spred /\
     is_verification_key gu usg sk_label time vk /\
     is_valid gu time content /\
     is_valid gu time signature /\
-    sign_with_label_pre #dy_bytes lab (length #dy_bytes content) /\
     verify_with_label vk lab content signature
   )
   (ensures can_flow time sk_label public \/ (exists time_sig. time_sig <$ time /\ spred usg time_sig vk content))

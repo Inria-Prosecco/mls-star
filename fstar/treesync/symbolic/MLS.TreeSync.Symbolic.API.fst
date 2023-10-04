@@ -308,9 +308,8 @@ let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
     (group_id = group_id') &&
     (l = st.levels) &&
     (tree = st.tree) &&
-    (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path) &&
-    (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
-    (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
+    length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes &&
+    (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path)
   );
   let auth_path = extract_result pr (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id private_st.signature_key signature_nonce) in
   wf_weaken_lemma _ (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) path;
@@ -340,13 +339,12 @@ let authenticate_leaf_node_data_from_key_package #tkt pr p si_private ln_data =
   let now1 = global_timestamp () in
   let private_st = get_private_treesync_state pr p si_private in
   guard pr (
-    sign_leaf_node_data_key_package_pre #dy_bytes #crypto_dy_bytes ln_data &&
-    (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
-    (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
+    (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes)
   );
   is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
+  let res = extract_result pr (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce) in
   is_msg_sign_leaf_node_data_key_package pr.global_usage p SecrecyLabels.public now1 ln_data private_st.signature_key signature_nonce;
-  sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce
+  res
 
 val authenticate_leaf_node_data_from_update:
   #tkt:treekem_types dy_bytes ->
@@ -371,13 +369,12 @@ let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_i
   let now1 = global_timestamp () in
   let private_st = get_private_treesync_state pr p si_private in
   guard pr (
-    sign_leaf_node_data_update_pre #dy_bytes #crypto_dy_bytes ln_data group_id &&
-    (length (private_st.signature_key <: dy_bytes) = sign_private_key_length #dy_bytes) &&
-    (length (signature_nonce <: dy_bytes) = sign_nonce_length #dy_bytes)
+    (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes)
   );
   is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
+  let res = extract_result pr (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce) in
   is_msg_sign_leaf_node_data_update pr.global_usage p SecrecyLabels.public now1 ln_data group_id leaf_index private_st.signature_key signature_nonce;
-  sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce
+  res
 
 (*** Trigger events ***)
 

@@ -31,7 +31,7 @@ let test_welcome_one t =
     let cb = mk_concrete_crypto_bytes cs in
 
     let init_priv = extract_result (mk_hpke_private_key (hex_string_to_bytes t.init_priv) "test_welcome_one" "init_priv") in
-    let signer_pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.signer_pub) "test_welcome_one" "signer_pub") in
+    let signer_pub = hex_string_to_bytes t.signer_pub in
     let key_package: key_package_nt bytes tkt =
       match parse (mls_message_nt bytes) (hex_string_to_bytes t.key_package) with
       | None -> failwith "test_welcome_one: malformed key package"

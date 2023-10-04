@@ -112,9 +112,6 @@ let leaf_is_valid #bytes #cb #tkt ln group_id leaf_index =
   leaf_index < pow2 32 && (
   let tbs_bytes = get_leaf_tbs ln group_id leaf_index in
   length tbs_bytes < pow2 30 &&
-  sign_with_label_pre #bytes "LeafNodeTBS" (length tbs_bytes) &&
-  length #bytes ln.data.signature_key = sign_public_key_length #bytes &&
-  length #bytes ln.signature = sign_signature_length #bytes &&
   verify_with_label #bytes ln.data.signature_key "LeafNodeTBS" tbs_bytes ln.signature
   // TODO: other checks described in
   // https://messaginglayersecurity.rocks/mls-protocol/draft-ietf-mls-protocol.html#name-leaf-node-validation
@@ -182,7 +179,7 @@ let path_is_valid #bytes #cb #tkt #l #li group_id t p =
 val external_path_to_path_aux:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source = LNS_update} -> group_id:mls_bytes bytes -> sign_private_key bytes -> sign_nonce bytes ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source = LNS_update} -> group_id:mls_bytes bytes -> sign_key:bytes -> sign_nonce bytes ->
   result (leaf_node_nt bytes tkt)
 let external_path_to_path_aux #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
   let? computed_parent_hash = compute_leaf_parent_hash_from_path t p (root_parent_hash #bytes) in
@@ -193,14 +190,8 @@ let external_path_to_path_aux #bytes #cb #tkt #l #i #li t p group_id sign_key no
     let? leaf_index: nat_lbytes 4 = mk_nat_lbytes li "external_path_to_path_aux" "li" in
     return (serialize (leaf_node_tbs_nt bytes tkt) ({data = new_lp_data; group_id; leaf_index;}))
   ) in
-  let? new_signature = (
-    if not (length new_lp_tbs < pow2 30) then
-      error "external_path_to_path_aux: tbs too long"
-    else if not (sign_with_label_pre #bytes "LeafNodeTBS" (length new_lp_tbs)) then
-      error "external_path_to_path_aux: bad signature precondition"
-    else
-      return (sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce)
-  ) in
+  let? new_signature = sign_with_label sign_key "LeafNodeTBS" new_lp_tbs nonce in
+  let? new_signature = mk_mls_bytes new_signature "external_path_to_path_aux" "new_signature" in
   return ({ data = new_lp_data; signature = new_signature } <: leaf_node_nt bytes tkt)
 #pop-options
 
@@ -208,7 +199,7 @@ let external_path_to_path_aux #bytes #cb #tkt #l #i #li t p group_id sign_key no
 val external_path_to_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source == LNS_update} -> group_id:mls_bytes bytes -> sign_private_key bytes -> sign_nonce bytes ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source == LNS_update} -> group_id:mls_bytes bytes -> sign_key:bytes -> sign_nonce bytes ->
   result (pathsync bytes tkt l i li)
 let external_path_to_path #bytes #cb #tkt #l #i #li t p group_id sign_key nonce =
   let? new_leaf = external_path_to_path_aux t p group_id sign_key nonce in
@@ -266,44 +257,24 @@ let rec un_addP #bytes #bl #tkt #l #i t pred =
     } in
     TNode (Some new_content) (un_addP left pred) (un_addP right pred)
 
-val sign_leaf_node_data_key_package_pre:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  ln_data:leaf_node_data_nt bytes tkt ->
-  bool
-let sign_leaf_node_data_key_package_pre #bytes #cb #tkt ln_data =
-  let tbs_length = (prefixes_length #bytes ((ps_leaf_node_data_nt tkt).serialize ln_data)) in
-  tbs_length < pow2 30 &&
-  sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
-
 val sign_leaf_node_data_key_package:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  ln_data:leaf_node_data_nt bytes tkt ->
-  sign_private_key bytes -> sign_nonce bytes ->
-  Pure (leaf_node_nt bytes tkt)
-  (requires ln_data.source = LNS_key_package /\ sign_leaf_node_data_key_package_pre ln_data)
-  (ensures fun _ -> True)
+  ln_data:leaf_node_data_nt bytes tkt{ln_data.source = LNS_key_package} ->
+  sign_key:bytes -> sign_nonce bytes ->
+  result (leaf_node_nt bytes tkt)
 let sign_leaf_node_data_key_package #bytes #cb #tkt ln_data sign_key nonce =
   let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id = (); leaf_index = ();}) in
-  let signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
-  ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)
-
-val sign_leaf_node_data_update_pre:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  ln_data:leaf_node_data_nt bytes tkt -> group_id:mls_bytes bytes ->
-  bool
-let sign_leaf_node_data_update_pre #bytes #cb #tkt ln_data group_id =
-  let tbs_length = (prefixes_length #bytes ((ps_leaf_node_data_nt tkt).serialize ln_data)) + 4 + (length #bytes group_id) + 4 in
-  tbs_length < pow2 30 &&
-  sign_with_label_pre #bytes "LeafNodeTBS" tbs_length
+  let? signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
+  let? signature = mk_mls_bytes signature "sign_leaf_node_data_key_package" "signature" in
+  return ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)
 
 val sign_leaf_node_data_update:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  ln_data:leaf_node_data_nt bytes tkt -> group_id:mls_bytes bytes -> leaf_index:nat_lbytes 4 ->
-  sign_private_key bytes -> sign_nonce bytes ->
-  Pure (leaf_node_nt bytes tkt)
-  (requires ln_data.source = LNS_update /\ sign_leaf_node_data_update_pre ln_data group_id)
-  (ensures fun _ -> True)
+  ln_data:leaf_node_data_nt bytes tkt{ln_data.source = LNS_update} -> group_id:mls_bytes bytes -> leaf_index:nat_lbytes 4 ->
+  sign_key:bytes -> sign_nonce bytes ->
+  result (leaf_node_nt bytes tkt)
 let sign_leaf_node_data_update #bytes #cb #tkt ln_data group_id leaf_index sign_key nonce =
   let ln_tbs: bytes = serialize (leaf_node_tbs_nt bytes tkt) ({data = ln_data; group_id; leaf_index;}) in
-  let signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
-  ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)
+  let? signature = sign_with_label sign_key "LeafNodeTBS" ln_tbs nonce in
+  let? signature = mk_mls_bytes signature "sign_leaf_node_data_update" "signature" in
+  return ({ data = ln_data; signature = signature } <: leaf_node_nt bytes tkt)

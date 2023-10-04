@@ -113,50 +113,6 @@ let mk_hpke_kem_output #bytes #cb b fun_name var_name =
   else
     return b
 
-val mk_sign_public_key:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes ->
-  string -> string ->
-  result (sign_public_key bytes)
-let mk_sign_public_key #bytes #cb b fun_name var_name =
-  if not (length b = sign_public_key_length #bytes) then
-    error (fun_name ^ ": " ^ var_name ^ " has bad length")
-  else
-    return b
-
-val mk_sign_private_key:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes ->
-  string -> string ->
-  result (sign_private_key bytes)
-let mk_sign_private_key #bytes #cb b fun_name var_name =
-  if not (length b = sign_private_key_length #bytes) then
-    error (fun_name ^ ": " ^ var_name ^ " has bad length")
-  else
-    return b
-
-val mk_sign_nonce:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes ->
-  string -> string ->
-  result (sign_nonce bytes)
-let mk_sign_nonce #bytes #cb b fun_name var_name =
-  if not (length b = sign_nonce_length #bytes) then
-    error (fun_name ^ ": " ^ var_name ^ " has bad length")
-  else
-    return b
-
-val mk_sign_signature:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes ->
-  string -> string ->
-  result (sign_signature bytes)
-let mk_sign_signature #bytes #cb b fun_name var_name =
-  if not (length b = sign_signature_length #bytes) then
-    error (fun_name ^ ": " ^ var_name ^ " has bad length")
-  else
-    return b
-
 val mk_aead_nonce:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
@@ -216,15 +172,10 @@ let get_mls_label label =
   normalize_term_spec (string_is_ascii ("MLS 1.0 " ^ label));
   "MLS 1.0 " ^ label
 
-let sign_with_label_pre (#bytes:Type0) {|crypto_bytes bytes|} (label:valid_label) (length_content:mls_nat): bool =
-  8 + (8 + String.strlen label) + length_content < sign_max_input_length #bytes
-
 val get_sign_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   label:valid_label -> content:mls_bytes bytes ->
-  Pure bytes
-  (requires sign_with_label_pre #bytes label (length #bytes content))
-  (ensures fun res -> length #bytes res < sign_max_input_length #bytes)
+  bytes
 let get_sign_content #bytes #cb label content =
   ((ps_prefix_to_ps_whole ps_sign_content_nt).serialize ({
     label = get_mls_label label;
@@ -233,19 +184,23 @@ let get_sign_content #bytes #cb label content =
 
 val sign_with_label:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  signature_key:sign_private_key bytes -> label:valid_label -> content:mls_bytes bytes{sign_with_label_pre #bytes label (length #bytes content)} -> entropy:sign_nonce bytes ->
-  sign_signature bytes
+  signature_key:bytes -> label:valid_label -> content:bytes -> entropy:sign_nonce bytes ->
+  result bytes
 let sign_with_label #bytes #cb signature_key label content entropy =
+  let? content = mk_mls_bytes content "sign_with_label" "content" in
   let sign_content = get_sign_content label content in
   sign_sign signature_key sign_content entropy
 
 val verify_with_label:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  verification_key:sign_public_key bytes -> label:valid_label -> content:mls_bytes bytes{sign_with_label_pre #bytes label (length #bytes content)} -> signature:sign_signature bytes ->
+  verification_key:bytes -> label:valid_label -> content:bytes -> signature:bytes ->
   bool
 let verify_with_label #bytes #cb verification_key label content signature =
-  let sign_content = get_sign_content label content in
-  sign_verify verification_key sign_content signature
+  if not (length content < pow2 30) then
+    false
+  else
+    let sign_content = get_sign_content label content in
+    sign_verify verification_key sign_content signature
 
 (*** ExpandWithLabel / DeriveSecret ***)
 

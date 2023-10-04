@@ -60,22 +60,20 @@ let test_derive_tree_secret t =
 
 val test_sign_with_label: {|crypto_bytes bytes|} -> crypto_basics_sign_with_label -> ML unit
 let test_sign_with_label t =
-  let priv = extract_result (mk_sign_private_key (hex_string_to_bytes t.priv) "test_sign_with_label" "priv") in
-  let pub = extract_result (mk_sign_public_key (hex_string_to_bytes t.pub) "test_sign_with_label" "pub") in
-  let content = extract_result (mk_mls_bytes (hex_string_to_bytes t.content) "test_sign_with_label" "content") in
+  let priv = hex_string_to_bytes t.priv in
+  let pub = hex_string_to_bytes t.pub in
+  let content = hex_string_to_bytes t.content in
   let label = t.label in
-  let signature = extract_result (mk_sign_signature (hex_string_to_bytes t.signature) "test_sign_with_label" "signature") in
+  let signature = hex_string_to_bytes t.signature in
   if not (string_is_ascii label && String.length label < pow2 30 - 8) then (
     failwith "test_sign_with_label: label is malformed\n"
-  ) else if not (sign_with_label_pre #bytes label (length #bytes content)) then (
-    failwith "test_sign_with_label: bad signature precondition\n"
   ) else (
     let signature_ok =
       verify_with_label #bytes pub label content signature
     in
     let signature_roundtrip_ok =
-      let (_, nonce) = gen_rand_bytes #bytes (init_rand_state 0xC0FFEE) (sign_nonce_length #bytes) in
-      let my_signature = sign_with_label #bytes priv label content nonce in
+      let (_, nonce) = gen_rand_bytes #bytes (init_rand_state 0xC0FFEE) (sign_sign_min_entropy_length #bytes) in
+      let my_signature = extract_result (sign_with_label #bytes priv label content nonce) in
       verify_with_label #bytes pub label content my_signature
     in
     if not signature_ok then (

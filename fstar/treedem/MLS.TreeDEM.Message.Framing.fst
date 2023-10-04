@@ -48,27 +48,21 @@ let compute_tbm #bytes #bl content auth group_context =
 
 val compute_message_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  sign_private_key bytes -> sign_nonce bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
-  result (sign_signature bytes)
+  sign_key:bytes -> sign_nonce bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
+  result bytes
 let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
   let serialized_tbs: bytes = serialize (framed_content_tbs_nt bytes) tbs in
-  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "FramedContentTBS" (length #bytes serialized_tbs)) then error "compute_message_signature: tbs too long"
-  else (
-    return (sign_with_label sk "FramedContentTBS" serialized_tbs rand)
-  )
+  sign_with_label sk "FramedContentTBS" serialized_tbs rand
 
 val check_message_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  sign_public_key bytes -> sign_signature bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
-  result bool
+  verif_key:bytes -> sig:bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
+  bool
 let check_message_signature #bytes #cb pk signature wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
   let serialized_tbs: bytes = serialize (framed_content_tbs_nt bytes) tbs in
-  if not (length serialized_tbs < pow2 30 && sign_with_label_pre #bytes "FramedContentTBS" (length #bytes serialized_tbs)) then error "check_message_signature: tbs too long"
-  else (
-    return (verify_with_label pk "FramedContentTBS" serialized_tbs signature)
-  )
+  verify_with_label pk "FramedContentTBS" serialized_tbs signature
 
 val compute_message_membership_tag:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -82,13 +76,14 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
 val compute_framed_content_auth_data:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   wire_format_nt -> msg:framed_content_nt bytes ->
-  sign_private_key bytes -> sign_nonce bytes ->
+  sign_key:bytes -> sign_nonce bytes ->
   group_context:static_option (knows_group_context msg.sender) (group_context_nt bytes) ->
   static_option (msg.content.content_type = CT_commit) bytes ->
   static_option (msg.content.content_type = CT_commit) bytes ->
   result (framed_content_auth_data_nt bytes msg.content.content_type)
 let compute_framed_content_auth_data #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
   let? signature = compute_message_signature sk rand wire_format msg group_context in
+  let? signature = mk_mls_bytes signature "compute_framed_content_auth_data" "signature" in
   let? confirmation_tag = (
     if msg.content.content_type = CT_commit then (
       let? confirmed_transcript_hash = compute_confirmed_transcript_hash wire_format msg signature interim_transcript_hash in
@@ -106,12 +101,11 @@ let compute_framed_content_auth_data #bytes #cb wire_format msg sk rand group_co
 val check_authenticated_content_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   msg:authenticated_content_nt bytes ->
-  sign_public_key bytes ->
+  verif_key:bytes ->
   group_context:static_option (knows_group_context msg.content.sender) (group_context_nt bytes) ->
-  result bool
+  bool
 let check_authenticated_content_signature #bytes #cb msg vk group_context =
-  let? signature = mk_sign_signature msg.auth.signature "check_authenticated_content_signature" "signature" in
-  check_message_signature vk signature msg.wire_format msg.content group_context
+  check_message_signature vk msg.auth.signature msg.wire_format msg.content group_context
 
 val check_authenticated_content_confirmation_tag:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
