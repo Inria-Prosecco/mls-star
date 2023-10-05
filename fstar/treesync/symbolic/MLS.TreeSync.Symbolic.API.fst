@@ -266,9 +266,6 @@ val external_path_has_event_later:
   t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
   Lemma
   (requires
-    (get_path_leaf p).source == LNS_update /\
-    li < pow2 32 /\
-    Success? (external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id) /\
     external_path_has_event prin time0 t p group_id /\
     time0 <$ time1
   )
@@ -287,9 +284,6 @@ val authenticate_path:
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
   LCrypto (pathsync dy_bytes tkt l 0 li) pr
   (requires fun t0 ->
-    (get_path_leaf path).source == LNS_update /\
-    li < pow2 32 /\
-    Success? (external_path_to_path_nosig #dy_bytes #crypto_dy_bytes tree path group_id) /\
     external_path_has_event p (trace_len t0) tree path group_id /\
     is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) path /\
     has_treesync_invariants tkt pr
