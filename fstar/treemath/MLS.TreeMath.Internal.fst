@@ -5,7 +5,7 @@ open FStar.Mul
 open FStar.Math.Lemmas
 open FStar.List.Tot
 
-#set-options "--fuel 1 --ifuel 0 --z3rlimit 50"
+#set-options "--fuel 1 --ifuel 0 --z3rlimit 200"
 
 val level_aux: x:nat -> k:nat{pow2 k <= x+x+1} -> Pure nat
   (requires forall (i:nat{i<k}). (x / (pow2 i)) % 2 == 1)
