@@ -1010,6 +1010,7 @@ let conditional_subtract #t #l t' a =
   logand_lemma mask pow2_bits;
   a3 `add` (mask `logand` pow2_bits)
 
+#push-options "--z3rlimit 500 --quake 1/25"
 let cast_mod #t #l t' l' a =
   assert_norm (pow2 7 = 128);
   assert_norm (pow2 15 = 32768);
@@ -1022,6 +1023,7 @@ let cast_mod #t #l t' l' a =
     let b = conditional_subtract t' (a `logand` mod_mask m) in
     cast t' l' b
     end
+#pop-options
 
 #pop-options
 
