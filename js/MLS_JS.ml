@@ -74,7 +74,7 @@ let _ =
           Js.null
 
     method currentEpoch (s: MLS.state) =
-      Z.to_int s.MLS.tree_state.MLS_TreeSync_Types.version3
+      Z.to_int s.MLS.epoch
 
     method create1 (e: Typed_array.uint8Array Js.t) (credential: _ Js.t) (priv: Typed_array.uint8Array Js.t)
       (group_id: Js.js_string Js.t)
@@ -150,6 +150,11 @@ let _ =
               | MLS.MsgAdd identity ->
                   Obj.magic (object%js
                     val kind = "add"
+                    val identity = js_string_of_bytes identity
+                  end)
+              | MLS.MsgRemove identity ->
+                  Obj.magic (object%js
+                    val kind = "remove"
                     val identity = js_string_of_bytes identity
                   end)
             val state = state

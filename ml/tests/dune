@@ -1,7 +1,15 @@
 (copy_files# src/*)
 
+(library
+ (wrapped false)
+ (libraries mls_star)
+ (name mls_test)
+ (modules :standard \
+   MLS_Test))
+
 (test
- (libraries fstar.lib mls_star yojson)
+ (libraries fstar.lib mls_star mls_test yojson)
+ (modules MLS_Test)
  (name MLS_Test))
 
 (env

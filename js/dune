@@ -3,9 +3,9 @@
  (modes byte js)
  (modules MLS_JS)
  (js_of_ocaml
-   (flags "--disable" "genprim" "--opt" "3")
+   ;(flags "--disable" "genprim" "--opt" "3")
    ;(flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=0" "--pretty" "--disable" "excwrap")
    (javascript_files "BigInteger.js" "zarith.js" "overrides.js"))
  (preprocess
   (pps js_of_ocaml-ppx))
- (libraries mls.core js_of_ocaml))
+ (libraries fstar.lib mls_star mls_test js_of_ocaml))
