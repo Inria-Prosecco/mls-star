@@ -26,11 +26,11 @@
     "dolev-yao-star-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1687449833,
-        "narHash": "sha256-3I1EcchMry61OBztOg6O+tyIJ1/4/ya7nkOjW/k2KUc=",
+        "lastModified": 1705056642,
+        "narHash": "sha256-SS30Ehc7N5Jjc/p6hD678krwLh2817jXf0pVp1CLGu4=",
         "owner": "prosecco",
         "repo": "dolev-yao-star",
-        "rev": "f1cdcc6f9ccfe7e9f62565a6fd00de45a8749cb9",
+        "rev": "13311fd7d770d78487a53476dd92dc6c1d27cc66",
         "type": "github"
       },
       "original": {
@@ -62,11 +62,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1702966734,
-        "narHash": "sha256-Vvo8M8n4FcKJRG21uppW+brVJ21dgidSWMAByXhO6/c=",
+        "lastModified": 1706647851,
+        "narHash": "sha256-tJgVMcCOEqdrgNUHjHgdc3+Spf3vri5Y3Y6noG1mZgo=",
         "owner": "FStarLang",
         "repo": "FStar",
-        "rev": "a3275f5dbb4d3c2d701a6834381b91d2c296ec85",
+        "rev": "a48e0aa9935c2a22ea540f9f2734c5f847d96361",
         "type": "github"
       },
       "original": {

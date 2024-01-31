@@ -114,8 +114,7 @@ test_vectors/data/%.json: test_vectors/git_commit | test_vectors/data
 
 .PHONY: build check release
 
-build: copy_lib
-	$(MAKE) -C fstar extract
+build: copy_lib copy_tests
 	OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune build --profile=release
 
 check: copy_lib copy_tests $(ALL_TEST_VECTORS_JSON)

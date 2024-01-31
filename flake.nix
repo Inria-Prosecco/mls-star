@@ -39,8 +39,9 @@
       ++ (fstar.buildInputs);
     };
     checks.${system} = {
-      mls-build = mls-star;
-      mls-tests = mls-star.tests;
+      mls-star-build = mls-star;
+      mls-star-tests = mls-star.tests;
+      mls-star-js = mls-star.js;
     };
   };
 }
