@@ -75,6 +75,38 @@
         "type": "github"
       }
     },
+    "hacl-packages-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1704452057,
+        "narHash": "sha256-bEn+Y20vqazLAQHgKq9IYPGfI3Lviz35/arhb1hyZto=",
+        "owner": "cryspen",
+        "repo": "hacl-packages",
+        "rev": "b9998466f7138d6928e8b6b256392a063b823b1c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cryspen",
+        "repo": "hacl-packages",
+        "type": "github"
+      }
+    },
+    "hacl-star-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1706637944,
+        "narHash": "sha256-Cf3kGqFEsOy5Y+2shxN7BC6ADcmWdqs6XZhPdT8sCZI=",
+        "owner": "hacl-star",
+        "repo": "hacl-star",
+        "rev": "513e026e7096639ee99f0c546c99e2f72f86fd6a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hacl-star",
+        "repo": "hacl-star",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1693158576,
@@ -95,6 +127,8 @@
         "comparse-flake": "comparse-flake",
         "dolev-yao-star-src": "dolev-yao-star-src",
         "fstar-flake": "fstar-flake",
+        "hacl-packages-src": "hacl-packages-src",
+        "hacl-star-src": "hacl-star-src",
         "nixpkgs": [
           "fstar-flake",
           "nixpkgs"

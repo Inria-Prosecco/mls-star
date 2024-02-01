@@ -1,4 +1,4 @@
-{lib, stdenv, which, fstar, fstar-dune, z3, ocamlPackages, comparse, dolev-yao-star, fetchFromGitHub}:
+{lib, stdenv, which, fstar, fstar-dune, z3, nodejs_20, ocamlPackages, comparse, dolev-yao-star, hacl-star-src, hacl-packages-src, fetchFromGitHub}:
 
 let
   mls-star = stdenv.mkDerivation {
@@ -92,9 +92,27 @@ let
       ]
     ;
     enableParallelBuilding = true;
-    buildFlags = "build";
+    # pre-patch uses build output from mls-star, to avoid building things twice
+    prePatch = ''
+      patchShebangs js/import.sh
+      cp -pr --no-preserve=mode ${mls-star-tests}/cache ${mls-star-tests}/ml .
+      mkdir obj
+      cp -p ml/lib/src/* obj/
+    '';
+    buildPhase = ''
+      make build
+      (cd js; ./import.sh)
+    '';
+    doCheck = true;
+    checkPhase = ''
+      cd js
+      node index.js
+    '';
+    installPhase = ''
+      touch $out
+    '';
     buildInputs =
-      [ which fstar z3 ]
+      [ which fstar z3 nodejs_20 ]
       ++ (with ocamlPackages; [
         ocaml dune_3 findlib yojson hacl-star
         js_of_ocaml js_of_ocaml-ppx integers_stubs_js
@@ -102,15 +120,8 @@ let
       ++ (fstar-dune.buildInputs);
     COMPARSE_HOME = comparse;
     DY_HOME = dolev-yao-star;
-    # pre-patch uses build output from mls-star, to avoid building things twice
-    prePatch = ''
-      cp -pr --no-preserve=mode ${mls-star-tests}/cache ${mls-star-tests}/ml .
-      mkdir obj
-      cp -p ml/lib/src/* obj/
-    '';
-    installPhase = ''
-      touch $out
-    '';
+    HACL_HOME = hacl-star-src;
+    HACL_PACKAGES_HOME = hacl-packages-src;
   };
 
 in
