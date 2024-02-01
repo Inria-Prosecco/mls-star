@@ -3,9 +3,10 @@
  (modes byte js)
  (modules MLS_JS)
  (js_of_ocaml
-   ;(flags "--disable" "genprim" "--opt" "3")
-   ;(flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=0" "--pretty" "--disable" "excwrap")
+   ; Only works when --profile=release is passed.
+   ; (flags "--disable" "genprim" "--opt" "3")
+   ; (flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=0" "--pretty" "--disable" "excwrap")
    (javascript_files "overrides.js"))
  (preprocess
   (pps js_of_ocaml-ppx))
- (libraries fstar.lib integers_stubs_js mls_star mls_test js_of_ocaml))
+ (libraries mls.primitives_js fstar.lib integers_stubs_js mls_star mls_test js_of_ocaml))
