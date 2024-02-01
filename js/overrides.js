@@ -1,3 +1,5 @@
+// OCaml system stuff
+
 //Provides: caml_thread_initialize const
 function caml_thread_initialize() {}
 
@@ -9,6 +11,26 @@ function caml_mutex_new() {
 //Provides: caml_condition_new const
 function caml_condition_new() {
     return 0;
+}
+
+//Provides:caml_thread_self
+function caml_thread_self() {
+  return 0;
+}
+
+//Provides:caml_thread_id
+function caml_thread_id() {
+  return 0;
+}
+
+//Provides:caml_mutex_lock
+function caml_mutex_lock() {
+  return 0;
+}
+
+//Provides:caml_mutex_unlock
+function caml_mutex_unlock() {
+  return 0;
 }
 
 /* Based on https://github.com/andrenth/ocaml-stdint/blob/master/lib/stdint.ml:
@@ -158,6 +180,9 @@ function int_of_int56(x) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+// BigInt-related functions for ocaml-integers... note that the BigInt primitive is now provided by
+// the zarith-js-stubs package.
 
 //Provides: int128_add
 function int128_add(x, y) {
@@ -539,22 +564,3 @@ function int_of_uint128(x) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//Provides:caml_thread_self
-function caml_thread_self() {
-  return 0;
-}
-
-//Provides:caml_thread_id
-function caml_thread_id() {
-  return 0;
-}
-
-//Provides:caml_mutex_lock
-function caml_mutex_lock() {
-  return 0;
-}
-
-//Provides:caml_mutex_unlock
-function caml_mutex_unlock() {
-  return 0;
-}

@@ -1,7 +1,3 @@
-var runtime = {
-  caml_thread_initialize: () => {}
-};
-
 let freshKeyPairDebug = 0;
 
 function freshKeyPair() {

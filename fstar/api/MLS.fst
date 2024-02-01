@@ -703,6 +703,8 @@ let process_group_message state msg =
     | _ ->
         internal_failure "unknown message type"
   ) in
+  // Needed to prove the completeness of the pattern-match below
+  let _ = allow_inversion content_type_nt in
   // Note: can't do a dependent pair pattern matching, have to nest matches +
   // annotations because of the dependency
   match message.content.content.content_type with
@@ -742,5 +744,3 @@ let process_group_message state msg =
   | CT_application ->
       let data: bytes = message.content.content.content in
       return (state, MsgData data)
-  | _ ->
-      internal_failure "unknown message content type"

@@ -25,6 +25,7 @@ let
       cp -r ml fstar cache hints $out
     '';
     passthru.tests = mls-star-tests;
+    passthru.js = mls-star-js;
   };
 
   mls-star-tests = stdenv.mkDerivation {
@@ -60,7 +61,8 @@ let
     '';
     doCheck = true;
     installPhase = ''
-      touch $out
+      mkdir -p $out
+      cp -r ml fstar cache hints $out
     '';
     passthru.test-vectors = test-files;
   };
@@ -74,5 +76,42 @@ let
       sha256 = "sha256-qYtSzY9epzvgahbJ3/omzGRwH5PVDLQmFfHzmQLDRc8=";
     }
   ;
+
+  mls-star-js = stdenv.mkDerivation {
+    name = "mls-star-js";
+    src =
+      lib.sources.sourceByRegex ./. [
+        "hacl-star-snapshot(/.*)?"
+        "fstar(/.*)?"
+        "Makefile"
+        "dune-project"
+        "ml(/lib(/dune)?)?"
+        "ml(/tests(/dune)?)?"
+        "js(/.*)?"
+        "mls.opam"
+      ]
+    ;
+    enableParallelBuilding = true;
+    buildFlags = "build";
+    buildInputs =
+      [ which fstar z3 ]
+      ++ (with ocamlPackages; [
+        ocaml dune_3 findlib yojson hacl-star
+        js_of_ocaml js_of_ocaml-ppx integers_stubs_js
+      ])
+      ++ (fstar-dune.buildInputs);
+    COMPARSE_HOME = comparse;
+    DY_HOME = dolev-yao-star;
+    # pre-patch uses build output from mls-star, to avoid building things twice
+    prePatch = ''
+      cp -pr --no-preserve=mode ${mls-star-tests}/cache ${mls-star-tests}/ml .
+      mkdir obj
+      cp -p ml/lib/src/* obj/
+    '';
+    installPhase = ''
+      touch $out
+    '';
+  };
+
 in
   mls-star

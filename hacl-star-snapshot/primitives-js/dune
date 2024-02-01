@@ -1,0 +1,11 @@
+(library
+ (public_name mls.primitives_js)
+ (name primitives_js)
+ (libraries js_helpers)
+ (foreign_stubs
+  (language c)
+  ;(flags -I/blah/include)
+  (names dummy))
+ (implements haclml)
+ ; (modes byte)
+)

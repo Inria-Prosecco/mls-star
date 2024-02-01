@@ -1,0 +1,8 @@
+(library
+ (name js_helpers)
+ (public_name mls.js_helpers)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (wrapped false)
+ (modes byte native)
+ (libraries js_of_ocaml fstar.lib))
