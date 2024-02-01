@@ -50,10 +50,10 @@ let rec find_my_encrypted_group_secret #bytes #cb kp_ref_to_hpke_sk l =
 val decrypt_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   welcome_nt bytes -> (bytes -> option (hpke_private_key bytes)) -> option (l:nat & treesync bytes tkt l 0) ->
-  result (group_info_nt bytes & group_secrets_nt bytes)
+  result (group_info_nt bytes & group_secrets_nt bytes & hpke_private_key bytes)
 let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
+  let? (my_hpke_sk, my_hpke_ciphertext) = from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_ref_to_hpke_sk w.secrets) in
   let? group_secrets = (
-    let? (my_hpke_sk, my_hpke_ciphertext) = from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_ref_to_hpke_sk w.secrets) in
     let? kem_output = mk_hpke_kem_output my_hpke_ciphertext.kem_output "decrypt_welcome" "kem_output" in
     let? group_secrets_bytes = decrypt_with_label my_hpke_sk "Welcome" w.encrypted_group_info kem_output my_hpke_ciphertext.ciphertext in
     let? group_secrets_network = from_option "decrypt_welcome: malformed group secrets" (parse (group_secrets_nt bytes) group_secrets_bytes) in
@@ -68,7 +68,7 @@ let decrypt_welcome #bytes #cb w kp_ref_to_hpke_sk opt_tree =
     return (group_info_network)
   ) in
   //TODO: integrity check, this is where `opt_tree` will be useful
-  return (group_info, group_secrets)
+  return (group_info, group_secrets, my_hpke_sk)
 
 (*** Encrypting a welcome ***)
 

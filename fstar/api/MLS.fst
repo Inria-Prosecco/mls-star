@@ -305,7 +305,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
   let kp_tbs = ({
     version = PV_mls10;
     cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
-    init_key = encryption_key;
+    init_key = encryption_key; //TODO: use a different key
     leaf_node;
     extensions = [];
   } <: key_package_tbs_nt bytes tkt) in
@@ -321,8 +321,8 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
 let fresh_key_package e cred private_sign_key =
   let? key_package, leaf_secret = fresh_key_package_internal e cred private_sign_key in
   let key_package_bytes = (ps_prefix_to_ps_whole (ps_key_package_nt _)).serialize key_package in
-  let? hash = hash_leaf_package key_package.tbs.leaf_node in
-  return (key_package_bytes, hash, (leaf_secret <: bytes))
+  let? hash = compute_key_package_ref key_package in
+  return (key_package_bytes, (hash <: bytes), (leaf_secret <: bytes))
 
 let current_epoch s = s.epoch
 
@@ -611,7 +611,7 @@ let find_my_index #l t sign_pk =
 let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
   let? welcome = from_option "process_welcome_message: can't parse welcome message" ((ps_prefix_to_ps_whole ps_welcome_nt).parse welcome_bytes) in
-  let? (group_info, secrets) = decrypt_welcome welcome (fun kp_hash ->
+  let? (group_info, secrets, leaf_decryption_key) = decrypt_welcome welcome (fun kp_hash ->
     match lookup kp_hash with
     | Some leaf_secret -> (
       if length leaf_secret = hpke_private_key_length #bytes then Some leaf_secret
@@ -646,17 +646,6 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     return ()
   ) in
   let? leaf_index = find_my_index treesync sign_pk in
-  let? leaf_decryption_key = (
-    let opt_my_leaf_package = leaf_at treesync leaf_index in
-    match opt_my_leaf_package with
-    | None -> internal_failure "process_welcome_message: leaf index points to a blank leaf"
-    | Some my_leaf_package -> (
-      let? kp_hash = hash_leaf_package my_leaf_package in
-      match lookup kp_hash with
-      | Some leaf_secret -> mk_hpke_private_key leaf_secret "process_welcome_message" "leaf_decryption_key"
-      | None -> internal_failure "process_welcome_message: decrypt_welcome found my leaf package but not proccess_welcome_message"
-    )
-  ) in
   let opt_path_secret_and_inviter_ind: option (bytes & nat) = match secrets.path_secret with | None -> None | Some {path_secret} -> Some (path_secret, group_info.tbs.signer) in
   let? treekem = treesync_to_treekem treesync in
   assume(leaf_index < pow2 l /\ Some? (leaf_at treekem leaf_index));
