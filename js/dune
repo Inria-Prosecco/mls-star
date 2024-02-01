@@ -4,8 +4,10 @@
  (modules MLS_JS)
  (js_of_ocaml
    ; Only works when --profile=release is passed.
-   ; (flags "--disable" "genprim" "--opt" "3")
-   ; (flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=0" "--pretty" "--disable" "excwrap")
+   ; For release (I think).
+   ;(flags "--disable" "genprim" "--opt" "3")
+   ; Flags for debugging what's going on.
+   ;(flags "--disable" "genprim" "--opt" "3" "--set" "tc_depth=0" "--pretty" "--disable" "excwrap")
    (javascript_files "overrides.js"))
  (preprocess
   (pps js_of_ocaml-ppx))
