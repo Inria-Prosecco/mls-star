@@ -93,6 +93,36 @@ var my_print = debug ? console.log : () => {};
 // set of crypto primitives.
 var MyCrypto;
 
+
+// TODO: too many modules here, try to figure out a more minimalistic build
+// XXX: keep this in sync with import.sh
+var hacl_modules = [
+  "WasmSupport",
+  "FStar",
+  "LowStar_Endianness",
+  "Hacl_Hash_Base",
+  "Hacl_Hash_MD5",
+  "Hacl_Hash_SHA1",
+  "Hacl_Hash_SHA2",
+  "Hacl_Impl_Blake2_Constants",
+  "Hacl_Hash_Blake2s",
+  "Hacl_Hash_Blake2b",
+  "Hacl_HMAC",
+  "Hacl_HKDF",
+  "Hacl_Bignum_Base",
+  "Hacl_Bignum",
+  "Hacl_Bignum25519_51",
+  "Hacl_Curve25519_51",
+  "Hacl_Ed25519_PrecompTable",
+  "Hacl_Ed25519",
+  "Hacl_EC_Ed25519",
+  "Hacl_Chacha20",
+  "Hacl_Chacha20_Vec32",
+  "Hacl_MAC_Poly1305",
+  "Hacl_AEAD_Chacha20Poly1305"
+];
+
+
 function HaclCrypto(Hacl) {
   return {
     sha2_256_hash: (b) => Hacl.SHA2.hash_256(b)[0],
@@ -109,10 +139,10 @@ function HaclCrypto(Hacl) {
 
     ed25519_verify: (pk, msg, signature) => Hacl.Ed25519.verify(pk, msg, signature)[0],
 
-    chacha20_poly1305_encrypt: (key, iv, ad, pt) => Hacl.Chacha20Poly1305.aead_encrypt(key, iv, ad, pt),
+    chacha20_poly1305_encrypt: (key, iv, ad, pt) => Hacl.Chacha20Poly1305.encrypt(pt, ad, key, iv),
 
     chacha20_poly1305_decrypt: (key, iv, ad, ct, tag) => {
-      let [ret, plain] = Hacl.Chacha20Poly1305.aead_decrypt(key, iv, ad, ct, tag);
+      let [ret, plain] = Hacl.Chacha20Poly1305.decrypt(ct, ad, key, iv, tag);
       if (ret == 0)
         return plain;
       else
@@ -142,7 +172,7 @@ function NodeCrypto(Hacl) {
     ed25519_verify: (pk, msg, signature) => Hacl.Ed25519.verify(pk, msg, signature)[0],
 
     chacha20_poly1305_encrypt: (key, iv, ad, pt) => {
-      let cipher = node_crypto.createCipheriv('chacha20-poly1305', key, iv, { authTagLength: 16 }); 
+      let cipher = node_crypto.createCipheriv('chacha20-poly1305', key, iv, { authTagLength: 16 });
       cipher.setAAD(ad);
       let ct = cipher.update(pt);
       cipher.final();
@@ -246,12 +276,15 @@ if (typeof module !== "undefined") {
   (async () => {
     // Load the WASM modules, and instruct the MLS node module to use NodeCrypto
     // for primitives.
-    let h = await HaclWasm.getInitializedHaclModule();
+    let h = await HaclWasm.getInitializedHaclModule(hacl_modules);
     // The line below doesn't work because for some reason that's beyond my
     // understanding, the global scope of JSOO and this global scope are not the
     // same. Maybe they live in different modules or something?
     // MyCrypto = HaclCrypto(h);
-    MLS.setCrypto(NodeCrypto(h));
+
+    // HACL has slightly better performance, actually.
+    // MLS.setCrypto(NodeCrypto(h));
+    MLS.setCrypto(HaclCrypto(h));
 
     my_print("Test starting");
 
@@ -260,9 +293,10 @@ if (typeof module !== "undefined") {
   })();
 } else {
   window.addEventListener("load", async () => {
+    // TODO: this currently broken because the load path isn't right.
     // Load the WASM modules. Node module scoping, so MLS.js will simply call
     // MyCrypto in the global object.
-    let h = await HaclWasm.getInitializedHaclModule();
+    let h = await HaclWasm.getInitializedHaclModule(hacl_modules);
     MyCrypto = HaclCrypto(h);
 
     let pre = document.querySelector("pre");
