@@ -1,3 +1,7 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
 open Prims
 type ('n, 'a) seqn = 'a FStar_Seq_Base.seq
 type 'a seq2 = (unit, 'a) seqn

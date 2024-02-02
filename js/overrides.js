@@ -1,3 +1,52 @@
+
+////////////////////////////////////////////////////////////////////////////////
+// THE IMPORTANT STUFF
+
+//Provides:whacl_sha2_256_hash
+function whacl_sha2_256_hash(b) {
+  return joo_global_object.MyCrypto.sha2_256_hash(b);
+}
+
+//Provides:whacl_hkdf_sha2_256_extract
+function whacl_hkdf_sha2_256_extract(salt, ikm) {
+  return joo_global_object.MyCrypto.hkdf_sha2_256_extract(salt, ikm);
+}
+
+//Provides:whacl_hkdf_sha2_256_expand
+function whacl_hkdf_sha2_256_expand(prk, info, size) {
+  return joo_global_object.MyCrypto.hkdf_sha2_256_expand(prk, info, size);
+}
+
+//Provides:whacl_sha2_512_hash
+function whacl_sha2_512_hash(b) {
+  return joo_global_object.MyCrypto.sha2_512_hash(b);
+}
+
+//Provides:whacl_ed25519_secret_to_public
+function whacl_ed25519_secret_to_public(sk) {
+  return joo_global_object.MyCrypto.ed25519_secret_to_public(sk);
+}
+
+//Provides:whacl_ed25519_sign
+function whacl_ed25519_sign(sk, msg) {
+  return joo_global_object.MyCrypto.ed25519_sign(sk, msg);
+}
+
+//Provides:whacl_ed25519_verify
+function whacl_ed25519_verify(pk, msg, signature) {
+  return joo_global_object.MyCrypto.ed25519_verify(pk, msg, signature);
+}
+
+//Provides:whacl_chacha20_poly1305_encrypt
+function whacl_chacha20_poly1305_encrypt(key, iv, ad, pt) {
+  return joo_global_object.MyCrypto.chacha20_poly1305_encrypt(key, iv, ad, pt);
+}
+
+//Provides:whacl_chacha20_poly1305_decrypt
+function whacl_chacha20_poly1305_decrypt(key, iv, ad, ct, tag) {
+  return joo_global_object.MyCrypto.chacha20_poly1305_decrypt(key, iv, ad, ct, tag);
+}
+
 // OCaml system stuff
 
 //Provides: caml_thread_initialize const

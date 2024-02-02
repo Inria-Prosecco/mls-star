@@ -1,3 +1,7 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
 open Prims
 type 'p is_gctr_plain_LE = unit
 type gctr_plain_LE = Vale_Def_Words_s.nat8 FStar_Seq_Base.seq

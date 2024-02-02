@@ -1,3 +1,7 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
 open Prims
 let rec (ws_aux :
   Spec_Hash_Definitions.sha2_alg ->

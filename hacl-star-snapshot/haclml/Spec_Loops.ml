@@ -7,7 +7,7 @@ let rec seq_map :
       then FStar_Seq_Base.empty ()
       else
         (let s' =
-           FStar_Seq_Properties.cons (f (FStar_Seq_Properties.head s))
+           FStar_Seq_Base.cons (f (FStar_Seq_Properties.head s))
              (seq_map f (FStar_Seq_Properties.tail s)) in
          s')
 let rec seq_map2 :
@@ -22,7 +22,7 @@ let rec seq_map2 :
         then FStar_Seq_Base.empty ()
         else
           (let s'' =
-             FStar_Seq_Properties.cons
+             FStar_Seq_Base.cons
                (f (FStar_Seq_Properties.head s)
                   (FStar_Seq_Properties.head s'))
                (seq_map2 f (FStar_Seq_Properties.tail s)

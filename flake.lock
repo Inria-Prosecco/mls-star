@@ -62,16 +62,48 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1706647851,
-        "narHash": "sha256-tJgVMcCOEqdrgNUHjHgdc3+Spf3vri5Y3Y6noG1mZgo=",
+        "lastModified": 1706891748,
+        "narHash": "sha256-oqWC0SCGyFQ/qaVOHE5qB24G8xYEJFQo8fTwADUO4Ow=",
         "owner": "FStarLang",
         "repo": "FStar",
-        "rev": "a48e0aa9935c2a22ea540f9f2734c5f847d96361",
+        "rev": "58c915a86a2c07c8eca8d9deafd76cb7a91f0eb7",
         "type": "github"
       },
       "original": {
         "owner": "FStarLang",
         "repo": "FStar",
+        "type": "github"
+      }
+    },
+    "hacl-packages-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1704452057,
+        "narHash": "sha256-bEn+Y20vqazLAQHgKq9IYPGfI3Lviz35/arhb1hyZto=",
+        "owner": "cryspen",
+        "repo": "hacl-packages",
+        "rev": "b9998466f7138d6928e8b6b256392a063b823b1c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cryspen",
+        "repo": "hacl-packages",
+        "type": "github"
+      }
+    },
+    "hacl-star-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1706898309,
+        "narHash": "sha256-n6KYj60fdu8ZzCkI9BYM7ylxLjKpGYW5/83rzDwyG7E=",
+        "owner": "hacl-star",
+        "repo": "hacl-star",
+        "rev": "2f5f95bc0ced5f51b3a9ecf59b870722749ec8a1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hacl-star",
+        "repo": "hacl-star",
         "type": "github"
       }
     },
@@ -95,6 +127,8 @@
         "comparse-flake": "comparse-flake",
         "dolev-yao-star-src": "dolev-yao-star-src",
         "fstar-flake": "fstar-flake",
+        "hacl-packages-src": "hacl-packages-src",
+        "hacl-star-src": "hacl-star-src",
         "nixpkgs": [
           "fstar-flake",
           "nixpkgs"

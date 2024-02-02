@@ -27,12 +27,12 @@ let dummy128 = dummy64 @ dummy64
 let dummy256 = dummy128 @ dummy128
 
 let bytes_of_list l =
-  FStar_Seq_Properties.seq_of_list (List.map (fun x ->
+  FStar_Seq_Base.seq_of_list (List.map (fun x ->
     assert (x <= 255);
     x
   ) l)
 
-let list_of_bytes = FStar_Seq_Properties.seq_to_list
+let list_of_bytes = FStar_Seq_Base.seq_to_list
 
 let cb = MLS_Crypto_Builtins.mk_concrete_crypto_bytes MLS_Crypto_Builtins.AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
 
