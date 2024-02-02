@@ -1,3 +1,7 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
 open Prims
 let (k224_256_l : (FStar_UInt32.t, unit) FStar_List_Tot_Properties.llist) =
   [FStar_UInt32.uint_to_t (Prims.parse_int "0x428a2f98");

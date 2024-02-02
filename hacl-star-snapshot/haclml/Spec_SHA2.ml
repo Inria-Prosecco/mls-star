@@ -1,3 +1,8 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
+
 open Prims
 let (size_k_w : Spec_Hash_Definitions.sha2_alg -> Prims.nat) =
   fun uu___ ->

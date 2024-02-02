@@ -1,3 +1,7 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
 open Prims
 let (is_supported_alg : Spec_Hash_Definitions.hash_alg -> Prims.bool) =
   fun uu___ ->

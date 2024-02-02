@@ -1,3 +1,8 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
+
 open Prims
 let op_String_Access :
   'uuuuu . unit -> 'uuuuu FStar_Seq_Base.seq -> Prims.nat -> 'uuuuu =

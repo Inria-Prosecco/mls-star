@@ -33,7 +33,7 @@ let rec (n_to_le :
          let byte = FStar_UInt8.uint_to_t (n mod (Prims.of_int (256))) in
          let n' = n / (Prims.of_int (256)) in
          let b' = n_to_le len1 n' in
-         let b = FStar_Seq_Properties.cons byte b' in b)
+         let b = FStar_Seq_Base.cons byte b' in b)
 let rec (n_to_be :
   FStar_UInt32.t -> Prims.nat -> FStar_UInt8.t FStar_Seq_Base.seq) =
   fun len ->
@@ -86,7 +86,7 @@ let rec (seq_uint32_of_le :
         (let uu___1 = FStar_Seq_Properties.split b (Prims.of_int (4)) in
          match uu___1 with
          | (hd, tl) ->
-             FStar_Seq_Properties.cons (uint32_of_le hd)
+             FStar_Seq_Base.cons (uint32_of_le hd)
                (seq_uint32_of_le (l - Prims.int_one) tl))
 let rec (le_of_seq_uint32 :
   FStar_UInt32.t FStar_Seq_Base.seq -> FStar_UInt8.t FStar_Seq_Base.seq) =
@@ -108,7 +108,7 @@ let rec (seq_uint32_of_be :
         (let uu___1 = FStar_Seq_Properties.split b (Prims.of_int (4)) in
          match uu___1 with
          | (hd, tl) ->
-             FStar_Seq_Properties.cons (uint32_of_be hd)
+             FStar_Seq_Base.cons (uint32_of_be hd)
                (seq_uint32_of_be (l - Prims.int_one) tl))
 let rec (be_of_seq_uint32 :
   FStar_UInt32.t FStar_Seq_Base.seq -> FStar_UInt8.t FStar_Seq_Base.seq) =
@@ -130,7 +130,7 @@ let rec (seq_uint64_of_le :
         (let uu___1 = FStar_Seq_Properties.split b (Prims.of_int (8)) in
          match uu___1 with
          | (hd, tl) ->
-             FStar_Seq_Properties.cons (uint64_of_le hd)
+             FStar_Seq_Base.cons (uint64_of_le hd)
                (seq_uint64_of_le (l - Prims.int_one) tl))
 let rec (le_of_seq_uint64 :
   FStar_UInt64.t FStar_Seq_Base.seq -> FStar_UInt8.t FStar_Seq_Base.seq) =
@@ -152,7 +152,7 @@ let rec (seq_uint64_of_be :
         (let uu___1 = FStar_Seq_Properties.split b (Prims.of_int (8)) in
          match uu___1 with
          | (hd, tl) ->
-             FStar_Seq_Properties.cons (uint64_of_be hd)
+             FStar_Seq_Base.cons (uint64_of_be hd)
                (seq_uint64_of_be (l - Prims.int_one) tl))
 let rec (be_of_seq_uint64 :
   FStar_UInt64.t FStar_Seq_Base.seq -> FStar_UInt8.t FStar_Seq_Base.seq) =

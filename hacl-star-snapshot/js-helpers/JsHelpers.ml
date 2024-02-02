@@ -3,7 +3,7 @@ open Js_of_ocaml
 (* In spec-land, `FStar.Seq.seq FStar.UInt8.t` becomes this: *)
 type bytes = int FStar_Seq_Base.seq
 
-let list_of_bytes = FStar_Seq_Properties.seq_to_list
+let list_of_bytes = FStar_Seq_Base.seq_to_list
 
 let bytes_of_list l =
   FStar_Seq_Base.MkSeq (List.map (fun x ->

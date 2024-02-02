@@ -20,9 +20,9 @@ let op_At_Bar :
       Prims.nat -> ('a, unit) lseq -> ('a, unit) lseq -> ('a, unit) lseq
   = fun len0 -> fun len1 -> fun s0 -> fun s1 -> concat len0 len1 s0 s1
 let to_list : 'a . 'a seq -> 'a Prims.list =
-  fun s -> FStar_Seq_Properties.seq_to_list s
+  fun s -> FStar_Seq_Base.seq_to_list s
 let of_list : 'a . 'a Prims.list -> ('a, unit) lseq =
-  fun l -> FStar_Seq_Properties.seq_of_list l
+  fun l -> FStar_Seq_Base.seq_of_list l
 
 type ('a, 'len, 's1, 's2) equal = unit
 
