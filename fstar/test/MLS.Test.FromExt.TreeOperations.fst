@@ -40,6 +40,7 @@ let test_tree_operations_one t =
   let bl = bytes_like_bytes in
   let tree_before = extract_option "tree_before" (((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt))).parse (hex_string_to_bytes t.tree_before)) in
   let (|l, treesync_before|) = extract_result (ratchet_tree_to_treesync tree_before) in
+  assert((pow2 l) `divides` 0);
   let proposal = extract_option "proposal" (((ps_prefix_to_ps_whole (ps_proposal_nt))).parse (hex_string_to_bytes t.proposal)) in
   let proposal_sender = FStar.UInt32.v t.proposal_sender in
   let (|_, treesync_after|): l:nat & treesync bytes tkt l 0  =
