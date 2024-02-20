@@ -14,18 +14,13 @@
       flake = false;
     };
 
-    hacl-star-src = {
-      url = "github:hacl-star/hacl-star";
-      flake = false;
-    };
-
     hacl-packages-src = {
       url = "github:cryspen/hacl-packages";
       flake = false;
     };
   };
 
-  outputs = {self, nixpkgs, fstar-flake, comparse-flake, dolev-yao-star-src, hacl-star-src, hacl-packages-src}:
+  outputs = {self, nixpkgs, fstar-flake, comparse-flake, dolev-yao-star-src, hacl-packages-src}:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -34,7 +29,7 @@
     fstar-dune = fstar-flake.packages.${system}.fstar-dune;
     comparse = comparse-flake.packages.${system}.comparse;
     dolev-yao-star = dolev-yao-star-src;
-    mls-star = pkgs.callPackage ./default.nix {inherit fstar fstar-dune z3 comparse dolev-yao-star hacl-star-src hacl-packages-src; ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_14;};
+    mls-star = pkgs.callPackage ./default.nix {inherit fstar fstar-dune z3 comparse dolev-yao-star hacl-packages-src; ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_14;};
   in {
     packages.${system} = {
       default = mls-star;

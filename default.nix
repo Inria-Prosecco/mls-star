@@ -1,4 +1,4 @@
-{lib, stdenv, which, fstar, fstar-dune, z3, nodejs_20, ocamlPackages, comparse, dolev-yao-star, hacl-star-src, hacl-packages-src, fetchFromGitHub}:
+{lib, stdenv, which, fstar, fstar-dune, z3, nodejs_20, ocamlPackages, comparse, dolev-yao-star, hacl-packages-src, fetchFromGitHub}:
 
 let
   mls-star = stdenv.mkDerivation {
@@ -106,7 +106,7 @@ let
     doCheck = true;
     checkPhase = ''
       cd js
-      node index.js
+      node test.js
     '';
     installPhase = ''
       touch $out
@@ -120,7 +120,6 @@ let
       ++ (fstar-dune.buildInputs);
     COMPARSE_HOME = comparse;
     DY_HOME = dolev-yao-star;
-    HACL_HOME = hacl-star-src;
     HACL_PACKAGES_HOME = hacl-packages-src;
   };
 

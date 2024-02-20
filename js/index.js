@@ -64,6 +64,23 @@ function send(state, data) {
   return MLS.send1(state, dummy4, data);
 }
 
+function remove(state, identity) {
+  let dummy36 = new Uint8Array([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3
+  ]);
+  let random36 = crypto.getRandomValues(new Uint8Array(36));
+  return MLS.remove1(state, identity, dummy36);
+}
+
+
 function processGroupMessage(state, payload) {
   return MLS.processGroupMessage1(state, payload);
 }
@@ -77,22 +94,15 @@ function processWelcomeMessage(payload, keyPair, lookup) {
 ////////////////////////////////////////////////////////////////////////////////
 
 if (typeof module !== "undefined") {
-  var HaclWasm = require("./wasm/api.js");
   var MLS = require("./js/MLS_JS.bc.js");
   var node_crypto = require("crypto");
   // for getRandomValues, hardcoded above
   var crypto = node_crypto.webcrypto;
-} else {
-  var MLS = this;
 }
-
-// Filled out at load-time.
-var my_print = debug ? console.log : () => {};
 
 // Implementation of the (fast) crypto. Currently calling our own verified HACL-WASM
 // set of crypto primitives.
 var MyCrypto;
-
 
 // TODO: too many modules here, try to figure out a more minimalistic build
 // XXX: keep this in sync with import.sh
@@ -123,6 +133,7 @@ var hacl_modules = [
 ];
 
 
+// For now, we suggest using HACL for crypto (faster and verified)
 function HaclCrypto(Hacl) {
   return {
     sha2_256_hash: (b) => Hacl.SHA2.hash_256(b)[0],
@@ -194,114 +205,22 @@ function NodeCrypto(Hacl) {
   };
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Test driver                                                                //
-////////////////////////////////////////////////////////////////////////////////
-
-var test_main = () => {
-  // A demo of how to drive the high-level API.
-  my_print("Page loaded");
-
-  // A self-test mostly for my own debugging.
-  const t0 = performance.now();
-  MLS.test();
-  const t1 = performance.now();
-
-  // Sample usage of the API -- an integration test.
-
-  // Fresh public & private *signing* keys. The application remembers the
-  // private signing key.
-  let signKeyPair_A = freshKeyPair();
-  console.log("generated a signing key pair for A", signKeyPair_A);
-
-  // Fresh credentials: a key package to be pushed to the directory, and a
-  // private HPKE key. Here, the application remembers that the private key
-  // corresponds to this specific package by way of the provided hash.
-  let cred_A = { identity: "jonathan", signPubKey: signKeyPair_A.pubKey };
-  let packageAndKey_A = freshKeyPackage(cred_A, signKeyPair_A.privKey);
-  console.log("generated a key package and a private key for A", packageAndKey_A);
-
-  // Create a new state for a group id.
-  let state_A = create(cred_A, signKeyPair_A.privKey, "hackathon@skype.net");
-
-  // We are at epoch 0 right now.
-  console.log("current epoch of A", MLS.currentEpoch(state_A));
-
-  // Let's introduce a new user: B
-  let signKeyPair_B = freshKeyPair();
-  let cred_B = { identity: "juraj", signPubKey: signKeyPair_B.pubKey };
-  let packageAndKey_B = freshKeyPackage(cred_B, signKeyPair_B.privKey);
-
-  // We publish key packages to the server. For each key package, we remember
-  // locally the private for each package hash.
-  let store_B = {};
-  console.log("adding to B's store", packageAndKey_B.hash);
-  store_B[packageAndKey_B.hash] = packageAndKey_B.privKey;
-
-  // A adds B to the group
-  ({ state: state_A, welcomeMessage, groupMessage } = add(state_A, packageAndKey_B.keyPackage));
-  console.log("welcome message for B", welcomeMessage);
-  console.log("group message", groupMessage);
-
-  // A processes the echo of the add
-  ({ state: state_A, outcome } = processGroupMessage(state_A, groupMessage.payload));
-
-  // B creates its fresh state via the welcome message
-  ({ state: state_B, groupId } = processWelcomeMessage(welcomeMessage.payload, signKeyPair_B,
-    (hash) => {
-      console.log("looking into B's store", hash);
-      return (store_B[hash] || null)
-    }));
-  console.log("B joined the group", groupId);
-
-  // B says hello
-  ({ state: state_B, groupMessage } = send(state_B, "hello!"));
-
-  // B processes the echo of the message
-  ({ state: state_B, outcome } = processGroupMessage(state_B, groupMessage.payload));
-  console.log("B received a message", outcome.payload);
-  console.log("current epoch of B", MLS.currentEpoch(state_B));
-
-  // A receives the message
-  ({ state: state_A, outcome } = processGroupMessage(state_A, groupMessage.payload));
-  console.log("A received a message", outcome.payload);
-  console.log("current epoch of A", MLS.currentEpoch(state_A));
-
-  const t2 = performance.now();
-  console.log(`Internal self-test took ${t1 - t0} milliseconds.`);
-  console.log(`JS-driven test took ${t2 - t1} milliseconds.`);
-};
-
-if (typeof module !== "undefined") {
-  (async () => {
-    // Load the WASM modules, and instruct the MLS node module to use NodeCrypto
-    // for primitives.
-    let h = await HaclWasm.getInitializedHaclModule(hacl_modules);
-    // The line below doesn't work because for some reason that's beyond my
-    // understanding, the global scope of JSOO and this global scope are not the
-    // same. Maybe they live in different modules or something?
-    // MyCrypto = HaclCrypto(h);
-
-    // HACL has slightly better performance, actually.
-    // MLS.setCrypto(NodeCrypto(h));
-    MLS.setCrypto(HaclCrypto(h));
-
-    my_print("Test starting");
-
-    await test_main();
-    my_print("done\n")
-  })();
-} else {
-  window.addEventListener("load", async () => {
-    // TODO: this currently broken because the load path isn't right.
-    // Load the WASM modules. Node module scoping, so MLS.js will simply call
-    // MyCrypto in the global object.
-    let h = await HaclWasm.getInitializedHaclModule(hacl_modules);
-    MyCrypto = HaclCrypto(h);
-
-    let pre = document.querySelector("pre");
-    pre.appendChild(document.createTextNode("Test starting (see console)\n"));
-    test_main();
-    pre.appendChild(document.createTextNode("Test done (see console)\n"));
-  });
-}
+if (typeof module !== undefined)
+  module.exports = {
+    // MLS API
+    freshKeyPair,
+    freshKeyPackage,
+    create,
+    add,
+    send,
+    remove,
+    processGroupMessage,
+    processWelcomeMessage,
+    currentEpoch: MLS.currentEpoch,
+    // MLS Crypto API (the individual primitives)
+    setCrypto: MLS.setCrypto,
+    HaclCrypto,
+    hacl_modules,
+    // self-test
+    test: MLS.test,
+  };
