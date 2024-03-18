@@ -80,6 +80,21 @@ val get_public_credential:
 
 // TODO inspect a credential
 
+(*** Create key package ***)
+
+type create_key_package_result = {
+  key_package: bytes;
+  // key and value to be added to the store
+  keystore_key: bytes;
+  keystore_value: bytes;
+}
+
+val create_key_package:
+  #entropy_t:Type0 -> {|entropy entropy_t|} ->
+  entropy_t ->
+  credential_pair ->
+  entropy_t & (result create_key_package_result)
+
 (*** Group creation ***)
 
 val create_group:
@@ -97,21 +112,6 @@ val join_group:
 val join_with_external_commit:
   unit -> //TODO
   result mls_group
-
-(*** Create key package ***)
-
-type create_key_package_result = {
-  key_package: bytes;
-  // key and value to be added to the store
-  keystore_key: bytes;
-  keystore_value: bytes;
-}
-
-val create_key_package:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  credential_pair ->
-  entropy_t & (result create_key_package_result)
 
 (*** Export data from the group ***)
 
