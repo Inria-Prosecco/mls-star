@@ -31,7 +31,7 @@ FSTAR_FLAGS = $(FSTAR_INCLUDE_DIRS) --cache_checked_modules --already_cached '+P
 all: copy_lib
 
 clean:
-	rm -rf hints cache obj ml/lib/src ml/tests/src
+	rm -rf hints cache obj ml/lib/src ml/tests/src js/wasm js/js mls-*.tar.bz2
 	dune clean
 
 # Dependency analysis
@@ -114,14 +114,14 @@ test_vectors/data/%.json: test_vectors/git_commit | test_vectors/data
 
 .PHONY: build check release
 
-build: copy_lib copy_tests
-	OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune build --profile=release
-
 check: copy_lib copy_tests $(ALL_TEST_VECTORS_JSON)
 	OCAMLRUNPARAM=b OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune runtest --force --no-buffer --display=quiet --profile=release
 
-release:
-	tar cjvf mls-js-$(shell date +%Y%m%d%H%M%z).tar.bz2 js/index.html js/index.js _build/default/js/MLS_JS.bc.js
+js: copy_lib copy_tests
+	OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune build --profile=release
+	cd js && ./import.sh
+	cd js && ./package.sh
+
 
 # Interactive mode support
 

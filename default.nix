@@ -100,16 +100,16 @@ let
       cp -p ml/lib/src/* obj/
     '';
     buildPhase = ''
-      make build
-      (cd js; ./import.sh)
+      make js
     '';
     doCheck = true;
     checkPhase = ''
-      cd js
-      node test.js
+      (cd js; node test.js)
     '';
     installPhase = ''
-      touch $out
+      mkdir $out
+      # Remove the date for reproducible builds
+      cp mls-*.tar.bz2 $out/mls.tar.bz2
     '';
     buildInputs =
       [ which fstar z3 nodejs_20 ]
