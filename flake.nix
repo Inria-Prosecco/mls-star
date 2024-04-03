@@ -39,9 +39,13 @@
       packages = [
         fstar z3
       ] ++ (with pkgs.ocaml-ng.ocamlPackages_4_14; [
-        ocaml dune_3 findlib yojson
+        ocaml dune_3 findlib yojson hacl-star
+        js_of_ocaml js_of_ocaml-ppx integers_stubs_js
       ])
-      ++ (fstar.buildInputs);
+      ++ (fstar-dune.buildInputs);
+      COMPARSE_HOME = comparse;
+      DY_HOME = dolev-yao-star;
+      HACL_PACKAGES_HOME = hacl-packages-src;
     };
     checks.${system} = {
       mls-star-build = mls-star;
