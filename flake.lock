@@ -26,16 +26,16 @@
     "dolev-yao-star-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1705056642,
-        "narHash": "sha256-SS30Ehc7N5Jjc/p6hD678krwLh2817jXf0pVp1CLGu4=",
-        "owner": "prosecco",
-        "repo": "dolev-yao-star",
-        "rev": "13311fd7d770d78487a53476dd92dc6c1d27cc66",
+        "lastModified": 1682502249,
+        "narHash": "sha256-Xf/tgpS4Xbweotc/XOr1M2tfjdkVMAU+A4Ce9CP7vCM=",
+        "owner": "Inria-Prosecco",
+        "repo": "treesync",
+        "rev": "7ea27ead0abc4e6bf47033f35a7eada233ac244e",
         "type": "github"
       },
       "original": {
-        "owner": "prosecco",
-        "repo": "dolev-yao-star",
+        "owner": "Inria-Prosecco",
+        "repo": "treesync",
         "type": "github"
       }
     },
