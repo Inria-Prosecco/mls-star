@@ -251,6 +251,7 @@ let rec filtered_resolution_are_leaves_imply_are_sorted #bytes #bl #tkt #l #i p 
   match t with
   | TLeaf _ -> ()
   | TNode None left right -> (
+    assert(forall (x:node_index) l. List.Tot.mem x l <==> List.Tot.memP x l);
     filter_append p (resolution left) (resolution right);
     FStar.Classical.forall_intro (List.Tot.append_mem (List.Tot.filter p (resolution left)) (List.Tot.filter p (resolution right)));
     filtered_resolution_are_leaves_imply_are_sorted p left;

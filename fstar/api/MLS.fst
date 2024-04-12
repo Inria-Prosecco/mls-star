@@ -611,14 +611,13 @@ let find_my_index #l t sign_pk =
 let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
   let? welcome = from_option "process_welcome_message: can't parse welcome message" ((ps_prefix_to_ps_whole ps_welcome_nt).parse welcome_bytes) in
-  let? (group_info, secrets, leaf_decryption_key) = decrypt_welcome welcome (fun kp_hash ->
-    match lookup kp_hash with
-    | Some leaf_secret -> (
-      if length leaf_secret = hpke_private_key_length #bytes then Some leaf_secret
-      else None
-    )
-    | None -> None
-  ) None in
+  let extract_hpke_sk (x:bytes): result (hpke_private_key bytes) =
+    if not (length x = hpke_private_key_length #bytes) then
+      internal_failure "process_welcome_message: bad HPKE private key length"
+    else
+      return x
+  in
+  let? (group_info, secrets, (_, leaf_decryption_key)) = decrypt_welcome welcome lookup extract_hpke_sk in
   let group_id = group_info.tbs.group_context.group_id in
   let? ratchet_tree = from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse group_info.tbs.extensions) in
   let? treesync_state = (

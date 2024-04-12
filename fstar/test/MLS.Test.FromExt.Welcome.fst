@@ -47,7 +47,7 @@ let test_welcome_one t =
 
     let kp_ref = extract_result (make_keypackage_ref #bytes (serialize _ key_package)) in
 
-    let (group_info, group_secrets, my_init_decryption_key) = extract_result (decrypt_welcome welcome (fun ref -> if ref = kp_ref then Some init_priv else None) None) in
+    let (group_info, group_secrets, (_, my_init_decryption_key)) = extract_result (decrypt_welcome welcome (fun ref -> if ref = kp_ref then Some init_priv else None) (fun x -> return x)) in
 
     if not (extract_result (verify_welcome_group_info (fun _ -> return signer_pub) group_info)) then (
       failwith "test_welcome_one: bad signature"

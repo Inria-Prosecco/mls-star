@@ -2,10 +2,6 @@
 set -e
 set -o pipefail
 set -x
-if [[ $HACL_HOME == "" ]]; then
-  echo "Please define HACL_HOME"
-  exit 1
-fi
 if [[ $HACL_PACKAGES_HOME == "" ]]; then
   echo "Please define HACL_PACKAGES_HOME"
   exit 1
@@ -40,9 +36,9 @@ HACL_MODULES=(
 )
 
 for m in ${HACL_MODULES[@]}; do
-  cp $HACL_HOME/dist/wasm/$m.wasm wasm/
+  cp $HACL_PACKAGES_HOME/src/wasm/$m.wasm wasm/
 done
-cp $HACL_HOME/dist/wasm/*.js* wasm/
+cp $HACL_PACKAGES_HOME/src/wasm/*.js* wasm/
 cp $HACL_PACKAGES_HOME/js/* wasm/
 mkdir -p js
 rm -rf js/MLS_JS.bc.js

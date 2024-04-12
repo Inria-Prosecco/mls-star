@@ -26,16 +26,16 @@
     "dolev-yao-star-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1705056642,
-        "narHash": "sha256-SS30Ehc7N5Jjc/p6hD678krwLh2817jXf0pVp1CLGu4=",
-        "owner": "prosecco",
-        "repo": "dolev-yao-star",
-        "rev": "13311fd7d770d78487a53476dd92dc6c1d27cc66",
+        "lastModified": 1682502249,
+        "narHash": "sha256-Xf/tgpS4Xbweotc/XOr1M2tfjdkVMAU+A4Ce9CP7vCM=",
+        "owner": "Inria-Prosecco",
+        "repo": "treesync",
+        "rev": "7ea27ead0abc4e6bf47033f35a7eada233ac244e",
         "type": "github"
       },
       "original": {
-        "owner": "prosecco",
-        "repo": "dolev-yao-star",
+        "owner": "Inria-Prosecco",
+        "repo": "treesync",
         "type": "github"
       }
     },
@@ -62,11 +62,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1708328206,
-        "narHash": "sha256-H7X8pCieiyywS6FZ1/NzSJX48M1yqD0xPTCqr6osVO8=",
+        "lastModified": 1710871305,
+        "narHash": "sha256-4bqvrVXX8JVlvswJx9apdVJu/HvoAEVsYxGI8IZt14s=",
         "owner": "FStarLang",
         "repo": "FStar",
-        "rev": "1998265fb4628100af96da522fbc8713040303a4",
+        "rev": "41299bb12072a7475c036262b9851f7cdc287387",
         "type": "github"
       },
       "original": {
@@ -91,22 +91,6 @@
         "type": "github"
       }
     },
-    "hacl-star-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1708298466,
-        "narHash": "sha256-IVryGnGvH2X3hkMeOiBDLKS5kLky/rKyCdVXVkZEuF4=",
-        "owner": "hacl-star",
-        "repo": "hacl-star",
-        "rev": "443aed2deccfbee84f928fadc1f594f729c3aad4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hacl-star",
-        "repo": "hacl-star",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1693158576,
@@ -128,7 +112,6 @@
         "dolev-yao-star-src": "dolev-yao-star-src",
         "fstar-flake": "fstar-flake",
         "hacl-packages-src": "hacl-packages-src",
-        "hacl-star-src": "hacl-star-src",
         "nixpkgs": [
           "fstar-flake",
           "nixpkgs"

@@ -1,0 +1,19 @@
+{
+  "name": "mls-star",
+  "version": "0.0.1",
+  "description": "A verified implementation of the MLS messaging protocol, written in F*, compiled to JS/WASM",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/inria-prosecco/mls-star.git"
+  },
+  "author": "Théophile Wallez <theophile.wallez@inria.fr>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/inria-prosecco/mls-star/issues"
+  },
+  "homepage": "https://github.com/inria-prosecco/mls-star#readme"
+}
