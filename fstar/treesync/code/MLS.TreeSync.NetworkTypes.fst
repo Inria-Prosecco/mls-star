@@ -195,46 +195,6 @@ type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byte
 instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (leaf_node_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_leaf_node_tbs_nt tkt)
 
 /// struct {
-///     ProtocolVersion version;
-///     CipherSuite cipher_suite;
-///     HPKEPublicKey init_key;
-///     LeafNode leaf_node;
-///     Extension extensions<V>;
-/// } KeyPackageTBS;
-
-type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
-  version: protocol_version_nt;
-  cipher_suite: cipher_suite_nt;
-  //TODO: should this type abstracted away?
-  init_key: hpke_public_key_nt bytes;
-  leaf_node: leaf_node_nt bytes tkt;
-  extensions: mls_list bytes ps_extension_nt;
-}
-
-%splice [ps_key_package_tbs_nt] (gen_parser (`key_package_tbs_nt))
-
-instance parseable_serializeable_key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_tbs_nt tkt)
-
-/// struct {
-///     ProtocolVersion version;
-///     CipherSuite cipher_suite;
-///     HPKEPublicKey init_key;
-///     LeafNode leaf_node;
-///     Extension extensions<V>;
-///     // SignWithLabel(., "KeyPackageTBS", KeyPackageTBS)
-///     opaque signature<V>;
-/// } KeyPackage;
-
-type key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
-  tbs: key_package_tbs_nt bytes tkt;
-  signature: mls_bytes bytes;
-}
-
-%splice [ps_key_package_nt] (gen_parser (`key_package_nt))
-
-instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_nt tkt)
-
-/// struct {
 ///     HPKEPublicKey encryption_key;
 ///     opaque parent_hash<V>;
 ///     uint32 unmerged_leaves<V>;

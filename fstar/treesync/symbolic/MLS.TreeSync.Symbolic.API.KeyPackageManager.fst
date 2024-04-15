@@ -2,6 +2,7 @@ module MLS.TreeSync.Symbolic.API.KeyPackageManager
 
 open Comparse
 open MLS.TreeSync.NetworkTypes
+open MLS.Bootstrap.NetworkTypes
 open LabeledRuntimeAPI
 open MLS.Symbolic
 open MLS.Symbolic.MapSession

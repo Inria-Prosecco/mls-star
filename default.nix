@@ -13,7 +13,7 @@ let
         # The directory fstar/test has to be created though, as it is hardcoded in the makefile
         "fstar"
         "fstar/test"
-        "fstar/(api|common|glue|symbolic|treedem|treekem|treemath|treesync).*"
+        "fstar/(api|bootstrap|common|glue|symbolic|treedem|treekem|treemath|treesync).*"
       ]
     ;
     enableParallelBuilding = true;

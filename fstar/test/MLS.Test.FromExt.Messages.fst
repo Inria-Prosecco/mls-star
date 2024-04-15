@@ -9,6 +9,7 @@ open MLS.StringUtils
 
 open MLS.Result
 open MLS.NetworkTypes
+open MLS.Bootstrap.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes

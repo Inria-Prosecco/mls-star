@@ -63,6 +63,11 @@ let ps_mls_ascii_string_is_well_formed #bytes #bl pre x =
 type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 %splice [ps_hpke_public_key_nt] (gen_parser (`hpke_public_key_nt))
 
+/// opaque MAC<V>;
+
+type mac_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
+%splice [ps_mac_nt] (gen_parser (`mac_nt))
+
 /// enum {
 ///     reserved(0),
 ///     mls10(1),

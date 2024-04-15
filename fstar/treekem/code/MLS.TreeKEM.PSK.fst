@@ -1,8 +1,8 @@
-module MLS.TreeDEM.PSK
+module MLS.TreeKEM.PSK
 
 open Comparse
 open MLS.Crypto
-open MLS.TreeDEM.NetworkTypes
+open MLS.TreeKEM.NetworkTypes
 open MLS.Result
 
 #set-options "--fuel 0 --ifuel 0"

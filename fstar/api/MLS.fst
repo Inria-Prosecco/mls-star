@@ -12,12 +12,14 @@ open MLS.NetworkBinder
 open MLS.TreeSyncTreeKEMBinder
 open MLS.TreeSync.Extensions
 open MLS.TreeSync.Invariants.AuthService
-open MLS.TreeDEM.KeyPackageRef
 open MLS.TreeKEM.Operations
 open MLS.TreeKEM.API.Types
 open MLS.TreeDEM.NetworkTypes
 open MLS.TreeDEM.Message.Framing
-open MLS.TreeDEM.Welcome
+open MLS.Bootstrap.NetworkTypes
+open MLS.Bootstrap.KeyPackageRef
+open MLS.Bootstrap.Welcome
+open MLS.Extensions
 open MLS.Utils
 open MLS.Result
 

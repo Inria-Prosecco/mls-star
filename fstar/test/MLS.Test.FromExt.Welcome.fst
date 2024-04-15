@@ -13,7 +13,8 @@ open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
-open MLS.TreeDEM.Welcome
+open MLS.Bootstrap.NetworkTypes
+open MLS.Bootstrap.Welcome
 open MLS.TreeDEM.Message.Framing
 open MLS.TreeKEM.KeySchedule
 
