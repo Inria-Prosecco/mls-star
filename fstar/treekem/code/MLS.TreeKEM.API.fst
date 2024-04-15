@@ -21,6 +21,7 @@ module KS = MLS.TreeKEM.API.KeySchedule
 
 (*** Create ***)
 
+// TODO: enforce epoch_secret to be of size KDF.Nh?
 val create:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   hpke_private_key bytes -> bytes ->
