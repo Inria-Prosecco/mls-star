@@ -2,7 +2,6 @@ module MLS.TreeDEM.Message.Framing
 
 open Comparse
 open MLS.TreeDEM.Keys
-open MLS.TreeDEM.Message.Transcript
 open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.TreeDEM.NetworkTypes
@@ -49,11 +48,12 @@ let compute_tbm #bytes #bl content auth group_context =
 val compute_message_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   sign_key:bytes -> sign_nonce bytes -> wire_format_nt -> content:framed_content_nt bytes -> group_context:static_option (knows_group_context content.sender) (group_context_nt bytes) ->
-  result bytes
+  result (mls_bytes bytes)
 let compute_message_signature #bytes #cb sk rand wire_format msg group_context =
   let tbs = compute_tbs wire_format msg group_context in
   let serialized_tbs: bytes = serialize (framed_content_tbs_nt bytes) tbs in
-  sign_with_label sk "FramedContentTBS" serialized_tbs rand
+  let? signature = sign_with_label sk "FramedContentTBS" serialized_tbs rand in
+  mk_mls_bytes signature "compute_message_signature" "signature"
 
 val check_message_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -73,31 +73,6 @@ let compute_message_membership_tag #bytes #cb membership_key msg auth group_cont
   let serialized_tbm = serialize (authenticated_content_tbm_nt bytes) tbm in
   hmac_hmac membership_key serialized_tbm
 
-val compute_framed_content_auth_data:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  wire_format_nt -> msg:framed_content_nt bytes ->
-  sign_key:bytes -> sign_nonce bytes ->
-  group_context:static_option (knows_group_context msg.sender) (group_context_nt bytes) ->
-  static_option (msg.content.content_type = CT_commit) bytes ->
-  static_option (msg.content.content_type = CT_commit) bytes ->
-  result (framed_content_auth_data_nt bytes msg.content.content_type)
-let compute_framed_content_auth_data #bytes #cb wire_format msg sk rand group_context confirmation_key interim_transcript_hash =
-  let? signature = compute_message_signature sk rand wire_format msg group_context in
-  let? signature = mk_mls_bytes signature "compute_framed_content_auth_data" "signature" in
-  let? confirmation_tag = (
-    if msg.content.content_type = CT_commit then (
-      let? confirmed_transcript_hash = compute_confirmed_transcript_hash wire_format msg signature interim_transcript_hash in
-      let? confirmation_tag = compute_message_confirmation_tag #bytes confirmation_key confirmed_transcript_hash in
-      return (confirmation_tag <: static_option (msg.content.content_type = CT_commit) (mac_nt bytes))
-    ) else (
-      return ()
-    )
-  ) in
-  return ({
-    signature = signature;
-    confirmation_tag = confirmation_tag;
-  } <: framed_content_auth_data_nt bytes msg.content.content_type)
-
 val check_authenticated_content_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   msg:authenticated_content_nt bytes ->
@@ -111,8 +86,7 @@ val check_authenticated_content_confirmation_tag:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   msg:authenticated_content_nt bytes{msg.content.content.content_type == CT_commit} -> bytes -> bytes ->
   result bool
-let check_authenticated_content_confirmation_tag #bytes #bl msg confirmation_key interim_transcript_hash =
-  let? confirmed_transcript_hash = compute_confirmed_transcript_hash msg.wire_format msg.content msg.auth.signature interim_transcript_hash in
+let check_authenticated_content_confirmation_tag #bytes #bl msg confirmation_key confirmed_transcript_hash =
   let? expected_confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
   return ((expected_confirmation_tag <: bytes) = (msg.auth.confirmation_tag <: bytes))
 

@@ -15,7 +15,7 @@ open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeKEM.Operations
 open MLS.TreeKEM.API.Types
 open MLS.TreeDEM.NetworkTypes
-open MLS.TreeDEM.Message.Framing
+open MLS.TreeDEM.API.Types
 open MLS.Bootstrap.NetworkTypes
 open MLS.Bootstrap.KeyPackageRef
 open MLS.Bootstrap.Welcome
@@ -48,15 +48,30 @@ noeq type state = {
   leaf_index: nat;
   treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt asp group_id;
   treekem_state: treekem_state bytes leaf_index;
+  treedem_state: treedem_state bytes;
   epoch: nat;
   sign_private_key: bytes;
-  handshake_state: MLS.TreeDEM.Keys.ratchet_state bytes;
-  application_state: MLS.TreeDEM.Keys.ratchet_state bytes;
-  encryption_secret: bytes;
   confirmed_transcript_hash: bytes;
   interim_transcript_hash: bytes;
   pending_updatepath: list (update_path_nt bytes & (MLS.TreeKEM.API.Types.treekem_state bytes leaf_index & bytes));
 }
+
+#push-options "--ifuel 1"
+val get_verification_keys:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat ->
+  treesync bytes tkt l 0 ->
+  tree (option (signature_public_key_nt bytes)) unit l 0
+let get_verification_keys #bytes #bl #tkt #l t =
+  tree_map
+    (fun (opt_ln: option (leaf_node_nt bytes tkt)) ->
+      match opt_ln with
+      | None -> None
+      | Some ln -> Some (ln.data.signature_key)
+    )
+    (fun _ -> ())
+    t
+#pop-options
 
 #push-options "--fuel 1"
 val compute_group_context: bytes -> nat -> bytes -> bytes -> result (group_context_nt bytes)
@@ -85,19 +100,6 @@ val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
   let leaf_package = (ps_prefix_to_ps_whole (ps_leaf_node_nt _)).serialize leaf_package in
   hash_hash leaf_package
-
-#push-options "--z3rlimit 50 --fuel 1"
-val reset_ratchet_states: state -> result state
-let reset_ratchet_states st =
-  if not (st.leaf_index < pow2 st.treesync_state.levels) then
-     internal_failure "reset_ratchet_states: leaf_index too big"
-  else (
-    let? leaf_secret = MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #st.treesync_state.levels #0 st.encryption_secret st.leaf_index in
-    let? handshake_state = MLS.TreeDEM.Keys.init_handshake_ratchet leaf_secret in
-    let? application_state = MLS.TreeDEM.Keys.init_application_ratchet leaf_secret in
-    return ({st with handshake_state; application_state})
-  )
-#pop-options
 
 val process_proposal: nat -> (state & list (key_package_nt bytes tkt & nat)) -> proposal_nt bytes -> result (state & list (key_package_nt bytes tkt & nat))
 let process_proposal sender_id (st, added_leaves) p =
@@ -154,8 +156,21 @@ let proposal_or_ref_to_proposal st prop_or_ref =
   | POR_reference ref -> error "proposal_or_ref_to_proposal: don't handle references for now (TODO)"
 #pop-options
 
+#push-options "--z3rlimit 100"
 val process_commit: state -> wire_format_nt -> msg:framed_content_nt bytes{msg.content.content_type = CT_commit} -> framed_content_auth_data_nt bytes CT_commit -> result state
 let process_commit state wire_format message message_auth =
+  let full_message: authenticated_content_nt bytes = {
+    wire_format;
+    content = message;
+    auth = message_auth;
+  } in
+  // Verify signature
+  let? () = (
+    if not (MLS.TreeDEM.API.verify_signature state.treedem_state full_message) then
+      error "process_commit: bad signature"
+    else
+      return ()
+  ) in
   let message_content: commit_nt bytes = message.content.content in
   let? sender_id = (
     if not (S_member? message.sender) then
@@ -240,13 +255,35 @@ let process_commit state wire_format message message_auth =
   let state = { state with epoch = state.epoch + 1 } in
   // 3. Update transcript
   let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
-  // 4. New group context
+  // 4. Check confirmation tag
+  let? () = (
+    let confirmation_key = state.treekem_state.keyschedule_state.epoch_keys.confirmation_key in
+    let? confirmation_tag_ok = MLS.TreeDEM.API.verify_confirmation_tag state.treedem_state full_message confirmation_key confirmed_transcript_hash in
+    if not confirmation_tag_ok then
+      error "process_commit: invalid confirmation tag"
+    else return ()
+  ) in
+  // 5. Update TreeDEM
   let? group_context = state_to_group_context state in
-  // 5. Ratchet.
-  let state = { state with encryption_secret; pending_updatepath = [];} in
-  let? state = reset_ratchet_states state in
-  // TODO: check confirmation tag
+  let? my_leaf_index: leaf_index state.treesync_state.levels 0 = (
+    if not (state.leaf_index < pow2 state.treesync_state.levels) then
+      internal_failure "process_commit: bad leaf index"
+    else
+      return state.leaf_index
+  ) in
+  let? treedem_state = MLS.TreeDEM.API.init {
+    tree_height = state.treesync_state.levels;
+    my_leaf_index;
+    group_context;
+    encryption_secret;
+    sender_data_secret = state.treekem_state.keyschedule_state.epoch_keys.sender_data_secret;
+    membership_key = state.treekem_state.keyschedule_state.epoch_keys.membership_key;
+    my_signature_key = state.sign_private_key;
+    verification_keys = get_verification_keys state.treesync_state.tree;
+  } in
+  let state = { state with treedem_state; pending_updatepath = [];} in
   return state
+#pop-options
 
 let fresh_key_pair e =
   if not (length #bytes e >= sign_gen_keypair_min_entropy_length #bytes) then
@@ -344,43 +381,38 @@ let create e cred private_sign_key group_id =
   // epoch secret.
   let? epoch_secret, e = chop_entropy e 32 in
   let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.create leaf_decryption_key key_package.tbs.leaf_node.data.content epoch_secret in
-  let? leaf_dem_secret = MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 #0 encryption_secret 0 in
-  let? handshake_state = MLS.TreeDEM.Keys.init_handshake_ratchet leaf_dem_secret in
-  let? application_state = MLS.TreeDEM.Keys.init_application_ratchet leaf_dem_secret in
+
+  let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
+  let epoch = 0 in
+  let confirmed_transcript_hash = Seq.empty in
+  let? group_context = compute_group_context group_id epoch tree_hash confirmed_transcript_hash in
+  let leaf_index = 0 in
+  let? treedem_state = MLS.TreeDEM.API.init {
+    tree_height = 0;
+    my_leaf_index = leaf_index;
+    group_context;
+    encryption_secret;
+    sender_data_secret = treekem_state.keyschedule_state.epoch_keys.sender_data_secret;
+    membership_key = treekem_state.keyschedule_state.epoch_keys.membership_key;
+    my_signature_key = private_sign_key;
+    verification_keys = get_verification_keys treesync_state.tree;
+  } in
+  //let? leaf_dem_secret = MLS.TreeDEM.Keys.leaf_kdf #bytes #bytes_crypto_bytes #0 #0 encryption_secret 0 in
+  //let? handshake_state = MLS.TreeDEM.Keys.init_handshake_ratchet leaf_dem_secret in
+  //let? application_state = MLS.TreeDEM.Keys.init_application_ratchet leaf_dem_secret in
   return ({
     group_id;
     treesync_state;
     treekem_state;
-    epoch = 0;
-    leaf_index = 0;
+    epoch;
+    leaf_index;
     sign_private_key = private_sign_key;
-    handshake_state;
-    application_state;
-    encryption_secret;
-    confirmed_transcript_hash = Seq.empty;
+    treedem_state;
+    confirmed_transcript_hash;
     interim_transcript_hash = Seq.empty;
     pending_updatepath = [];
   })
 #pop-options
-
-val send_helper: state -> msg:framed_content_nt bytes → e:entropy { Seq.length e == 4 } → result (state & framed_content_auth_data_nt bytes msg.content.content_type & mls_message_nt bytes)
-let send_helper st msg e =
-  let? (rand_reuse_guard, e) = chop_entropy e 4 in
-  let? rand_nonce = universal_sign_nonce in
-  assume(Seq.length rand_reuse_guard == length #bytes rand_reuse_guard);
-  let? group_context = state_to_group_context st in
-  let wire_format = WF_mls_private_message in
-  let? auth = compute_framed_content_auth_data wire_format msg st.sign_private_key rand_nonce (mk_static_option group_context) (mk_static_option st.treekem_state.keyschedule_state.epoch_keys.confirmation_key) (mk_static_option st.interim_transcript_hash) in
-  let auth_msg: authenticated_content_nt bytes = {
-    wire_format;
-    content = msg;
-    auth = auth;
-  } in
-  let ratchet = if msg.content.content_type = CT_application then st.application_state else st.handshake_state in
-  let? ct_new_ratchet_state = authenticated_content_to_private_message auth_msg ratchet rand_reuse_guard st.treekem_state.keyschedule_state.epoch_keys.sender_data_secret in
-  let (ct, new_ratchet_state) = ct_new_ratchet_state in
-  let new_st = if msg.content.content_type = CT_application then { st with application_state = new_ratchet_state } else { st with handshake_state = new_ratchet_state } in
-  return (new_st, auth, (M_mls10 (M_private_message ct)))
 
 #push-options "--ifuel 1 --fuel 1"
 val unsafe_mk_randomness: #l:list nat -> bytes -> result (randomness bytes l & bytes)
@@ -538,20 +570,26 @@ let generate_commit state e proposals =
       content = { proposals; path = Some update_path };
     };
   } in
-  let? fresh, e = chop_entropy e 4 in
-  let? (state, msg_auth, encap_msg) = send_helper state msg fresh in
-  let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash WF_mls_private_message msg msg_auth.signature state.interim_transcript_hash in
+  let? nonce = universal_sign_nonce in
+  let? half_auth_commit = MLS.TreeDEM.API.start_authenticate_commit state.treedem_state WF_mls_private_message msg nonce in
+  let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash WF_mls_private_message msg half_auth_commit.signature state.interim_transcript_hash in
   let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "generate_commit" "confirmed_transcipt_hash" in
   let new_group_context = { provisional_group_context with confirmed_transcript_hash } in
   let? commit_result = MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context None in
   let state = { state with pending_updatepath = (update_path, (commit_result.new_state, commit_result.encryption_secret))::state.pending_updatepath } in
+  let? auth_commit = MLS.TreeDEM.API.finish_authenticate_commit half_auth_commit commit_result.new_state.keyschedule_state.epoch_keys.confirmation_key confirmed_transcript_hash in
+  let? reuse_guard, e = chop_entropy e 4 in
+  assume(Seq.length reuse_guard == length #bytes reuse_guard);
+  let? (commit_ct, new_treedem_state) = MLS.TreeDEM.API.protect_private state.treedem_state auth_commit reuse_guard in
+  let state = { state with treedem_state = new_treedem_state } in
+  let encap_msg = M_mls10 (M_private_message commit_ct) in
   return (state, {
     group_msg = (state.group_id, serialize _ encap_msg);
     path_secrets;
     joiner_secret = commit_result.joiner_secret;
     ratchet_tree;
     new_group_context;
-    confirmation_tag = msg_auth.confirmation_tag;
+    confirmation_tag = auth_commit.auth.confirmation_tag;
   }, e)
 #pop-options
 
@@ -595,8 +633,15 @@ let send state e data =
       content = data;
     };
   } in
-  let? (new_state, msg_auth, msg) = send_helper state msg e in
-  return (new_state, ((state.group_id <: group_id), serialize _ msg))
+  let? (rand_reuse_guard, e) = chop_entropy e 4 in
+  let? rand_nonce = universal_sign_nonce in
+  assume(Seq.length rand_reuse_guard == length #bytes rand_reuse_guard);
+  let? group_context = state_to_group_context state in
+  let wire_format = WF_mls_private_message in
+  let? auth_msg = MLS.TreeDEM.API.authenticate_non_commit state.treedem_state wire_format msg rand_nonce in
+  let? (ct, new_treedem_state) = MLS.TreeDEM.API.protect_private state.treedem_state auth_msg rand_reuse_guard in 
+  let new_state = {state with treedem_state = new_treedem_state} in
+  return (new_state, ((state.group_id <: group_id), serialize _ (M_mls10 (M_private_message ct))))
 
 
 val find_my_index: #l:nat -> treesync bytes tkt l 0 -> bytes -> result (res:nat{res<pow2 l})
@@ -656,25 +701,42 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch tree_hash group_info.tbs.group_context.confirmed_transcript_hash in
   let? epoch_secret = MLS.TreeKEM.KeySchedule.secret_joiner_to_epoch secrets.joiner_secret None ((ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context) in
   let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.welcome treekem leaf_decryption_key opt_path_secret_and_inviter_ind leaf_index epoch_secret in
-  let dumb_ratchet_state: MLS.TreeDEM.Keys.ratchet_state bytes = {
-    secret = mk_zero_vector (kdf_length #bytes);
-    generation = 0;
+
+  let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
+  let epoch = group_info.tbs.group_context.epoch in
+  let confirmed_transcript_hash = group_info.tbs.group_context.confirmed_transcript_hash in
+  let? group_context = compute_group_context group_id epoch tree_hash confirmed_transcript_hash in
+
+  let? () = (
+    let? computed_confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag treekem_state.keyschedule_state.epoch_keys.confirmation_key confirmed_transcript_hash in
+    if not ((group_info.tbs.confirmation_tag <: bytes) = (computed_confirmation_tag <: bytes)) then
+      error "process_welcome_message: bad confirmation_tag"
+    else return ()
+  ) in
+
+  let? treedem_state = MLS.TreeDEM.API.init {
+    tree_height = treesync_state.levels;
+    my_leaf_index = leaf_index;
+    group_context;
+    encryption_secret;
+    sender_data_secret = treekem_state.keyschedule_state.epoch_keys.sender_data_secret;
+    membership_key = treekem_state.keyschedule_state.epoch_keys.membership_key;
+    my_signature_key = sign_sk;
+    verification_keys = get_verification_keys treesync_state.tree;
   } in
+
   let st: state = {
     group_id;
     treesync_state;
     treekem_state;
-    epoch = group_info.tbs.group_context.epoch;
+    treedem_state;
+    epoch;
     leaf_index;
     sign_private_key = sign_sk;
-    handshake_state = dumb_ratchet_state;
-    application_state = dumb_ratchet_state;
-    encryption_secret;
-    confirmed_transcript_hash = group_info.tbs.group_context.confirmed_transcript_hash;
+    confirmed_transcript_hash;
     interim_transcript_hash;
     pending_updatepath = [];
   } in
-  let? st = reset_ratchet_states st in
   return ((group_id <: bytes), st)
 #pop-options
 
@@ -684,11 +746,11 @@ let process_group_message state msg =
   let? (wire_format, message) = (
     match msg with
     | M_mls10 (M_public_message msg) ->
-        let? group_context = state_to_group_context state in
-        let? auth_msg = public_message_to_authenticated_content msg (mk_static_option group_context) (mk_static_option state.treekem_state.keyschedule_state.epoch_keys.membership_key) in
+        let? auth_msg = MLS.TreeDEM.API.unprotect_public state.treedem_state msg in
         return (WF_mls_public_message, auth_msg)
     | M_mls10  (M_private_message msg) ->
-        let? auth_msg = private_message_to_authenticated_content msg state.treesync_state.levels (state.encryption_secret <: bytes) (state.treekem_state.keyschedule_state.epoch_keys.sender_data_secret <: bytes) in
+        let? (auth_msg, new_treedem_state) = MLS.TreeDEM.API.unprotect_private state.treedem_state msg in
+        // oopsi, ignore new_treedem_state because process_group_message is not stateful!
         return (WF_mls_private_message, auth_msg)
     | _ ->
         internal_failure "unknown message type"

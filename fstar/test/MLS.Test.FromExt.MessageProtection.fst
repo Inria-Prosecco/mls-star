@@ -55,12 +55,24 @@ let check_signature #bl auth_msg t =
   if not (check_authenticated_content_signature auth_msg signature_pub (mk_static_option group_context)) then
     failwith "check_signature: bad signature"
 
+val compute_framed_content_auth_data:
+  {|crypto_bytes bytes|} ->
+  wire_format_nt -> content:framed_content_nt bytes -> group_context_nt bytes -> bytes ->
+  ML (framed_content_auth_data_nt bytes content.content.content_type)
+let compute_framed_content_auth_data #cb wf content group_context signature_priv =
+  let nonce = mk_zero_vector #bytes (sign_sign_min_entropy_length #bytes) in
+  let signature = extract_result (compute_message_signature signature_priv nonce wf content (mk_static_option group_context)) in
+  {
+    signature;
+    confirmation_tag = mk_static_option (extract_result (mk_mls_bytes (zero_vector #bytes) "" ""));
+  }
+
 val check_public_message_roundtrip: {|crypto_bytes bytes|} -> framed_content_nt bytes -> message_protection_test -> ML unit
 let check_public_message_roundtrip #cb msg t =
   let group_context = get_group_context t in
   let signature_priv = hex_string_to_bytes t.signature_priv in
   let membership_key = hex_string_to_bytes t.membership_key in
-  let auth = extract_result (compute_framed_content_auth_data WF_mls_public_message msg signature_priv (mk_zero_vector #bytes (sign_sign_min_entropy_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
+  let auth = compute_framed_content_auth_data WF_mls_public_message msg group_context signature_priv in
   let auth_msg: authenticated_content_nt bytes = {wire_format = WF_mls_public_message; content = msg; auth;} in
   let pub_msg = extract_result (authenticated_content_to_public_message auth_msg (mk_static_option group_context) (mk_static_option membership_key)) in
   let auth_msg_roundtrip = extract_result (public_message_to_authenticated_content pub_msg (mk_static_option group_context) (mk_static_option membership_key)) in
@@ -79,7 +91,7 @@ let check_private_message_roundtrip #cb msg t =
     | CT_application -> MLS.TreeDEM.Keys.init_application_ratchet leaf_tree_secret
     | _ -> MLS.TreeDEM.Keys.init_handshake_ratchet leaf_tree_secret
   ) in
-  let auth = extract_result (compute_framed_content_auth_data WF_mls_private_message msg signature_priv (mk_zero_vector #bytes (sign_sign_min_entropy_length #bytes)) (mk_static_option group_context) (mk_static_option zero_vector) (mk_static_option zero_vector)) in
+  let auth = compute_framed_content_auth_data WF_mls_private_message msg group_context signature_priv in
   let auth_msg: authenticated_content_nt bytes = {wire_format = WF_mls_private_message; content = msg; auth;} in
   let (priv_msg, _) = extract_result (authenticated_content_to_private_message auth_msg ratchet (mk_zero_vector 4) sender_data_secret) in
   let auth_msg_roundtrip = extract_result (private_message_to_authenticated_content priv_msg 1 encryption_secret sender_data_secret) in
