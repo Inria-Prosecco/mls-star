@@ -40,7 +40,7 @@ let test_transcript_hashes_one t =
 
       if not (authenticated_content.content.content.content_type = CT_commit) then
         failwith "test_transcript_hashes_one: not a commit"
-      else if not (extract_result (check_authenticated_content_confirmation_tag authenticated_content confirmation_key interim_transcript_hash_before)) then
+      else if not (extract_result (check_authenticated_content_confirmation_tag authenticated_content confirmation_key confirmed_transcript_hash_after)) then
         failwith "test_transcript_hashes_one: bad confirmation_tag"
       ;
       true

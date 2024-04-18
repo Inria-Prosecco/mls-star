@@ -1,13 +1,13 @@
-module MLS.TreeDEM.Welcome
+module MLS.Bootstrap.Welcome
 
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
-open MLS.TreeDEM.NetworkTypes
+open MLS.Bootstrap.NetworkTypes
+open MLS.Bootstrap.KeyPackageRef
 open MLS.Crypto
 open MLS.Tree
-open MLS.TreeDEM.KeyPackageRef
 open MLS.TreeKEM.KeySchedule
 open MLS.Result
 
@@ -105,7 +105,7 @@ let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 val encrypt_group_secrets:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> mls_bytes bytes -> key_packages:list (key_package_nt bytes tkt & option (mls_bytes bytes)) -> mls_list bytes ps_pre_shared_key_nt -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
+  bytes -> mls_bytes bytes -> key_packages:list (key_package_nt bytes tkt & option (mls_bytes bytes)) -> mls_list bytes ps_pre_shared_key_id_nt -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
   result (list (encrypted_group_secrets_nt bytes))
 let rec encrypt_group_secrets #bytes #cb encrypted_group_info joiner_secret key_packages psks rand =
   match key_packages with

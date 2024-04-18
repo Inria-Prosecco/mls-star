@@ -164,3 +164,15 @@ let rec print_tree #leaf_t #node_t #l #i print_leaf print_node t =
   | TLeaf data -> print_leaf data
   | TNode data left right ->
     "(" ^ print_tree print_leaf print_node left ^ ") " ^ print_node data ^ " (" ^ print_tree print_leaf print_node right ^ ")"
+
+val tree_map:
+  #a_leaf_t:Type -> #a_node_t:Type -> #b_leaf_t:Type -> #b_node_t:Type ->
+  #l:nat -> #i:tree_index l ->
+  (a_leaf_t -> b_leaf_t) -> (a_node_t -> b_node_t) ->
+  tree a_leaf_t a_node_t l i ->
+  tree b_leaf_t b_node_t l i
+let rec tree_map #a_leaf_t #a_node_t #b_leaf_t #b_node_t #l #i f_leaf f_node t =
+  match t with
+  | TLeaf x -> TLeaf (f_leaf x)
+  | TNode data left right ->
+    TNode (f_node data) (tree_map f_leaf f_node left) (tree_map f_leaf f_node right)

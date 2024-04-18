@@ -63,6 +63,11 @@ let ps_mls_ascii_string_is_well_formed #bytes #bl pre x =
 type hpke_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 %splice [ps_hpke_public_key_nt] (gen_parser (`hpke_public_key_nt))
 
+/// opaque MAC<V>;
+
+type mac_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
+%splice [ps_mac_nt] (gen_parser (`mac_nt))
+
 /// enum {
 ///     reserved(0),
 ///     mls10(1),
@@ -240,3 +245,44 @@ type proposal_type_nt =
   | [@@@ open_tag] PT_unknown: n:nat_lbytes 2{~(n <= 7)} -> proposal_type_nt
 
 %splice [ps_proposal_type_nt] (gen_parser (`proposal_type_nt))
+
+/// opaque SignaturePublicKey<V>;
+
+type signature_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
+%splice [ps_signature_public_key_nt] (gen_parser (`signature_public_key_nt))
+
+/// // See IANA registry for registered values
+/// uint16 CredentialType;
+
+type credential_type_nt =
+  | [@@@ with_num_tag 2 0x0000] CT_reserved: credential_type_nt
+  | [@@@ with_num_tag 2 0x0001] CT_basic: credential_type_nt
+  | [@@@ with_num_tag 2 0x0002] CT_x509: credential_type_nt
+  | [@@@ open_tag] CT_unknown: n:nat_lbytes 2{~(n <= 2)} -> credential_type_nt
+
+%splice [ps_credential_type_nt] (gen_parser (`credential_type_nt))
+
+/// struct {
+///     opaque cert_data<V>;
+/// } Certificate;
+
+type certificate_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
+%splice [ps_certificate_nt] (gen_parser (`certificate_nt))
+
+/// struct {
+///     CredentialType credential_type;
+///     select (Credential.credential_type) {
+///         case basic:
+///             opaque identity<V>;
+///
+///         case x509:
+///             Certificate chain<V>;
+///     };
+/// } Credential;
+
+type credential_nt (bytes:Type0) {|bytes_like bytes|} =
+  | [@@@ with_tag CT_basic] C_basic: identity: mls_bytes bytes -> credential_nt bytes
+  | [@@@ with_tag CT_x509] C_x509: chain: mls_list bytes ps_certificate_nt -> credential_nt bytes
+
+%splice [ps_credential_nt] (gen_parser (`credential_nt))
+

@@ -9,8 +9,8 @@ open MLS.StringUtils
 
 open MLS.Result
 open MLS.Crypto
-open MLS.TreeDEM.NetworkTypes
-open MLS.TreeDEM.PSK
+open MLS.TreeKEM.NetworkTypes
+open MLS.TreeKEM.PSK
 
 val test_psk_one: psk_test -> ML bool
 let test_psk_one t =

@@ -4,72 +4,7 @@ open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
-
-(*** PSKs ***)
-
-/// enum {
-///   reserved(0),
-///   external(1),
-///   resumption(2),
-///   (255)
-/// } PSKType;
-
-type psk_type_nt =
-  | [@@@ with_num_tag 1 1] PSKT_external: psk_type_nt
-  | [@@@ with_num_tag 1 2] PSKT_resumption: psk_type_nt
-
-%splice [ps_psk_type_nt] (gen_parser (`psk_type_nt))
-
-/// enum {
-///   reserved(0),
-///   application(1),
-///   reinit(2),
-///   branch(3),
-///   (255)
-/// } ResumptionPSKUsage;
-
-type resumption_psk_usage_nt =
-  | [@@@ with_num_tag 1 1] RPSKU_application: resumption_psk_usage_nt
-  | [@@@ with_num_tag 1 2] RPSKU_reinit: resumption_psk_usage_nt
-  | [@@@ with_num_tag 1 3] RPSKU_branch: resumption_psk_usage_nt
-
-%splice [ps_resumption_psk_usage_nt] (gen_parser (`resumption_psk_usage_nt))
-
-/// struct {
-///   PSKType psktype;
-///   select (PreSharedKeyID.psktype) {
-///     case external:
-///       opaque psk_id<V>;
-///
-///     case resumption:
-///       ResumptionPSKUsage usage;
-///       opaque psk_group_id<V>;
-///       uint64 psk_epoch;
-///   };
-///   opaque psk_nonce<V>;
-/// } PreSharedKeyID;
-
-type pre_shared_key_id_nt (bytes:Type0) {|bytes_like bytes|} =
-  | [@@@ with_tag PSKT_external] PSKI_external: psk_id:mls_bytes bytes -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
-  | [@@@ with_tag PSKT_resumption] PSKI_resumption: usage: resumption_psk_usage_nt -> psk_group_id:mls_bytes bytes -> psk_epoch:nat_lbytes 8 -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
-
-%splice [ps_pre_shared_key_id_nt] (gen_parser (`pre_shared_key_id_nt))
-
-/// struct {
-///     PreSharedKeyID id;
-///     uint16 index;
-///     uint16 count;
-/// } PSKLabel;
-
-type psk_label_nt (bytes:Type0) {|bytes_like bytes|} = {
-  id: pre_shared_key_id_nt bytes;
-  index: nat_lbytes 2;
-  count: nat_lbytes 2;
-}
-
-%splice [ps_psk_label_nt] (gen_parser (`psk_label_nt))
-
-instance parseable_serializeable_psk_label_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (psk_label_nt bytes) = mk_parseable_serializeable ps_psk_label_nt
+open MLS.Bootstrap.NetworkTypes
 
 (*** Proposals ***)
 
@@ -153,11 +88,7 @@ type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
 
 /// opaque HashReference<V>;
 ///
-/// HashReference KeyPackageRef;
 /// HashReference ProposalRef;
-
-type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-%splice [ps_key_package_ref_nt] (gen_parser (`key_package_ref_nt))
 
 type proposal_ref_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 %splice [ps_proposal_ref_nt] (gen_parser (`proposal_ref_nt))
@@ -263,11 +194,6 @@ type wire_format_nt =
   | [@@@ open_tag] WF_unknown: n:nat_lbytes 2{~(n <= 5)} -> wire_format_nt
 
 %splice [ps_wire_format_nt] (gen_parser (`wire_format_nt))
-
-/// opaque MAC<V>;
-
-type mac_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-%splice [ps_mac_nt] (gen_parser (`mac_nt))
 
 /// enum {
 ///     reserved(0),
@@ -568,96 +494,6 @@ type interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 %splice [ps_interim_transcript_hash_input_nt] (gen_parser (`interim_transcript_hash_input_nt))
 
 instance parseable_serializeable_interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (interim_transcript_hash_input_nt bytes) = mk_parseable_serializeable ps_interim_transcript_hash_input_nt
-
-/// struct {
-///     GroupContext group_context;
-///     Extension extensions<V>;
-///     MAC confirmation_tag;
-///     uint32 signer;
-/// } GroupInfoTBS;
-
-type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
-  group_context: group_context_nt bytes;
-  extensions: mls_bytes bytes;
-  confirmation_tag: mac_nt bytes;
-  signer: nat_lbytes 4;
-}
-
-%splice [ps_group_info_tbs_nt] (gen_parser (`group_info_tbs_nt))
-
-instance parseable_serializeable_group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_info_tbs_nt bytes) = mk_parseable_serializeable ps_group_info_tbs_nt
-
-/// struct {
-///     GroupContext group_context;
-///     Extension extensions<V>;
-///     MAC confirmation_tag;
-///     uint32 signer;
-///     /* SignWithLabel(., "GroupInfoTBS", GroupInfoTBS) */
-///     opaque signature<V>;
-/// } GroupInfo;
-
-type group_info_nt (bytes:Type0) {|bytes_like bytes|} = {
-  tbs: group_info_tbs_nt bytes;
-  signature: mls_bytes bytes;
-}
-
-%splice [ps_group_info_nt] (gen_parser (`group_info_nt))
-
-
-instance parseable_serializeable_group_info_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_info_nt bytes) = mk_parseable_serializeable ps_group_info_nt
-
-/// struct {
-///   opaque path_secret<V>;
-/// } PathSecret;
-
-type path_secret_nt (bytes:Type0) {|bytes_like bytes|} = {
-  path_secret: mls_bytes bytes;
-}
-
-%splice [ps_path_secret_nt] (gen_parser (`path_secret_nt))
-
-/// struct {
-///   opaque joiner_secret<V>;
-///   optional<PathSecret> path_secret;
-///   PreSharedKeyID psks<V>;
-/// } GroupSecrets;
-
-type group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
-  joiner_secret: mls_bytes bytes;
-  [@@@ with_parser #bytes (ps_option ps_path_secret_nt)]
-  path_secret: option (path_secret_nt bytes);
-  psks: mls_list bytes (ps_pre_shared_key_nt);
-}
-
-%splice [ps_group_secrets_nt] (gen_parser (`group_secrets_nt))
-
-instance parseable_serializeable_group_secrets_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_secrets_nt bytes) = mk_parseable_serializeable ps_group_secrets_nt
-
-/// struct {
-///   KeyPackageRef new_member;
-///   HPKECiphertext encrypted_group_secrets;
-/// } EncryptedGroupSecrets;
-
-type encrypted_group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
-  new_member: key_package_ref_nt bytes;
-  encrypted_group_secrets: hpke_ciphertext_nt bytes;
-}
-
-%splice [ps_encrypted_group_secrets_nt] (gen_parser (`encrypted_group_secrets_nt))
-
-/// struct {
-///   CipherSuite cipher_suite;
-///   EncryptedGroupSecrets secrets<V>;
-///   opaque encrypted_group_info<V>;
-/// } Welcome;
-
-type welcome_nt (bytes:Type0) {|bytes_like bytes|} = {
-  cipher_suite: cipher_suite_nt;
-  secrets: mls_list bytes ps_encrypted_group_secrets_nt;
-  encrypted_group_info: mls_bytes bytes;
-}
-
-%splice [ps_welcome_nt] (gen_parser (`welcome_nt))
 
 /// struct {
 ///     ProtocolVersion version = mls10;

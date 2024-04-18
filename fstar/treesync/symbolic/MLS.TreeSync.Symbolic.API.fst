@@ -7,6 +7,7 @@ open GlobalRuntimeLib
 open LabeledRuntimeAPI
 open MLS.Tree
 open MLS.NetworkTypes
+open MLS.Bootstrap.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
 open MLS.TreeSync.Operations

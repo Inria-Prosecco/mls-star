@@ -10,46 +10,6 @@ noeq type treekem_types (bytes:Type0) {|bytes_like bytes|} = {
   ps_node_content: parser_serializer bytes node_content;
 }
 
-/// opaque SignaturePublicKey<V>;
-
-type signature_public_key_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-%splice [ps_signature_public_key_nt] (gen_parser (`signature_public_key_nt))
-
-/// // See IANA registry for registered values
-/// uint16 CredentialType;
-
-type credential_type_nt =
-  | [@@@ with_num_tag 2 0x0000] CT_reserved: credential_type_nt
-  | [@@@ with_num_tag 2 0x0001] CT_basic: credential_type_nt
-  | [@@@ with_num_tag 2 0x0002] CT_x509: credential_type_nt
-  | [@@@ open_tag] CT_unknown: n:nat_lbytes 2{~(n <= 2)} -> credential_type_nt
-
-%splice [ps_credential_type_nt] (gen_parser (`credential_type_nt))
-
-/// struct {
-///     opaque cert_data<V>;
-/// } Certificate;
-
-type certificate_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
-%splice [ps_certificate_nt] (gen_parser (`certificate_nt))
-
-/// struct {
-///     CredentialType credential_type;
-///     select (Credential.credential_type) {
-///         case basic:
-///             opaque identity<V>;
-///
-///         case x509:
-///             Certificate chain<V>;
-///     };
-/// } Credential;
-
-type credential_nt (bytes:Type0) {|bytes_like bytes|} =
-  | [@@@ with_tag CT_basic] C_basic: identity: mls_bytes bytes -> credential_nt bytes
-  | [@@@ with_tag CT_x509] C_x509: chain: mls_list bytes ps_certificate_nt -> credential_nt bytes
-
-%splice [ps_credential_nt] (gen_parser (`credential_nt))
-
 /// enum {
 ///     reserved(0),
 ///     key_package(1),
@@ -193,46 +153,6 @@ type leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types byte
 %splice [ps_leaf_node_tbs_nt_is_well_formed] (gen_is_well_formed_lemma (`leaf_node_tbs_nt))
 
 instance parseable_serializeable_leaf_node_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (leaf_node_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_leaf_node_tbs_nt tkt)
-
-/// struct {
-///     ProtocolVersion version;
-///     CipherSuite cipher_suite;
-///     HPKEPublicKey init_key;
-///     LeafNode leaf_node;
-///     Extension extensions<V>;
-/// } KeyPackageTBS;
-
-type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
-  version: protocol_version_nt;
-  cipher_suite: cipher_suite_nt;
-  //TODO: should this type abstracted away?
-  init_key: hpke_public_key_nt bytes;
-  leaf_node: leaf_node_nt bytes tkt;
-  extensions: mls_list bytes ps_extension_nt;
-}
-
-%splice [ps_key_package_tbs_nt] (gen_parser (`key_package_tbs_nt))
-
-instance parseable_serializeable_key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_tbs_nt tkt)
-
-/// struct {
-///     ProtocolVersion version;
-///     CipherSuite cipher_suite;
-///     HPKEPublicKey init_key;
-///     LeafNode leaf_node;
-///     Extension extensions<V>;
-///     // SignWithLabel(., "KeyPackageTBS", KeyPackageTBS)
-///     opaque signature<V>;
-/// } KeyPackage;
-
-type key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
-  tbs: key_package_tbs_nt bytes tkt;
-  signature: mls_bytes bytes;
-}
-
-%splice [ps_key_package_nt] (gen_parser (`key_package_nt))
-
-instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_nt tkt)
 
 /// struct {
 ///     HPKEPublicKey encryption_key;

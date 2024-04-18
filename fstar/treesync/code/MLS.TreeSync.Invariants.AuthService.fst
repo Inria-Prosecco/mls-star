@@ -4,6 +4,7 @@ open Comparse
 open MLS.Crypto
 open MLS.Tree
 open MLS.TreeCommon
+open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Types
 
