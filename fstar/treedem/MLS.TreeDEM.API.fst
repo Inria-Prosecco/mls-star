@@ -46,50 +46,10 @@ let init #bytes #cb {tree_height; my_leaf_index; group_context; encryption_secre
     verification_keys;
   } <: treedem_state bytes)
 
-val protect_public:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  treedem_state bytes ->
-  msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_public_message} ->
-  result (public_message_nt bytes)
-let protect_public #bytes #cb st msg =
-  authenticated_content_to_public_message msg (mk_static_option st.group_context) (mk_static_option st.membership_key)
+(*** Authentication ***)
 
-val unprotect_public:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  treedem_state bytes ->
-  public_message_nt bytes ->
-  result (authenticated_content_nt bytes)
-let unprotect_public #bytes #cb st msg =
-  public_message_to_authenticated_content msg (mk_static_option st.group_context) (mk_static_option st.membership_key)
-
-val protect_private:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  treedem_state bytes ->
-  msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} ->
-  lbytes bytes 4 ->
-  result (private_message_nt bytes & treedem_state bytes)
-let protect_private #bytes #cb st msg reuse_guard =
-  let ratchet =
-    match msg.content.content.content_type with
-    | CT_application -> st.my_application_ratchet
-    | _ -> st.my_handshake_ratchet
-  in
-  let? (res, new_ratchet) = authenticated_content_to_private_message msg ratchet reuse_guard st.sender_data_secret in
-  let new_st =
-    match msg.content.content.content_type with
-    | CT_application -> { st with my_application_ratchet = new_ratchet }
-    | _ -> { st with my_handshake_ratchet = new_ratchet }
-  in
-  return (res, new_st)
-
-val unprotect_private:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  treedem_state bytes ->
-  private_message_nt bytes ->
-  result (authenticated_content_nt bytes & treedem_state bytes)
-let unprotect_private #bytes #cb st msg =
-  let? res = private_message_to_authenticated_content msg st.tree_height st.encryption_secret st.sender_data_secret in
-  return (res, st)
+/// Proposals and application messages are authenticated using a single signature.
+/// This function will compute it.
 
 val authenticate_non_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -108,6 +68,14 @@ let authenticate_non_commit #bytes #cb st wf msg nonce =
       confirmation_tag = ();
     }
   } <: res:authenticated_content_nt bytes{res.wire_format == wf /\ res.content == msg})
+
+/// Commits are authenticated using both a signature and a confirmation tag.
+/// Because the confirmation tag is computed using the next epoch's confirmation key,
+/// which itself depend on the confirmed transcript hash,
+/// which itself depend on the commit's signature,
+/// commits are authenticated in two steps:
+/// first the signature,
+/// then the confirmation tag.
 
 type half_authenticated_commit (bytes:Type0) {|bytes_like bytes|} = {
   wire_format: wire_format_nt;
@@ -147,6 +115,8 @@ let finish_authenticate_commit #bytes #cb msg confirmation_key confirmed_transcr
     }
   } <: res:authenticated_content_nt bytes{res.wire_format == msg.wire_format /\ res.content == msg.content})
 
+/// Functions to verify the authentication.
+
 val verify_signature:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   treedem_state bytes ->
@@ -179,3 +149,56 @@ let verify_confirmation_tag #bytes #cb st msg confirmation_key confirmed_transcr
   | CT_commit ->
     check_authenticated_content_confirmation_tag msg confirmation_key confirmed_transcript_hash
   | _ -> internal_failure "verify_confirmation_tag: not a commit"
+
+(*** Protection ***)
+
+/// Protect public messages, by computing or checking the membership tag
+
+val protect_public:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  treedem_state bytes ->
+  msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_public_message} ->
+  result (public_message_nt bytes)
+let protect_public #bytes #cb st msg =
+  authenticated_content_to_public_message msg (mk_static_option st.group_context) (mk_static_option st.membership_key)
+
+val unprotect_public:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  treedem_state bytes ->
+  public_message_nt bytes ->
+  result (authenticated_content_nt bytes)
+let unprotect_public #bytes #cb st msg =
+  public_message_to_authenticated_content msg (mk_static_option st.group_context) (mk_static_option st.membership_key)
+
+/// Protect private messages, by encrypting using the secret tree.
+/// These functions are stateful, for forward secrecy.
+
+val protect_private:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  treedem_state bytes ->
+  msg:authenticated_content_nt bytes{msg.wire_format == WF_mls_private_message} ->
+  lbytes bytes 4 ->
+  result (private_message_nt bytes & treedem_state bytes)
+let protect_private #bytes #cb st msg reuse_guard =
+  let ratchet =
+    match msg.content.content.content_type with
+    | CT_application -> st.my_application_ratchet
+    | _ -> st.my_handshake_ratchet
+  in
+  let? (res, new_ratchet) = authenticated_content_to_private_message msg ratchet reuse_guard st.sender_data_secret in
+  let new_st =
+    match msg.content.content.content_type with
+    | CT_application -> { st with my_application_ratchet = new_ratchet }
+    | _ -> { st with my_handshake_ratchet = new_ratchet }
+  in
+  return (res, new_st)
+
+val unprotect_private:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  treedem_state bytes ->
+  private_message_nt bytes ->
+  result (authenticated_content_nt bytes & treedem_state bytes)
+let unprotect_private #bytes #cb st msg =
+  let? res = private_message_to_authenticated_content msg st.tree_height st.encryption_secret st.sender_data_secret in
+  return (res, st)
+
