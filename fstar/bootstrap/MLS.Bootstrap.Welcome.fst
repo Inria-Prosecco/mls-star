@@ -3,6 +3,7 @@ module MLS.Bootstrap.Welcome
 open Comparse
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
+open MLS.TreeSync.Types
 open MLS.TreeKEM.NetworkTypes
 open MLS.Bootstrap.NetworkTypes
 open MLS.Bootstrap.KeyPackageRef
@@ -164,11 +165,25 @@ let sign_welcome_group_info #bytes #cb sign_sk gi_tbs rand =
   let? signature = mk_mls_bytes signature "sign_welcome_group_info" "signature" in
   return ({tbs = gi_tbs; signature;})
 
+val get_signer_verification_key:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat ->
+  treesync bytes tkt l 0 ->
+  group_info_nt bytes ->
+  result bytes
+let get_signer_verification_key #bytes #bl #tkt #l t group_info =
+  if not (group_info.tbs.signer < pow2 l) then
+    error "get_signer_verification_key: signer too big"
+  else (
+    match leaf_at t group_info.tbs.signer with
+    | None -> error "get_signer_verification_key: signer is a blank leaf"
+    | Some ln -> return ln.data.signature_key
+  )
+
 val verify_welcome_group_info:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  (nat -> result (verif_key:bytes)) -> group_info_nt bytes ->
-  result bool
-let verify_welcome_group_info #bytes #cb get_sign_pk gi =
-  let? sign_pk = get_sign_pk gi.tbs.signer in
+  bytes -> group_info_nt bytes ->
+  bool
+let verify_welcome_group_info #bytes #cb sign_pk gi =
   let tbs_bytes: bytes = serialize (group_info_tbs_nt bytes) gi.tbs in
-  return (verify_with_label sign_pk "GroupInfoTBS" tbs_bytes gi.signature)
+  verify_with_label sign_pk "GroupInfoTBS" tbs_bytes gi.signature

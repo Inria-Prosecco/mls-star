@@ -681,15 +681,10 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let treesync = treesync_state.tree in
   let l = treesync_state.levels in
   let? _ = ( //Check signature
-    let? group_info_ok = verify_welcome_group_info (fun leaf_ind ->
-      if not (leaf_ind < pow2 l) then
-        error "process_welcome_message: leaf_ind too big"
-      else (
-        let? sender_leaf_package = from_option "process_welcome_message: signer leaf is blanked (1)" (leaf_at treesync leaf_ind) in
-        return (sender_leaf_package.data.signature_key <: bytes)
-      )
-    ) group_info in
-    return ()
+    let? signer_verification_key = get_signer_verification_key treesync group_info in
+    if not (verify_welcome_group_info signer_verification_key group_info) then
+      error "process_welcome_message: bad GroupInfo signature"
+    else return ()
   ) in
   let? leaf_index = find_my_index treesync sign_pk in
   let opt_path_secret_and_inviter_ind: option (bytes & nat) = match secrets.path_secret with | None -> None | Some {path_secret} -> Some (path_secret, group_info.tbs.signer) in
