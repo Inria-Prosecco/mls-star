@@ -55,3 +55,11 @@ let commit #bytes #cb st opt_commit_secret opt_psk new_group_context =
     joiner_secret;
     welcome_secret;
   })
+
+val export:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  treekem_keyschedule_state bytes ->
+  valid_label -> bytes -> len:nat ->
+  result (lbytes bytes len)
+let export #bytes #cb st label context len =
+  mls_exporter st.epoch_keys.exporter_secret label context len

@@ -257,7 +257,7 @@ let process_commit state wire_format message message_auth =
   let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
   // 4. Check confirmation tag
   let? () = (
-    let confirmation_key = state.treekem_state.keyschedule_state.epoch_keys.confirmation_key in
+    let confirmation_key = (MLS.TreeKEM.API.get_epoch_keys state.treekem_state).confirmation_key in
     let? confirmation_tag_ok = MLS.TreeDEM.API.verify_confirmation_tag state.treedem_state full_message confirmation_key confirmed_transcript_hash in
     if not confirmation_tag_ok then
       error "process_commit: invalid confirmation tag"
@@ -276,8 +276,8 @@ let process_commit state wire_format message message_auth =
     my_leaf_index;
     group_context;
     encryption_secret;
-    sender_data_secret = state.treekem_state.keyschedule_state.epoch_keys.sender_data_secret;
-    membership_key = state.treekem_state.keyschedule_state.epoch_keys.membership_key;
+    sender_data_secret = (MLS.TreeKEM.API.get_epoch_keys state.treekem_state).sender_data_secret;
+    membership_key = (MLS.TreeKEM.API.get_epoch_keys state.treekem_state).membership_key;
     my_signature_key = state.sign_private_key;
     verification_keys = get_verification_keys state.treesync_state.tree;
   } in
@@ -392,8 +392,8 @@ let create e cred private_sign_key group_id =
     my_leaf_index = leaf_index;
     group_context;
     encryption_secret;
-    sender_data_secret = treekem_state.keyschedule_state.epoch_keys.sender_data_secret;
-    membership_key = treekem_state.keyschedule_state.epoch_keys.membership_key;
+    sender_data_secret = (MLS.TreeKEM.API.get_epoch_keys treekem_state).sender_data_secret;
+    membership_key = (MLS.TreeKEM.API.get_epoch_keys treekem_state).membership_key;
     my_signature_key = private_sign_key;
     verification_keys = get_verification_keys treesync_state.tree;
   } in
@@ -577,7 +577,7 @@ let generate_commit state e proposals =
   let new_group_context = { provisional_group_context with confirmed_transcript_hash } in
   let? commit_result = MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context None in
   let state = { state with pending_updatepath = (update_path, (commit_result.new_state, commit_result.encryption_secret))::state.pending_updatepath } in
-  let? auth_commit = MLS.TreeDEM.API.finish_authenticate_commit half_auth_commit commit_result.new_state.keyschedule_state.epoch_keys.confirmation_key confirmed_transcript_hash in
+  let? auth_commit = MLS.TreeDEM.API.finish_authenticate_commit half_auth_commit (MLS.TreeKEM.API.get_epoch_keys commit_result.new_state).confirmation_key confirmed_transcript_hash in
   let? reuse_guard, e = chop_entropy e 4 in
   assume(Seq.length reuse_guard == length #bytes reuse_guard);
   let? (commit_ct, new_treedem_state) = MLS.TreeDEM.API.protect_private state.treedem_state auth_commit reuse_guard in
@@ -703,7 +703,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let? group_context = compute_group_context group_id epoch tree_hash confirmed_transcript_hash in
 
   let? () = (
-    let? computed_confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag treekem_state.keyschedule_state.epoch_keys.confirmation_key confirmed_transcript_hash in
+    let? computed_confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag (MLS.TreeKEM.API.get_epoch_keys treekem_state).confirmation_key confirmed_transcript_hash in
     if not ((group_info.tbs.confirmation_tag <: bytes) = (computed_confirmation_tag <: bytes)) then
       error "process_welcome_message: bad confirmation_tag"
     else return ()
@@ -714,8 +714,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     my_leaf_index = leaf_index;
     group_context;
     encryption_secret;
-    sender_data_secret = treekem_state.keyschedule_state.epoch_keys.sender_data_secret;
-    membership_key = treekem_state.keyschedule_state.epoch_keys.membership_key;
+    sender_data_secret = (MLS.TreeKEM.API.get_epoch_keys treekem_state).sender_data_secret;
+    membership_key = (MLS.TreeKEM.API.get_epoch_keys treekem_state).membership_key;
     my_signature_key = sign_sk;
     verification_keys = get_verification_keys treesync_state.tree;
   } in

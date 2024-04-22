@@ -186,3 +186,20 @@ let finalize_create_commit #bytes #cb #leaf_ind pending new_group_context opt_ps
     welcome_secret = additional_secrets.welcome_secret;
     joiner_secret = additional_secrets.joiner_secret;
   }
+
+(*** Getters ***)
+
+val get_epoch_keys:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  treekem_state bytes leaf_ind ->
+  epoch_keys bytes
+let get_epoch_keys #bytes #cb #leaf_ind st =
+  st.keyschedule_state.epoch_keys
+
+val export:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  treekem_state bytes leaf_ind ->
+  valid_label -> bytes -> len:nat ->
+  result (lbytes bytes len)
+let export #bytes #cb st label context len =
+  KS.export st.keyschedule_state label context len
