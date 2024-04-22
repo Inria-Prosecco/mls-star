@@ -50,7 +50,7 @@ let test_welcome_one t =
 
     let (group_info, group_secrets, (_, my_init_decryption_key)) = extract_result (decrypt_welcome welcome (fun ref -> if ref = kp_ref then Some init_priv else None) (fun x -> return x)) in
 
-    if not (extract_result (verify_welcome_group_info (fun _ -> return signer_pub) group_info)) then (
+    if not (verify_welcome_group_info signer_pub group_info) then (
       failwith "test_welcome_one: bad signature"
     );
 

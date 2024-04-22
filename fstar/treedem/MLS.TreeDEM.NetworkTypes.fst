@@ -109,6 +109,8 @@ type proposal_nt (bytes:Type0) {|bytes_like bytes|} =
 
 %splice [ps_proposal_nt] (gen_parser (`proposal_nt))
 
+instance parseable_serializeable_proposal_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (proposal_nt bytes) = mk_parseable_serializeable ps_proposal_nt
+
 /// enum {
 ///   reserved(0),
 ///   proposal(1),
