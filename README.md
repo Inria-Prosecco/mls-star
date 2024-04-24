@@ -121,3 +121,6 @@ export HACL_PACKAGES_HOME=$(cd hacl-packages; pwd)
 - `make js` will compile MLS\* to Javascript
 - `node js/test.js` will start the Javascript tests
 
+Some parts of the verification can be omitted if just the extracted code is useful:
+- `NO_DY=1 make ...` will omit all the symbolic security proofs verification (hence do not require DY\* as a dependency)
+- `ADMIT=1 make ...` will admit all SMT queries
