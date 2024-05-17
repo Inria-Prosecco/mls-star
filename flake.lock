@@ -23,19 +23,29 @@
         "type": "github"
       }
     },
-    "dolev-yao-star-src": {
-      "flake": false,
+    "dolev-yao-star-flake": {
+      "inputs": {
+        "comparse-flake": [
+          "comparse-flake"
+        ],
+        "fstar-flake": [
+          "fstar-flake"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
       "locked": {
-        "lastModified": 1682502249,
-        "narHash": "sha256-Xf/tgpS4Xbweotc/XOr1M2tfjdkVMAU+A4Ce9CP7vCM=",
-        "owner": "Inria-Prosecco",
-        "repo": "treesync",
-        "rev": "7ea27ead0abc4e6bf47033f35a7eada233ac244e",
+        "lastModified": 1715956913,
+        "narHash": "sha256-qN9szzS81pPHOsx/dnjNqOtkKIEA9/iUTDcSf05gQ5E=",
+        "owner": "REPROSEC",
+        "repo": "dolev-yao-star-extrinsic",
+        "rev": "3b62a6ade537dc3f060064cb538ec75d4a2df020",
         "type": "github"
       },
       "original": {
-        "owner": "Inria-Prosecco",
-        "repo": "treesync",
+        "owner": "REPROSEC",
+        "repo": "dolev-yao-star-extrinsic",
         "type": "github"
       }
     },
@@ -109,7 +119,7 @@
     "root": {
       "inputs": {
         "comparse-flake": "comparse-flake",
-        "dolev-yao-star-src": "dolev-yao-star-src",
+        "dolev-yao-star-flake": "dolev-yao-star-flake",
         "fstar-flake": "fstar-flake",
         "hacl-packages-src": "hacl-packages-src",
         "nixpkgs": [

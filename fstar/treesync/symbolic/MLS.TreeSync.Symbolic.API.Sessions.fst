@@ -1,8 +1,8 @@
 module MLS.TreeSync.Symbolic.API.Sessions
 
 open Comparse
-open GlobalRuntimeLib
-open LabeledRuntimeAPI
+open DY.Core
+open DY.Lib
 open MLS.Tree
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
@@ -13,8 +13,6 @@ open MLS.TreeSync.Invariants.ValidLeaves
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.API.Types
 open MLS.Symbolic
-open MLS.Symbolic.Session
-open MLS.Symbolic.TypedSession
 open MLS.TreeSync.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.Symbolic.LeafNodeSignature
@@ -66,118 +64,147 @@ type bare_treesync_state (tkt:treekem_types dy_bytes) =
 
 instance parseable_serializeable_bare_treesync_state (tkt:treekem_types dy_bytes): parseable_serializeable dy_bytes (bare_treesync_state tkt) = mk_parseable_serializeable (ps_bare_treesync_state_ tkt dy_as_token ps_dy_as_token)
 
-val treesync_public_state_label: string
-let treesync_public_state_label = "MLS.TreeSync.PublicState"
-
-// The `fun` is a workaround for FStarLang/FStar#2694
-val bare_treesync_public_state_pred: tkt:treekem_types dy_bytes -> bare_typed_session_pred (bare_treesync_state tkt)
-let bare_treesync_public_state_pred tkt = fun gu p time si vi st ->
-  is_publishable gu time st.group_id /\
-  is_well_formed _ (is_publishable gu time) st.tree /\
-  unmerged_leaves_ok st.tree /\
-  parent_hash_invariant st.tree /\
-  valid_leaves_invariant st.group_id st.tree /\
-  all_credentials_ok st.tree (st.tokens <: as_tokens dy_bytes (dy_asp gu time).token_t st.levels 0)
-
-#push-options "--fuel 0 --ifuel 0"
-val treesync_public_state_pred: treekem_types dy_bytes -> session_pred
-let treesync_public_state_pred tkt =
-  typed_session_pred_to_session_pred (
-    mk_typed_session_pred (bare_treesync_public_state_pred tkt)
-      (fun gu p time0 time1 si vi st ->
-        // Prove publishability of treesync in the future
-        wf_weaken_lemma _ (is_publishable gu time0) (is_publishable gu time1) st.tree
-      )
-      (fun gu p time si vi st ->
-        let pre = is_msg gu (readers [psv_id p si vi]) time in
-        wf_weaken_lemma _ (is_publishable gu time) pre st.tree;
-        ps_dy_as_tokens_is_well_formed pre st.tokens
-      )
-  )
+#push-options "--fuel 1 --ifuel 1 --z3rlimit 25"
+val treesync_public_state_pred: {|crypto_invariants|} -> tkt:treekem_types dy_bytes -> local_state_predicate (bare_treesync_state tkt)
+let treesync_public_state_pred #ci tkt = {
+  pred = (fun tr prin state_id st ->
+    is_publishable tr st.group_id /\
+    is_well_formed _ (is_publishable tr) st.tree /\
+    unmerged_leaves_ok st.tree /\
+    parent_hash_invariant st.tree /\
+    valid_leaves_invariant st.group_id st.tree /\
+    all_credentials_ok st.tree ((st.tokens <: as_tokens dy_bytes dy_as_token st.levels 0) <: as_tokens dy_bytes (dy_asp tr).token_t st.levels 0)
+  );
+  pred_later = (fun tr1 tr2 prin state_id st ->
+    wf_weaken_lemma _ (is_publishable tr1) (is_publishable tr2) st.tree
+  );
+  pred_knowable = (fun tr prin state_id st ->
+    let pre = is_knowable_by (principal_state_label prin state_id) tr in
+    wf_weaken_lemma _ (is_publishable tr) pre st.tree;
+    ps_dy_as_tokens_is_well_formed pre st.tokens
+  );
+}
 #pop-options
 
-val has_treesync_public_state_invariant: treekem_types dy_bytes -> preds -> prop
-let has_treesync_public_state_invariant tkt pr =
-  has_session_pred pr treesync_public_state_label (treesync_public_state_pred tkt)
+instance local_state_bare_treesync_state (tkt:treekem_types dy_bytes): local_state (bare_treesync_state tkt) =
+  mk_local_state_instance "MLS.TreeSync.PublicState"
+
+val has_treesync_public_state_invariant: treekem_types dy_bytes -> protocol_invariants -> prop
+let has_treesync_public_state_invariant tkt invs =
+  has_local_state_predicate invs (treesync_public_state_pred tkt)
+
+val treesync_public_state_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> string & local_bytes_state_predicate
+let treesync_public_state_tag_and_invariant #ci tkt = ((local_state_bare_treesync_state tkt).tag, local_state_predicate_to_local_bytes_state_predicate (treesync_public_state_pred tkt))
 
 (*** LCrypto API for public state ***)
 
-val treesync_state_to_session_bytes:
+val treesync_state_to_bare_treesync_state:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> time:timestamp -> si:nat -> vi:nat ->
-  group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id ->
-  Pure dy_bytes
-  (requires
-    is_publishable pr.global_usage time group_id /\
-    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
-    has_treesync_public_state_invariant tkt pr
-  )
-  (ensures fun res -> treesync_public_state_pred tkt pr.global_usage p time si vi res)
-let treesync_state_to_session_bytes #tkt pr p time si vi group_id st =
-  let bare_st: bare_treesync_state tkt = {
+  #group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  bare_treesync_state tkt
+let treesync_state_to_bare_treesync_state #tkt #group_id st = {
     group_id = group_id;
     levels = st.levels;
     tree = st.tree;
     tokens = st.tokens;
-  } in
-  parse_serialize_inv_lemma #dy_bytes (bare_treesync_state tkt) bare_st;
-  serialize (bare_treesync_state tkt) bare_st
+  }
 
 val new_public_treesync_state:
-  #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> time:timestamp ->
-  group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id ->
-  LCrypto nat pr
-  (requires fun t0 ->
-    time == trace_len t0 /\
-    is_publishable pr.global_usage time group_id /\
-    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
-    has_treesync_public_state_invariant tkt pr
+  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> 
+  principal ->
+  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  crypto nat
+let new_public_treesync_state #tkt #group_id prin st =
+  let* state_id = new_session_id prin in
+  set_state prin state_id (treesync_state_to_bare_treesync_state st);*
+  return state_id
+
+val new_public_treesync_state_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> 
+  prin:principal ->
+  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_publishable tr group_id /\
+    is_well_formed _ (is_publishable tr) (st.tree <: treesync _ _ _ _) /\
+    treesync_state_valid (dy_asp tr) st /\
+    trace_invariant tr /\
+    has_treesync_public_state_invariant tkt invs
   )
-  (ensures fun t0 si t1 -> trace_len t1 == trace_len t0 + 1)
-let new_public_treesync_state #tkt pr p time group_id st =
-  let si = new_session_number pr p in
-  let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 group_id st in
-  new_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si 0 bare_st_bytes;
-  si
+  (ensures (
+    let (_, tr_out) = new_public_treesync_state prin st tr in
+    trace_invariant tr_out
+  ))
+let new_public_treesync_state_proof #invs #tkt #group_id prin st tr = ()
 
 val set_public_treesync_state:
-  #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> si:nat -> time:timestamp ->
-  group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    time == trace_len t0 /\
-    is_publishable pr.global_usage time group_id /\
-    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
-    has_treesync_public_state_invariant tkt pr
+  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
+  prin:principal -> state_id:nat ->
+  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  crypto unit
+let set_public_treesync_state #tkt #group_id prin state_id st =
+  set_state prin state_id (treesync_state_to_bare_treesync_state st)
+
+val set_public_treesync_state_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
+  prin:principal -> state_id:nat ->
+  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_publishable tr group_id /\
+    is_well_formed _ (is_publishable tr) (st.tree <: treesync _ _ _ _) /\
+    treesync_state_valid (dy_asp tr) st /\
+    trace_invariant tr /\
+    has_treesync_public_state_invariant tkt invs
   )
-  (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
-let set_public_treesync_state #tkt pr p si time group_id st =
-  let bare_st_bytes = treesync_state_to_session_bytes pr p time si 0 group_id st in
-  update_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si 0 bare_st_bytes
+  (ensures (
+    let ((), tr_out) = set_public_treesync_state prin state_id st tr in
+    trace_invariant tr_out
+  ))
+let set_public_treesync_state_proof #invs #tkt #group_id prin state_id st tr = ()
 
 val get_public_treesync_state:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> si:nat -> time:timestamp ->
-  LCrypto (group_id:mls_bytes dy_bytes & treesync_state dy_bytes tkt (dy_asp pr.global_usage time) group_id) pr
-  (requires fun t0 ->
-    time == trace_len t0 /\
-    has_treesync_public_state_invariant tkt pr
+  prin:principal -> state_id:nat ->
+  crypto (option (dtuple2 (mls_bytes dy_bytes) (treesync_state dy_bytes tkt dy_as_token)))
+let get_public_treesync_state #tkt prin state_id =
+  let*? bare_st: bare_treesync_state tkt = get_state prin state_id in
+  // TODO: Dynamic could be removed with REPROSEC/dolev-yao-star-extrinsic#24
+  if not (unmerged_leaves_ok bare_st.tree && parent_hash_invariant bare_st.tree && valid_leaves_invariant bare_st.group_id bare_st.tree) then
+    return None
+  else
+  return (Some (|bare_st.group_id, ({
+    levels = bare_st.levels;
+    tree = bare_st.tree;
+    tokens = bare_st.tokens;
+  } <: treesync_state dy_bytes tkt dy_as_token bare_st.group_id)|))
+
+val get_public_treesync_state_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  prin:principal -> state_id:nat ->
+  tr:trace ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_treesync_public_state_invariant tkt invs
   )
-  (ensures fun t0 (|group_id, st|) t1 ->
-    is_publishable pr.global_usage time group_id /\
-    is_well_formed _ (is_publishable pr.global_usage time) (st.tree <: treesync _ _ _ _) /\
-    t1 == t0
-  )
-let get_public_treesync_state #tkt pr p si time =
-  let (_, st_bytes) = get_session pr treesync_public_state_label (treesync_public_state_pred tkt) p si in
-  let st = Some?.v (parse (bare_treesync_state tkt) st_bytes) in
-  (|st.group_id, ({
-    levels = st.levels;
-    tree = st.tree;
-    tokens = st.tokens;
-  } <: treesync_state dy_bytes tkt (dy_asp pr.global_usage time) st.group_id)|)
+  (ensures (
+    let (opt_result, tr_out) = get_public_treesync_state prin state_id tr in
+    tr_out == tr /\ (
+      match opt_result with
+      | None -> True
+      | Some (|group_id, st|) -> (
+        is_publishable tr_out group_id /\
+        is_well_formed _ (is_publishable tr_out) (st.tree <: treesync dy_bytes tkt _ _)
+      )
+    )
+  ))
+let get_public_treesync_state_proof #invs #tkt prin state_id tr = ()
 
 (*** Session predicate for private state ***)
 
@@ -192,62 +219,95 @@ type treesync_private_state = treesync_private_state_ dy_bytes
 
 instance parseable_serializeable_treesync_private_state: parseable_serializeable dy_bytes treesync_private_state = mk_parseable_serializeable ps_treesync_private_state_
 
-val treesync_private_state_label: string
-let treesync_private_state_label = "MLS.TreeSync.PrivateState"
+val treesync_private_state_pred: {|crypto_invariants|} -> local_state_predicate treesync_private_state
+let treesync_private_state_pred #ci = {
+  pred = (fun tr prin state_id st ->
+    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key
+  );
+  pred_later = (fun tr1 tr2 prin state_id st -> ());
+  pred_knowable = (fun tr prin state_id st -> ());
+}
 
-val bare_treesync_private_state_pred: bare_typed_session_pred treesync_private_state
-let bare_treesync_private_state_pred gu p time si vi st =
-  is_signature_key gu "MLS.LeafSignKey" (readers [p_id p]) time st.signature_key
+instance local_state_treesync_private_state: local_state treesync_private_state =
+  mk_local_state_instance "MLS.TreeSync.PrivateState"
 
-val treesync_private_state_pred: session_pred
-let treesync_private_state_pred =
-  typed_session_pred_to_session_pred bare_treesync_private_state_pred
+val has_treesync_private_state_invariant: protocol_invariants -> prop
+let has_treesync_private_state_invariant invs =
+  has_local_state_predicate invs treesync_private_state_pred
 
-val has_treesync_private_state_invariant: preds -> prop
-let has_treesync_private_state_invariant pr =
-  has_session_pred pr treesync_private_state_label treesync_private_state_pred
+val treesync_private_state_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
+let treesync_private_state_tag_and_invariant #ci = (local_state_treesync_private_state.tag, local_state_predicate_to_local_bytes_state_predicate treesync_private_state_pred)
 
 (*** LCrypto API for private state ***)
 
 val new_private_treesync_state:
-  pr:preds -> p:principal ->
-  st:treesync_private_state ->
-  LCrypto nat pr
-  (requires fun t0 ->
-    is_signature_key pr.global_usage "MLS.LeafSignKey" (readers [p_id p]) (trace_len t0) st.signature_key /\
-    has_treesync_private_state_invariant pr
+  principal -> treesync_private_state ->
+  crypto nat
+let new_private_treesync_state prin st =
+  let* state_id = new_session_id prin in
+  set_state prin state_id st;*
+  return state_id
+
+val new_private_treesync_state_proof:
+  {|invs:protocol_invariants|} ->
+  prin:principal -> st:treesync_private_state ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key /\
+    trace_invariant tr /\
+    has_treesync_private_state_invariant invs
   )
-  (ensures fun t0 si t1 -> trace_len t1 == trace_len t0 + 1)
-let new_private_treesync_state pr p st =
-  let si = new_session_number pr p in
-  let st_bytes = serialize treesync_private_state st in
-  parse_serialize_inv_lemma #dy_bytes treesync_private_state st;
-  new_session pr treesync_private_state_label treesync_private_state_pred p si 0 st_bytes;
-  si
+  (ensures (
+    let (_, tr_out) = new_private_treesync_state prin st tr in
+    trace_invariant tr_out
+  ))
+let new_private_treesync_state_proof #invs prin st tr = ()
 
 val set_private_treesync_state:
-  pr:preds -> p:principal -> si:nat ->
-  st:treesync_private_state ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    is_signature_key pr.global_usage "MLS.LeafSignKey" (readers [p_id p]) (trace_len t0) st.signature_key /\
-    has_treesync_private_state_invariant pr
+  principal -> nat -> treesync_private_state ->
+  crypto unit
+let set_private_treesync_state prin state_id st =
+  set_state prin state_id st
+
+val set_private_treesync_state_proof:
+  {|invs:protocol_invariants|} ->
+  prin:principal -> state_id:nat -> st:treesync_private_state ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key /\
+    trace_invariant tr /\
+    has_treesync_private_state_invariant invs
   )
-  (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
-let set_private_treesync_state pr p si st =
-  let st_bytes = serialize treesync_private_state st in
-  parse_serialize_inv_lemma #dy_bytes treesync_private_state st;
-  new_session pr treesync_private_state_label treesync_private_state_pred p si 0 st_bytes
+  (ensures (
+    let ((), tr_out) = set_private_treesync_state prin state_id st tr in
+    trace_invariant tr_out
+  ))
+let set_private_treesync_state_proof #invs prin state_id st tr = ()
 
 val get_private_treesync_state:
-  pr:preds -> p:principal -> si:nat ->
-  LCrypto treesync_private_state pr
-  (requires fun t0 -> has_treesync_private_state_invariant pr)
-  (ensures fun t0 st t1 ->
-    is_signature_key pr.global_usage "MLS.LeafSignKey" (readers [p_id p]) (trace_len t0) st.signature_key /\
-    t1 == t0
+  principal -> nat ->
+  crypto (option treesync_private_state)
+let get_private_treesync_state prin state_id =
+  get_state prin state_id
+
+val get_private_treesync_state_proof:
+  {|invs:protocol_invariants|} ->
+  prin:principal -> state_id:nat ->
+  tr:trace ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_treesync_private_state_invariant invs
   )
-let get_private_treesync_state pr p si =
-  let (_, st_bytes) = get_session pr treesync_private_state_label treesync_private_state_pred p si in
-  let st = Some?.v (parse treesync_private_state st_bytes) in
-  st
+  (ensures (
+    let (opt_result, tr_out) = get_private_treesync_state prin state_id tr in
+    tr_out == tr /\ (
+      match opt_result with
+      | None -> True
+      | Some st ->
+        is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key
+    )
+  ))
+let get_private_treesync_state_proof #invs prin state_id tr = ()

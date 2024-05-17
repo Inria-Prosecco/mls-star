@@ -37,16 +37,10 @@ let universal_sign_nonce =
 
 let group_id = bytes
 
-let asp: as_parameters bytes = {
-  token_t = unit;
-  credential_ok = (fun _ _ -> True);
-  valid_successor = (fun _ _ -> True);
-}
-
 noeq type state = {
   group_id:mls_bytes bytes;
   leaf_index: nat;
-  treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt asp group_id;
+  treesync_state: MLS.TreeSync.API.Types.treesync_state bytes tkt unit group_id;
   treekem_state: treekem_state bytes leaf_index;
   treedem_state: treedem_state bytes;
   epoch: nat;

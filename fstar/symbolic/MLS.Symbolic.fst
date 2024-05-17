@@ -1,68 +1,41 @@
 module MLS.Symbolic
 
 open Comparse
+open DY.Core
 open MLS.Crypto
-open ComparseGlue
 open MLS.NetworkTypes
-open MLS.Symbolic.SplitPredicate
+open DY.Lib.SplitPredicate
 open MLS.Result
 
-#push-options "--fuel 1 --ifuel 1"
+#push-options "--fuel 0 --ifuel 0"
 
 (*** Typeclass instantiation on DY* ***)
 
 val dy_bytes: eqtype
-let dy_bytes = CryptoLib.bytes
+let dy_bytes = DY.Core.bytes
 
-/// At this time, DY* doesn't expose lengths for cryptographic functions. Therefore we assume them here.
-/// Assuming them is sound since no similar properties are exposed by DY*.
-/// This will have to be cleaned up the day DY* exposes lengths for cryptographic functions.
-
-assume val dy_kdf_length: nat
-assume val dy_kdf_length_lemma:
-  key:dy_bytes -> data:dy_bytes ->
-  Lemma
-  (length (CryptoLib.extract key data) == dy_kdf_length)
-
-assume val dy_sign_public_key_length: nat
-assume val dy_sign_private_key_length: nat
-assume val dy_sign_nonce_length: nat
-assume val dy_sign_signature_length: n:nat{n < 256}
-
-assume val dy_aead_nonce_length: n:nat{4 <= n}
-assume val dy_aead_key_length: nat
-
-assume val dy_hmac_length: n:nat{n < 256}
-assume val dy_hmac_length_lemma:
-  key:dy_bytes -> data:dy_bytes ->
-  Lemma
-  (length (CryptoLib.mac key data) == dy_hmac_length)
-
+#push-options "--ifuel 1"
 val dy_bytes_has_crypto: available_ciphersuite -> crypto_bytes dy_bytes
 let dy_bytes_has_crypto acs = {
-  base = dy_bytes_like;
+  base = DY.Lib.bytes_like_bytes;
 
   bytes_hasEq = ();
 
   ciphersuite = acs;
 
   hash_hash = (fun buf ->
-    return (CryptoLib.hash buf)
+    return (DY.Core.hash buf)
   );
   hash_max_input_length = pow2 256; //infinity!
   hash_hash_pre = (fun buf -> ());
-  hash_output_length_bound = (fun buf -> assume(CryptoLib.hash buf <> empty));
+  hash_output_length_bound = (fun buf -> assume(DY.Core.hash buf <> empty));
 
-  kdf_length = dy_kdf_length;
+  kdf_length = magic();
   kdf_extract = (fun key data ->
-    dy_kdf_length_lemma key data;
-    return (CryptoLib.extract key data)
+    admit()
   );
   kdf_expand = (fun prk info len ->
-    // TODO: expose the length in DY*
-    // (used in TreeKEM, TreeDEM)
-    admit();
-    return (CryptoLib.expand prk info)
+    admit()
   );
 
   hpke_public_key_length = magic();
@@ -71,61 +44,47 @@ let dy_bytes_has_crypto acs = {
   hpke_private_key_length_bound = magic();
   hpke_kem_output_length = magic();
   hpke_gen_keypair = (fun ikm ->
-    // TODO: actually implement HPKE in DY*
-    // (used in TreeKEM)
-    admit();
-    return (ikm, CryptoLib.pk ikm)
+    admit()
   );
   hpke_encrypt = (fun pkR info ad plaintext rand ->
-    // TODO: actually implement HPKE in DY*
-    // (no info/ad nor kem output)
-    // (used in TreeKEM)
-    admit();
-    return (CryptoLib.pke_enc pkR rand plaintext, CryptoLib.empty)
+    admit()
   );
   hpke_decrypt = (fun enc skR info ad ciphertext ->
-    // TODO: actually implement HPKE in DY*
-    // (no info/ad nor kem output)
-    // (used in TreeKEM)
-    match CryptoLib.pke_dec skR ciphertext with
-    | SecrecyLabels.Success res -> return res
-    | SecrecyLabels.Error e -> error e
+    admit()
   );
 
-  sign_gen_keypair_min_entropy_length = dy_sign_private_key_length;
+  sign_gen_keypair_min_entropy_length = magic();
   sign_gen_keypair = (fun rand ->
-    return (CryptoLib.vk rand, rand)
+    return (DY.Core.vk rand, rand)
   );
-  sign_sign_min_entropy_length = dy_sign_nonce_length;
+  sign_sign_min_entropy_length = magic();
   sign_sign = (fun sk msg rand ->
-    return (CryptoLib.sign sk rand msg)
+    return (DY.Core.sign sk rand msg)
   );
   sign_verify = (fun pk msg signature ->
-    CryptoLib.verify pk msg signature
+    DY.Core.verify pk msg signature
   );
 
-  aead_nonce_length = dy_aead_nonce_length;
-  aead_nonce_length_bound = ();
-  aead_key_length = dy_aead_key_length;
+  aead_nonce_length = magic();
+  aead_nonce_length_bound = magic();
+  aead_key_length = magic();
   aead_encrypt = (fun key nonce ad plaintext ->
-    return (CryptoLib.aead_enc key nonce plaintext ad)
+    return (DY.Core.aead_enc key nonce plaintext ad)
   );
   aead_decrypt = (fun key nonce ad ciphertext ->
-    match CryptoLib.aead_dec key nonce ciphertext ad with
-    | SecrecyLabels.Success res -> return res
-    | SecrecyLabels.Error e -> error e
+    match DY.Core.aead_dec key nonce ciphertext ad with
+    | Some res -> return res
+    | None -> error "aead_decrypt: couldn't decrypt"
   );
 
-  hmac_length = dy_hmac_length;
-  hmac_length_bound = ();
+  hmac_length = magic();
+  hmac_length_bound = magic();
   hmac_hmac = (fun key data ->
-    dy_hmac_length_lemma key data;
-    return (CryptoLib.mac key data)
+    admit()
   );
 
   string_to_bytes = (fun s ->
-    CryptoLib.string_to_bytes_len s;
-    CryptoLib.string_to_bytes s
+    (ps_whole_ascii_string.serialize s <: dy_bytes)
   );
 
   unsafe_split = (fun buf i ->
@@ -137,150 +96,9 @@ let dy_bytes_has_crypto acs = {
 
   debug_bytes_to_string = (fun b -> "");
 }
+#pop-options
 
 instance crypto_dy_bytes: crypto_bytes dy_bytes = dy_bytes_has_crypto AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
-
-(*** Abbreviations for DY* functions ***)
-
-val principal: Type0
-let principal = SecrecyLabels.principal
-
-val ps_principal: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes principal
-let ps_principal #bytes #bl = ps_principal #bytes
-
-val timestamp: Type0
-let timestamp = SecrecyLabels.timestamp
-
-val ps_timestamp: #bytes:Type0 -> {|bytes_like bytes|} -> parser_serializer bytes timestamp
-let ps_timestamp #bytes #bl = ps_nat #bytes
-
-val key_usages: Type0
-let key_usages = LabeledCryptoAPI.key_usages
-
-// In universe 1 because it contains predicates
-val global_usage: Type u#1
-let global_usage = LabeledCryptoAPI.global_usage
-
-val preds: Type u#1
-let preds = LabeledRuntimeAPI.preds
-
-val label: Type0
-let label = SecrecyLabels.label
-
-val id: Type0
-let id = SecrecyLabels.id
-
-// Exposing the constructor directly would have been nice, but that's not possible
-val p_id: principal -> id
-let p_id p = SecrecyLabels.P p
-
-val ps_id: principal -> nat -> id
-let ps_id p s = SecrecyLabels.S p s
-
-val psv_id: principal -> nat -> nat -> id
-let psv_id p s v = SecrecyLabels.V p s v
-
-val public: label
-let public = SecrecyLabels.public
-
-val readers: list id -> label
-let readers l = SecrecyLabels.readers l
-
-val usage: Type0
-let usage = CryptoLib.usage
-
-val sig_usage: string -> usage
-let sig_usage usg = CryptoLib.sig_usage usg
-
-val can_flow: ts:timestamp -> from:label -> to:label -> prop
-let can_flow = LabeledCryptoAPI.can_flow
-
-// Why a dollar? Because time is money!
-let (<$) (t1:timestamp) (t2:timestamp) = SecrecyLabels.later_than t2 t1
-
-val get_usage: global_usage -> dy_bytes -> (option usage)
-let get_usage p b = LabeledCryptoAPI.get_usage p.key_usages b
-
-val get_label: global_usage -> dy_bytes -> label
-let get_label p b = LabeledCryptoAPI.get_label p.key_usages b
-
-val is_valid: p:global_usage -> i:timestamp -> bytes_compatible_pre dy_bytes
-let is_valid p i = LabeledCryptoAPI.is_valid p i
-
-val is_labeled: global_usage -> label -> timestamp -> dy_bytes -> prop
-let is_labeled p l i b = is_valid p i b /\ get_label p b == l
-
-val has_usage: global_usage -> usage -> timestamp -> dy_bytes -> prop
-let has_usage p u i b = LabeledCryptoAPI.has_usage p i b u
-
-val is_secret: global_usage -> usage -> label -> timestamp -> dy_bytes -> prop
-let is_secret p u l i b = LabeledCryptoAPI.is_secret p i b l u
-
-val is_msg: global_usage -> label -> timestamp -> bytes_compatible_pre dy_bytes
-let is_msg p l i = ComparseGlue.is_msg p l i
-
-val is_publishable: global_usage -> timestamp -> bytes_compatible_pre dy_bytes
-let is_publishable p i = is_msg p SecrecyLabels.public i
-
-val is_verification_key: global_usage -> string -> label -> timestamp -> dy_bytes -> prop
-let is_verification_key gu usg sk_lab time vk = LabeledCryptoAPI.is_verification_key gu time vk sk_lab usg
-
-val is_signature_key: global_usage -> string -> label -> timestamp -> dy_bytes -> prop
-let is_signature_key gu usg sk_lab time sk = LabeledCryptoAPI.is_signing_key gu time sk sk_lab usg
-
-val get_signkey_label: key_usages -> dy_bytes -> label
-let get_signkey_label ku vk = LabeledCryptoAPI.get_signkey_label ku vk
-
-val is_verification_key_to_signkey_label: gu:global_usage -> usg:string -> sk_lab:label -> time:timestamp -> vk:dy_bytes -> Lemma
-  (requires is_verification_key gu usg sk_lab time vk)
-  (ensures get_signkey_label gu.key_usages vk == sk_lab)
-let is_verification_key_to_signkey_label gu usg sk_lab time vk =
-  LabeledCryptoAPI.verification_key_label_lemma gu time vk sk_lab
-
-val event: Type0
-let event = CryptoEffect.event
-
-val did_event_occur_before: principal -> timestamp -> event -> prop
-let did_event_occur_before prin time e = GlobalRuntimeLib.did_event_occur_before time prin e
-
-val event_pred_at: preds -> principal -> timestamp -> event -> prop
-let event_pred_at pr prin time e = LabeledRuntimeAPI.event_pred_at pr time prin e
-
-val hash_hash_inj:
-  b1:dy_bytes -> b2:dy_bytes ->
-  Lemma (
-    length b1 < hash_max_input_length #dy_bytes /\
-    length b2 < hash_max_input_length #dy_bytes /\
-    hash_hash b1 == hash_hash b2 ==>
-    b1 == b2
-  )
-let hash_hash_inj b1 b2 = CryptoLib.hash_inj_lemma b1 b2
-
-val is_corrupt: timestamp -> id -> prop
-let is_corrupt time x = LabeledCryptoAPI.corrupt_id time x
-
-val can_flow_to_public_implies_corruption:
-  time:timestamp -> x:id ->
-  Lemma
-  (requires (can_flow time (readers [x]) public))
-  (ensures is_corrupt time x)
-let can_flow_to_public_implies_corruption time x = LabeledCryptoAPI.can_flow_to_public_implies_corruption time x
-
-val readers_is_injective:
-  x:principal -> y:principal ->
-  Lemma
-  (requires readers [p_id x] == readers [p_id y])
-  (ensures x == y)
-let readers_is_injective x y =
-  SecrecyLabels.readers_is_injective x
-
-val can_flow_transitive:
-  time:timestamp -> l1:label -> l2:label -> l3:label ->
-  Lemma
-  (requires can_flow time l1 l2 /\ can_flow time l2 l3)
-  (ensures can_flow time l1 l3)
-let can_flow_transitive time l1 l2 l3 =
-  LabeledCryptoAPI.can_flow_transitive time l1 l2 l3
 
 (*** Labeled signature predicate ***)
 
@@ -292,116 +110,154 @@ val get_mls_label_inj:
 let get_mls_label_inj l1 l2 =
   String.concat_injective "MLS 1.0 " "MLS 1.0 " l1 l2
 
-let split_sign_pred_func: split_predicate_input_values = {
-  labeled_data_t = (string & timestamp & dy_bytes & dy_bytes);
-  label_t = valid_label;
-  encoded_label_t = mls_ascii_string;
-  raw_data_t = (string & timestamp & dy_bytes & dy_bytes);
+type verif_key_t {|crypto_usages|} = vk:dy_bytes{SigKey? (get_signkey_usage vk)}
 
-  decode_labeled_data = (fun (usg, time, key, data) -> (
-    match parse (sign_content_nt dy_bytes) data with
-    | Some ({label; content}) -> Some (label, (usg, time, key, content))
-    | None -> None
-  ));
-
-  encode_label = get_mls_label;
-  encode_label_inj = get_mls_label_inj;
+noeq
+type mls_sign_pred {|crypto_usages|} = {
+  pred: trace -> key:verif_key_t -> msg:dy_bytes -> prop;
+  pred_later:
+    tr1:trace -> tr2:trace ->
+    key:verif_key_t -> msg:dy_bytes ->
+    Lemma
+    (requires pred tr1 key msg /\ tr1 <$ tr2)
+    (ensures pred tr2 key msg)
+  ;
 }
 
-let sign_pred = usage:string -> timestamp -> key:dy_bytes -> msg:dy_bytes -> prop
+let split_sign_pred_func {|crypto_usages|}: split_predicate_input_values = {
+  local_pred = mls_sign_pred;
+  global_pred = trace -> verif_key_t -> dy_bytes -> prop;
 
-val sign_pred_to_local_pred: sign_pred -> local_pred split_sign_pred_func
-let sign_pred_to_local_pred spred (usg, time, key, msg) =
-  spred usg time key msg
+  raw_data_t = (trace & verif_key_t & dy_bytes);
+  tagged_data_t = (trace & verif_key_t & dy_bytes);
 
-val global_usage_to_global_pred: global_usage -> global_pred split_sign_pred_func
-let global_usage_to_global_pred gu (usg, time, key, msg) =
-  gu.usage_preds.can_sign time usg key msg
+  apply_local_pred = (fun pred (tr, vk, content) -> pred.pred tr vk content);
+  apply_global_pred = (fun pred (tr, vk, msg) -> pred tr vk msg);
+  mk_global_pred = (fun pred tr vk msg -> pred (tr, vk, msg));
+  apply_mk_global_pred = (fun _ _ -> ());
 
-val has_sign_pred: global_usage -> valid_label -> sign_pred -> prop
-let has_sign_pred gu lab spred =
-  has_local_pred split_sign_pred_func (global_usage_to_global_pred gu) lab (sign_pred_to_local_pred spred)
+  tag_t = valid_label;
+  encoded_tag_t = mls_ascii_string;
 
-// We can omit the `is_publishable` disjunction in the precondition,
-// because it will never be used inside a protocol security proof.
-// It can however be used to demonstrate attacks, but that is not our goal.
+  encode_tag = get_mls_label;
+  encode_tag_inj = get_mls_label_inj;
+
+  decode_tagged_data = (fun (tr, key, data) -> (
+    match parse (sign_content_nt dy_bytes) data with
+    | Some ({label; content}) -> Some (label, (tr, key, content))
+    | None -> None
+  ));
+}
+
+val has_sign_pred: crypto_invariants -> (valid_label & mls_sign_pred) -> prop
+let has_sign_pred ci (lab, spred) =
+  has_local_pred split_sign_pred_func (sign_pred #ci) (lab, spred)
+
 #push-options "--z3rlimit 25"
-val sign_with_label_valid:
-  gu:global_usage -> spred:sign_pred -> usg:string -> time:timestamp ->
+val bytes_invariant_sign_with_label:
+  {|ci:crypto_invariants|} -> spred:mls_sign_pred -> tr:trace ->
   sk:dy_bytes -> lab:valid_label -> msg:mls_bytes dy_bytes -> nonce:sign_nonce dy_bytes ->
   Lemma
   (requires
-    is_valid gu time sk /\ ( (* is_publishable gu time sk \/ *) get_usage gu sk == Some (sig_usage usg)) /\
-    is_valid gu time nonce /\
-    get_label gu sk == get_label gu nonce /\
-    is_valid gu time msg /\
-    has_sign_pred gu lab spred /\ (exists time_sig. time_sig <$ time /\ spred usg time_sig (CryptoLib.vk sk) msg)
+    bytes_invariant tr sk /\
+    bytes_invariant tr nonce /\
+    bytes_invariant tr msg /\
+    SigKey? (get_usage sk) /\
+    SigNonce? (get_usage nonce) /\
+    (get_label sk) `can_flow tr` (get_label nonce) /\
+    has_sign_pred ci (lab, spred) /\
+    spred.pred tr (vk sk) msg
   )
   (ensures
-    is_valid gu time (Success?.v (sign_with_label sk lab msg nonce)) /\
-    can_flow time (get_label gu (Success?.v (sign_with_label sk lab msg nonce))) (get_label gu msg)
+    bytes_invariant tr (Success?.v (sign_with_label sk lab msg nonce)) /\
+    (get_label (Success?.v (sign_with_label sk lab msg nonce))) `can_flow tr` (get_label msg)
   )
-let sign_with_label_valid gu spred usg time sk lab msg nonce =
-  assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
+let bytes_invariant_sign_with_label #ci spred tr sk lab msg nonce =
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label lab;
     content = msg;
   } in
-  serialize_wf_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
-  serialize_wf_lemma (sign_content_nt dy_bytes) (is_msg gu (get_label gu msg) time) sign_content;
-  parse_serialize_inv_lemma #dy_bytes (sign_content_nt dy_bytes) sign_content;
-  let sign_content_bytes: dy_bytes = serialize (sign_content_nt dy_bytes) sign_content in
-  LabeledCryptoAPI.sign_lemma #gu #time #(get_label gu sk) #(get_label gu sign_content_bytes) sk nonce sign_content_bytes;
-  can_flow_transitive time (get_label gu (CryptoLib.sign sk nonce sign_content_bytes)) (get_label gu sign_content_bytes) (get_label gu msg)
+  serialize_wf_lemma (sign_content_nt dy_bytes) (bytes_invariant tr) sign_content;
+  serialize_wf_lemma (sign_content_nt dy_bytes) (is_knowable_by (get_label msg) tr) sign_content;
+  let sign_content_bytes = serialize _ sign_content in
+  assert(split_sign_pred_func.decode_tagged_data (tr, (vk sk), sign_content_bytes) == Some (split_sign_pred_func.encode_tag lab, (tr, (vk sk), msg)))
 #pop-options
 
-val verify_with_label_is_valid:
-  gu:global_usage -> spred:sign_pred -> usg:string -> sk_label:label -> time:timestamp ->
+val bytes_invariant_verify_with_label:
+  {|ci:crypto_invariants|} -> spred:mls_sign_pred -> tr:trace ->
   vk:dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:dy_bytes ->
   Lemma
   (requires
-    has_sign_pred gu lab spred /\
-    is_verification_key gu usg sk_label time vk /\
-    is_valid gu time content /\
-    is_valid gu time signature /\
+    has_sign_pred ci (lab, spred) /\
+    bytes_invariant tr vk /\
+    bytes_invariant tr content /\
+    bytes_invariant tr signature /\
     verify_with_label vk lab content signature
   )
-  (ensures can_flow time sk_label public \/ (exists time_sig. time_sig <$ time /\ spred usg time_sig vk content))
-let verify_with_label_is_valid gu spred usg sk_label time vk lab content signature =
-  assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
+  (ensures
+    (
+      SigKey? (get_signkey_usage vk) ==>
+      spred.pred tr vk content
+    ) \/ (
+      (get_signkey_label vk) `can_flow tr` public 
+    )
+  )
+let bytes_invariant_verify_with_label #ci spred tr vk lab content signature =
   let sign_content: sign_content_nt dy_bytes = {
     label = get_mls_label lab;
     content = content;
   } in
-  serialize_wf_lemma (sign_content_nt dy_bytes) (is_valid gu time) sign_content;
-  parse_serialize_inv_lemma #dy_bytes (sign_content_nt dy_bytes) sign_content;
-  let sign_content_bytes: dy_bytes = serialize (sign_content_nt dy_bytes) sign_content in
-  LabeledCryptoAPI.verify_lemma #gu #time #SecrecyLabels.private_label #SecrecyLabels.private_label vk sign_content_bytes signature
+  serialize_wf_lemma (sign_content_nt dy_bytes) (bytes_invariant tr) sign_content;
+  let sign_content_bytes = serialize _ sign_content in
+  if SigKey? (get_signkey_usage vk) then
+    assert(split_sign_pred_func.decode_tagged_data (tr, vk, sign_content_bytes) == Some (split_sign_pred_func.encode_tag lab, (tr, vk, content)))
+  else ()
 
-val label_sign_pred_to_label_local_pred: valid_label & sign_pred -> valid_label & local_pred split_sign_pred_func
-let label_sign_pred_to_label_local_pred (label, spred) =
-  (label, sign_pred_to_local_pred spred)
+val mk_sign_pred:
+  {|crypto_usages|} ->
+  list (valid_label & mls_sign_pred) ->
+  trace -> verif_key_t -> dy_bytes ->
+  prop
+let mk_sign_pred l tr key msg =
+  mk_global_pred split_sign_pred_func l tr key msg
 
-val mk_can_sign: list (valid_label & sign_pred) -> timestamp -> string -> dy_bytes -> dy_bytes -> prop
-let mk_can_sign l time usg key msg =
-  mk_global_pred split_sign_pred_func (List.Tot.map label_sign_pred_to_label_local_pred l) (usg, time, key, msg)
-
-val mk_can_sign_correct:
-  gu:global_usage -> lspred:list (valid_label & sign_pred) ->
-  lab:valid_label -> spred:sign_pred ->
+#push-options "--ifuel 1"
+val mk_sign_pred_later:
+  {|crypto_usages|} ->
+  lspred:list (valid_label & mls_sign_pred) ->
+  tr1:trace -> tr2:trace ->
+  vk:verif_key_t -> msg:dy_bytes ->
   Lemma
   (requires
-    gu.usage_preds.can_sign == mk_can_sign lspred /\
-    List.Tot.no_repeats_p (List.Tot.map fst lspred) /\
-    List.Tot.memP (lab, spred) lspred
+    mk_sign_pred lspred tr1 vk msg /\
+    tr1 <$ tr2
   )
-  (ensures has_sign_pred gu lab spred)
-let mk_can_sign_correct gu lspred lab spred =
-  let open MLS.MiscLemmas in
-  assert_norm (forall msg usg time key. global_usage_to_global_pred gu (usg, time, key, msg) <==> gu.usage_preds.can_sign time usg key msg); //???
-  memP_map (lab, spred) label_sign_pred_to_label_local_pred lspred;
-  FStar.Classical.forall_intro_2 (index_map label_sign_pred_to_label_local_pred);
-  FStar.Classical.forall_intro_2 (index_map (fst #valid_label #sign_pred));
-  FStar.Classical.forall_intro_2 (index_map (fst #valid_label #(local_pred split_sign_pred_func)));
-  List.Tot.index_extensionality (List.Tot.map fst lspred) (List.Tot.map fst (List.Tot.map label_sign_pred_to_label_local_pred lspred));
-  mk_global_pred_correct split_sign_pred_func (List.Tot.map label_sign_pred_to_label_local_pred lspred) lab (sign_pred_to_local_pred spred)
+  (ensures mk_sign_pred lspred tr2 vk msg)
+let mk_sign_pred_later lspred tr1 tr2 vk msg =
+  mk_global_pred_eq split_sign_pred_func lspred (tr1, vk, msg);
+  eliminate exists tag spred raw_data.
+    List.Tot.memP (tag, spred) lspred /\
+    split_sign_pred_func.apply_local_pred spred raw_data /\
+    split_sign_pred_func.decode_tagged_data (tr1, vk, msg) == Some (split_sign_pred_func.encode_tag tag, raw_data)
+  returns mk_sign_pred lspred tr2 vk msg
+  with _. (
+    let Some (_, (_, _, msg_sub)) = split_sign_pred_func.decode_tagged_data (tr1, vk, msg) in
+    spred.pred_later tr1 tr2 vk msg_sub;
+    mk_global_pred_eq split_sign_pred_func lspred (tr2, vk, msg);
+    assert(split_sign_pred_func.apply_local_pred spred (tr2, vk, msg_sub))
+  )
+#pop-options
+
+#push-options "--ifuel 1"
+val mk_sign_pred_correct:
+  ci:crypto_invariants -> lspred:list (valid_label & mls_sign_pred) ->
+  Lemma
+  (requires
+    sign_pred == mk_sign_pred lspred /\
+    List.Tot.no_repeats_p (List.Tot.map fst lspred)
+  )
+  (ensures for_allP (has_sign_pred ci) lspred)
+let mk_sign_pred_correct ci lspred =
+  for_allP_eq (has_sign_pred ci) lspred;
+  FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (mk_global_pred_correct split_sign_pred_func lspred))
+#pop-options
