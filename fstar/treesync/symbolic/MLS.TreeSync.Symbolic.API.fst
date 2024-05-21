@@ -28,7 +28,7 @@ open DY.Lib
 
 (*** Utility functions ***)
 
-val guard: b:bool -> crypto (option (squash b))
+val guard: b:bool -> traceful (option (squash b))
 let guard b =
   if b then
     return (Some ())
@@ -36,7 +36,7 @@ let guard b =
     return None
 
 #push-options "--ifuel 1"
-val extract_result: #a:Type -> x:MLS.Result.result a -> crypto (option a)
+val extract_result: #a:Type -> x:MLS.Result.result a -> traceful (option a)
 let extract_result #a x =
   match x with
   | MLS.Result.Success y -> return (Some y)
@@ -56,7 +56,7 @@ let has_treesync_invariants tkt invs =
 val get_token_for:
   p:principal -> as_session:nat ->
   inp:as_input dy_bytes ->
-  crypto (option dy_as_token)
+  traceful (option dy_as_token)
 let get_token_for p as_session (verification_key, credential) =
   let*? { who; usg; time; } = find_verified_credential p as_session ({ verification_key; credential; }) in
   guard (usg = "MLS.LeafSignKey");*?
@@ -90,7 +90,7 @@ let get_token_for_proof #invs p as_session (verification_key, credential) tr = (
 val get_tokens_for:
   p:principal -> as_session:nat ->
   inps:list (option (as_input dy_bytes)) ->
-  crypto (option (l:list (option dy_as_token){List.Tot.length l == List.Tot.length inps}))
+  traceful (option (l:list (option dy_as_token){List.Tot.length l == List.Tot.length inps}))
 let rec get_tokens_for p as_session inps =
   match inps with
   | [] -> return (Some [])
@@ -150,7 +150,7 @@ val create:
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:nat -> gmgr_session:nat ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:nat ->
-  crypto (option unit)
+  traceful (option unit)
 let create #tkt p as_session gmgr_session group_id ln secret_session =
   let*? create_pend = extract_result (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) in
   let*? token = get_token_for p as_session (create_pend.as_input) in
@@ -196,7 +196,7 @@ val welcome:
   p:principal -> as_session:nat -> gmgr_session:nat -> kpmgr_session:nat ->
   my_key_package:key_package_nt dy_bytes tkt ->
   group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
-  crypto (option unit)
+  traceful (option unit)
 let welcome #tkt p as_session gmgr_session kpmgr_session my_key_package group_id l t =
   let*? welcome_pend = extract_result (prepare_welcome #dy_bytes #crypto_dy_bytes group_id t) in
   welcome_pend.as_inputs_proof;
@@ -253,7 +253,7 @@ val add:
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:nat -> gmgr_session:nat ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
-  crypto (option nat)
+  traceful (option nat)
 let add #tkt p as_session gmgr_session group_id ln =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
   let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
@@ -312,7 +312,7 @@ val update:
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:nat -> gmgr_session:nat ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
-  crypto (option unit)
+  traceful (option unit)
 let update #tkt p as_session gmgr_session group_id ln li =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
   let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
@@ -370,7 +370,7 @@ val remove:
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:nat -> gmgr_session:nat ->
   group_id:mls_bytes dy_bytes -> li:nat ->
-  crypto (option unit)
+  traceful (option unit)
 let remove #tkt p as_session gmgr_session group_id li =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
   let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
@@ -421,7 +421,7 @@ val commit:
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> as_session:nat -> gmgr_session:nat ->
   group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
-  crypto (option unit)
+  traceful (option unit)
 let commit #tkt #l #li p as_session gmgr_session group_id path =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
   let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
@@ -492,7 +492,7 @@ let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
 
 val create_signature_keypair:
   p:principal ->
-  crypto (option (nat & signature_public_key_nt dy_bytes))
+  traceful (option (nat & signature_public_key_nt dy_bytes))
 let create_signature_keypair p =
   let* signature_key = mk_rand (SigKey "MLS.LeafSignKey") (principal_label p) 32 in
   let verification_key = vk signature_key in
@@ -547,7 +547,7 @@ val authenticate_path:
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> gmgr_session:nat ->
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li{(get_path_leaf path).source == LNS_update} ->
-  crypto (option (pathsync dy_bytes tkt l 0 li))
+  traceful (option (pathsync dy_bytes tkt l 0 li))
 let authenticate_path #tkt #l p gmgr_session group_id tree path =
   let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
@@ -627,7 +627,7 @@ val authenticate_leaf_node_data_from_key_package:
   p:principal ->
   si_private:nat ->
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
-  crypto (option (leaf_node_nt dy_bytes tkt))
+  traceful (option (leaf_node_nt dy_bytes tkt))
 let authenticate_leaf_node_data_from_key_package #tkt p si_private ln_data =
   let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
   let*? private_st = get_private_treesync_state p si_private in
@@ -681,7 +681,7 @@ val authenticate_leaf_node_data_from_update:
   p:principal ->
   si_private:nat ->
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
-  crypto (option (leaf_node_nt dy_bytes tkt))
+  traceful (option (leaf_node_nt dy_bytes tkt))
 let authenticate_leaf_node_data_from_update #tkt p si_private ln_data group_id leaf_index =
   let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
   let*? private_st = get_private_treesync_state p si_private in
@@ -739,7 +739,7 @@ val trigger_tree_list_event:
   #tkt:treekem_types dy_bytes ->
   p:principal ->
   group_id:mls_bytes dy_bytes -> tl:tree_list dy_bytes tkt ->
-  crypto unit
+  traceful unit
 let rec trigger_tree_list_event #tkt p group_id tl =
   match tl with
   | [] -> return ()
@@ -805,7 +805,7 @@ val trigger_leaf_node_event:
   #tkt:treekem_types dy_bytes ->
   p:principal ->
   ln_tbs:leaf_node_tbs_nt dy_bytes tkt ->
-  crypto unit
+  traceful unit
 let trigger_leaf_node_event #tkt p ln_tbs =
   trigger_event p ln_tbs
 

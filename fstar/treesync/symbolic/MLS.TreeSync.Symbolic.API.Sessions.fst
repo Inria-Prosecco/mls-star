@@ -96,7 +96,7 @@ let has_treesync_public_state_invariant tkt invs =
 val treesync_public_state_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> string & local_bytes_state_predicate
 let treesync_public_state_tag_and_invariant #ci tkt = ((local_state_bare_treesync_state tkt).tag, local_state_predicate_to_local_bytes_state_predicate (treesync_public_state_pred tkt))
 
-(*** LCrypto API for public state ***)
+(*** Traceful API for public state ***)
 
 val treesync_state_to_bare_treesync_state:
   #tkt:treekem_types dy_bytes ->
@@ -113,7 +113,7 @@ val new_public_treesync_state:
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> 
   principal ->
   st:treesync_state dy_bytes tkt dy_as_token group_id ->
-  crypto nat
+  traceful nat
 let new_public_treesync_state #tkt #group_id prin st =
   let* state_id = new_session_id prin in
   set_state prin state_id (treesync_state_to_bare_treesync_state st);*
@@ -143,7 +143,7 @@ val set_public_treesync_state:
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
   prin:principal -> state_id:nat ->
   st:treesync_state dy_bytes tkt dy_as_token group_id ->
-  crypto unit
+  traceful unit
 let set_public_treesync_state #tkt #group_id prin state_id st =
   set_state prin state_id (treesync_state_to_bare_treesync_state st)
 
@@ -170,7 +170,7 @@ let set_public_treesync_state_proof #invs #tkt #group_id prin state_id st tr = (
 val get_public_treesync_state:
   #tkt:treekem_types dy_bytes ->
   prin:principal -> state_id:nat ->
-  crypto (option (dtuple2 (mls_bytes dy_bytes) (treesync_state dy_bytes tkt dy_as_token)))
+  traceful (option (dtuple2 (mls_bytes dy_bytes) (treesync_state dy_bytes tkt dy_as_token)))
 let get_public_treesync_state #tkt prin state_id =
   let*? bare_st: bare_treesync_state tkt = get_state prin state_id in
   // TODO: Dynamic could be removed with REPROSEC/dolev-yao-star-extrinsic#24
@@ -238,11 +238,11 @@ let has_treesync_private_state_invariant invs =
 val treesync_private_state_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
 let treesync_private_state_tag_and_invariant #ci = (local_state_treesync_private_state.tag, local_state_predicate_to_local_bytes_state_predicate treesync_private_state_pred)
 
-(*** LCrypto API for private state ***)
+(*** Traceful API for private state ***)
 
 val new_private_treesync_state:
   principal -> treesync_private_state ->
-  crypto nat
+  traceful nat
 let new_private_treesync_state prin st =
   let* state_id = new_session_id prin in
   set_state prin state_id st;*
@@ -266,7 +266,7 @@ let new_private_treesync_state_proof #invs prin st tr = ()
 
 val set_private_treesync_state:
   principal -> nat -> treesync_private_state ->
-  crypto unit
+  traceful unit
 let set_private_treesync_state prin state_id st =
   set_state prin state_id st
 
@@ -288,7 +288,7 @@ let set_private_treesync_state_proof #invs prin state_id st tr = ()
 
 val get_private_treesync_state:
   principal -> nat ->
-  crypto (option treesync_private_state)
+  traceful (option treesync_private_state)
 let get_private_treesync_state prin state_id =
   get_state prin state_id
 
