@@ -12,8 +12,7 @@ open MLS.TreeSync.Symbolic.IsWellFormed
 
 [@@ with_bytes dy_bytes]
 type key_package_manager_value = {
-  [@@@ with_parser #bytes ps_nat]
-  si_private: nat;
+  si_private: state_id;
 }
 
 %splice [ps_key_package_manager_value] (gen_parser (`key_package_manager_value))

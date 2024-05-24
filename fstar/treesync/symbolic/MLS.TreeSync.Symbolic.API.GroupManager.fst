@@ -18,10 +18,8 @@ type group_manager_key  = {
 
 [@@ with_bytes dy_bytes]
 type group_manager_value  = {
-  [@@@ with_parser #bytes ps_nat]
-  si_public: nat;
-  [@@@ with_parser #bytes ps_nat]
-  si_private: nat;
+  si_public: state_id;
+  si_private: state_id;
 }
 
 %splice [ps_group_manager_value] (gen_parser (`group_manager_value))

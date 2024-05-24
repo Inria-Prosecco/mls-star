@@ -113,7 +113,7 @@ val new_public_treesync_state:
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> 
   principal ->
   st:treesync_state dy_bytes tkt dy_as_token group_id ->
-  traceful nat
+  traceful state_id
 let new_public_treesync_state #tkt #group_id prin st =
   let* state_id = new_session_id prin in
   set_state prin state_id (treesync_state_to_bare_treesync_state st);*
@@ -141,7 +141,7 @@ let new_public_treesync_state_proof #invs #tkt #group_id prin st tr = ()
 
 val set_public_treesync_state:
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
-  prin:principal -> state_id:nat ->
+  prin:principal -> state_id:state_id ->
   st:treesync_state dy_bytes tkt dy_as_token group_id ->
   traceful unit
 let set_public_treesync_state #tkt #group_id prin state_id st =
@@ -150,7 +150,7 @@ let set_public_treesync_state #tkt #group_id prin state_id st =
 val set_public_treesync_state_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
-  prin:principal -> state_id:nat ->
+  prin:principal -> state_id:state_id ->
   st:treesync_state dy_bytes tkt dy_as_token group_id ->
   tr:trace ->
   Lemma
@@ -169,7 +169,7 @@ let set_public_treesync_state_proof #invs #tkt #group_id prin state_id st tr = (
 
 val get_public_treesync_state:
   #tkt:treekem_types dy_bytes ->
-  prin:principal -> state_id:nat ->
+  prin:principal -> state_id:state_id ->
   traceful (option (dtuple2 (mls_bytes dy_bytes) (treesync_state dy_bytes tkt dy_as_token)))
 let get_public_treesync_state #tkt prin state_id =
   let*? bare_st: bare_treesync_state tkt = get_state prin state_id in
@@ -186,7 +186,7 @@ let get_public_treesync_state #tkt prin state_id =
 val get_public_treesync_state_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
-  prin:principal -> state_id:nat ->
+  prin:principal -> state_id:state_id ->
   tr:trace ->
   Lemma
   (requires
@@ -242,7 +242,7 @@ let treesync_private_state_tag_and_invariant #ci = (local_state_treesync_private
 
 val new_private_treesync_state:
   principal -> treesync_private_state ->
-  traceful nat
+  traceful state_id
 let new_private_treesync_state prin st =
   let* state_id = new_session_id prin in
   set_state prin state_id st;*
@@ -265,14 +265,14 @@ val new_private_treesync_state_proof:
 let new_private_treesync_state_proof #invs prin st tr = ()
 
 val set_private_treesync_state:
-  principal -> nat -> treesync_private_state ->
+  principal -> state_id -> treesync_private_state ->
   traceful unit
 let set_private_treesync_state prin state_id st =
   set_state prin state_id st
 
 val set_private_treesync_state_proof:
   {|invs:protocol_invariants|} ->
-  prin:principal -> state_id:nat -> st:treesync_private_state ->
+  prin:principal -> state_id:state_id -> st:treesync_private_state ->
   tr:trace ->
   Lemma
   (requires
@@ -287,14 +287,14 @@ val set_private_treesync_state_proof:
 let set_private_treesync_state_proof #invs prin state_id st tr = ()
 
 val get_private_treesync_state:
-  principal -> nat ->
+  principal -> state_id ->
   traceful (option treesync_private_state)
 let get_private_treesync_state prin state_id =
   get_state prin state_id
 
 val get_private_treesync_state_proof:
   {|invs:protocol_invariants|} ->
-  prin:principal -> state_id:nat ->
+  prin:principal -> state_id:state_id ->
   tr:trace ->
   Lemma
   (requires

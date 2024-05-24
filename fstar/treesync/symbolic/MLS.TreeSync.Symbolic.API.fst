@@ -54,7 +54,7 @@ let has_treesync_invariants tkt invs =
   has_leaf_node_tbs_invariant tkt invs.crypto_invs
 
 val get_token_for:
-  p:principal -> as_session:nat ->
+  p:principal -> as_session:state_id ->
   inp:as_input dy_bytes ->
   traceful (option dy_as_token)
 let get_token_for p as_session (verification_key, credential) =
@@ -64,7 +64,7 @@ let get_token_for p as_session (verification_key, credential) =
 
 val get_token_for_proof:
   {|invs:protocol_invariants|} ->
-  p:principal -> as_session:nat ->
+  p:principal -> as_session:state_id ->
   inp:as_input dy_bytes ->
   tr:trace ->
   Lemma
@@ -88,7 +88,7 @@ let get_token_for_proof #invs p as_session (verification_key, credential) tr = (
 
 #push-options "--fuel 1 --ifuel 1"
 val get_tokens_for:
-  p:principal -> as_session:nat ->
+  p:principal -> as_session:state_id ->
   inps:list (option (as_input dy_bytes)) ->
   traceful (option (l:list (option dy_as_token){List.Tot.length l == List.Tot.length inps}))
 let rec get_tokens_for p as_session inps =
@@ -110,7 +110,7 @@ let rec get_tokens_for p as_session inps =
 #push-options "--fuel 1 --ifuel 1"
 val get_tokens_for_proof:
   {|invs:protocol_invariants|} ->
-  p:principal -> as_session:nat ->
+  p:principal -> as_session:state_id ->
   inps:list (option (as_input dy_bytes)) ->
   tr:trace ->
   Lemma
@@ -148,8 +148,8 @@ let rec get_tokens_for_proof #invs p as_session inps tr =
 
 val create:
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:state_id ->
   traceful (option unit)
 let create #tkt p as_session gmgr_session group_id ln secret_session =
   let*? create_pend = extract_result (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) in
@@ -163,8 +163,8 @@ let create #tkt p as_session gmgr_session group_id ln secret_session =
 val create_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:state_id ->
   tr:trace ->
   Lemma
   (requires
@@ -193,7 +193,7 @@ let create_proof #invs #tkt p as_session gmgr_session group_id ln secret_session
 
 val welcome:
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat -> kpmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id -> kpmgr_session:state_id ->
   my_key_package:key_package_nt dy_bytes tkt ->
   group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
   traceful (option unit)
@@ -210,7 +210,7 @@ let welcome #tkt p as_session gmgr_session kpmgr_session my_key_package group_id
 val welcome_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat -> kpmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id -> kpmgr_session:state_id ->
   my_key_package:key_package_nt dy_bytes tkt ->
   group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
   tr:trace ->
@@ -251,7 +251,7 @@ let welcome_proof #invs #tkt p as_session gmgr_session kpmgr_session my_key_pack
 
 val add:
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
   traceful (option nat)
 let add #tkt p as_session gmgr_session group_id ln =
@@ -266,7 +266,7 @@ let add #tkt p as_session gmgr_session group_id ln =
 val add_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
   tr:trace ->
   Lemma
@@ -310,7 +310,7 @@ let add_proof #invs #tkt p as_session gmgr_session group_id ln tr =
 
 val update:
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
   traceful (option unit)
 let update #tkt p as_session gmgr_session group_id ln li =
@@ -326,7 +326,7 @@ let update #tkt p as_session gmgr_session group_id ln li =
 val update_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
   tr:trace ->
   Lemma
@@ -368,7 +368,7 @@ let update_proof #invs #tkt p as_session gmgr_session group_id ln li tr =
 
 val remove:
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> li:nat ->
   traceful (option unit)
 let remove #tkt p as_session gmgr_session group_id li =
@@ -383,7 +383,7 @@ let remove #tkt p as_session gmgr_session group_id li =
 val remove_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> li:nat ->
   tr:trace ->
   Lemma
@@ -419,7 +419,7 @@ let remove_proof #invs #tkt p as_session gmgr_session group_id li tr =
 
 val commit:
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
   traceful (option unit)
 let commit #tkt #l #li p as_session gmgr_session group_id path =
@@ -436,7 +436,7 @@ let commit #tkt #l #li p as_session gmgr_session group_id path =
 val commit_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
-  p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
   tr:trace ->
   Lemma
@@ -492,7 +492,7 @@ let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
 
 val create_signature_keypair:
   p:principal ->
-  traceful (option (nat & signature_public_key_nt dy_bytes))
+  traceful (option (state_id & signature_public_key_nt dy_bytes))
 let create_signature_keypair p =
   let* signature_key = mk_rand (SigKey "MLS.LeafSignKey") (principal_label p) 32 in
   let verification_key = vk signature_key in
@@ -545,7 +545,7 @@ let external_path_has_event_later #tkt #l #li prin tr1 tr2 t p group_id =
 #push-options "--z3rlimit 25"
 val authenticate_path:
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
-  p:principal -> gmgr_session:nat ->
+  p:principal -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li{(get_path_leaf path).source == LNS_update} ->
   traceful (option (pathsync dy_bytes tkt l 0 li))
 let authenticate_path #tkt #l p gmgr_session group_id tree path =
@@ -566,7 +566,7 @@ let authenticate_path #tkt #l p gmgr_session group_id tree path =
 val authenticate_path_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
-  p:principal -> gmgr_session:nat ->
+  p:principal -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
   tr:trace ->
   Lemma
@@ -625,7 +625,7 @@ let authenticate_path_proof #invs #tkt #l p gmgr_session group_id tree path tr =
 val authenticate_leaf_node_data_from_key_package:
   #tkt:treekem_types dy_bytes ->
   p:principal ->
-  si_private:nat ->
+  si_private:state_id ->
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
   traceful (option (leaf_node_nt dy_bytes tkt))
 let authenticate_leaf_node_data_from_key_package #tkt p si_private ln_data =
@@ -638,7 +638,7 @@ val authenticate_leaf_node_data_from_key_package_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal ->
-  si_private:nat ->
+  si_private:state_id ->
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
   tr:trace ->
   Lemma
@@ -679,7 +679,7 @@ let authenticate_leaf_node_data_from_key_package_proof  #invs #tkt p si_private 
 val authenticate_leaf_node_data_from_update:
   #tkt:treekem_types dy_bytes ->
   p:principal ->
-  si_private:nat ->
+  si_private:state_id ->
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
   traceful (option (leaf_node_nt dy_bytes tkt))
 let authenticate_leaf_node_data_from_update #tkt p si_private ln_data group_id leaf_index =
@@ -692,7 +692,7 @@ val authenticate_leaf_node_data_from_update_proof:
   {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal ->
-  si_private:nat ->
+  si_private:state_id ->
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
   tr:trace ->
   Lemma
