@@ -213,7 +213,8 @@ let process_commit state wire_format message message_auth =
   let? (state, encryption_secret) = (
     match message_content.path with
     | None -> (
-      let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.commit state.treekem_state None None provisional_group_context new_group_context in
+      let? pend = MLS.TreeKEM.API.prepare_process_add_only_commit state.treekem_state in
+      let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.finalize_process_commit pend None new_group_context in
       return ({ state with treekem_state;}, encryption_secret)
     )
     | Some path ->
@@ -236,11 +237,13 @@ let process_commit state wire_format message message_auth =
           assume(MLS.NetworkBinder.Properties.path_filtering_ok state.treekem_state.tree_state.tree treekem_path);
           assume(~(List.Tot.memP state.leaf_index (List.Tot.map snd added_leaves)));
           let open MLS.TreeKEM.API in
-          MLS.TreeKEM.API.commit state.treekem_state (Some {
+          let? pend = MLS.TreeKEM.API.prepare_process_full_commit state.treekem_state {
             commit_leaf_ind = _;
             path = treekem_path;
             excluded_leaves = (List.Tot.map snd added_leaves);
-          }) None provisional_group_context new_group_context
+            provisional_group_context;
+          } in
+          MLS.TreeKEM.API.finalize_process_commit pend None new_group_context
         )
       in
       return ({ state with treesync_state; treekem_state;}, encryption_secret)
@@ -446,7 +449,7 @@ let generate_welcome_message st ratchet_tree new_group_context confirmation_tag 
 
 type generate_update_path_result (leaf_index:nat) = {
   update_path: update_path_nt bytes;
-  pending_commit: MLS.TreeKEM.API.pending_commit_2 bytes leaf_index;
+  pending_commit: MLS.TreeKEM.API.pending_create_commit_2 bytes leaf_index;
   provisional_group_context: group_context_nt bytes;
   ratchet_tree: ratchet_tree_nt bytes tkt;
   path_secrets: list (key_package_nt bytes tkt & bytes);
