@@ -9,9 +9,11 @@
       inputs.fstar-flake.follows = "fstar-flake";
     };
 
-    dolev-yao-star-src = {
-      url = "github:Inria-Prosecco/treesync";
-      flake = false;
+    dolev-yao-star-flake = {
+      url = "github:REPROSEC/dolev-yao-star-extrinsic";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.fstar-flake.follows = "fstar-flake";
+      inputs.comparse-flake.follows = "comparse-flake";
     };
 
     hacl-packages-src = {
@@ -20,7 +22,7 @@
     };
   };
 
-  outputs = {self, nixpkgs, fstar-flake, comparse-flake, dolev-yao-star-src, hacl-packages-src}:
+  outputs = {self, nixpkgs, fstar-flake, comparse-flake, dolev-yao-star-flake, hacl-packages-src}:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -28,20 +30,7 @@
     fstar = fstar-flake.packages.${system}.fstar;
     fstar-dune = fstar-flake.packages.${system}.fstar-dune;
     comparse = comparse-flake.packages.${system}.comparse;
-    # The following is a hack, because nix is not able to fetch a subdirectory of a git repository
-    # (there is the "?dir=..." syntax, but it works only to point to the flake.nix!)
-    # There are two repositories where we may obtain dolev-yao-star
-    # - from the private dolev-yao-star repository
-    # - from the artifact of the TreeSync paper, that contains a recent public version of DY* in the dolev-yao-star subdirectory
-    # Hence, this little condition will check whether there exists a "dolev-yao-star" subdirectory
-    # (which only happens when dolev-yao-star-src points to the TreeSync artifact),
-    # and go into it when that is the case.
-    dolev-yao-star =
-      if (builtins.readDir dolev-yao-star-src)?"dolev-yao-star" then
-        "${dolev-yao-star-src}/dolev-yao-star"
-      else
-        dolev-yao-star-src
-    ;
+    dolev-yao-star = dolev-yao-star-flake.packages.${system}.dolev-yao-star;
     mls-star = pkgs.callPackage ./default.nix {inherit fstar fstar-dune z3 comparse dolev-yao-star hacl-packages-src; ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_14;};
   in {
     packages.${system} = {

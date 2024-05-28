@@ -3,8 +3,6 @@ module MLS.TreeSync.Symbolic.API
 open Comparse
 open MLS.Result
 open MLS.Crypto
-open GlobalRuntimeLib
-open LabeledRuntimeAPI
 open MLS.Tree
 open MLS.NetworkTypes
 open MLS.Bootstrap.NetworkTypes
@@ -23,427 +21,811 @@ open MLS.TreeSync.Symbolic.API.IsWellFormedInvariant
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 open MLS.TreeSync.Symbolic.AuthServiceCache
 open MLS.TreeSync.Symbolic.IsWellFormed
+open DY.Core
+open DY.Lib
 
-#set-options "--fuel 0 --ifuel 0"
+#set-options "--fuel 0 --ifuel 0 --z3cliopt 'smt.qi.eager_threshold=100'"
 
 (*** Utility functions ***)
 
-val guard: pr:preds -> b:bool -> LCrypto unit pr
-  (requires fun t0 -> True)
-  (ensures fun t0 _ t1 -> t1 == t0 /\ b)
-let guard pr b =
-  if b then ()
-  else error "guard failed"
+val guard: b:bool -> traceful (option (squash b))
+let guard b =
+  if b then
+    return (Some ())
+  else
+    return None
 
 #push-options "--ifuel 1"
-val extract_result: #a:Type -> pr:preds -> x:MLS.Result.result a -> LCrypto a pr
-  (requires fun t0 -> True)
-  (ensures fun t0 res t1 -> t1 == t0 /\ x == Success res)
-let extract_result #a pr x =
+val extract_result: #a:Type -> x:MLS.Result.result a -> traceful (option a)
+let extract_result #a x =
   match x with
-  | MLS.Result.Success y -> y
-  | MLS.Result.InternalError s -> error "extract_result: internal error '" ^ s ^ "'"
-  | MLS.Result.ProtocolError s -> error "extract_result: protocol error '" ^ s ^ "'"
+  | MLS.Result.Success y -> return (Some y)
+  | MLS.Result.InternalError s -> return None
+  | MLS.Result.ProtocolError s -> return None
 #pop-options
 
-val has_treesync_invariants: treekem_types dy_bytes -> preds -> prop
-let has_treesync_invariants tkt pr =
-  has_treesync_public_state_invariant tkt pr /\
-  has_treesync_private_state_invariant pr /\
-  has_group_manager_invariant pr /\
-  has_key_package_manager_invariant tkt pr /\
-  has_as_cache_invariant pr /\
-  has_leaf_node_tbs_invariant tkt pr.global_usage
+val has_treesync_invariants: treekem_types dy_bytes -> protocol_invariants -> prop
+let has_treesync_invariants tkt invs =
+  has_treesync_public_state_invariant tkt invs /\
+  has_treesync_private_state_invariant invs /\
+  has_group_manager_invariant invs /\
+  has_key_package_manager_invariant tkt invs /\
+  has_as_cache_invariant invs /\
+  has_leaf_node_tbs_invariant tkt invs.crypto_invs
 
 val get_token_for:
-  pr:preds -> p:principal -> as_session:nat ->
+  p:principal -> as_session:state_id ->
   inp:as_input dy_bytes ->
-  LCrypto dy_as_token pr
-  (requires fun t0 -> has_as_cache_invariant pr)
-  (ensures fun t0 token t1 ->
-    (dy_asp pr.global_usage (trace_len t0)).credential_ok inp token /\
-    t1 == t0
+  traceful (option dy_as_token)
+let get_token_for p as_session (verification_key, credential) =
+  let*? { who; usg; time; } = find_verified_credential p as_session ({ verification_key; credential; }) in
+  guard (usg = "MLS.LeafSignKey");*?
+  return (Some ({ who; time; } <: dy_as_token))
+
+val get_token_for_proof:
+  {|invs:protocol_invariants|} ->
+  p:principal -> as_session:state_id ->
+  inp:as_input dy_bytes ->
+  tr:trace ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_as_cache_invariant invs
   )
-let get_token_for pr p as_session (verification_key, credential) =
-  let now = global_timestamp () in
-  let { who; usg; time; } = find_verified_credential pr p as_session ({ verification_key; credential; }) in
-  guard pr (usg = "MLS.LeafSignKey");
-  { who; time; }
+  (ensures (
+    let (opt_token, tr_out) = get_token_for p as_session inp tr in
+    tr_out == tr /\ (
+      match opt_token with
+      | None -> True
+      | Some token -> (
+        (dy_asp tr_out).credential_ok inp token
+      )
+    )
+  ))
+  [SMTPat (get_token_for p as_session inp tr);
+   SMTPat (has_as_cache_invariant invs)]
+let get_token_for_proof #invs p as_session (verification_key, credential) tr = ()
 
 #push-options "--fuel 1 --ifuel 1"
 val get_tokens_for:
-  pr:preds -> p:principal -> as_session:nat ->
+  p:principal -> as_session:state_id ->
   inps:list (option (as_input dy_bytes)) ->
-  LCrypto (list (option dy_as_token)) pr
-  (requires fun t0 -> has_as_cache_invariant pr)
-  (ensures fun t0 tokens t1 ->
-    List.Tot.length tokens == List.Tot.length inps /\
-    (forall i.
-      match (List.Tot.index inps i), (List.Tot.index tokens i) with
-      | None, None -> True
-      | Some inp, Some token -> (dy_asp pr.global_usage (trace_len t0)).credential_ok inp token
-      | _, _ -> False
-    ) /\
-    t1 == t0
-  )
-let rec get_tokens_for pr p as_session inps =
-  let now = global_timestamp () in
+  traceful (option (l:list (option dy_as_token){List.Tot.length l == List.Tot.length inps}))
+let rec get_tokens_for p as_session inps =
   match inps with
-  | [] -> []
+  | [] -> return (Some [])
   | inp_head::inps_tail ->
-    let token_head =
+    let*? token_head =
       match inp_head with
-      | Some inp -> Some (get_token_for pr p as_session inp)
-      | None -> None
+      | Some inp ->
+        let*? token = get_token_for p as_session inp in
+        return (Some (Some token))
+      | None -> return (Some None)
     in
-    let tokens_tail = get_tokens_for pr p as_session inps_tail in
+    let*? tokens_tail = get_tokens_for p as_session inps_tail in
     let tokens = token_head::tokens_tail in
-    // An assert is needed to trigger the `forall`
-    assert(forall i. i <> 0 ==> List.Tot.index inps i == List.Tot.index inps_tail (i-1));
-    tokens
+    return (Some (tokens <: l:list (option dy_as_token){List.Tot.length l == List.Tot.length inps}))
+#pop-options
+
+#push-options "--fuel 1 --ifuel 1"
+val get_tokens_for_proof:
+  {|invs:protocol_invariants|} ->
+  p:principal -> as_session:state_id ->
+  inps:list (option (as_input dy_bytes)) ->
+  tr:trace ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_as_cache_invariant invs
+  )
+  (ensures (
+    let (opt_tokens, tr_out) = get_tokens_for p as_session inps tr in
+    tr_out == tr /\ (
+      match opt_tokens with
+      | None -> True
+      | Some tokens -> (
+        List.Tot.length tokens == List.Tot.length inps /\
+        (forall i.
+          match (List.Tot.index inps i), (List.Tot.index tokens i) with
+          | None, None -> True
+          | Some inp, Some token -> (dy_asp tr_out).credential_ok inp token
+          | _, _ -> False
+        )
+      )
+    )
+  ))
+  [SMTPat (get_tokens_for p as_session inps tr);
+   SMTPat (has_as_cache_invariant invs)]
+let rec get_tokens_for_proof #invs p as_session inps tr =
+  match inps with
+  | [] -> ()
+  | inp_head::inps_tail ->
+    get_tokens_for_proof p as_session inps_tail tr;
+    assert(forall i. i <> 0 ==> List.Tot.index inps i == List.Tot.index inps_tail (i-1))
 #pop-options
 
 (*** Process proposals ***)
 
 val create:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:nat ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    is_publishable pr.global_usage (trace_len t0) group_id /\
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) ln /\
-    has_treesync_invariants tkt pr
-  )
-  (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 2)
-let create #tkt pr p as_session gmgr_session group_id ln secret_session =
-  let now = global_timestamp () in
-  let create_pend = extract_result pr (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) in
-  let token = get_token_for pr p as_session create_pend.as_input in
-  let token: as_token_for (dy_asp pr.global_usage now) create_pend.as_input = token in
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:state_id ->
+  traceful (option unit)
+let create #tkt p as_session gmgr_session group_id ln secret_session =
+  let*? create_pend = extract_result (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) in
+  let*? token = get_token_for p as_session (create_pend.as_input) in
   let st = finalize_create create_pend token in
-  is_well_formed_finalize_create (is_publishable pr.global_usage now) create_pend token;
-  let si_public = new_public_treesync_state pr p now _ st in
+  let* si_public = new_public_treesync_state p st in
   let group_sessions = { si_public; si_private = secret_session; } in
-  add_new_group_sessions pr p gmgr_session group_id group_sessions
+  add_new_group_sessions p gmgr_session { group_id } group_sessions;*?
+  return (Some ())
+
+val create_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:state_id ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_publishable tr group_id /\
+    is_well_formed _ (is_publishable tr) ln /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
+  )
+  (ensures (
+    let (_, tr_out) = create p as_session gmgr_session group_id ln secret_session tr in
+    trace_invariant tr_out
+  ))
+let create_proof #invs #tkt p as_session gmgr_session group_id ln secret_session tr =
+  let (opt_create_pend, tr) = extract_result (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) tr in
+  match opt_create_pend with
+  | None -> ()
+  | Some create_pend -> (
+    let (opt_token, tr) = get_token_for p as_session create_pend.as_input tr in
+    match opt_token with
+    | None -> ()
+    | Some token -> (
+      is_well_formed_finalize_create (is_publishable tr) create_pend token;
+      finalize_create_valid #_ #_ #_ #(dy_asp tr) create_pend token
+    )
+  )
 
 val welcome:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat -> kpmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id -> kpmgr_session:state_id ->
   my_key_package:key_package_nt dy_bytes tkt ->
   group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    is_publishable pr.global_usage (trace_len t0) group_id /\
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) t /\
-    has_treesync_invariants tkt pr
-  )
-  (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 2)
-let welcome #tkt pr p as_session gmgr_session kpmgr_session my_key_package group_id l t =
-  let now = global_timestamp () in
-  let welcome_pend = extract_result pr (prepare_welcome #dy_bytes #crypto_dy_bytes group_id t) in
+  traceful (option unit)
+let welcome #tkt p as_session gmgr_session kpmgr_session my_key_package group_id l t =
+  let*? welcome_pend = extract_result (prepare_welcome #dy_bytes #crypto_dy_bytes group_id t) in
   welcome_pend.as_inputs_proof;
-  let tokens = get_tokens_for pr p as_session welcome_pend.as_inputs in
-  let tokens: tokens_for_welcome (dy_asp pr.global_usage now) welcome_pend = tokens in
+  let*? tokens = get_tokens_for p as_session welcome_pend.as_inputs in
   let st = finalize_welcome welcome_pend tokens in
-  is_well_formed_finalize_welcome (is_publishable pr.global_usage now) welcome_pend tokens;
-  let si_public = new_public_treesync_state pr p now _ st in
-  let si_private = (find_key_package_secret_session tkt pr p kpmgr_session my_key_package).si_private in
+  let* si_public = new_public_treesync_state p st in
+  let*? { si_private } = find_key_package_secret_session tkt p kpmgr_session my_key_package in
   let group_sessions = { si_public; si_private; } in
-  add_new_group_sessions pr p gmgr_session group_id group_sessions
+  add_new_group_sessions p gmgr_session { group_id } group_sessions
+
+val welcome_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id -> kpmgr_session:state_id ->
+  my_key_package:key_package_nt dy_bytes tkt ->
+  group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_publishable tr group_id /\
+    is_well_formed _ (is_publishable tr) t /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
+  )
+  (ensures (
+    let (_, tr_out) = welcome p as_session gmgr_session kpmgr_session my_key_package group_id l t tr in
+    trace_invariant tr_out
+  ))
+let welcome_proof #invs #tkt p as_session gmgr_session kpmgr_session my_key_package group_id l t tr =
+  let (opt_welcome_pend, tr) = extract_result (prepare_welcome #dy_bytes #crypto_dy_bytes group_id t) tr in
+  match opt_welcome_pend with
+  | None -> ()
+  | Some welcome_pend -> (
+    welcome_pend.as_inputs_proof;
+    get_tokens_for_proof p as_session welcome_pend.as_inputs tr;
+    let (opt_tokens, tr) = get_tokens_for p as_session welcome_pend.as_inputs tr in
+    match opt_tokens with
+    | None -> ()
+    | Some tokens -> (
+      is_well_formed_finalize_welcome (is_publishable tr) welcome_pend tokens;
+      finalize_welcome_valid #_ #_ #_ #(dy_asp tr) welcome_pend tokens;
+      // not sure why F* needs the following lines
+      // similar to FStarLang/FStar#3093 ?
+      let st = finalize_welcome welcome_pend tokens in
+      let (si_public, tr) = new_public_treesync_state p st tr in
+      let (opt_si_private, tr) = find_key_package_secret_session tkt p kpmgr_session my_key_package tr in
+      match opt_si_private with
+      | None -> ()
+      | Some { si_private } -> ()
+    )
+  )
 
 val add:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
-  LCrypto nat pr
-  (requires fun t0 ->
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) ln /\
-    has_treesync_invariants tkt pr
-  )
-  (ensures fun t0 _ t1 -> trace_len t1 == trace_len t0 + 1)
-let add #tkt pr p as_session gmgr_session group_id ln =
-  let now = global_timestamp () in
-  let group_session = find_group_sessions pr p gmgr_session group_id in
-  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
+  traceful (option nat)
+let add #tkt p as_session gmgr_session group_id ln =
+  let*? group_session = find_group_sessions p gmgr_session { group_id } in
+  let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
+  let*? add_pend = extract_result (prepare_add st ln) in
+  let*? token = get_token_for p as_session add_pend.as_input in
+  let*? (new_st, new_leaf_index) = extract_result (finalize_add add_pend token) in
+  set_public_treesync_state p group_session.si_public new_st;*
+  return (Some new_leaf_index)
 
-  let add_pend = extract_result pr (prepare_add st ln) in
-  let token = get_token_for pr p as_session add_pend.as_input in
-  let (new_st, new_leaf_index) = extract_result pr (finalize_add add_pend token) in
-  is_well_formed_finalize_add (is_publishable pr.global_usage now) add_pend token;
-  set_public_treesync_state pr p group_session.si_public now _ new_st;
-  new_leaf_index
+val add_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_well_formed _ (is_publishable tr) ln /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
+  )
+  (ensures (
+    let (_, tr_out) = add p as_session gmgr_session group_id ln tr in
+    trace_invariant tr_out
+  ))
+let add_proof #invs #tkt p as_session gmgr_session group_id ln tr =
+  let (opt_group_session, tr) = find_group_sessions p gmgr_session { group_id } tr in
+  match opt_group_session with
+  | None -> ()
+  | Some group_session -> (
+    let (opt_st, tr) = get_public_treesync_state #tkt p group_session.si_public tr in
+    match opt_st with
+    | None -> ()
+    | Some (|group_id, st|) -> (
+      let (opt_add_pend, tr) = extract_result (prepare_add st ln) tr in
+      match opt_add_pend with
+      | None -> ()
+      | Some add_pend -> (
+        let (opt_token, tr) = get_token_for p as_session add_pend.as_input tr in
+        match opt_token with
+        | None -> ()
+        | Some token -> (
+          let (opt_new_st, tr) = extract_result (finalize_add add_pend token) tr in
+          match opt_new_st with
+          | None -> ()
+          | Some (new_st, _) -> (
+            is_well_formed_finalize_add (is_publishable tr) add_pend token;
+            finalize_add_valid #_ #_ #_ #(dy_asp tr) add_pend token
+          )
+        )
+      )
+    )
+  )
 
 val update:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) ln /\
-    has_treesync_invariants tkt pr
-  )
-  (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 1)
-let update #tkt pr p as_session gmgr_session group_id ln li =
-  let now = global_timestamp () in
-  let group_session = find_group_sessions pr p gmgr_session group_id in
-  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
-  guard pr (li < pow2 st.levels);
-  let update_pend = extract_result pr (prepare_update st ln li) in
-  let token = get_token_for pr p as_session update_pend.as_input in
+  traceful (option unit)
+let update #tkt p as_session gmgr_session group_id ln li =
+  let*? group_session = find_group_sessions p gmgr_session { group_id } in
+  let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
+  guard (li < pow2 st.levels);*?
+  let*? update_pend = extract_result (prepare_update st ln li) in
+  let*? token = get_token_for p as_session update_pend.as_input in
   let new_st = finalize_update update_pend token in
-  is_well_formed_finalize_update (is_publishable pr.global_usage now) update_pend token;
-  set_public_treesync_state pr p group_session.si_public now _ new_st
+  set_public_treesync_state p group_session.si_public new_st;*
+  return (Some ())
+
+val update_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_well_formed _ (is_publishable tr) ln /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
+  )
+  (ensures (
+    let (_, tr_out) = update p as_session gmgr_session group_id ln li tr in
+    trace_invariant tr_out
+  ))
+let update_proof #invs #tkt p as_session gmgr_session group_id ln li tr =
+  let (opt_group_session, tr) = find_group_sessions p gmgr_session { group_id } tr in
+  match opt_group_session with
+  | None -> ()
+  | Some group_session -> (
+    let (opt_st, tr) = get_public_treesync_state #tkt p group_session.si_public tr in
+    match opt_st with
+    | None -> ()
+    | Some (|group_id, st|) -> (
+      if not (li < pow2 st.levels) then ()
+      else (
+        let (opt_update_pend, tr) = extract_result (prepare_update st ln li) tr in
+        match opt_update_pend with
+        | None -> ()
+        | Some update_pend -> (
+          let (opt_token, tr) = get_token_for p as_session update_pend.as_input tr in
+          match opt_token with
+          | None -> ()
+          | Some token -> (
+            is_well_formed_finalize_update (is_publishable tr) update_pend token;
+            finalize_update_valid #_ #_ #_ #(dy_asp tr) update_pend token
+          )
+        )
+      )
+    )
+  )
 
 val remove:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> li:nat ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    has_treesync_invariants tkt pr
-  )
-  (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 1)
-let remove #tkt pr p as_session gmgr_session group_id li =
-  let now = global_timestamp () in
-  let group_session = find_group_sessions pr p gmgr_session group_id in
-  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
-  guard pr (li < pow2 st.levels);
-  let remove_pend = extract_result pr (prepare_remove st li) in
+  traceful (option unit)
+let remove #tkt p as_session gmgr_session group_id li =
+  let*? group_session = find_group_sessions p gmgr_session { group_id } in
+  let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
+  guard (li < pow2 st.levels);*?
+  let*? remove_pend = extract_result (prepare_remove st li) in
   let new_st = finalize_remove remove_pend in
-  is_well_formed_finalize_remove (is_publishable pr.global_usage now) remove_pend;
-  set_public_treesync_state pr p group_session.si_public now _ new_st
+  set_public_treesync_state p group_session.si_public new_st;*
+  return (Some ())
 
-#push-options "--z3rlimit 25"
+val remove_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> li:nat ->
+  tr:trace ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
+  )
+  (ensures (
+    let (_, tr_out) = remove #tkt p as_session gmgr_session group_id li tr in
+    trace_invariant tr_out
+  ))
+let remove_proof #invs #tkt p as_session gmgr_session group_id li tr =
+  let (opt_group_session, tr) = find_group_sessions p gmgr_session { group_id } tr in
+  match opt_group_session with
+  | None -> ()
+  | Some group_session -> (
+    let (opt_st, tr) = get_public_treesync_state #tkt p group_session.si_public tr in
+    match opt_st with
+    | None -> ()
+    | Some (|group_id, st|) -> (
+      if not (li < pow2 st.levels) then ()
+      else (
+        let (opt_remove_pend, tr) = extract_result (prepare_remove st li) tr in
+        match opt_remove_pend with
+        | None -> ()
+        | Some remove_pend -> (
+          is_well_formed_finalize_remove (is_publishable tr) remove_pend;
+          finalize_remove_valid #_ #_ #_ #(dy_asp tr) remove_pend
+        )
+      )
+    )
+  )
+
 val commit:
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
-  pr:preds -> p:principal -> as_session:nat -> gmgr_session:nat ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
-  LCrypto unit pr
-  (requires fun t0 ->
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) path /\
-    has_treesync_invariants tkt pr
+  traceful (option unit)
+let commit #tkt #l #li p as_session gmgr_session group_id path =
+  let*? group_session = find_group_sessions p gmgr_session { group_id } in
+  let*? (|group_id, st|) = get_public_treesync_state #tkt p group_session.si_public in
+  guard (l = st.levels);*?
+  let*? commit_pend = extract_result (prepare_commit st path) in
+  let*? token = get_token_for p as_session commit_pend.as_input in
+  let*? new_st = extract_result (finalize_commit commit_pend token) in
+  set_public_treesync_state p group_session.si_public new_st;*
+  return (Some ())
+
+#push-options "--z3rlimit 50"
+val commit_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  p:principal -> as_session:state_id -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_well_formed _ (is_publishable tr) path /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
   )
-  (ensures fun t0 () t1 -> trace_len t1 == trace_len t0 + 1)
-let commit #tkt #l #li pr p as_session gmgr_session group_id path =
-  let now = global_timestamp () in
-  let group_session = find_group_sessions pr p gmgr_session group_id in
-  let (|group_id, st|) = get_public_treesync_state #tkt pr p group_session.si_public now in
-  guard pr (l = st.levels);
-  let commit_pend = extract_result pr (prepare_commit st path) in
-  let token = get_token_for pr p as_session commit_pend.as_input in
-  let new_st = extract_result pr (finalize_commit commit_pend token) in
-  is_well_formed_finalize_commit (is_publishable pr.global_usage now) commit_pend token;
-  set_public_treesync_state pr p group_session.si_public now _ new_st
+  (ensures (
+    let (_, tr_out) = commit p as_session gmgr_session group_id path tr in
+    trace_invariant tr_out
+  ))
+#restart-solver
+let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
+  let (opt_group_session, tr) = find_group_sessions p gmgr_session { group_id } tr in
+  match opt_group_session with
+  | None -> ()
+  | Some group_session -> (
+    let (opt_st, tr) = get_public_treesync_state #tkt p group_session.si_public tr in
+    match opt_st with
+    | None -> ()
+    | Some (|group_id, st|) -> (
+      if not (l = st.levels) then ()
+      else (
+        let (opt_commit_pend, tr) = extract_result (prepare_commit st path) tr in
+        match opt_commit_pend with
+        | None -> ()
+        | Some commit_pend -> (
+          let (opt_token, tr) = get_token_for p as_session commit_pend.as_input tr in
+          match opt_token with
+          | None -> ()
+          | Some token -> (
+            let (opt_new_st, tr) = extract_result (finalize_commit commit_pend token) tr in
+            assert((dy_asp tr).credential_ok commit_pend.as_input token);
+            match opt_new_st with
+            | None -> ()
+            | Some new_st -> (
+              FStar.Pure.BreakVC.break_vc ();
+              is_well_formed_finalize_commit (is_publishable tr) commit_pend token;
+              finalize_commit_valid #_ #_ #_ #(dy_asp tr) commit_pend token;
+              set_public_treesync_state_proof p group_session.si_public new_st tr;
+              let (_, tr) = set_public_treesync_state p group_session.si_public new_st tr in
+              ()
+            )
+          )
+        )
+      )
+    )
+  )
 #pop-options
 
 (*** Create signature keypair ***)
 
 val create_signature_keypair:
-  pr:preds -> p:principal ->
-  LCrypto (nat & signature_public_key_nt dy_bytes) pr
-  (requires fun t0 ->
-    has_treesync_private_state_invariant pr
-  )
-  (ensures fun t0 (private_si, verification_key) t1 ->
-    is_verification_key pr.global_usage "MLS.LeafSignKey" (readers [p_id p]) (trace_len t0) verification_key /\
-    trace_len t1 == trace_len t0 + 2
-  )
-let create_signature_keypair pr p =
-  let (|now, signature_key|) = rand_gen #pr (readers [p_id p]) (sig_usage "MLS.LeafSignKey") in
-  let verification_key = LabeledCryptoAPI.vk #pr.global_usage #now #(readers [p_id p]) signature_key in
-  guard pr (length (signature_key <: dy_bytes) < pow2 30);
-  guard pr (length (verification_key <: dy_bytes) < pow2 30);
+  p:principal ->
+  traceful (option (state_id & signature_public_key_nt dy_bytes))
+let create_signature_keypair p =
+  let* signature_key = mk_rand (SigKey "MLS.LeafSignKey") (principal_label p) 32 in
+  let verification_key = vk signature_key in
+  guard (length (signature_key <: dy_bytes) < pow2 30);*?
+  guard (length (verification_key <: dy_bytes) < pow2 30);*?
   let private_state: treesync_private_state = {signature_key;} in
-  let private_si = new_private_treesync_state pr p private_state in
-  (private_si, verification_key)
+  let* private_si = new_private_treesync_state p private_state in
+  return (Some (private_si, (verification_key <: signature_public_key_nt dy_bytes)))
+
+val create_signature_keypair_proof:
+  {|invs:protocol_invariants|} ->
+  p:principal ->
+  tr:trace ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_treesync_private_state_invariant invs
+  )
+  (ensures (
+    let (opt_res, tr_out) = create_signature_keypair p tr in
+    trace_invariant tr_out /\ (
+      match opt_res with
+      | None -> True
+      | Some (private_si, verification_key) ->
+        is_verification_key "MLS.LeafSignKey" (principal_label p) tr_out verification_key
+    )
+  ))
+let create_signature_keypair_proof #invs p tr = ()
 
 (*** Sign stuff ***)
 
 val external_path_has_event_later:
   #tkt:treekem_types dy_bytes ->
   #l:nat -> #li:leaf_index l 0 ->
-  prin:principal -> time0:timestamp -> time1:timestamp ->
+  prin:principal -> tr1:trace -> tr2:trace ->
   t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
   Lemma
   (requires
-    external_path_has_event prin time0 t p group_id /\
-    time0 <$ time1
+    external_path_has_event prin tr1 t p group_id /\
+    tr1 <$ tr2
   )
-  (ensures external_path_has_event prin time1 t p group_id)
-let external_path_has_event_later #tkt #l #li prin time0 time1 t p group_id =
+  (ensures external_path_has_event prin tr2 t p group_id)
+let external_path_has_event_later #tkt #l #li prin tr1 tr2 t p group_id =
   let Success auth_p = external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id in
   path_is_parent_hash_valid_external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id;
   apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #dy_bytes #crypto_dy_bytes t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #dy_bytes);
-  for_allP_eq (tree_has_event prin time0 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p);
-  for_allP_eq (tree_has_event prin time1 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p)
+  for_allP_eq (tree_has_event prin tr1 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p);
+  for_allP_eq (tree_has_event prin tr2 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p)
 
 #push-options "--z3rlimit 25"
 val authenticate_path:
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
-  pr:preds -> p:principal -> gmgr_session:nat ->
+  p:principal -> gmgr_session:state_id ->
+  group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li{(get_path_leaf path).source == LNS_update} ->
+  traceful (option (pathsync dy_bytes tkt l 0 li))
+let authenticate_path #tkt #l p gmgr_session group_id tree path =
+  let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
+  let*? group_session = find_group_sessions p gmgr_session { group_id } in
+  let*? (|group_id', st|) = get_public_treesync_state #tkt p group_session.si_public in
+  let*? private_st = get_private_treesync_state p group_session.si_private in
+  guard (group_id = group_id');*?
+  guard (l = st.levels);*?
+  guard (tree = st.tree);*?
+  guard (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes);*?
+  guard (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path);*?
+  let*? auth_path = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id private_st.signature_key signature_nonce) in
+  return (Some auth_path)
+#pop-options
+
+#push-options "--z3rlimit 25"
+val authenticate_path_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  p:principal -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
-  LCrypto (pathsync dy_bytes tkt l 0 li) pr
-  (requires fun t0 ->
-    external_path_has_event p (trace_len t0) tree path group_id /\
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t0)) path /\
-    has_treesync_invariants tkt pr
+  tr:trace ->
+  Lemma
+  (requires
+    external_path_has_event p tr tree path group_id /\
+    is_well_formed _ (is_publishable tr) path /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
   )
-  (ensures fun t0 auth_path t1 ->
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t1)) auth_path /\
-    trace_len t1 == trace_len t0 + 1
+  (ensures (
+    let (opt_auth_path, tr_out) = authenticate_path p gmgr_session group_id tree path tr in
+    trace_invariant tr_out /\ (
+      match opt_auth_path with
+      | None -> True
+      | Some auth_path ->
+        is_well_formed _ (is_publishable tr_out) auth_path
+    )
+  ))
+let authenticate_path_proof #invs #tkt #l p gmgr_session group_id tree path tr =
+  let tr_in = tr in
+  let (signature_nonce, tr) = mk_rand SigNonce (principal_label p) 32 tr in
+  let (opt_group_session, tr) = find_group_sessions p gmgr_session { group_id } tr in
+  match opt_group_session with
+  | None -> ()
+  | Some group_session -> (
+    let (opt_st, tr) = get_public_treesync_state #tkt p group_session.si_public tr in
+    match opt_st with
+    | None -> ()
+    | Some(|group_id', st|) -> (
+      let (opt_private_st, tr) = get_private_treesync_state p group_session.si_private tr in
+      match opt_private_st with
+      | None -> ()
+      | Some private_st -> (
+        if not (group_id = group_id') then ()
+        else if not (l = st.levels) then ()
+        else if not (tree = st.tree) then ()
+        else if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
+        else if not (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path) then ()
+        else if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
+        else (
+          let (opt_auth_path, tr) = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id private_st.signature_key signature_nonce) tr in
+          match opt_auth_path with
+          | None -> ()
+          | Some auth_path -> (
+            let tr_out = tr in
+            wf_weaken_lemma _ (is_publishable tr_in) (is_publishable tr_out) path;
+            external_path_has_event_later p tr_in tr_out tree path group_id;
+            is_msg_external_path_to_path p public tr_out tree path group_id private_st.signature_key signature_nonce
+          )
+        )
+      )
+    )
   )
-let authenticate_path #tkt #l pr p gmgr_session group_id tree path =
-  let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
-  let now1 = global_timestamp () in
-  let group_session = find_group_sessions pr p gmgr_session group_id in
-  let (|group_id', st|) = get_public_treesync_state #tkt pr p group_session.si_public now1 in
-  let private_st = get_private_treesync_state pr p group_session.si_private in
-  guard pr (
-    (group_id = group_id') &&
-    (l = st.levels) &&
-    (tree = st.tree) &&
-    length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes &&
-    (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path)
-  );
-  let auth_path = extract_result pr (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id private_st.signature_key signature_nonce) in
-  wf_weaken_lemma _ (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) path;
-  external_path_has_event_later p now0 now1 tree path group_id;
-  is_msg_external_path_to_path pr.global_usage p SecrecyLabels.public now1 tree path group_id private_st.signature_key signature_nonce;
-  auth_path
 #pop-options
 
 val authenticate_leaf_node_data_from_key_package:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal ->
-  si_private:nat ->
-  ln_data:leaf_node_data_nt dy_bytes tkt ->
-  LCrypto (leaf_node_nt dy_bytes tkt) pr
-  (requires fun t0 ->
-    ln_data.source == LNS_key_package /\
-    is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage (trace_len t0)) ln_data /\
-    leaf_node_has_event p (trace_len t0) ({data = ln_data; group_id = (); leaf_index = ();}) /\
-    has_treesync_invariants tkt pr
+  p:principal ->
+  si_private:state_id ->
+  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
+  traceful (option (leaf_node_nt dy_bytes tkt))
+let authenticate_leaf_node_data_from_key_package #tkt p si_private ln_data =
+  let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
+  let*? private_st = get_private_treesync_state p si_private in
+  guard (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes);*?
+  extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce)
+
+val authenticate_leaf_node_data_from_key_package_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  p:principal ->
+  si_private:state_id ->
+  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable tr) ln_data /\
+    leaf_node_has_event p tr ({data = ln_data; group_id = (); leaf_index = ();}) /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
   )
-  (ensures fun t0 ln t1 ->
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t1)) ln /\
-    trace_len t1 == trace_len t0 + 1
+  (ensures (
+    let (opt_ln, tr_out) = authenticate_leaf_node_data_from_key_package p si_private ln_data tr in
+    trace_invariant tr_out /\ (
+      match opt_ln with
+      | None -> True
+      | Some ln ->
+        is_well_formed _ (is_publishable tr_out) ln
+    )
+  ))
+let authenticate_leaf_node_data_from_key_package_proof  #invs #tkt p si_private ln_data tr =
+  let tr_in = tr in
+  let (signature_nonce, tr) = mk_rand SigNonce (principal_label p) 32 tr in
+  let (opt_private_st, tr) = get_private_treesync_state p si_private tr in
+  match opt_private_st with
+  | None -> ()
+  | Some private_st -> (
+    if not (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes) then ()
+    else (
+      let (opt_res, tr) = extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce) tr in
+      match opt_res with
+      | None -> ()
+      | Some res -> (
+        is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable tr_in) (is_knowable_by public tr) ln_data;
+        is_msg_sign_leaf_node_data_key_package p public tr ln_data private_st.signature_key signature_nonce
+      )
+    )
   )
-let authenticate_leaf_node_data_from_key_package #tkt pr p si_private ln_data =
-  let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
-  let now1 = global_timestamp () in
-  let private_st = get_private_treesync_state pr p si_private in
-  guard pr (
-    (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes)
-  );
-  is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
-  let res = extract_result pr (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce) in
-  is_msg_sign_leaf_node_data_key_package pr.global_usage p SecrecyLabels.public now1 ln_data private_st.signature_key signature_nonce;
-  res
 
 val authenticate_leaf_node_data_from_update:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal ->
-  si_private:nat ->
-  ln_data:leaf_node_data_nt dy_bytes tkt -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
-  LCrypto (leaf_node_nt dy_bytes tkt) pr
-  (requires fun t0 ->
-    ln_data.source == LNS_update /\
-    is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage (trace_len t0)) ln_data /\
-    is_publishable pr.global_usage (trace_len t0) group_id /\
-    leaf_node_has_event p (trace_len t0) ({data = ln_data; group_id; leaf_index;}) /\
-    tree_has_event p (trace_len t0) group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
-    has_treesync_invariants tkt pr
+  p:principal ->
+  si_private:state_id ->
+  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
+  traceful (option (leaf_node_nt dy_bytes tkt))
+let authenticate_leaf_node_data_from_update #tkt p si_private ln_data group_id leaf_index =
+  let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
+  let*? private_st = get_private_treesync_state p si_private in
+  guard (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes);*?
+  extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce)
+
+val authenticate_leaf_node_data_from_update_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  p:principal ->
+  si_private:state_id ->
+  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
+  tr:trace ->
+  Lemma
+  (requires
+    is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable tr) ln_data /\
+    is_publishable tr group_id /\
+    leaf_node_has_event p tr ({data = ln_data; group_id; leaf_index;}) /\
+    tree_has_event p tr group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
+    trace_invariant tr /\
+    has_treesync_invariants tkt invs
   )
-  (ensures fun t0 ln t1 ->
-    is_well_formed _ (is_publishable pr.global_usage (trace_len t1)) ln /\
-    trace_len t1 == trace_len t0 + 1
+  (ensures (
+    let (opt_ln, tr_out) = authenticate_leaf_node_data_from_update p si_private ln_data group_id leaf_index tr in
+    trace_invariant tr_out /\ (
+      match opt_ln with
+      | None -> True
+      | Some ln ->
+        is_well_formed _ (is_publishable tr_out) ln
+    )
+  ))
+let authenticate_leaf_node_data_from_update_proof #invs #tkt p si_private ln_data group_id leaf_index tr =
+  let tr_in = tr in
+  let (signature_nonce, tr) = mk_rand SigNonce (principal_label p) 32 tr in
+  let (opt_private_st, tr) = get_private_treesync_state p si_private tr in
+  match opt_private_st with
+  | None -> ()
+  | Some private_st -> (
+    if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
+    else (
+      let (opt_res, tr) = extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce) tr in
+      match opt_res with
+      | None -> ()
+      | Some res -> (
+        is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable tr_in) (is_knowable_by public tr) ln_data;
+        is_msg_sign_leaf_node_data_update p public tr ln_data group_id leaf_index private_st.signature_key signature_nonce
+      )
+    )
   )
-let authenticate_leaf_node_data_from_update #tkt pr p si_private ln_data group_id leaf_index =
-  let (|now0, signature_nonce|) = rand_gen #pr (readers [p_id p]) (sig_usage "???") in
-  let now1 = global_timestamp () in
-  let private_st = get_private_treesync_state pr p si_private in
-  guard pr (
-    (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes)
-  );
-  is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable pr.global_usage now0) (is_publishable pr.global_usage now1) ln_data;
-  let res = extract_result pr (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce) in
-  is_msg_sign_leaf_node_data_update pr.global_usage p SecrecyLabels.public now1 ln_data group_id leaf_index private_st.signature_key signature_nonce;
-  res
 
 (*** Trigger events ***)
 
-val tree_event_triggerable: #tkt:treekem_types dy_bytes -> pr:preds -> p:principal -> time:timestamp -> group_id:mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> prop
-let tree_event_triggerable pr p time group_id t =
-  event_pred_at pr p time (tree_to_event group_id t)
-
-val trigger_one_tree_event:
+#push-options "--ifuel 1"
+val trigger_tree_list_event:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> now:timestamp ->
-  group_id:mls_bytes dy_bytes -> t:(l:nat & i:tree_index l & treesync dy_bytes tkt l i) ->
-  squash (tree_event_triggerable pr p now group_id t) ->
-  LCrypto unit pr
-  (requires fun t0 -> now == trace_len t0)
-  (ensures fun t0 () t1 ->
-    did_event_occur_before p (trace_len t1) (tree_to_event group_id t) /\
-    trace_len t1 == trace_len t0 + 1
+  p:principal ->
+  group_id:mls_bytes dy_bytes -> tl:tree_list dy_bytes tkt ->
+  traceful unit
+let rec trigger_tree_list_event #tkt p group_id tl =
+  match tl with
+  | [] -> return ()
+  | h::t -> (
+    trigger_event p (mk_group_has_tree_event group_id h);*
+    trigger_tree_list_event p group_id t
   )
-let trigger_one_tree_event #tkt pr p now group_id t proof =
-  trigger_event #pr p (tree_to_event group_id t)
+#pop-options
 
 val trigger_tree_list_event_lemma:
   #tkt:treekem_types dy_bytes ->
-  p:principal -> now:timestamp ->
+  p:principal -> tr:trace ->
   group_id:mls_bytes dy_bytes -> h:(l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> t:tree_list dy_bytes tkt ->
-  Lemma(tree_list_has_event p now group_id (h::t) <==> (tree_has_event p now group_id h /\ tree_list_has_event p now group_id t))
-let trigger_tree_list_event_lemma #tkt p now group_id h t =
+  Lemma(tree_list_has_event p tr group_id (h::t) <==> (tree_has_event p tr group_id h /\ tree_list_has_event p tr group_id t))
+let trigger_tree_list_event_lemma #tkt p tr group_id h t =
   let open FStar.Tactics in
-  assert(tree_list_has_event p now group_id (h::t) == (
-    tree_has_event p now group_id h /\
-    tree_list_has_event p now group_id t
+  assert(tree_list_has_event p tr group_id (h::t) == (
+    tree_has_event p tr group_id h /\
+    tree_list_has_event p tr group_id t
   )) by (
     norm [delta_only [`%tree_list_has_event; `%for_allP]; zeta; iota];
     trefl()
   )
 
-#push-options "--fuel 1 --ifuel 1 --z3rlimit 25"
-val trigger_tree_list_event:
+#push-options "--ifuel 1 --fuel 1 --z3rlimit 10"
+val trigger_tree_list_event_proof:
+  {|invs:protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal -> now:timestamp ->
+  group_has_event_pred: event_predicate (group_has_tree_event dy_bytes tkt) ->
+  p:principal ->
   group_id:mls_bytes dy_bytes -> tl:tree_list dy_bytes tkt ->
-  proof_list:(i:nat{i < List.Tot.length tl} -> squash (tree_event_triggerable pr p (now+i) group_id (List.Tot.index tl i))) ->
-  LCrypto unit pr
-  (requires fun t0 -> now == trace_len t0)
-  (ensures fun t0 () t1 ->
-    tree_list_has_event p (trace_len t1) group_id tl /\
-    trace_len t1 == trace_len t0 + (List.Tot.length tl)
+  tr:trace ->
+  Lemma
+  (requires
+    (forall t tr_extended. List.Tot.memP t tl /\ tr <$ tr_extended ==> group_has_event_pred tr_extended p (mk_group_has_tree_event group_id t)) /\
+    trace_invariant tr /\
+    has_event_pred invs group_has_event_pred
   )
-  (decreases tl)
-let rec trigger_tree_list_event #tkt pr p now group_id tl event_tl_proof =
+  (ensures (
+    let ((), tr_out) = trigger_tree_list_event p group_id tl tr in
+    trace_invariant tr_out /\
+    tree_list_has_event p tr_out group_id tl
+  ))
+let rec trigger_tree_list_event_proof #invs #tkt group_has_event_pred p group_id tl tr =
+  let tr_in = tr in
   match tl with
-  | [] -> (
-    normalize_term_spec (tree_list_has_event p now group_id tl)
-  )
-  | h::t -> (
-    // I lost so much time finding that F* needs the following assert
-    // WTF??? There is definitely a problem in SMT encoding
-    assert(Cons?.tl tl == t);
-    trigger_one_tree_event pr p now group_id h (event_tl_proof 0);
-    trigger_tree_list_event pr p (now+1) group_id t (fun i -> event_tl_proof (i+1));
-    let now_end = now + List.Tot.length tl in
-    trigger_tree_list_event_lemma p now_end group_id h t
+  | [] -> normalize_term_spec (tree_list_has_event p tr group_id tl)
+  | tl_head::tl_tail -> (
+    // There is a problem in the SMT encoding, hence we need to bamboozle F* like this.
+    let lem (x:group_has_tree_event dy_bytes tkt): Lemma (tr <$ snd (trigger_event p x tr)) = () in
+    lem (mk_group_has_tree_event group_id tl_head);
+    // Similarly, this lemma should be triggered by SMT patterns.
+    // Looks like F* do not like `mk_group_has_tree_event group_id tl_head`
+    trigger_event_trace_invariant group_has_event_pred p (mk_group_has_tree_event group_id tl_head) tr;
+    let ((), tr) = trigger_event p (mk_group_has_tree_event group_id tl_head) tr in
+    trigger_tree_list_event_proof group_has_event_pred p group_id tl_tail tr;
+    let ((), tr) = trigger_tree_list_event p group_id tl_tail tr in
+    trigger_tree_list_event_lemma p tr group_id tl_head tl_tail
   )
 #pop-options
 
 val trigger_leaf_node_event:
   #tkt:treekem_types dy_bytes ->
-  pr:preds -> p:principal ->
+  p:principal ->
   ln_tbs:leaf_node_tbs_nt dy_bytes tkt ->
-  LCrypto unit pr
-  (requires fun t0 -> event_pred_at pr p (trace_len t0) (leaf_node_to_event ln_tbs))
-  (ensures fun t0 () t1 ->
-    leaf_node_has_event p (trace_len t1) ln_tbs /\
-    trace_len t1 == trace_len t0 + 1
+  traceful unit
+let trigger_leaf_node_event #tkt p ln_tbs =
+  trigger_event p ln_tbs
+
+val trigger_leaf_node_event_proof:
+  {|invs:protocol_invariants|} ->
+  #tkt:treekem_types dy_bytes ->
+  leaf_node_has_event_pred: event_predicate (leaf_node_tbs_nt dy_bytes tkt) ->
+  p:principal ->
+  ln_tbs:leaf_node_tbs_nt dy_bytes tkt ->
+  tr:trace ->
+  Lemma
+  (requires
+    leaf_node_has_event_pred tr p ln_tbs /\
+    trace_invariant tr /\
+    has_event_pred invs leaf_node_has_event_pred
   )
-let trigger_leaf_node_event #tkt pr p ln_tbs =
-  trigger_event #pr p (leaf_node_to_event ln_tbs)
+  (ensures (
+    let ((), tr_out) = trigger_leaf_node_event p ln_tbs tr in
+    trace_invariant tr_out /\
+    leaf_node_has_event p tr_out ln_tbs
+  ))
+let trigger_leaf_node_event_proof #invs #tkt leaf_node_has_event_pred p ln_tbs tr = ()
+

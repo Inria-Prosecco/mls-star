@@ -27,9 +27,7 @@ The next sections are devoted on how to setup MLS\* without Nix.
 MLS\* depends on the F\* proof-oriented programming language and the Z3 SMT solver,
 as well as two libraries:
 - [Comparse](https://github.com/TWal/comparse), for message formatting
-- [DY\*](https://github.com/REPROSEC/dolev-yao-star), for symbolic security proofs
-
-For DY\*, we rely on a version available in the [artifact for the TreeSync paper](https://github.com/Inria-Prosecco/treesync/tree/main/dolev-yao-star)
+- [DY\*](https://github.com/REPROSEC/dolev-yao-star-extrinsic), for symbolic security proofs
 
 The Javascript extraction of MLS\* furthermore rely on:
 - [HACL Packages](https://github.com/cryspen/hacl-packages), for the WASM build of HACL\* and its Javascript wrapper
@@ -63,10 +61,10 @@ export PATH=$PATH:$(cd directory/where/z3/4.8.5/lives; pwd)
 
 Two choices are possible:
 - either [Comparse](https://github.com/TWal/comparse) is cloned in `../comparse`,
-  [DY\*](https://github.com/Inria-Prosecco/treesync/tree/main/dolev-yao-star) is cloned in `../dolev-yao-star`,
+  [DY\*](https://github.com/REPROSEC/dolev-yao-star-extrinsic) is cloned in `../dolev-yao-star`,
   and `fstar.exe` is in the `PATH`
 - or [Comparse](https://github.com/TWal/comparse) is cloned in `COMPARSE_HOME`,
-  [DY\*](https://github.com/Inria-Prosecco/treesync/tree/main/dolev-yao-star) is cloned in `DY_HOME`,
+  [DY\*](https://github.com/REPROSEC/dolev-yao-star-extrinsic) is cloned in `DY_HOME`,
   and F\* in `FSTAR_HOME`,
   in that case using [direnv](https://direnv.net/) is a advisable.
 
@@ -75,8 +73,7 @@ When using relative path, the following commands will setup the dependencies.
 ```bash
 cd ..
 git clone git@github.com:TWal/comparse.git
-git clone git@github.com:Inria-Prosecco/treesync.git
-ln -s treesync/dolev-yao-star dolev-yao-star
+git clone git@github.com:REPROSEC/dolev-yao-star-extrinsic.git dolev-yao-star
 ```
 
 When using environement variables, the following commands will setup the dependencies.
@@ -84,8 +81,8 @@ When using environement variables, the following commands will setup the depende
 ```bash
 git clone git@github.com:TWal/comparse.git
 export COMPARSE_HOME=$(cd comparse; pwd)
-git clone git@github.com:Inria-Prosecco/treesync.git
-export DY_HOME=$(cd treesync/dolev-yao-star; pwd)
+git clone git@github.com:REPROSEC/dolev-yao-star-extrinsic.git dolev-yao-star
+export DY_HOME=$(cd dolev-yao-star; pwd)
 ```
 
 ### Installing the OCaml dependencies
@@ -121,3 +118,6 @@ export HACL_PACKAGES_HOME=$(cd hacl-packages; pwd)
 - `make js` will compile MLS\* to Javascript
 - `node js/test.js` will start the Javascript tests
 
+Some parts of the verification can be omitted if just the extracted code is useful:
+- `NO_DY=1 make ...` will omit all the symbolic security proofs verification (hence do not require DY\* as a dependency)
+- `ADMIT=1 make ...` will admit all SMT queries

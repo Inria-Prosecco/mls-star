@@ -273,26 +273,19 @@ let rec is_well_formed_set_path_leaf #bytes #bl pre #tkt #l #i #li p ln =
   | PLeaf _ -> ()
   | PNode _ p_next -> is_well_formed_set_path_leaf pre p_next ln
 
+open DY.Core
 open MLS.Symbolic
 
-val pre_is_hash_compatible_is_msg:
-  p:global_usage -> l:label -> i:timestamp ->
+val pre_is_hash_compatible_is_knowable_by:
+  {|crypto_invariants|} -> l:label -> tr:trace ->
   Lemma
-  (pre_is_hash_compatible (is_msg p l i))
-  [SMTPat (pre_is_hash_compatible (is_msg p l i))]
-let pre_is_hash_compatible_is_msg p l i =
-  introduce forall b. (is_msg p l i b /\ Success? (hash_hash b)) ==> is_msg p l i (Success?.v (hash_hash b))
-  with (
-    introduce _ ==> _
-    with _. (
-      LabeledCryptoAPI.hash_lemma #p #i #l b
-    )
-  )
+  (pre_is_hash_compatible (is_knowable_by l tr))
+  [SMTPat (pre_is_hash_compatible (is_knowable_by l tr))]
+let pre_is_hash_compatible_is_knowable_by #ci l tr = ()
 
-val pre_is_hash_compatible_is_valid:
-  p:global_usage -> i:timestamp ->
+val pre_is_hash_compatible_bytes_invariant:
+  {|crypto_invariants|} -> tr:trace ->
   Lemma
-  (pre_is_hash_compatible (is_valid p i))
-  [SMTPat (pre_is_hash_compatible (is_valid p i))]
-let pre_is_hash_compatible_is_valid p i =
-  pre_is_hash_compatible_is_msg p SecrecyLabels.private_label i
+  (pre_is_hash_compatible (bytes_invariant tr))
+  [SMTPat (pre_is_hash_compatible (bytes_invariant tr))]
+let pre_is_hash_compatible_bytes_invariant tr = ()

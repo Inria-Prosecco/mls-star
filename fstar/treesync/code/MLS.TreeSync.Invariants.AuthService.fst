@@ -42,35 +42,35 @@ noeq type as_parameters (bytes:Type0) {|bytes_like bytes|} = {
 let as_tokens (bytes:Type0) {|bytes_like bytes|} (token_t:Type0) = tree (option token_t) unit
 
 val as_add_update:
-  #bytes:Type0 -> {|bytes_like bytes|} -> #asp:as_parameters bytes ->
+  #bytes:Type0 -> {|bytes_like bytes|} -> #token_t:Type0 ->
   #l:nat -> #i:tree_index l ->
-  as_tokens bytes asp.token_t l i -> leaf_index l i -> asp.token_t ->
-  as_tokens bytes asp.token_t l i
+  as_tokens bytes token_t l i -> leaf_index l i -> token_t ->
+  as_tokens bytes token_t l i
 let as_add_update #bytes #bl #asp #l #i t li token =
   tree_change_path t li (Some token) ()
 
 val as_remove:
-  #bytes:Type0 -> {|bytes_like bytes|} -> #asp:as_parameters bytes ->
+  #bytes:Type0 -> {|bytes_like bytes|} -> #token_t:Type0 ->
   #l:nat -> #i:tree_index l ->
-  as_tokens bytes asp.token_t l i -> leaf_index l i ->
-  as_tokens bytes asp.token_t l i
+  as_tokens bytes token_t l i -> leaf_index l i ->
+  as_tokens bytes token_t l i
 let as_remove #bytes #bl #asp #l #i t li =
   tree_change_path t li None ()
 
 val as_truncate:
-  #bytes:Type0 -> {|bytes_like bytes|} -> #asp:as_parameters bytes ->
+  #bytes:Type0 -> {|bytes_like bytes|} -> #token_t:Type0 ->
   #l:pos ->
-  as_tokens bytes asp.token_t l 0 ->
-  as_tokens bytes asp.token_t (l-1) 0
+  as_tokens bytes token_t l 0 ->
+  as_tokens bytes token_t (l-1) 0
 let as_truncate #bytes #bl #asp #l t =
   let TNode _ left _ = t in
   left
 
 val as_extend:
-  #bytes:Type0 -> {|bytes_like bytes|} -> #asp:as_parameters bytes ->
+  #bytes:Type0 -> {|bytes_like bytes|} -> #token_t:Type0 ->
   #l:nat ->
-  as_tokens bytes asp.token_t l 0 ->
-  as_tokens bytes asp.token_t (l+1) 0
+  as_tokens bytes token_t l 0 ->
+  as_tokens bytes token_t (l+1) 0
 let as_extend #bytes #bl #asp #l t =
   TNode () t (mk_blank_tree_general _ _ None ())
 

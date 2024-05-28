@@ -3,12 +3,16 @@ FSTAR_HOME    ?= $(dir $(shell which fstar.exe))/..
 COMPARSE_HOME ?= $(MLS_HOME)/../comparse
 DY_HOME       ?= $(MLS_HOME)/../dolev-yao-star
 
-INNER_SOURCE_DIRS = api bootstrap common/code common/proofs glue/code glue/proofs symbolic test treedem treekem/code treekem/proofs treemath treesync/code treesync/proofs treesync/symbolic
+NO_DY ?=
+USE_DY = $(if $(NO_DY),, 1)
+
+INNER_SOURCE_DIRS = api bootstrap common/code common/proofs glue/code glue/proofs test treedem treekem/code treekem/proofs treemath treesync/code treesync/proofs $(if $(USE_DY), symbolic treesync/symbolic)
 
 HACL_SNAPSHOT_DIR = $(MLS_HOME)/hacl-star-snapshot
 SOURCE_DIRS = $(addprefix $(MLS_HOME)/fstar/, $(INNER_SOURCE_DIRS))
 
-INCLUDE_DIRS = $(SOURCE_DIRS) $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)/src $(DY_HOME) $(DY_HOME)/symbolic
+DY_INCLUDE_DIRS = core lib lib/comparse lib/event lib/state lib/utils
+INCLUDE_DIRS = $(SOURCE_DIRS) $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)/src $(if $(USE_DY), $(addprefix $(DY_HOME)/src/, $(DY_INCLUDE_DIRS)))
 FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
 
 ADMIT ?=
@@ -17,8 +21,7 @@ MAYBE_ADMIT = $(if $(ADMIT),--admit_smt_queries true)
 FSTAR_EXE ?= $(FSTAR_HOME)/bin/fstar.exe
 FSTAR = $(FSTAR_EXE) $(MAYBE_ADMIT)
 
-DY_EXTRACT = +CryptoLib +SecrecyLabels +ComparseGlue +LabeledCryptoAPI +CryptoEffect +GlobalRuntimeLib +LabeledRuntimeAPI +Ord +AttackerAPI
-FSTAR_EXTRACT = --extract '-* +MLS +Comparse $(DY_EXTRACT) -Comparse.Tactic'
+FSTAR_EXTRACT = --extract '-* +MLS +Comparse -Comparse.Tactic $(if $(USE_DY), +DY)'
 
 # Allowed warnings:
 # - (Warning 242) Definitions of inner let-rec ... and its enclosing top-level letbinding are not encoded to the solver, you will only be able to reason with their types
@@ -68,7 +71,7 @@ obj:
 cache/MLS.Test.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+272'
 # Allow more warning in dependencies
 cache/Lib.IntTypes.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+288+349'
-cache/SecrecyLabels.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+337'
+cache/DY.Core.Bytes.Type.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+290'
 
 %.checked: | hints obj
 	$(FSTAR) $(FSTAR_FLAGS) $(FSTAR_RULE_FLAGS) $< && touch -c $@
