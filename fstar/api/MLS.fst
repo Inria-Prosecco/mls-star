@@ -428,10 +428,10 @@ let generate_welcome_message st ratchet_tree new_group_context confirmation_tag 
   let? joiner_secret = mk_mls_bytes joiner_secret "generate_welcome_message" "joiner_secret" in
   let? ratchet_tree_bytes = mk_mls_bytes ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree) "generate_welcome_message" "ratchet_tree" in
   let? leaf_index = mk_nat_lbytes st.leaf_index "generate_welcome_message" "leaf_index" in
-  assert_norm(bytes_length #bytes ps_extension_nt [] == 0);
+  let? extensions = mk_mls_list [{extension_type = ET_ratchet_tree; extension_data = ratchet_tree_bytes;}] "generate_welcome_message" "extensions" in
   let group_info_tbs: group_info_tbs_nt bytes = {
     group_context = new_group_context;
-    extensions = ratchet_tree_bytes;
+    extensions;
     confirmation_tag;
     signer = leaf_index;
   } in
@@ -663,7 +663,12 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   in
   let? (group_info, secrets, (_, leaf_decryption_key)) = decrypt_welcome welcome lookup extract_hpke_sk in
   let group_id = group_info.tbs.group_context.group_id in
-  let? ratchet_tree = from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse group_info.tbs.extensions) in
+  let? ratchet_tree = (
+    match group_info.tbs.extensions with
+    | [{extension_type = ET_ratchet_tree; extension_data}] ->
+      from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse extension_data)
+    | _ -> error "process_welcome_message: invalid extensions"
+  ) in
   let? treesync_state = (
     let? (|l, treesync|) = ratchet_tree_to_treesync ratchet_tree in
     let? welcome_pend = MLS.TreeSync.API.prepare_welcome group_id treesync in
