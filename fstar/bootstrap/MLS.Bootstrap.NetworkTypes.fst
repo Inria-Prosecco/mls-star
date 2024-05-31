@@ -67,7 +67,7 @@ type key_package_ref_nt (bytes:Type0) {|bytes_like bytes|} = mls_bytes bytes
 
 type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_context: group_context_nt bytes;
-  extensions: mls_bytes bytes;
+  extensions: mls_list bytes ps_extension_nt;
   confirmation_tag: mac_nt bytes;
   signer: nat_lbytes 4;
 }
