@@ -74,6 +74,21 @@ let extract_entropy #bytes #bl #entropy_t #entropy_tc len =
   assume(length rand == len);
   return_prob #bytes #entropy_t (rand <: lbytes bytes len)
 
+#push-options "--ifuel 1 --fuel 1"
+val extract_randomness:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  l:list nat ->
+  prob #bytes #entropy_t (randomness bytes l)
+let rec extract_randomness #bytes #bl #entropy_t #entropy_tc l =
+  match l with
+  | [] -> return_prob (mk_empty_randomness bytes)
+  | h::t ->
+    let* rand_head = extract_entropy h in
+    let* rand_tail = extract_randomness t in
+    return_prob (mk_randomness #bytes #_ #h #t (rand_head, rand_tail))
+#pop-options
+
 (*** Authentication Service types ***)
 
 type token_for (#bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) (vk:signature_public_key_nt bytes) (cred:credential_nt bytes) =
@@ -163,10 +178,15 @@ let gen_sign_nonce #bytes #cb #entropy_t #entropy_tc =
   return_prob (res <: sign_nonce bytes)
 
 noeq
-type proposal_and_token (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
-  sender: sender_nt bytes;
+type bare_proposal_and_token (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
   proposal: proposal_nt bytes;
   token: proposal_token_for asp proposal;
+}
+
+noeq
+type proposal_and_token (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
+  sender: sender_nt bytes;
+  proposal_token: bare_proposal_and_token bytes asp;
 }
 
 noeq
@@ -174,7 +194,7 @@ type mls_group (bytes:Type0) {|crypto_bytes bytes|} (asp:as_parameters bytes) = 
   group_context: group_context_nt bytes;
   my_leaf_index: nat;
   my_signature_key: bytes;
-  treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp group_context.group_id;
+  treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t group_context.group_id;
   treekem: MLS.TreeKEM.API.Types.treekem_state bytes my_leaf_index;
   treedem: MLS.TreeDEM.API.Types.treedem_state bytes;
   proposal_cache: list (bytes & proposal_and_token bytes asp);
@@ -217,22 +237,28 @@ type signature_keypair (bytes:Type0) {|bytes_like bytes|} = {
   private_key: bytes;
 }
 
-type framing_params = {
+type framing_params (bytes:Type0) = {
   // Should we encrypt the message?
   encrypt: bool;
   // How much padding to add
   padding_size: nat;
+  //
+  authenticated_data: bytes;
 }
 
-type commit_params = {
+//TODO
+assume val leaf_node_params: Type0
+
+noeq
+type commit_params (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
   // Extra proposals to include in the commit
-  proposals: unit; //TODO
+  proposals: list (bare_proposal_and_token bytes asp);
   // Should we inline the ratchet tree in the Welcome messages?
   inline_tree: bool;
   // Should we force the UpdatePath even if we could do an add-only commit?
   force_update: bool;
   // Options for the generation of the new leaf node
-  leaf_node_options: unit; //TODO
+  leaf_node_params: leaf_node_params;
 }
 
 noeq
@@ -458,7 +484,7 @@ let create_group_with_group_id #bytes #bl #entropy_t #entropy_tc #asp cred_pair 
   let*? pending_treesync = return_prob (MLS.TreeSync.API.prepare_create group_id my_leaf_node) in
   assume(my_leaf_node.data.signature_key == cred_pair.cred.signature_public_key);
   assume(my_leaf_node.data.credential == cred_pair.cred.cred);
-  let treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp group_id = MLS.TreeSync.API.finalize_create pending_treesync cred_pair.token in
+  let treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t group_id = MLS.TreeSync.API.finalize_create pending_treesync cred_pair.token in
 
   // Initialize TreeKEM
   let* epoch_secret = extract_entropy (kdf_length #bytes) in
@@ -595,7 +621,7 @@ let find_my_index #bytes #bl #l t ln =
 val finalize_join_group:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
-  step_before:continue_join_group_output bytes -> MLS.TreeSync.API.tokens_for_welcome asp step_before.welcome_pend ->
+  step_before:continue_join_group_output bytes -> tokens:list (option asp.token_t){List.Tot.length tokens == pow2 step_before.l} ->
   result (mls_group bytes asp)
 let finalize_join_group #bytes #cb #asp step_before tokens =
   //TODO handle PSK somewhere
@@ -783,8 +809,10 @@ let queue_new_proposal #bytes #cb #asp st valid_proposal =
   let? proposal_ref = make_proposal_ref (serialize _ proposal <: bytes) in
   let proposal_cache_entry: proposal_and_token bytes asp = {
     sender = valid_proposal.proposal.proposal_msg.content.sender;
-    proposal;
-    token = valid_proposal.token;
+    proposal_token = {
+      proposal;
+      token = valid_proposal.token;
+    }
   } in
   return { st with proposal_cache = (proposal_ref, proposal_cache_entry)::st.proposal_cache }
 
@@ -810,8 +838,10 @@ let rec _get_all_proposals #bytes #cb #asp st sender proposals tokens =
       let (token, tokens_tail) = (tokens <: ((proposal_token_for asp proposal) & (list_to_type (List.Tot.map (proposal_token_for asp) (filter_and_map _get_proposal proposals_tail))))) in
       let proposal_token: proposal_and_token bytes asp = {
         sender;
-        proposal;
-        token;
+        proposal_token = {
+          proposal;
+          token;
+        }
       } in
       let? proposals_tokens_tail = _get_all_proposals st sender proposals_tail tokens_tail in
       return (proposal_token::proposals_tokens_tail)
@@ -822,19 +852,19 @@ let rec _get_all_proposals #bytes #cb #asp st sender proposals tokens =
 val _process_group_context_extensions_proposal:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_group_context_extensions? proposal.proposal} ->
+  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_group_context_extensions? proposal.proposal_token.proposal} ->
   result (mls_group bytes asp)
 let _process_group_context_extensions_proposal #bytes #cb #asp st proposal =
-  let P_group_context_extensions {extensions} = proposal.proposal in
+  let P_group_context_extensions {extensions} = proposal.proposal_token.proposal in
   return ({ st with group_context = { st.group_context with extensions } } <: mls_group bytes asp)
 
 val _process_add_proposal_aux:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_add? proposal.proposal} ->
+  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_add? proposal.proposal_token.proposal} ->
   result (mls_group bytes asp & key_package_nt bytes tkt & nat)
 let _process_add_proposal_aux #bytes #cb #asp st proposal =
-  let P_add {key_package} = proposal.proposal in
+  let P_add {key_package} = proposal.proposal_token.proposal in
   let leaf_node = key_package.tbs.leaf_node in
   let? () = (
     // TODO: verification should be a separate function
@@ -844,14 +874,14 @@ let _process_add_proposal_aux #bytes #cb #asp st proposal =
     else return ()
   ) in
   let? add_pend = MLS.TreeSync.API.prepare_add st.treesync leaf_node in
-  let? (treesync, _) = MLS.TreeSync.API.finalize_add add_pend proposal.token in
+  let? (treesync, _) = MLS.TreeSync.API.finalize_add add_pend proposal.proposal_token.token in
   let (treekem, add_index) = MLS.TreeKEM.API.add st.treekem ({public_key = key_package.tbs.leaf_node.data.content;}) in
   return (({ st with treesync; treekem } <: mls_group bytes asp), key_package, add_index)
 
 val _process_add_proposal:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
-  (mls_group bytes asp & list (key_package_nt bytes tkt & nat)) -> proposal:proposal_and_token bytes asp{P_add? proposal.proposal} ->
+  (mls_group bytes asp & list (key_package_nt bytes tkt & nat)) -> proposal:proposal_and_token bytes asp{P_add? proposal.proposal_token.proposal} ->
   result (mls_group bytes asp & list (key_package_nt bytes tkt & nat))
 let _process_add_proposal #bytes #cb #asp (st, l) proposal =
   let? (st, key_package, add_index) = _process_add_proposal_aux st proposal in
@@ -860,10 +890,10 @@ let _process_add_proposal #bytes #cb #asp (st, l) proposal =
 val _process_update_proposal:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_update? proposal.proposal} ->
+  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_update? proposal.proposal_token.proposal} ->
   result (mls_group bytes asp)
 let _process_update_proposal #bytes #cb #asp st proposal =
-  let P_update {leaf_node} = proposal.proposal in
+  let P_update {leaf_node} = proposal.proposal_token.proposal in
   let? (sender_index:nat) = (
     match proposal.sender with
     | S_member leaf_index -> (
@@ -877,7 +907,7 @@ let _process_update_proposal #bytes #cb #asp st proposal =
   let? pend_update = MLS.TreeSync.API.prepare_update st.treesync leaf_node sender_index in
   // TODO: what to do about this assume?
   assume(asp.valid_successor pend_update.as_input_before pend_update.as_input);
-  let treesync = MLS.TreeSync.API.finalize_update pend_update proposal.token in
+  let treesync = MLS.TreeSync.API.finalize_update pend_update proposal.proposal_token.token in
   assume(st.treesync.levels == st.treekem.tree_state.levels); // Could be proved
   let treekem = MLS.TreeKEM.API.update st.treekem ({public_key = leaf_node.data.content}) sender_index in
   return ({ st with treesync; treekem } <: mls_group bytes asp)
@@ -885,10 +915,10 @@ let _process_update_proposal #bytes #cb #asp st proposal =
 val _process_remove_proposal:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_remove? proposal.proposal} ->
+  mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_remove? proposal.proposal_token.proposal} ->
   result (mls_group bytes asp)
 let _process_remove_proposal #bytes #cb #asp st proposal =
-  let P_remove {removed} = proposal.proposal in
+  let P_remove {removed} = proposal.proposal_token.proposal in
   if not (removed < pow2 st.treesync.levels) then
     error "_process_remove_proposal: leaf_index too big"
   else if not (removed <> st.my_leaf_index) then
@@ -903,10 +933,10 @@ let _process_remove_proposal #bytes #cb #asp st proposal =
 
 noeq
 type sort_proposals_output (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
-  group_context_extensions: list (proposal:proposal_and_token bytes asp{P_group_context_extensions? proposal.proposal});
-  adds: list (proposal:proposal_and_token bytes asp{P_add? proposal.proposal});
-  updates: list (proposal:proposal_and_token bytes asp{P_update? proposal.proposal});
-  removes: list (proposal:proposal_and_token bytes asp{P_remove? proposal.proposal});
+  group_context_extensions: list (proposal:proposal_and_token bytes asp{P_group_context_extensions? proposal.proposal_token.proposal});
+  adds: list (proposal:proposal_and_token bytes asp{P_add? proposal.proposal_token.proposal});
+  updates: list (proposal:proposal_and_token bytes asp{P_update? proposal.proposal_token.proposal});
+  removes: list (proposal:proposal_and_token bytes asp{P_remove? proposal.proposal_token.proposal});
   other: list (proposal_and_token bytes asp);
 }
 
@@ -927,7 +957,7 @@ let rec _sort_proposals #bytes #bl #asp l =
   }
   | h::t -> (
     let tmp = _sort_proposals t in
-    match h.proposal with
+    match h.proposal_token.proposal with
     | P_group_context_extensions _ -> { tmp with group_context_extensions = h::tmp.group_context_extensions }
     | P_add _ -> { tmp with adds = h::tmp.adds }
     | P_update _ -> { tmp with updates = h::tmp.updates }
@@ -955,7 +985,7 @@ val _merge_update_path:
   st:mls_group bytes asp ->
   nat -> update_path_nt bytes ->
   list (key_package_nt bytes tkt & nat) ->
-  result (MLS.TreeSync.API.Types.treesync_state bytes tkt asp st.group_context.group_id & MLS.TreeKEM.API.pending_process_commit st.treekem & group_context_nt bytes)
+  result (MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t st.group_context.group_id & MLS.TreeKEM.API.pending_process_commit st.treekem & group_context_nt bytes)
 let _merge_update_path #bytes #cb #asp st sender_index path new_members =
   let? () = (
     if not (sender_index < pow2 st.treesync.levels) then error ""
@@ -998,7 +1028,7 @@ val _merge_no_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
   st:mls_group bytes asp ->
-  result (MLS.TreeSync.API.Types.treesync_state bytes tkt asp st.group_context.group_id & MLS.TreeKEM.API.pending_process_commit st.treekem & group_context_nt bytes)
+  result (MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t st.group_context.group_id & MLS.TreeKEM.API.pending_process_commit st.treekem & group_context_nt bytes)
 let _merge_no_update_path #bytes #cb #asp st =
   let? provisional_group_context = (
     let? tree_hash = MLS.TreeSync.API.compute_tree_hash st.treesync in
@@ -1010,7 +1040,6 @@ let _merge_no_update_path #bytes #cb #asp st =
   let? pending_treekem = MLS.TreeKEM.API.prepare_process_add_only_commit st.treekem in
   
   return (st.treesync, pending_treekem, provisional_group_context)
-
 
 #push-options "--z3rlimit 50"
 val merge_commit:
@@ -1092,7 +1121,7 @@ val _authenticate_non_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> framing_params ->
+  mls_group bytes asp -> framing_params bytes ->
   msg:framed_content_nt bytes{msg.content.content_type =!= CT_commit} ->
   prob #bytes #entropy_t (result (authenticated_content_nt bytes))
 let _authenticate_non_commit #bytes #cb #entropy_t #entropy_tc #asp st params msg =
@@ -1108,7 +1137,7 @@ val _send_authenticated_message:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> framing_params ->
+  mls_group bytes asp -> framing_params bytes ->
   authenticated_content_nt bytes ->
   prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
 let _send_authenticated_message #bytes #cb #entropy_t #entropy_tc #asp st params msg =
@@ -1130,11 +1159,11 @@ val _send_tagged_content:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> framing_params ->
-  msg:mls_tagged_content_nt bytes{msg.content_type =!= CT_commit} -> authenticated_data:bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  msg:mls_tagged_content_nt bytes{msg.content_type =!= CT_commit} ->
   prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
-let _send_tagged_content #bytes #cb #entropy_t #entropy_tc #asp st params msg authenticated_data =
-  let*? authenticated_data = return_prob (mk_mls_bytes authenticated_data "_send_tagged_content" "authenticated_data") in
+let _send_tagged_content #bytes #cb #entropy_t #entropy_tc #asp st params msg =
+  let*? authenticated_data = return_prob (mk_mls_bytes params.authenticated_data "_send_tagged_content" "authenticated_data") in
   let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "_send_tagged_content" "my_leaf_index") in
   let framed_msg: framed_content_nt bytes = {
     group_id = st.group_context.group_id;
@@ -1150,10 +1179,10 @@ val send_application_message:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> framing_params ->
-  message:bytes -> authenticated_data:bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  message:bytes ->
   prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
-let send_application_message #bytes #cb #entropy_t #entropy_tc #asp st params message authenticated_data =
+let send_application_message #bytes #cb #entropy_t #entropy_tc #asp st params message =
   (
     if not (params.encrypt) then
       return_prob (error "send_application_message: applications messages must be encrypted")
@@ -1164,4 +1193,138 @@ let send_application_message #bytes #cb #entropy_t #entropy_tc #asp st params me
       content_type = CT_application;
       content = message;
   } in
-  _send_tagged_content st params content authenticated_data
+  _send_tagged_content st params content
+
+val _send_proposal_message:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  proposal_nt bytes ->
+  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+let _send_proposal_message #bytes #cb #entropy_t #entropy_tc #asp st params proposal =
+  let content: mls_tagged_content_nt bytes = {
+    content_type = CT_proposal;
+    content = proposal;
+  } in
+  _send_tagged_content st params content
+
+val propose_add_member:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  key_package_nt bytes tkt ->
+  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+let propose_add_member #bytes #cb #entropy_t #entropy_tc #asp st params key_package =
+  _send_proposal_message st params (P_add {key_package})
+
+val _propose_remove:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  nat ->
+  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+let _propose_remove #bytes #cb #entropy_t #entropy_tc #asp st params removed =
+  let*? (): squash(removed < pow2 32) = (
+    if not (removed < pow2 32) then return_prob (error "_propose_remove: removed too big")
+    else return_prob (return ())
+  ) in
+  _send_proposal_message st params (P_remove {removed})
+
+#push-options "--ifuel 1"
+val find_credential:
+  #bytes:eqtype -> {|bytes_like bytes|} ->
+  credential_nt bytes ->
+  list (option (leaf_node_nt bytes tkt)) ->
+  result nat
+let rec find_credential #bytes #bl cred l =
+  match l with
+  | [] -> error "find_credential: cannot find credential to remove"
+  | h::t ->
+    if Some? h && (Some?.v h).data.credential = cred then
+      return 0
+    else
+      let? res = find_credential cred t in
+      return (res+1 <: nat)
+#pop-options
+
+val propose_remove_member:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  credential_nt bytes ->
+  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+let propose_remove_member #bytes #cb #entropy_t #entropy_tc #asp st params removed_cred =
+  bytes_hasEq #bytes;
+  let*? removed_index = return_prob (find_credential removed_cred (MLS.Tree.get_leaf_list st.treesync.tree)) in
+  _propose_remove st params removed_index
+
+val propose_remove_myself:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+let propose_remove_myself #bytes #cb #entropy_t #entropy_tc #asp st params =
+  _propose_remove st params st.my_leaf_index
+
+type create_group_info_parameters (bytes:Type0) {|bytes_like bytes|} = {
+  new_group_context: group_context_nt bytes;
+  group_info_extensions: mls_list bytes ps_extension_nt;
+  confirmation_tag: mac_nt bytes;
+}
+
+val _create_group_info:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> create_group_info_parameters bytes ->
+  prob #bytes #entropy_t (result (group_info_nt bytes))
+let _create_group_info #bytes #cb #entropy_t #entropy_tc #asp st params =
+  let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "_create_group_info" "my_leaf_index") in
+  let group_info_tbs: group_info_tbs_nt bytes = {
+    group_context = params.new_group_context;
+    extensions = params.group_info_extensions;
+    confirmation_tag = params.confirmation_tag;
+    signer = my_leaf_index;
+  } in
+  let* group_info_sign_nonce = gen_sign_nonce in
+  return_prob (sign_welcome_group_info st.my_signature_key group_info_tbs group_info_sign_nonce)
+
+type create_welcome_parameters (bytes:Type0) {|bytes_like bytes|} = {
+  joiner_secret: bytes;
+  key_packages_and_path_secrets: list (key_package_nt bytes tkt & option (mls_bytes bytes));
+}
+
+val _create_welcome:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> group_info:group_info_nt bytes -> create_welcome_parameters bytes ->
+  prob #bytes #entropy_t (result (option (welcome_nt bytes)))
+let _create_welcome #bytes #cb #entropy_t #entropy_tc #asp st group_info params =
+  if Nil? params.key_packages_and_path_secrets then
+    return_prob (return None)
+  else (
+    let*? joiner_secret = return_prob (mk_mls_bytes params.joiner_secret "_create_welcome" "joiner_secret") in
+    let* encrypt_welcome_rand = extract_randomness _ in
+    let*? welcome_msg = return_prob (encrypt_welcome group_info joiner_secret params.key_packages_and_path_secrets encrypt_welcome_rand) in
+    return_prob (return (Some welcome_msg))
+  )
+
+val create_commit:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp -> framing_params bytes ->
+  commit_params bytes asp ->
+  prob #bytes #entropy_t (result (mls_message_nt bytes & option (welcome_nt bytes) & group_info_nt bytes & mls_group bytes asp))
+let create_commit #bytes #cb #entropy_t #entropy_tc #asp st fparams cparams =
+  let group_info_inputs = magic() in
+  let welcome_inputs = magic() in
+  let*? group_info = _create_group_info st group_info_inputs in
+  let*? welcome = _create_welcome st group_info welcome_inputs in
+  return_prob (return ((magic()), welcome, group_info, (magic())))
