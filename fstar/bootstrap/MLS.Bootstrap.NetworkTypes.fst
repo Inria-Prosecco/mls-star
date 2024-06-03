@@ -118,6 +118,7 @@ type group_secrets_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_group_secrets_nt] (gen_parser (`group_secrets_nt))
+%splice [ps_group_secrets_nt_is_well_formed] (gen_is_well_formed_lemma (`group_secrets_nt))
 
 instance parseable_serializeable_group_secrets_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_secrets_nt bytes) = mk_parseable_serializeable ps_group_secrets_nt
 
