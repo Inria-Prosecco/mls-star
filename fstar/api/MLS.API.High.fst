@@ -1315,6 +1315,118 @@ let _create_welcome #bytes #cb #entropy_t #entropy_tc #asp st group_info params 
     return_prob (return (Some welcome_msg))
   )
 
+noeq
+type generate_update_path_result (bytes:Type0) {|crypto_bytes bytes|} (asp:as_parameters bytes) (group_id:mls_bytes bytes) (leaf_index:nat) = {
+  provisional_group_context: group_context_nt bytes;
+  update_path: update_path_nt bytes;
+  new_treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t group_id;
+  pending_commit: MLS.TreeKEM.API.pending_create_commit_2 bytes leaf_index;
+  path_secrets: list (key_package_nt bytes tkt & bytes);
+}
+
+val _generate_update_path:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  st:mls_group bytes asp -> list (proposal_and_token bytes asp) ->
+  prob #bytes #entropy_t (result (generate_update_path_result bytes asp st.group_context.group_id st.my_leaf_index))
+let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st proposals_tokens =
+  let first_st = st in
+  let*? (st, new_members, other_proposals) = return_prob (_process_proposals st proposals_tokens) in
+  let st: mls_group bytes asp = st in
+  assume(st.my_leaf_index == first_st.my_leaf_index);
+  assume(st.group_context.group_id == first_st.group_context.group_id);
+  assume(st.treesync.levels == st.treekem.tree_state.levels);
+  let*? _ = (
+    if not (st.my_leaf_index < pow2 st.treesync.levels) then
+      return_prob (internal_failure "_generate_updat_path: my leaf index is too big")
+    else return_prob (return (() <: squash (st.my_leaf_index < pow2 st.treesync.levels)))
+  ) in
+
+  let* prepare_create_commit_rand = extract_randomness _ in
+  let*? (pending_create_commit, pre_update_path) = return_prob (MLS.TreeKEM.API.prepare_create_commit st.treekem prepare_create_commit_rand) in
+
+  let*? update_path_sync = (
+    // let? my_new_leaf_package_data = (
+    //   let opt_my_leaf_package = leaf_at st.treesync_state.tree st.leaf_index in
+    //   let? my_leaf_package = (from_option "generate_update_path: my leaf is blanked" opt_my_leaf_package) in
+    //   return ({
+    //     my_leaf_package.data with
+    //     source = LNS_update;
+    //     lifetime = ();
+    //     parent_hash = ();
+    //   })
+    // ) in
+    let*? my_new_leaf_package_data = return_prob (magic()) in
+    let*? ext_update_path: MLS.TreeSync.Types.external_pathsync bytes tkt _ _ _ = return_prob (MLS.TreeSyncTreeKEMBinder.treekem_to_treesync my_new_leaf_package_data pre_update_path) in
+    let* sign_nonce = gen_sign_nonce in
+    assume((MLS.Tree.get_path_leaf ext_update_path).source == LNS_update);
+    return_prob (MLS.TreeSync.API.authenticate_external_path st.treesync ext_update_path st.my_signature_key sign_nonce)
+  ) in
+
+  let*? new_treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t st.group_context.group_id = return_prob (
+    let? pending_commit = MLS.TreeSync.API.prepare_commit st.treesync update_path_sync in
+    MLS.TreeSync.API.finalize_commit pending_commit (magic())
+  ) in
+
+  let*? provisional_group_context = return_prob (
+    let? tree_hash = MLS.TreeSync.API.compute_tree_hash new_treesync in
+    let? tree_hash = mk_mls_bytes tree_hash "merge_commit" "tree_hash" in
+    let? epoch = mk_nat_lbytes (st.group_context.epoch + 1) "merge_commit" "epoch" in
+    return { st.group_context with tree_hash; epoch }
+  ) in
+
+  let* continue_create_commit_rand = extract_randomness _ in
+  let*? (pending_commit, commit_result) = return_prob (MLS.TreeKEM.API.continue_create_commit pending_create_commit (List.Tot.map snd new_members) provisional_group_context continue_create_commit_rand) in
+  let commit_result: MLS.TreeKEM.API.continue_create_commit_result _ = commit_result in
+
+  let uncompressed_update_path = MLS.NetworkBinder.mls_star_paths_to_update_path update_path_sync commit_result.update_path in
+  let*? update_path = return_prob (MLS.NetworkBinder.compress_update_path uncompressed_update_path) in
+
+  assume(List.Tot.length (List.Tot.map fst new_members) == List.Tot.length commit_result.added_leaves_path_secrets);
+  let path_secrets = List.Pure.zip (List.Tot.map fst new_members) commit_result.added_leaves_path_secrets in
+
+  return_prob (return ({
+    provisional_group_context;
+    update_path;
+    new_treesync;
+    pending_commit;
+    path_secrets;
+  } <: generate_update_path_result bytes asp first_st.group_context.group_id first_st.my_leaf_index))
+
+type authenticate_commit_result (bytes:Type0) {|crypto_bytes bytes|} (leaf_ind:nat) = {
+  auth_commit: auth_commit:authenticated_content_nt bytes{auth_commit.content.content.content_type == CT_commit};
+  new_group_context: group_context_nt bytes;
+  commit_result: MLS.TreeKEM.API.create_commit_result bytes leaf_ind;
+}
+
+val _authenticate_commit:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  #asp:as_parameters bytes ->
+  st:mls_group bytes asp -> framing_params bytes ->
+  msg:framed_content_nt bytes{msg.content.content_type == CT_commit} ->
+  group_context_nt bytes ->
+  MLS.TreeKEM.API.pending_create_commit_2 bytes st.my_leaf_index ->
+  prob #bytes #entropy_t (result (authenticate_commit_result bytes st.my_leaf_index))
+let _authenticate_commit #bytes #cb #entropy_t #entropy_tc #asp st params msg provisional_group_context pending_commit =
+  let* nonce = gen_sign_nonce in
+  let*? half_auth_commit = return_prob #_ #_ #_ #(result(_:MLS.TreeDEM.API.half_authenticated_commit bytes{_})) (MLS.TreeDEM.API.start_authenticate_commit st.treedem WF_mls_private_message msg nonce) in
+  let*? confirmed_transcript_hash: mls_bytes bytes = return_prob (
+    let? confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag (MLS.TreeKEM.API.get_epoch_keys st.treekem).confirmation_key st.group_context.confirmed_transcript_hash in
+    let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash confirmation_tag st.group_context.confirmed_transcript_hash in
+    let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash WF_mls_private_message msg half_auth_commit.signature interim_transcript_hash in
+    mk_mls_bytes confirmed_transcript_hash "_authenticate_commit" "confirmed_transcipt_hash"
+  ) in
+  let new_group_context = { provisional_group_context with confirmed_transcript_hash } in
+  let*? commit_result: MLS.TreeKEM.API.create_commit_result bytes st.my_leaf_index = return_prob (MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context None) in
+  let*? auth_commit = return_prob #_ #_ #_ #(result(_:authenticated_content_nt bytes{_})) (MLS.TreeDEM.API.finish_authenticate_commit half_auth_commit (MLS.TreeKEM.API.get_epoch_keys commit_result.new_state).confirmation_key confirmed_transcript_hash) in
+  return_prob (return ({
+    auth_commit;
+    new_group_context;
+    commit_result;
+  }))
+
 val create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
@@ -1323,8 +1435,41 @@ val create_commit:
   commit_params bytes asp ->
   prob #bytes #entropy_t (result (mls_message_nt bytes & option (welcome_nt bytes) & group_info_nt bytes & mls_group bytes asp))
 let create_commit #bytes #cb #entropy_t #entropy_tc #asp st fparams cparams =
-  let group_info_inputs = magic() in
-  let welcome_inputs = magic() in
+  let proposals_tokens = magic() in
+  let*? {provisional_group_context; update_path; new_treesync; pending_commit; path_secrets} = _generate_update_path st proposals_tokens in
+
+  let commit: commit_nt bytes = {
+    proposals = magic();
+    path = Some update_path;
+  } in
+  let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "create_commit" "my_leaf_index") in
+  let*? authenticated_data = return_prob (mk_mls_bytes fparams.authenticated_data "create_commit" "authenticated_data") in
+  let framed_commit: framed_content_nt bytes = {
+    group_id = st.group_context.group_id;
+    epoch = st.group_context.epoch;
+    sender = S_member my_leaf_index;
+    authenticated_data;
+    content = {
+      content_type = CT_commit;
+      content = commit;
+    };
+  } in
+
+  let*? { auth_commit; new_group_context; commit_result } = _authenticate_commit st fparams framed_commit provisional_group_context pending_commit in
+
+  let group_info_inputs: create_group_info_parameters bytes = {
+    new_group_context;
+    group_info_extensions = magic();
+    confirmation_tag = auth_commit.auth.confirmation_tag;
+  } in
   let*? group_info = _create_group_info st group_info_inputs in
+
+  let welcome_inputs = {
+    joiner_secret = commit_result.joiner_secret;
+    key_packages_and_path_secrets = magic();
+  } in
   let*? welcome = _create_welcome st group_info welcome_inputs in
-  return_prob (return ((magic()), welcome, group_info, (magic())))
+
+  let*? (commit_msg, st) = _send_authenticated_message st fparams auth_commit in
+
+  return_prob (return (commit_msg, welcome, group_info, st))
