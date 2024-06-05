@@ -206,3 +206,5 @@ type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
 type ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = mls_list bytes (ps_option (ps_node_nt tkt))
 
 %splice [ps_ratchet_tree_nt] (gen_parser (`ratchet_tree_nt))
+
+instance parseable_serializeable_ratchet_tree_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (ratchet_tree_nt bytes tkt) = mk_parseable_serializeable (ps_ratchet_tree_nt tkt)

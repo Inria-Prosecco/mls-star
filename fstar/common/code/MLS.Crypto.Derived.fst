@@ -177,7 +177,7 @@ val get_sign_content:
   label:valid_label -> content:mls_bytes bytes ->
   bytes
 let get_sign_content #bytes #cb label content =
-  ((ps_prefix_to_ps_whole ps_sign_content_nt).serialize ({
+  (serialize _ ({
     label = get_mls_label label;
     content = content;
   }))
@@ -217,6 +217,10 @@ type kdf_label_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_kdf_label_nt] (gen_parser (`kdf_label_nt))
+%splice [ps_kdf_label_nt_is_well_formed] (gen_is_well_formed_lemma (`kdf_label_nt))
+
+instance parseable_serializeable_kdf_label_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (kdf_label_nt bytes) =
+  mk_parseable_serializeable ps_kdf_label_nt
 
 val expand_with_label:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -226,7 +230,7 @@ let expand_with_label #bytes #cb secret label context len =
   normalize_term_spec ((pow2 30) - 8);
   let? length = mk_nat_lbytes len "expand_with_label" "len" in
   let? context = mk_mls_bytes context "expand_with_label" "context" in
-  let kdf_label = (ps_prefix_to_ps_whole ps_kdf_label_nt).serialize ({
+  let kdf_label = serialize _ ({
     length;
     label = get_mls_label label;
     context;
