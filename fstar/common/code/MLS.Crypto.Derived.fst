@@ -308,16 +308,17 @@ instance parseable_serializeable_ref_hash_input_nt (bytes:Type0) {|bytes_like by
 val ref_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   mls_ascii_string -> bytes ->
-  result bytes
+  result (mls_bytes bytes)
 let ref_hash #bytes #cb label value =
   let? value = mk_mls_bytes value "ref_hash" "value" in
-  let hash_content = (serialize (ref_hash_input_nt bytes) ({label; value;})) in
-  hash_hash hash_content
+  let hash_content: bytes = (serialize (ref_hash_input_nt bytes) ({label; value;})) in
+  let? ref = hash_hash hash_content in
+  mk_mls_bytes ref "ref_hash" "ref"
 
 val make_keypackage_ref:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
-  result bytes
+  result (mls_bytes bytes)
 let make_keypackage_ref #bytes #cb buf =
   normalize_term_spec (String.strlen "MLS 1.0 KeyPackage Reference");
   ref_hash "MLS 1.0 KeyPackage Reference" buf
@@ -325,7 +326,7 @@ let make_keypackage_ref #bytes #cb buf =
 val make_proposal_ref:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
-  result bytes
+  result (mls_bytes bytes)
 let make_proposal_ref #bytes #cb buf =
   normalize_term_spec (String.strlen "MLS 1.0 Proposal Reference");
   ref_hash "MLS 1.0 Proposal Reference" buf
