@@ -92,7 +92,7 @@ let state_to_group_context st =
 
 val hash_leaf_package: leaf_node_nt bytes tkt -> result bytes
 let hash_leaf_package leaf_package =
-  let leaf_package = (ps_prefix_to_ps_whole (ps_leaf_node_nt _)).serialize leaf_package in
+  let leaf_package = serialize _ leaf_package in
   hash_hash leaf_package
 
 val process_proposal: nat -> (state & list (key_package_nt bytes tkt & nat)) -> proposal_nt bytes -> result (state & list (key_package_nt bytes tkt & nat))
@@ -325,7 +325,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     extensions;
   } in
   let? signature = (
-    let tbs = (ps_prefix_to_ps_whole (ps_leaf_node_tbs_nt _)).serialize ({
+    let tbs = serialize (leaf_node_tbs_nt bytes tkt) ({
       data = leaf_data;
       group_id = ();
       leaf_index = ();
@@ -346,7 +346,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
     extensions = [];
   } <: key_package_tbs_nt bytes tkt) in
   let? nonce = universal_sign_nonce in
-  let tbs: bytes = (ps_prefix_to_ps_whole (ps_key_package_tbs_nt _)).serialize kp_tbs in
+  let tbs: bytes = serialize _ kp_tbs in
   let? signature: bytes = sign_with_label private_sign_key "KeyPackageTBS" tbs nonce in
   let? signature = mk_mls_bytes signature "fresh_key_package_internal" "signature" in
   return (({
@@ -356,7 +356,7 @@ let fresh_key_package_internal e { identity; signature_key } private_sign_key =
 
 let fresh_key_package e cred private_sign_key =
   let? key_package, leaf_secret = fresh_key_package_internal e cred private_sign_key in
-  let key_package_bytes = (ps_prefix_to_ps_whole (ps_key_package_nt _)).serialize key_package in
+  let key_package_bytes = serialize _ key_package in
   let? hash = compute_key_package_ref key_package in
   return (key_package_bytes, (hash <: bytes), (leaf_secret <: bytes))
 
@@ -426,7 +426,7 @@ let rec unsafe_mk_randomness #l e =
 val generate_welcome_message: state -> ratchet_tree_nt bytes tkt -> group_context_nt bytes -> mac_nt bytes -> bytes -> new_key_packages:list (key_package_nt bytes tkt & bytes) -> bytes -> result (welcome_nt bytes)
 let generate_welcome_message st ratchet_tree new_group_context confirmation_tag joiner_secret new_key_packages e =
   let? joiner_secret = mk_mls_bytes joiner_secret "generate_welcome_message" "joiner_secret" in
-  let? ratchet_tree_bytes = mk_mls_bytes ((ps_prefix_to_ps_whole (ps_ratchet_tree_nt tkt)).serialize ratchet_tree) "generate_welcome_message" "ratchet_tree" in
+  let? ratchet_tree_bytes = mk_mls_bytes (serialize _ ratchet_tree) "generate_welcome_message" "ratchet_tree" in
   let? leaf_index = mk_nat_lbytes st.leaf_index "generate_welcome_message" "leaf_index" in
   let? extensions = mk_mls_list [{extension_type = ET_ratchet_tree; extension_data = ratchet_tree_bytes;}] "generate_welcome_message" "extensions" in
   let group_info_tbs: group_info_tbs_nt bytes = {
@@ -591,14 +591,14 @@ let generate_commit state e proposals =
 #pop-options
 
 let add state key_package e =
-  let? key_package = from_option "error message if it is malformed" ((ps_prefix_to_ps_whole (ps_key_package_nt tkt)).parse key_package) in
+  let? key_package = from_option "error message if it is malformed" (parse _ key_package) in
   let proposals = [ (P_add {key_package}) ] in
   let? (state, {group_msg; path_secrets; joiner_secret; ratchet_tree; new_group_context; confirmation_tag}, e) = generate_commit state e proposals in
   let? fresh, e = chop_entropy e 32 in
   let rand = fresh in
   assume (hpke_private_key_length #bytes == 32);
   let? welcome_msg = generate_welcome_message state ratchet_tree new_group_context confirmation_tag joiner_secret path_secrets rand in
-  let w:welcome_message = (empty #bytes, (ps_prefix_to_ps_whole ps_welcome_nt).serialize welcome_msg) in
+  let w:welcome_message = (empty #bytes, serialize _ welcome_msg) in
   return (state, (group_msg,w))
 
 let remove state p e =
@@ -654,7 +654,7 @@ let find_my_index #l t sign_pk =
 #push-options "--z3rlimit 50"
 let process_welcome_message w (sign_pk, sign_sk) lookup =
   let (_, welcome_bytes) = w in
-  let? welcome = from_option "process_welcome_message: can't parse welcome message" ((ps_prefix_to_ps_whole ps_welcome_nt).parse welcome_bytes) in
+  let? welcome = from_option "process_welcome_message: can't parse welcome message" (parse _ welcome_bytes) in
   let extract_hpke_sk (x:bytes): result (hpke_private_key bytes) =
     if not (length x = hpke_private_key_length #bytes) then
       internal_failure "process_welcome_message: bad HPKE private key length"
@@ -666,7 +666,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let? ratchet_tree = (
     match group_info.tbs.extensions with
     | [{extension_type = ET_ratchet_tree; extension_data}] ->
-      from_option "bad ratchet tree" ((ps_prefix_to_ps_whole #bytes (ps_ratchet_tree_nt tkt)).parse extension_data)
+      from_option "bad ratchet tree" (parse _ (extension_data <: bytes))
     | _ -> error "process_welcome_message: invalid extensions"
   ) in
   let? treesync_state = (
@@ -696,7 +696,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash #bytes group_info.tbs.confirmation_tag group_info.tbs.group_context.confirmed_transcript_hash in
   let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
   let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch tree_hash group_info.tbs.group_context.confirmed_transcript_hash in
-  let? epoch_secret = MLS.TreeKEM.KeySchedule.secret_joiner_to_epoch secrets.joiner_secret None ((ps_prefix_to_ps_whole ps_group_context_nt).serialize group_context) in
+  let? epoch_secret = MLS.TreeKEM.KeySchedule.secret_joiner_to_epoch (secrets.joiner_secret <: bytes) None (serialize _ group_context) in
   let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.welcome treekem leaf_decryption_key opt_path_secret_and_inviter_ind leaf_index epoch_secret in
 
   let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
@@ -739,7 +739,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
 
 let process_group_message state msg =
   let? msg = from_option "process_group_message: can't parse group message"
-    ((ps_prefix_to_ps_whole ps_mls_message_nt).parse msg) in
+    (parse _ msg) in
   let? (wire_format, message) = (
     match msg with
     | M_mls10 (M_public_message msg) ->

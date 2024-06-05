@@ -23,6 +23,7 @@ type hpke_ciphertext_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_hpke_ciphertext_nt] (gen_parser (`hpke_ciphertext_nt))
+%splice [ps_hpke_ciphertext_nt_is_well_formed] (gen_is_well_formed_lemma (`hpke_ciphertext_nt))
 
 /// struct {
 ///     HPKEPublicKey encryption_key;
