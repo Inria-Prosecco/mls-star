@@ -16,6 +16,7 @@ open MLS.TreeSync.Invariants.AuthService
 
 (*** Entropy ***)
 
+[@@FStar.Tactics.Typeclasses.fundeps [0;1]]
 class entropy (bytes:Type0) (t:Type) = {
   rel: t -> t -> prop;
   rel_refl: x:t -> Lemma (x `rel` x);
@@ -27,38 +28,38 @@ class entropy (bytes:Type0) (t:Type) = {
 }
 
 let prob (#bytes:Type0) (#entropy_t) {|entropy bytes entropy_t|} (t:Type): Type =
-  x:entropy_t -> res:(entropy_t & t){x `rel #bytes` (fst res)}
+  x:entropy_t -> res:(entropy_t & t){x `rel` (fst res)}
 
 val return_prob:
   #bytes:Type0 -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
   #a:Type ->
   a ->
-  prob #bytes #entropy_t a
+  prob a
 let return_prob #bytes #entropy_t #entropy_tc #a x e =
-  rel_refl #bytes e;
+  rel_refl e;
   (e, x)
 
 val (let*):
   #bytes:Type0 -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
   #a:Type -> #b:Type ->
-  prob #bytes #entropy_t a -> (a -> prob #bytes #entropy_t b) -> prob #bytes #entropy_t b
+  prob a -> (a -> prob b) -> prob b
 let (let*) #bytes #entropy_t #entropy_tc #a #b x f e0 =
   let (e1, x_value) = x e0 in
   let (e2, y_value) = f x_value e1 in
-  rel_trans #bytes e0 e1 e2;
+  rel_trans e0 e1 e2;
   (e2, y_value)
 
 #push-options "--ifuel 1"
 val (let*?):
   #bytes:Type0 -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
   #a:Type -> #b:Type ->
-  prob #bytes #entropy_t (result a) -> (a -> prob #bytes #entropy_t (result b)) -> prob #bytes #entropy_t (result b)
+  prob (result a) -> (a -> prob (result b)) -> prob (result b)
 let (let*?) #bytes #entropy_t #entropy_tc #a #b x f e0 =
   let (e1, x_result) = x e0 in
   match x_result with
   | Success x_value -> (
     let (e2, y_result) = f x_value e1 in
-    rel_trans #bytes e0 e1 e2;
+    rel_trans e0 e1 e2;
     (e2, y_result)
   )
   | InternalError s -> (e1, InternalError s)
@@ -68,11 +69,11 @@ let (let*?) #bytes #entropy_t #entropy_tc #a #b x f e0 =
 val extract_entropy:  
   #bytes:Type0 -> {|bytes_like bytes|} -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
   len:nat ->
-  prob #bytes #entropy_t (lbytes bytes len)
+  prob (lbytes bytes len)
 let extract_entropy #bytes #bl #entropy_t #entropy_tc len =
   let* rand = extract_entropy_ #bytes len in
   assume(length rand == len);
-  return_prob #bytes #entropy_t (rand <: lbytes bytes len)
+  return_prob (rand <: lbytes bytes len)
 
 #push-options "--ifuel 1 --fuel 1"
 val extract_randomness:
@@ -184,9 +185,9 @@ let commit_tokens_for #bytes #bl asp commit =
 
 val gen_sign_nonce:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
-  prob #bytes #entropy_t (sign_nonce bytes)
+  prob (sign_nonce bytes)
 let gen_sign_nonce #bytes #cb #entropy_t #entropy_tc =
-  let* res = extract_entropy #bytes #_ #entropy_t (sign_sign_min_entropy_length #bytes) in
+  let* res = extract_entropy (sign_sign_min_entropy_length #bytes) in
   return_prob (res <: sign_nonce bytes)
 
 noeq
@@ -303,12 +304,12 @@ type processed_message (bytes:Type0) {|bytes_like bytes|} = {
 val generate_signature_keypair:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
-  prob #bytes #entropy_t (result (signature_keypair bytes))
+  prob (result (signature_keypair bytes))
 let generate_signature_keypair #bytes #cb #entropy_t #entropy_tc =
   let* rand = extract_entropy (sign_gen_keypair_min_entropy_length #bytes) in
   let*? (vk, sk) = return_prob (sign_gen_keypair rand) in
   let*? vk = return_prob (mk_mls_bytes vk "generate_signature_keypair" "vk") in
-  return_prob #bytes #entropy_t (return ({
+  return_prob (return ({
     public_key = vk;
     private_key = sk;
   } <: signature_keypair bytes))
@@ -367,7 +368,7 @@ val create_leaf_node_data_:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   credential bytes ->
-  prob #bytes #entropy_t (result (leaf_node_data_nt bytes tkt & hpke_private_key bytes))
+  prob (result (leaf_node_data_nt bytes tkt & hpke_private_key bytes))
 let create_leaf_node_data_ #bytes #cb #entropy_t #entropy_tc cred =
   let* rand = extract_entropy (hpke_private_key_length #bytes) in
   let*? (decryption_key, encryption_key) = return_prob (hpke_gen_keypair rand) in
@@ -392,7 +393,7 @@ val create_leaf_node_:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   credential_pair bytes asp ->
-  prob #bytes #entropy_t (result (leaf_node_nt bytes tkt & hpke_private_key bytes))
+  prob (result (leaf_node_nt bytes tkt & hpke_private_key bytes))
 let create_leaf_node_ #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
   let*? (leaf_node_data, decryption_key) = create_leaf_node_data_ cred_pair.cred in
   let* nonce = gen_sign_nonce in
@@ -420,7 +421,7 @@ val create_key_package_:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   credential_pair bytes asp ->
-  prob #bytes #entropy_t (result (keystore_value_type bytes))
+  prob (result (keystore_value_type bytes))
 let create_key_package_ #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
   let*? (leaf_node, leaf_node_decryption_key) = create_leaf_node_ cred_pair in
   let* rand = extract_entropy (hpke_private_key_length #bytes) in
@@ -456,7 +457,7 @@ val create_key_package:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   credential_pair bytes asp ->
-  prob #bytes #entropy_t (result (create_key_package_result bytes))
+  prob (result (create_key_package_result bytes))
 let create_key_package #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
   let*? keystore_value = create_key_package_ cred_pair in
   let key_package = keystore_value.key_package in
@@ -494,7 +495,7 @@ val create_group_with_group_id:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   credential_pair bytes asp -> bytes ->
-  prob #bytes #entropy_t (result (mls_group bytes asp))
+  prob (result (mls_group bytes asp))
 let create_group_with_group_id #bytes #bl #entropy_t #entropy_tc #asp cred_pair group_id =
   let*? group_id = return_prob (mk_mls_bytes group_id "create_group_with_group_id" "group_id") in
   let epoch = 0 in
@@ -557,7 +558,7 @@ val create_group:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   credential_pair bytes asp ->
-  prob #bytes #entropy_t (result (mls_group bytes asp))
+  prob (result (mls_group bytes asp))
 let create_group #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
   let* group_id = extract_entropy (kdf_length #bytes) in
   create_group_with_group_id cred_pair group_id
@@ -767,7 +768,7 @@ let epoch #bytes #cb #asp st =
 //   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
 //   #asp:as_parameters bytes ->
 //   mls_group bytes asp ->
-//   prob #bytes #entropy_t (result (group_info_nt bytes))
+//   prob (result (group_info_nt bytes))
 
 // val get_new_credentials:
 //   unvalidated_commit ->
@@ -1163,7 +1164,7 @@ val _authenticate_non_commit:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   msg:framed_content_nt bytes{msg.content.content_type =!= CT_commit} ->
-  prob #bytes #entropy_t (result (authenticated_content_nt bytes))
+  prob (result (authenticated_content_nt bytes))
 let _authenticate_non_commit #bytes #cb #entropy_t #entropy_tc #asp st params msg =
   let wire_format =
     if params.encrypt then WF_mls_private_message
@@ -1179,7 +1180,7 @@ val _send_authenticated_message:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   authenticated_content_nt bytes ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let _send_authenticated_message #bytes #cb #entropy_t #entropy_tc #asp st params msg =
   match msg.wire_format with
   | WF_mls_public_message -> (
@@ -1201,7 +1202,7 @@ val _send_tagged_content:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   msg:mls_tagged_content_nt bytes{msg.content_type =!= CT_commit} ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let _send_tagged_content #bytes #cb #entropy_t #entropy_tc #asp st params msg =
   let*? authenticated_data = return_prob (mk_mls_bytes params.authenticated_data "_send_tagged_content" "authenticated_data") in
   let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "_send_tagged_content" "my_leaf_index") in
@@ -1221,7 +1222,7 @@ val send_application_message:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   message:bytes ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let send_application_message #bytes #cb #entropy_t #entropy_tc #asp st params message =
   (
     if not (params.encrypt) then
@@ -1241,7 +1242,7 @@ val _send_proposal_message:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   proposal_nt bytes ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let _send_proposal_message #bytes #cb #entropy_t #entropy_tc #asp st params proposal =
   let content: mls_tagged_content_nt bytes = {
     content_type = CT_proposal;
@@ -1255,7 +1256,7 @@ val propose_add_member:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   key_package_nt bytes tkt ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let propose_add_member #bytes #cb #entropy_t #entropy_tc #asp st params key_package =
   _send_proposal_message st params (P_add {key_package})
 
@@ -1265,7 +1266,7 @@ val _propose_remove:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   nat ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let _propose_remove #bytes #cb #entropy_t #entropy_tc #asp st params removed =
   let*? (): squash(removed < pow2 32) = (
     if not (removed < pow2 32) then return_prob (error "_propose_remove: removed too big")
@@ -1296,7 +1297,7 @@ val propose_remove_member:
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
   credential_nt bytes ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let propose_remove_member #bytes #cb #entropy_t #entropy_tc #asp st params removed_cred =
   bytes_hasEq #bytes;
   let*? removed_index = return_prob (find_credential removed_cred (MLS.Tree.get_leaf_list st.treesync.tree)) in
@@ -1307,7 +1308,7 @@ val propose_remove_myself:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   mls_group bytes asp -> framing_params bytes ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & mls_group bytes asp))
 let propose_remove_myself #bytes #cb #entropy_t #entropy_tc #asp st params =
   _propose_remove st params st.my_leaf_index
 
@@ -1322,7 +1323,7 @@ val _create_group_info:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   mls_group bytes asp -> create_group_info_parameters bytes ->
-  prob #bytes #entropy_t (result (group_info_nt bytes))
+  prob (result (group_info_nt bytes))
 let _create_group_info #bytes #cb #entropy_t #entropy_tc #asp st params =
   let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "_create_group_info" "my_leaf_index") in
   let group_info_tbs: group_info_tbs_nt bytes = {
@@ -1344,7 +1345,7 @@ val _create_welcome:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
   mls_group bytes asp -> group_info:group_info_nt bytes -> create_welcome_parameters bytes ->
-  prob #bytes #entropy_t (result (option (welcome_nt bytes)))
+  prob (result (option (welcome_nt bytes)))
 let _create_welcome #bytes #cb #entropy_t #entropy_tc #asp st group_info params =
   if Nil? params.key_packages_and_path_secrets then
     return_prob (return None)
@@ -1465,7 +1466,7 @@ val _authenticate_commit:
   msg:framed_content_nt bytes{msg.content.content_type == CT_commit} ->
   group_context_nt bytes ->
   MLS.TreeKEM.API.pending_create_commit_2 bytes st.my_leaf_index ->
-  prob #bytes #entropy_t (result (authenticate_commit_result bytes st.my_leaf_index))
+  prob (result (authenticate_commit_result bytes st.my_leaf_index))
 let _authenticate_commit #bytes #cb #entropy_t #entropy_tc #asp st params msg provisional_group_context pending_commit =
   let* nonce = gen_sign_nonce in
   let*? half_auth_commit = return_prob #_ #_ #_ #(result(_:MLS.TreeDEM.API.half_authenticated_commit bytes{_})) (MLS.TreeDEM.API.start_authenticate_commit st.treedem WF_mls_private_message msg nonce) in
@@ -1509,7 +1510,7 @@ val create_commit:
   #asp:as_parameters bytes ->
   mls_group bytes asp ->
   framing_params bytes -> commit_params bytes asp ->
-  prob #bytes #entropy_t (result (mls_message_nt bytes & option (welcome_nt bytes) & group_info_nt bytes & mls_group bytes asp))
+  prob (result (mls_message_nt bytes & option (welcome_nt bytes) & group_info_nt bytes & mls_group bytes asp))
 let create_commit #bytes #cb #entropy_t #entropy_tc #asp st fparams cparams =
   let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "create_commit" "my_leaf_index") in
   assume(my_leaf_index == st.my_leaf_index);
