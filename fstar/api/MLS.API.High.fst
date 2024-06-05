@@ -160,13 +160,25 @@ let rec list_to_type l =
   | h::t -> h & list_to_type t
 #pop-options
 
+val update_path_token:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  asp:as_parameters bytes ->
+  option (update_path_nt bytes) ->
+  Type0
+let update_path_token #bytes #bl asp opt_update_path =
+  match opt_update_path with
+  | None -> unit
+  | Some update_path ->
+    let (vk, cred) = leaf_node_to_as_input update_path.leaf_node in
+    token_for asp vk cred
+
 val commit_tokens_for:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   asp:as_parameters bytes ->
   commit_nt bytes ->
   Type0
 let commit_tokens_for #bytes #bl asp commit =
-  list_to_type (List.Tot.map (proposal_token_for asp) (filter_and_map _get_proposal commit.proposals))
+  update_path_token asp commit.path & list_to_type (List.Tot.map (proposal_token_for asp) (filter_and_map _get_proposal commit.proposals))
 
 (*** ... ***)
 
@@ -190,6 +202,15 @@ type proposal_and_token (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters by
 }
 
 noeq
+type pending_mls_group (bytes:Type0) {|crypto_bytes bytes|} (asp:as_parameters bytes) (my_leaf_index:nat) = {
+  new_group_context: group_context_nt bytes;
+  new_treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t new_group_context.group_id;
+  new_treekem: MLS.TreeKEM.API.Types.treekem_state bytes my_leaf_index;
+  encryption_secret: bytes;
+  // Maybe new signature key?
+}
+
+noeq
 type mls_group (bytes:Type0) {|crypto_bytes bytes|} (asp:as_parameters bytes) = {
   group_context: group_context_nt bytes;
   my_leaf_index: nat;
@@ -197,7 +218,8 @@ type mls_group (bytes:Type0) {|crypto_bytes bytes|} (asp:as_parameters bytes) = 
   treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t group_context.group_id;
   treekem: MLS.TreeKEM.API.Types.treekem_state bytes my_leaf_index;
   treedem: MLS.TreeDEM.API.Types.treedem_state bytes;
-  proposal_cache: list (bytes & proposal_and_token bytes asp);
+  proposal_cache: list (proposal_ref_nt bytes & proposal_and_token bytes asp);
+  pending_state: option (pending_mls_group bytes asp my_leaf_index);
 }
 
 type unvalidated_proposal (bytes:Type0) {|bytes_like bytes|} = {
@@ -247,7 +269,7 @@ type framing_params (bytes:Type0) = {
 }
 
 //TODO
-assume val leaf_node_params: Type0
+assume val leaf_node_params (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes): Type0
 
 noeq
 type commit_params (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
@@ -258,7 +280,7 @@ type commit_params (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) 
   // Should we force the UpdatePath even if we could do an add-only commit?
   force_update: bool;
   // Options for the generation of the new leaf node
-  leaf_node_params: leaf_node_params;
+  leaf_node_params: leaf_node_params bytes asp;
 }
 
 noeq
@@ -527,6 +549,7 @@ let create_group_with_group_id #bytes #bl #entropy_t #entropy_tc #asp cred_pair 
     treekem;
     treedem;
     proposal_cache = [];
+    pending_state = None;
   } <: mls_group bytes asp))
 
 val create_group:
@@ -594,8 +617,11 @@ let continue_join_group #bytes #cb step_before opt_ratchet_tree =
     match opt_ratchet_tree with
     | Some ratchet_tree -> return ratchet_tree
     | None -> (
-      //TODO: look in the group_info extensions
-      internal_failure ""
+      let? ratchet_tree_bytes =
+        from_option "continue_join_group: no ratchet tree given nor present in group info extensions"
+        (MLS.Extensions.get_extension ET_ratchet_tree step_before.group_info.tbs.extensions)
+      in
+      from_option "continue_join_group: malformed ratchet_tree" (parse _ ratchet_tree_bytes)
     )
   in
   let? (|l, treesync|) = MLS.NetworkBinder.ratchet_tree_to_treesync ratchet_tree in
@@ -698,6 +724,7 @@ let finalize_join_group #bytes #cb #asp step_before tokens =
     treekem;
     treedem;
     proposal_cache = [];
+    pending_state = None;
   } <: mls_group bytes asp)
 
 // TODO join_with_external_commit
@@ -983,10 +1010,10 @@ val _merge_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
   st:mls_group bytes asp ->
-  nat -> update_path_nt bytes ->
+  sender_index:nat{sender_index <> st.my_leaf_index} -> path:update_path_nt bytes -> update_path_token asp (Some path) ->
   list (key_package_nt bytes tkt & nat) ->
   result (MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t st.group_context.group_id & MLS.TreeKEM.API.pending_process_commit st.treekem & group_context_nt bytes)
-let _merge_update_path #bytes #cb #asp st sender_index path new_members =
+let _merge_update_path #bytes #cb #asp st sender_index path path_token new_members =
   let? () = (
     if not (sender_index < pow2 st.treesync.levels) then error ""
     else return ()
@@ -995,7 +1022,7 @@ let _merge_update_path #bytes #cb #asp st sender_index path new_members =
 
   let treesync_path = MLS.NetworkBinder.update_path_to_treesync uncompressed_path in
   let? commit_pend = MLS.TreeSync.API.prepare_commit st.treesync treesync_path in
-  let? treesync = MLS.TreeSync.API.finalize_commit commit_pend (magic ()) in
+  let? treesync = MLS.TreeSync.API.finalize_commit commit_pend path_token in
 
   let? provisional_group_context = (
     let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync in
@@ -1006,20 +1033,16 @@ let _merge_update_path #bytes #cb #asp st sender_index path new_members =
 
   let treekem_path = MLS.NetworkBinder.update_path_to_treekem uncompressed_path in
   let? pending_treekem =
-    if st.my_leaf_index = sender_index then (
-      admit()
-    ) else (
-      assume(st.treesync.levels == st.treekem.tree_state.levels);
-      assume(MLS.NetworkBinder.Properties.path_filtering_ok st.treekem.tree_state.tree treekem_path);
-      assume(~(List.Tot.memP st.my_leaf_index (List.Tot.map snd new_members)));
-      let open MLS.TreeKEM.API in
-      MLS.TreeKEM.API.prepare_process_full_commit st.treekem ({
-        commit_leaf_ind = _;
-        path = treekem_path;
-        excluded_leaves = (List.Tot.map snd new_members);
-        provisional_group_context;
-      })
-    )
+    assume(st.treesync.levels == st.treekem.tree_state.levels);
+    assume(MLS.NetworkBinder.Properties.path_filtering_ok st.treekem.tree_state.tree treekem_path);
+    assume(~(List.Tot.memP st.my_leaf_index (List.Tot.map snd new_members)));
+    let open MLS.TreeKEM.API in
+    MLS.TreeKEM.API.prepare_process_full_commit st.treekem ({
+      commit_leaf_ind = _;
+      path = treekem_path;
+      excluded_leaves = (List.Tot.map snd new_members);
+      provisional_group_context;
+    })
   in
   
   return (treesync, pending_treekem, provisional_group_context)
@@ -1067,31 +1090,47 @@ let merge_commit #bytes #cb #asp st valid_commit =
 
   // TODO: verify proposals
 
-  // Apply proposals
-  let? proposals_tokens = _get_all_proposals st commit_msg.content.sender commit.proposals valid_commit.tokens in
-  let? (st, new_members, other_proposals) = _process_proposals st proposals_tokens in
+  let? { new_group_context; new_treesync; new_treekem; encryption_secret } = (
+    if sender_index = st.my_leaf_index then (
+      from_option "merge_commit: no pending state?" st.pending_state
+    ) else (
+      let my_leaf_index = st.my_leaf_index in
+      // Apply proposals
+      let (path_token, proposal_tokens) = valid_commit.tokens in
+      let? proposals_and_tokens = _get_all_proposals st commit_msg.content.sender commit.proposals proposal_tokens in
+      let? (st, new_members, other_proposals) = _process_proposals st proposals_and_tokens in
+      assume(my_leaf_index == st.my_leaf_index);
 
-  let? (new_treesync, pending_treekem, provisional_group_context) = (
-    match commit.path with
-    | None -> (
-      // TODO check add-only commit
-      _merge_no_update_path st
-    )
-    | Some path -> (
-      _merge_update_path st sender_index path new_members
+      let? (new_treesync, pending_treekem, provisional_group_context) = (
+        match commit.path with
+        | None -> (
+          // TODO check add-only commit
+          _merge_no_update_path st
+        )
+        | Some path -> (
+          _merge_update_path st sender_index path path_token new_members
+        )
+      ) in
+
+      let? new_group_context = (
+        let? old_confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag (MLS.TreeKEM.API.get_epoch_keys st.treekem).confirmation_key st.group_context.confirmed_transcript_hash in
+        let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash old_confirmation_tag st.group_context.confirmed_transcript_hash in
+        let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash commit_msg.wire_format commit_msg.content commit_msg.auth.signature interim_transcript_hash in
+        let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "merge_commit" "confirmed_transcript_hash" in
+        return ({ provisional_group_context with confirmed_transcript_hash } <: group_context_nt bytes)
+      ) in
+
+      // TODO: handle PSK here
+      let? (new_treekem, encryption_secret) = MLS.TreeKEM.API.finalize_process_commit pending_treekem None new_group_context in
+
+      return ({
+        new_group_context;
+        new_treesync;
+        new_treekem;
+        encryption_secret;
+      } <: pending_mls_group bytes asp my_leaf_index)
     )
   ) in
-
-  let? new_group_context = (
-    let? old_confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag (MLS.TreeKEM.API.get_epoch_keys st.treekem).confirmation_key st.group_context.confirmed_transcript_hash in
-    let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash old_confirmation_tag st.group_context.confirmed_transcript_hash in
-    let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash commit_msg.wire_format commit_msg.content commit_msg.auth.signature interim_transcript_hash in
-    let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "merge_commit" "confirmed_transcript_hash" in
-    return ({ provisional_group_context with confirmed_transcript_hash } <: group_context_nt bytes)
-  ) in
-
-  // TODO: handle PSK here
-  let? (new_treekem, encryption_secret) = MLS.TreeKEM.API.finalize_process_commit pending_treekem None new_group_context in
 
   assume(st.my_leaf_index < pow2 new_treesync.levels);
   let? new_treedem =
@@ -1114,6 +1153,7 @@ let merge_commit #bytes #cb #asp st valid_commit =
     treekem = new_treekem;
     treedem = new_treedem;
     proposal_cache = [];
+    pending_state = None;
   } <: mls_group bytes asp)
 #pop-options
 
@@ -1315,22 +1355,45 @@ let _create_welcome #bytes #cb #entropy_t #entropy_tc #asp st group_info params 
     return_prob (return (Some welcome_msg))
   )
 
+val _make_new_leaf_package_data:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #asp:as_parameters bytes ->
+  leaf_node_params bytes asp ->
+  leaf_node_nt bytes tkt ->
+  result (leaf_node_data_nt bytes tkt)
+let _make_new_leaf_package_data #bytes #cb #asp params old_leaf_node =
+  return ({
+    old_leaf_node.data with
+    content = empty #bytes;
+    source = LNS_update;
+    lifetime = ();
+    parent_hash = ();
+  } <: leaf_node_data_nt bytes tkt)
+
 noeq
 type generate_update_path_result (bytes:Type0) {|crypto_bytes bytes|} (asp:as_parameters bytes) (group_id:mls_bytes bytes) (leaf_index:nat) = {
   provisional_group_context: group_context_nt bytes;
   update_path: update_path_nt bytes;
   new_treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t group_id;
   pending_commit: MLS.TreeKEM.API.pending_create_commit_2 bytes leaf_index;
-  path_secrets: list (key_package_nt bytes tkt & bytes);
+  key_packages_and_path_secrets: list (key_package_nt bytes tkt & option (mls_bytes bytes));
 }
+
+val _mk_path_secret:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  bytes ->
+  result (option (mls_bytes bytes))
+let _mk_path_secret #bytes #bl path_secret =
+  let? res = mk_mls_bytes path_secret "_mk_path_secret" "path_secret" in
+  return (Some res)
 
 val _generate_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
-  st:mls_group bytes asp -> list (proposal_and_token bytes asp) ->
+  st:mls_group bytes asp -> leaf_node_params bytes asp -> list (proposal_and_token bytes asp) ->
   prob #bytes #entropy_t (result (generate_update_path_result bytes asp st.group_context.group_id st.my_leaf_index))
-let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st proposals_tokens =
+let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st lnparams proposals_tokens =
   let first_st = st in
   let*? (st, new_members, other_proposals) = return_prob (_process_proposals st proposals_tokens) in
   let st: mls_group bytes asp = st in
@@ -1339,34 +1402,27 @@ let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st proposals_to
   assume(st.treesync.levels == st.treekem.tree_state.levels);
   let*? _ = (
     if not (st.my_leaf_index < pow2 st.treesync.levels) then
-      return_prob (internal_failure "_generate_updat_path: my leaf index is too big")
+      return_prob (internal_failure "_generate_update_path: my leaf index is too big")
     else return_prob (return (() <: squash (st.my_leaf_index < pow2 st.treesync.levels)))
   ) in
 
   let* prepare_create_commit_rand = extract_randomness _ in
   let*? (pending_create_commit, pre_update_path) = return_prob (MLS.TreeKEM.API.prepare_create_commit st.treekem prepare_create_commit_rand) in
 
-  let*? update_path_sync = (
-    // let? my_new_leaf_package_data = (
-    //   let opt_my_leaf_package = leaf_at st.treesync_state.tree st.leaf_index in
-    //   let? my_leaf_package = (from_option "generate_update_path: my leaf is blanked" opt_my_leaf_package) in
-    //   return ({
-    //     my_leaf_package.data with
-    //     source = LNS_update;
-    //     lifetime = ();
-    //     parent_hash = ();
-    //   })
-    // ) in
-    let*? my_new_leaf_package_data = return_prob (magic()) in
+  let*? (update_path_sync, update_path_token) = (
+    let*? my_old_leaf_package = return_prob (from_option "_generate_update_path: my leaf is blanked" (MLS.Tree.leaf_at st.treesync.tree st.my_leaf_index)) in
+    let*? update_path_token = return_prob (from_option "_generate_update_path: my leaf is blanked" (MLS.Tree.leaf_at st.treesync.tokens st.my_leaf_index)) in
+    let*? my_new_leaf_package_data = return_prob (_make_new_leaf_package_data lnparams my_old_leaf_package) in
     let*? ext_update_path: MLS.TreeSync.Types.external_pathsync bytes tkt _ _ _ = return_prob (MLS.TreeSyncTreeKEMBinder.treekem_to_treesync my_new_leaf_package_data pre_update_path) in
     let* sign_nonce = gen_sign_nonce in
     assume((MLS.Tree.get_path_leaf ext_update_path).source == LNS_update);
-    return_prob (MLS.TreeSync.API.authenticate_external_path st.treesync ext_update_path st.my_signature_key sign_nonce)
+    let*? update_path_sync = return_prob (MLS.TreeSync.API.authenticate_external_path st.treesync ext_update_path st.my_signature_key sign_nonce) in
+    return_prob (return (update_path_sync, update_path_token))
   ) in
 
   let*? new_treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t st.group_context.group_id = return_prob (
     let? pending_commit = MLS.TreeSync.API.prepare_commit st.treesync update_path_sync in
-    MLS.TreeSync.API.finalize_commit pending_commit (magic())
+    MLS.TreeSync.API.finalize_commit pending_commit update_path_token
   ) in
 
   let*? provisional_group_context = return_prob (
@@ -1383,15 +1439,16 @@ let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st proposals_to
   let uncompressed_update_path = MLS.NetworkBinder.mls_star_paths_to_update_path update_path_sync commit_result.update_path in
   let*? update_path = return_prob (MLS.NetworkBinder.compress_update_path uncompressed_update_path) in
 
-  assume(List.Tot.length (List.Tot.map fst new_members) == List.Tot.length commit_result.added_leaves_path_secrets);
-  let path_secrets = List.Pure.zip (List.Tot.map fst new_members) commit_result.added_leaves_path_secrets in
+  let*? added_leaves_path_secrets = return_prob #_ #_ #_ #(result (_:list (option (mls_bytes bytes)){_})) (mapM _mk_path_secret commit_result.added_leaves_path_secrets) in
+  assume(List.Tot.length (List.Tot.map fst new_members) == List.Tot.length added_leaves_path_secrets);
+  let key_packages_and_path_secrets = List.Pure.zip (List.Tot.map fst new_members) added_leaves_path_secrets in
 
   return_prob (return ({
     provisional_group_context;
     update_path;
     new_treesync;
     pending_commit;
-    path_secrets;
+    key_packages_and_path_secrets;
   } <: generate_update_path_result bytes asp first_st.group_context.group_id first_st.my_leaf_index))
 
 type authenticate_commit_result (bytes:Type0) {|crypto_bytes bytes|} (leaf_ind:nat) = {
@@ -1427,22 +1484,50 @@ let _authenticate_commit #bytes #cb #entropy_t #entropy_tc #asp st params msg pr
     commit_result;
   }))
 
+val _make_group_info_extensions:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #asp:as_parameters bytes ->
+  #group_id:mls_bytes bytes ->
+  commit_params bytes asp ->
+  MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t group_id ->
+  result (mls_list bytes ps_extension_nt)
+let _make_group_info_extensions cparams treesync =
+  let extensions = MLS.Extensions.empty_extensions in
+  let? extensions =
+    if cparams.inline_tree then (
+      let? ratchet_tree = MLS.NetworkBinder.treesync_to_ratchet_tree treesync.tree in
+      MLS.Extensions.set_extension ET_ratchet_tree extensions (serialize _ ratchet_tree)
+    ) else return extensions
+  in
+  // TODO: external_pub extension
+  return extensions
+
+// TODO this is mostly ignoring the framing and commit parameters
 val create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   #asp:as_parameters bytes ->
-  mls_group bytes asp -> framing_params bytes ->
-  commit_params bytes asp ->
+  mls_group bytes asp ->
+  framing_params bytes -> commit_params bytes asp ->
   prob #bytes #entropy_t (result (mls_message_nt bytes & option (welcome_nt bytes) & group_info_nt bytes & mls_group bytes asp))
 let create_commit #bytes #cb #entropy_t #entropy_tc #asp st fparams cparams =
-  let proposals_tokens = magic() in
-  let*? {provisional_group_context; update_path; new_treesync; pending_commit; path_secrets} = _generate_update_path st proposals_tokens in
+  let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "create_commit" "my_leaf_index") in
+  assume(my_leaf_index == st.my_leaf_index);
+  let proposals_outside = List.Tot.map POR_reference (List.Tot.map fst st.proposal_cache) in
+  let proposals_inside = List.Tot.map POR_proposal (List.Tot.map Mkbare_proposal_and_token?.proposal cparams.proposals) in
+  let proposals = List.Tot.append proposals_outside proposals_inside in
+  let*? proposals = return_prob (mk_mls_list proposals "create_commit" "proposals") in
+  // proposals_tokens could otherwise be defined using _get_all_proposals?
+  let proposals_tokens_outside = List.Tot.map snd st.proposal_cache in
+  let proposals_tokens_inside = List.Tot.map (Mkproposal_and_token (S_member my_leaf_index)) cparams.proposals in
+  let proposals_tokens = List.Tot.append proposals_tokens_outside proposals_tokens_inside in
+
+  let*? {provisional_group_context; update_path; new_treesync; pending_commit; key_packages_and_path_secrets} = _generate_update_path st cparams.leaf_node_params proposals_tokens in
 
   let commit: commit_nt bytes = {
-    proposals = magic();
+    proposals;
     path = Some update_path;
   } in
-  let*? my_leaf_index = return_prob (mk_nat_lbytes st.my_leaf_index "create_commit" "my_leaf_index") in
   let*? authenticated_data = return_prob (mk_mls_bytes fparams.authenticated_data "create_commit" "authenticated_data") in
   let framed_commit: framed_content_nt bytes = {
     group_id = st.group_context.group_id;
@@ -1457,19 +1542,32 @@ let create_commit #bytes #cb #entropy_t #entropy_tc #asp st fparams cparams =
 
   let*? { auth_commit; new_group_context; commit_result } = _authenticate_commit st fparams framed_commit provisional_group_context pending_commit in
 
+  let*? group_info_extensions = return_prob (_make_group_info_extensions cparams new_treesync) in
   let group_info_inputs: create_group_info_parameters bytes = {
     new_group_context;
-    group_info_extensions = magic();
+    group_info_extensions;
     confirmation_tag = auth_commit.auth.confirmation_tag;
   } in
   let*? group_info = _create_group_info st group_info_inputs in
 
   let welcome_inputs = {
     joiner_secret = commit_result.joiner_secret;
-    key_packages_and_path_secrets = magic();
+    key_packages_and_path_secrets;
   } in
   let*? welcome = _create_welcome st group_info welcome_inputs in
 
+  assume(st.group_context.group_id == new_group_context.group_id);
   let*? (commit_msg, st) = _send_authenticated_message st fparams auth_commit in
+  assume(my_leaf_index == st.my_leaf_index);
+
+  let st = {
+    st with
+    pending_state = Some ({
+      new_group_context;
+      new_treesync;
+      new_treekem = commit_result.new_state;
+      encryption_secret = commit_result.encryption_secret;
+    } <: pending_mls_group bytes asp st.my_leaf_index);
+  } in
 
   return_prob (return (commit_msg, welcome, group_info, st))
