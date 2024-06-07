@@ -14,6 +14,13 @@ open MLS.TreeSync.Invariants.AuthService
 
 #set-options "--fuel 0 --ifuel 0"
 
+// Workaround function for FStarLang/FStar#3309
+val unrefine:
+  #a:Type0 -> #p:(a -> Type0) ->
+  x:a{p x} ->
+  a
+let unrefine #a #p x = x
+
 (*** Entropy ***)
 
 [@@FStar.Tactics.Typeclasses.fundeps [0;1]]
@@ -1171,8 +1178,8 @@ let _authenticate_non_commit #bytes #cb #entropy_t #entropy_tc #asp st params ms
     else WF_mls_public_message
   in
   let* sign_nonce = gen_sign_nonce in
-  let*? res = return_prob #_ #_ #_ #(result (_:authenticated_content_nt bytes{_})) (MLS.TreeDEM.API.authenticate_non_commit st.treedem wire_format msg sign_nonce) in
-  return_prob (return (res <: authenticated_content_nt bytes))
+  let*? res = return_prob (MLS.TreeDEM.API.authenticate_non_commit st.treedem wire_format msg sign_nonce) in
+  return_prob (return (unrefine res))
 
 val _send_authenticated_message:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -1440,7 +1447,8 @@ let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st lnparams pro
   let uncompressed_update_path = MLS.NetworkBinder.mls_star_paths_to_update_path update_path_sync commit_result.update_path in
   let*? update_path = return_prob (MLS.NetworkBinder.compress_update_path uncompressed_update_path) in
 
-  let*? added_leaves_path_secrets = return_prob #_ #_ #_ #(result (_:list (option (mls_bytes bytes)){_})) (mapM _mk_path_secret commit_result.added_leaves_path_secrets) in
+  let*? added_leaves_path_secrets = return_prob (mapM _mk_path_secret commit_result.added_leaves_path_secrets) in
+  let added_leaves_path_secrets = unrefine added_leaves_path_secrets in
   assume(List.Tot.length (List.Tot.map fst new_members) == List.Tot.length added_leaves_path_secrets);
   let key_packages_and_path_secrets = List.Pure.zip (List.Tot.map fst new_members) added_leaves_path_secrets in
 
@@ -1468,6 +1476,7 @@ val _authenticate_commit:
   MLS.TreeKEM.API.pending_create_commit_2 bytes st.my_leaf_index ->
   prob (result (authenticate_commit_result bytes st.my_leaf_index))
 let _authenticate_commit #bytes #cb #entropy_t #entropy_tc #asp st params msg provisional_group_context pending_commit =
+  // The ugly #_ #_ #_ #(result (_:...{_})) are here as a workaround to FStarLang#3310
   let* nonce = gen_sign_nonce in
   let*? half_auth_commit = return_prob #_ #_ #_ #(result(_:MLS.TreeDEM.API.half_authenticated_commit bytes{_})) (MLS.TreeDEM.API.start_authenticate_commit st.treedem WF_mls_private_message msg nonce) in
   let*? confirmed_transcript_hash: mls_bytes bytes = return_prob (
