@@ -1,88 +1,102 @@
 module MLS.API
 
-/// Basic types that will be completed later
-val uint64: eqtype
-val bytes: eqtype
-val result: Type -> Type
+open Comparse
+
+open MLS.Result
+open MLS.Crypto
 
 /// Entropy typeclass
 
-class entropy (t:Type) = {
-  extract_entropy: t -> nat -> (bytes & t)
+[@@FStar.Tactics.Typeclasses.fundeps [0;1]]
+class entropy (bytes:Type0) (t:Type) = {
+  extract_entropy: nat -> t -> (bytes & t)
 }
 
-/// Types that are abstract
-type mls_group
-type unvalidated_proposal
-type validated_proposal
-type unvalidated_commit
-type validated_commit
-type credential
-type credential_pair
-type signature_keypair
+type prob (#bytes:Type0) (#entropy_t:Type) {|entropy bytes entropy_t|} (a:Type) = entropy_t -> (a & entropy_t)
 
-type framing_params = {
+/// Types that are abstract
+val mls_group: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val unvalidated_proposal: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val validated_proposal: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val unvalidated_commit: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val validated_commit: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val credential: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val credential_pair: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val signature_keypair: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+
+type framing_params (bytes:Type0) = {
   // Should we encrypt the message?
   encrypt: bool;
   // How much padding to add
   padding_size: nat;
+  //
+  authenticated_data: bytes;
 }
 
-type commit_params = {
+type leaf_node_params (bytes:Type0) {|bytes_like bytes|} = {
+  nothing_yet: unit;
+}
+
+noeq
+type commit_params (bytes:Type0) {|bytes_like bytes|} = {
   // Extra proposals to include in the commit
-  proposals: unit; //TODO
+  proposals: list (MLS.TreeDEM.NetworkTypes.proposal_nt bytes);
   // Should we inline the ratchet tree in the Welcome messages?
   inline_tree: bool;
   // Should we force the UpdatePath even if we could do an add-only commit?
   force_update: bool;
   // Options for the generation of the new leaf node
-  leaf_node_options: unit; //TODO
+  leaf_node_params: leaf_node_params bytes;
 }
 
-noeq
-type processed_message_content =
-  | ApplicationMessage: bytes -> processed_message_content
-  | Proposal: unvalidated_proposal -> processed_message_content
-  | Commit: unvalidated_commit -> processed_message_content
 
 noeq
-type processed_message = {
+type processed_message_content (bytes:Type0) {|crypto_bytes bytes|} =
+  | ApplicationMessage: bytes -> processed_message_content bytes
+  | Proposal: unvalidated_proposal bytes -> processed_message_content bytes
+  | Commit: unvalidated_commit bytes -> processed_message_content bytes
+
+noeq
+type processed_message (bytes:Type0) {|crypto_bytes bytes|} = {
   group_id: bytes;
-  epoch: uint64;
+  epoch: nat_lbytes 8;
   sender: unit; //TODO
   authenticated_data: bytes;
-  content: processed_message_content;
-  credential: credential;
+  content: processed_message_content bytes;
 }
 
 (*** Credentials ***)
 
 val generate_signature_keypair:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  entropy_t & result signature_keypair
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  prob (result (signature_keypair bytes))
 
 val get_signature_public_key:
-  signature_keypair ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  signature_keypair bytes ->
   bytes
 
 val mk_basic_credential:
-  signature_keypair -> identity:bytes ->
-  result credential_pair
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  signature_keypair bytes -> identity:bytes ->
+  result (credential_pair bytes)
 
 val mk_x509_credential:
-  signature_keypair -> x509_chain:list bytes ->
-  result credential_pair
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  signature_keypair bytes -> x509_chain:list bytes ->
+  result (credential_pair bytes)
 
 val get_public_credential:
-  credential_pair ->
-  credential
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  credential_pair bytes ->
+  credential bytes
 
 // TODO inspect a credential
 
 (*** Create key package ***)
 
-type create_key_package_result = {
+type create_key_package_result (bytes:Type0) {|crypto_bytes bytes|} = {
   key_package: bytes;
   // key and value to be added to the store
   keystore_key: bytes;
@@ -90,56 +104,74 @@ type create_key_package_result = {
 }
 
 val create_key_package:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  credential_pair ->
-  entropy_t & (result create_key_package_result)
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  credential_pair bytes ->
+  prob (result (create_key_package_result bytes))
 
 (*** Group creation ***)
 
 val create_group:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  credential_pair ->
-  entropy_t & (result mls_group)
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  credential_pair bytes ->
+  prob (result (mls_group bytes))
 
-let key_lookup = bytes -> option bytes
-val join_group:
+let key_lookup (bytes:Type0) = bytes -> option bytes
+
+val start_join_group_output: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+
+val start_join_group:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
   welcome:bytes ->
-  key_lookup ->
-  result mls_group
+  key_lookup bytes ->
+  result (start_join_group_output bytes)
 
-val join_with_external_commit:
-  unit -> //TODO
-  result mls_group
+val continue_join_group_output: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+
+val continue_join_group:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  start_join_group_output bytes -> opt_ratchet_tree:option bytes ->
+  result (continue_join_group_output bytes)
+
+// TODO: I hereby thing for welcome?
+
+val finalize_join_group:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  step_before:continue_join_group_output bytes ->
+  result (mls_group bytes)
+
+// val join_with_external_commit:
+//   #bytes:Type0 -> {|crypto_bytes bytes|} ->
+//   unit -> //TODO
+//   result (mls_group bytes)
 
 (*** Export data from the group ***)
 
 val export_secret:
-  mls_group ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
   label:string -> context:bytes -> len:nat ->
   result bytes
 
 val epoch_authenticator:
-  mls_group ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
   result bytes
 
 val epoch:
-  mls_group ->
-  result uint64
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
+  result FStar.UInt64.t
 
 // TODO: get resumption PSK? Or is it useless for the application?
-
-// TODO: not sure how it is useful. Maybe for external commits?
-val group_info:
-  mls_group ->
-  result bytes
 
 (*** Inspect commit ***)
 
 val get_new_credentials:
-  unvalidated_commit ->
-  result (list credential)
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  unvalidated_commit bytes ->
+  result (list (credential bytes))
 
 // TODO:
 // - roster update (added, updated, removed members)
@@ -154,87 +186,97 @@ val get_new_credentials:
 // TODO more getters
 
 val get_new_credential:
-  unvalidated_proposal ->
-  result (option credential)
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  unvalidated_proposal bytes ->
+  result (option (credential bytes))
 
 (*** Process messages ***)
 
 // Returns a new group because some keys are ratcheted forward?
 val process_message:
-  mls_group ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
   bytes ->
-  result (mls_group & processed_message)
+  result (processed_message bytes & mls_group bytes)
 
 val i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_commit:
-  unvalidated_commit ->
-  validated_commit
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  unvalidated_commit bytes ->
+  validated_commit bytes
 
 val merge_commit:
-  mls_group ->
-  validated_commit ->
-  result mls_group
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
+  validated_commit bytes ->
+  result (mls_group bytes)
 
 val i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_proposal:
-  unvalidated_proposal ->
-  validated_proposal
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  unvalidated_proposal bytes ->
+  validated_proposal bytes
 
 val queue_new_proposal:
-  mls_group ->
-  validated_proposal ->
-  result mls_group
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
+  validated_proposal bytes ->
+  result (mls_group bytes)
 
 (*** Send messages ***)
 
 // Authenticated data is sent in plaintext!
 val send_application_message:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  mls_group ->
-  framing_params ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  mls_group bytes ->
+  framing_params bytes ->
   message:bytes ->
-  authenticated_data:bytes ->
-  entropy_t & bytes
+  prob (result (bytes & mls_group bytes))
 
 (*** Send proposals ***)
 
 val propose_add_member:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  mls_group ->
-  framing_params ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  mls_group bytes ->
+  framing_params bytes ->
   key_package:bytes ->
-  entropy_t & (result bytes)
+  prob (result (bytes & mls_group bytes))
 
 val propose_remove_member:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  mls_group ->
-  framing_params ->
-  removed:credential ->
-  entropy_t & (result bytes)
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  mls_group bytes ->
+  framing_params bytes ->
+  removed:credential bytes ->
+  prob (result (bytes & mls_group bytes))
 
 val propose_remove_myself:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  mls_group ->
-  framing_params ->
-  entropy_t & (result bytes)
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  mls_group bytes ->
+  framing_params bytes ->
+  prob (result (bytes & mls_group bytes))
 
-val propose_external_psk:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  mls_group ->
-  framing_params ->
-  psk:unit -> // TODO
-  entropy_t & (result bytes)
+// val propose_external_psk:
+//   #bytes:Type0 -> {|crypto_bytes bytes|} ->
+//   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+//   mls_group bytes ->
+//   framing_params bytes ->
+//   psk:unit -> // TODO
+//   prob (result (bytes & mls_group bytes))
 
 (*** Create commit ***)
 
-val create_commit:
-  #entropy_t:Type0 -> {|entropy entropy_t|} ->
-  entropy_t ->
-  mls_group ->
-  framing_params ->
-  commit_params ->
-  entropy_t & bytes
+type create_commit_result (bytes:Type0) {|crypto_bytes bytes|} = {
+  commit: bytes;
+  welcome: option bytes;
+  group_info: bytes;
+}
 
+val create_commit:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
+  mls_group bytes ->
+  framing_params bytes ->
+  commit_params bytes ->
+  prob (result (create_commit_result bytes & mls_group bytes))

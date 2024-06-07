@@ -31,11 +31,11 @@ class entropy (bytes:Type0) (t:Type) = {
     (requires x `rel` y /\ y `rel` z)
     (ensures x `rel` z)
   ;
-  extract_entropy_: nat -> x:t -> res:(t & bytes){x `rel` (fst res)}
+  extract_entropy_: nat -> x:t -> res:(bytes & t){x `rel` (snd res)}
 }
 
 let prob (#bytes:Type0) (#entropy_t) {|entropy bytes entropy_t|} (t:Type): Type =
-  x:entropy_t -> res:(entropy_t & t){x `rel` (fst res)}
+  x:entropy_t -> res:(t & entropy_t){x `rel` (snd res)}
 
 val return_prob:
   #bytes:Type0 -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
@@ -44,17 +44,17 @@ val return_prob:
   prob a
 let return_prob #bytes #entropy_t #entropy_tc #a x e =
   rel_refl e;
-  (e, x)
+  (x, e)
 
 val (let*):
   #bytes:Type0 -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
   #a:Type -> #b:Type ->
   prob a -> (a -> prob b) -> prob b
 let (let*) #bytes #entropy_t #entropy_tc #a #b x f e0 =
-  let (e1, x_value) = x e0 in
-  let (e2, y_value) = f x_value e1 in
+  let (x_value, e1) = x e0 in
+  let (y_value, e2) = f x_value e1 in
   rel_trans e0 e1 e2;
-  (e2, y_value)
+  (y_value, e2)
 
 #push-options "--ifuel 1"
 val (let*?):
@@ -62,15 +62,15 @@ val (let*?):
   #a:Type -> #b:Type ->
   prob (result a) -> (a -> prob (result b)) -> prob (result b)
 let (let*?) #bytes #entropy_t #entropy_tc #a #b x f e0 =
-  let (e1, x_result) = x e0 in
+  let (x_result, e1) = x e0 in
   match x_result with
   | Success x_value -> (
-    let (e2, y_result) = f x_value e1 in
+    let (y_result, e2) = f x_value e1 in
     rel_trans e0 e1 e2;
-    (e2, y_result)
+    (y_result, e2)
   )
-  | InternalError s -> (e1, InternalError s)
-  | ProtocolError s -> (e1, ProtocolError s)
+  | InternalError s -> (InternalError s, e1)
+  | ProtocolError s -> (ProtocolError s, e1)
 #pop-options
 
 val extract_entropy:  
@@ -277,7 +277,9 @@ type framing_params (bytes:Type0) = {
 }
 
 //TODO
-assume val leaf_node_params (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes): Type0
+type leaf_node_params (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
+  nothing_yet: unit;
+}
 
 noeq
 type commit_params (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
@@ -414,6 +416,10 @@ type keystore_value_type (bytes:Type0) {|bytes_like bytes|} = {
   key_package_decryption_key: bytes;
   signature_private_key: bytes;
 }
+
+%splice [ps_keystore_value_type] (gen_parser (`keystore_value_type))
+instance parseable_serializeable_keystore_value_type (bytes:Type) {|bytes_like bytes|}: parseable_serializeable bytes (keystore_value_type bytes) =
+  mk_parseable_serializeable ps_keystore_value_type
 
 type create_key_package_result (bytes:Type0) {|bytes_like bytes|} = {
   key_package: key_package_nt bytes tkt;
@@ -897,7 +903,7 @@ val _process_add_proposal_aux:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
   mls_group bytes asp -> proposal:proposal_and_token bytes asp{P_add? proposal.proposal_token.proposal} ->
-  result (mls_group bytes asp & key_package_nt bytes tkt & nat)
+  result (key_package_nt bytes tkt & nat & mls_group bytes asp)
 let _process_add_proposal_aux #bytes #cb #asp st proposal =
   let P_add {key_package} = proposal.proposal_token.proposal in
   let leaf_node = key_package.tbs.leaf_node in
@@ -911,16 +917,16 @@ let _process_add_proposal_aux #bytes #cb #asp st proposal =
   let? add_pend = MLS.TreeSync.API.prepare_add st.treesync leaf_node in
   let? (treesync, _) = MLS.TreeSync.API.finalize_add add_pend proposal.proposal_token.token in
   let (treekem, add_index) = MLS.TreeKEM.API.add st.treekem ({public_key = key_package.tbs.leaf_node.data.content;}) in
-  return (({ st with treesync; treekem } <: mls_group bytes asp), key_package, add_index)
+  return (key_package, add_index, ({ st with treesync; treekem } <: mls_group bytes asp))
 
 val _process_add_proposal:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
-  (mls_group bytes asp & list (key_package_nt bytes tkt & nat)) -> proposal:proposal_and_token bytes asp{P_add? proposal.proposal_token.proposal} ->
-  result (mls_group bytes asp & list (key_package_nt bytes tkt & nat))
-let _process_add_proposal #bytes #cb #asp (st, l) proposal =
-  let? (st, key_package, add_index) = _process_add_proposal_aux st proposal in
-  return (st, (key_package, add_index)::l)
+  (list (key_package_nt bytes tkt & nat) & mls_group bytes asp) -> proposal:proposal_and_token bytes asp{P_add? proposal.proposal_token.proposal} ->
+  result (list (key_package_nt bytes tkt & nat) & mls_group bytes asp)
+let _process_add_proposal #bytes #cb #asp (l, st) proposal =
+  let? (key_package, add_index, st) = _process_add_proposal_aux st proposal in
+  return ((key_package, add_index)::l, st)
 
 val _process_update_proposal:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -1005,14 +1011,14 @@ val _process_proposals:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
   mls_group bytes asp -> list (proposal_and_token bytes asp) ->
-  result (mls_group bytes asp & list (key_package_nt bytes tkt & nat) & list (proposal_and_token bytes asp))
+  result (list (key_package_nt bytes tkt & nat) & list (proposal_and_token bytes asp) & mls_group bytes asp)
 let _process_proposals #bytes #cb #asp st proposals =
   let sorted_proposals = _sort_proposals proposals in
   let? st = fold_leftM _process_group_context_extensions_proposal st sorted_proposals.group_context_extensions in
   let? st = fold_leftM _process_update_proposal st sorted_proposals.updates in
   let? st = fold_leftM _process_remove_proposal st sorted_proposals.removes in
-  let? (st, adds) = fold_leftM _process_add_proposal (st, []) sorted_proposals.adds in
-  return (st, adds, sorted_proposals.other)
+  let? (adds, st) = fold_leftM _process_add_proposal ([], st) sorted_proposals.adds in
+  return (adds, sorted_proposals.other, st)
 
 val _merge_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
@@ -1106,7 +1112,7 @@ let merge_commit #bytes #cb #asp st valid_commit =
       // Apply proposals
       let (path_token, proposal_tokens) = valid_commit.tokens in
       let? proposals_and_tokens = _get_all_proposals st commit_msg.content.sender commit.proposals proposal_tokens in
-      let? (st, new_members, other_proposals) = _process_proposals st proposals_and_tokens in
+      let? (new_members, other_proposals, st) = _process_proposals st proposals_and_tokens in
       assume(my_leaf_index == st.my_leaf_index);
 
       let? (new_treesync, pending_treekem, provisional_group_context) = (
@@ -1403,7 +1409,7 @@ val _generate_update_path:
   prob #bytes #entropy_t (result (generate_update_path_result bytes asp st.group_context.group_id st.my_leaf_index))
 let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st lnparams proposals_tokens =
   let first_st = st in
-  let*? (st, new_members, other_proposals) = return_prob (_process_proposals st proposals_tokens) in
+  let*? (new_members, other_proposals, st) = return_prob (_process_proposals st proposals_tokens) in
   let st: mls_group bytes asp = st in
   assume(st.my_leaf_index == first_st.my_leaf_index);
   assume(st.group_context.group_id == first_st.group_context.group_id);
