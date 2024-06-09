@@ -31,7 +31,7 @@ class entropy (bytes:Type0) (t:Type) = {
     (requires x `rel` y /\ y `rel` z)
     (ensures x `rel` z)
   ;
-  extract_entropy_: nat -> x:t -> res:(bytes & t){x `rel` (snd res)}
+  extract_entropy_: nat -> x:t -> res:((result bytes) & t){x `rel` (snd res)}
 }
 
 let prob (#bytes:Type0) (#entropy_t) {|entropy bytes entropy_t|} (t:Type): Type =
@@ -76,25 +76,27 @@ let (let*?) #bytes #entropy_t #entropy_tc #a #b x f e0 =
 val extract_entropy:  
   #bytes:Type0 -> {|bytes_like bytes|} -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
   len:nat ->
-  prob (lbytes bytes len)
+  prob (result (lbytes bytes len))
 let extract_entropy #bytes #bl #entropy_t #entropy_tc len =
-  let* rand = extract_entropy_ #bytes len in
-  assume(length rand == len);
-  return_prob (rand <: lbytes bytes len)
+  let*? rand = extract_entropy_ #bytes len in
+  if not (length rand = len) then
+    return_prob (internal_failure "extract_entropy: received bad length")
+  else
+    return_prob (return (rand <: lbytes bytes len))
 
 #push-options "--ifuel 1 --fuel 1"
 val extract_randomness:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   l:list nat ->
-  prob #bytes #entropy_t (randomness bytes l)
+  prob #bytes #entropy_t (result (randomness bytes l))
 let rec extract_randomness #bytes #bl #entropy_t #entropy_tc l =
   match l with
-  | [] -> return_prob (mk_empty_randomness bytes)
+  | [] -> return_prob (return (mk_empty_randomness bytes))
   | h::t ->
-    let* rand_head = extract_entropy h in
-    let* rand_tail = extract_randomness t in
-    return_prob (mk_randomness #bytes #_ #h #t (rand_head, rand_tail))
+    let*? rand_head = extract_entropy h in
+    let*? rand_tail = extract_randomness t in
+    return_prob (return (mk_randomness #bytes #_ #h #t (rand_head, rand_tail)))
 #pop-options
 
 (*** Authentication Service types ***)
@@ -192,10 +194,10 @@ let commit_tokens_for #bytes #bl asp commit =
 
 val gen_sign_nonce:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #entropy_t:Type -> {|entropy bytes entropy_t|} ->
-  prob (sign_nonce bytes)
+  prob (result (sign_nonce bytes))
 let gen_sign_nonce #bytes #cb #entropy_t #entropy_tc =
-  let* res = extract_entropy (sign_sign_min_entropy_length #bytes) in
-  return_prob (res <: sign_nonce bytes)
+  let*? res = extract_entropy (sign_sign_min_entropy_length #bytes) in
+  return_prob (return (res <: sign_nonce bytes))
 
 noeq
 type bare_proposal_and_token (bytes:Type0) {|bytes_like bytes|} (asp:as_parameters bytes) = {
@@ -315,7 +317,7 @@ val generate_signature_keypair:
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
   prob (result (signature_keypair bytes))
 let generate_signature_keypair #bytes #cb #entropy_t #entropy_tc =
-  let* rand = extract_entropy (sign_gen_keypair_min_entropy_length #bytes) in
+  let*? rand = extract_entropy (sign_gen_keypair_min_entropy_length #bytes) in
   let*? (vk, sk) = return_prob (sign_gen_keypair rand) in
   let*? vk = return_prob (mk_mls_bytes vk "generate_signature_keypair" "vk") in
   return_prob (return ({
@@ -379,7 +381,7 @@ val create_leaf_node_data_:
   credential bytes ->
   prob (result (leaf_node_data_nt bytes tkt & hpke_private_key bytes))
 let create_leaf_node_data_ #bytes #cb #entropy_t #entropy_tc cred =
-  let* rand = extract_entropy (hpke_private_key_length #bytes) in
+  let*? rand = extract_entropy (hpke_private_key_length #bytes) in
   let*? (decryption_key, encryption_key) = return_prob (hpke_gen_keypair rand) in
   let*? encryption_key = return_prob (mk_mls_bytes ((encryption_key <: lbytes bytes (hpke_public_key_length #bytes)) <: bytes) "" "") in
   let*? capabilities = return_prob default_capabilities_ in
@@ -405,7 +407,7 @@ val create_leaf_node_:
   prob (result (leaf_node_nt bytes tkt & hpke_private_key bytes))
 let create_leaf_node_ #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
   let*? (leaf_node_data, decryption_key) = create_leaf_node_data_ cred_pair.cred in
-  let* nonce = gen_sign_nonce in
+  let*? nonce = gen_sign_nonce in
   assume(leaf_node_data.source == LNS_key_package); // Could be proved
   let*? leaf_node = return_prob (MLS.TreeSync.Operations.sign_leaf_node_data_key_package leaf_node_data cred_pair.signature_private_key nonce) in
   return_prob (return (leaf_node, decryption_key))
@@ -437,7 +439,7 @@ val create_key_package_:
   prob (result (keystore_value_type bytes))
 let create_key_package_ #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
   let*? (leaf_node, leaf_node_decryption_key) = create_leaf_node_ cred_pair in
-  let* rand = extract_entropy (hpke_private_key_length #bytes) in
+  let*? rand = extract_entropy (hpke_private_key_length #bytes) in
   let*? (key_package_decryption_key, init_key) = return_prob (hpke_gen_keypair rand) in
   let key_package_decryption_key = (key_package_decryption_key <: lbytes bytes (hpke_private_key_length #bytes)) <: bytes in
   let*? init_key = return_prob (mk_mls_bytes ((init_key <: lbytes bytes (hpke_public_key_length #bytes)) <: bytes) "" "") in
@@ -448,7 +450,7 @@ let create_key_package_ #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
     leaf_node;
     extensions = [];
   } <: key_package_tbs_nt bytes tkt) in
-  let* nonce = gen_sign_nonce in
+  let*? nonce = gen_sign_nonce in
   // TODO: signature should be a separate function
   let tbs: bytes = (ps_prefix_to_ps_whole (ps_key_package_tbs_nt _)).serialize kp_tbs in
   let*? signature: bytes = return_prob (sign_with_label cred_pair.signature_private_key "KeyPackageTBS" tbs nonce) in
@@ -523,7 +525,7 @@ let create_group_with_group_id #bytes #bl #entropy_t #entropy_tc #asp cred_pair 
   let treesync: MLS.TreeSync.API.Types.treesync_state bytes tkt asp.token_t group_id = MLS.TreeSync.API.finalize_create pending_treesync cred_pair.token in
 
   // Initialize TreeKEM
-  let* epoch_secret = extract_entropy (kdf_length #bytes) in
+  let*? epoch_secret = extract_entropy (kdf_length #bytes) in
   let*? (treekem, encryption_secret) = return_prob (MLS.TreeKEM.API.create my_decryption_key (my_leaf_node.data.content <: bytes) epoch_secret) in
 
   // Create group context
@@ -573,7 +575,7 @@ val create_group:
   credential_pair bytes asp ->
   prob (result (mls_group bytes asp))
 let create_group #bytes #cb #entropy_t #entropy_tc #asp cred_pair =
-  let* group_id = extract_entropy (kdf_length #bytes) in
+  let*? group_id = extract_entropy (kdf_length #bytes) in
   create_group_with_group_id cred_pair group_id
 
 let key_lookup (bytes:Type0) {|bytes_like bytes|} = bytes -> option (keystore_value_type bytes)
@@ -767,6 +769,7 @@ val epoch_authenticator:
 let epoch_authenticator #bytes #cb #asp st =
   (MLS.TreeKEM.API.get_epoch_keys st.treekem).epoch_authenticator
 
+// TODO: replace this with the whole group context?
 val epoch:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #asp:as_parameters bytes ->
@@ -774,6 +777,14 @@ val epoch:
   FStar.UInt64.t
 let epoch #bytes #cb #asp st =
   FStar.UInt64.uint_to_t st.group_context.epoch
+
+val group_id:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #asp:as_parameters bytes ->
+  mls_group bytes asp ->
+  bytes
+let group_id #bytes #cb #asp st =
+  st.group_context.group_id
 
 // TODO (need better extensions)
 // val group_info:
@@ -1183,7 +1194,7 @@ let _authenticate_non_commit #bytes #cb #entropy_t #entropy_tc #asp st params ms
     if params.encrypt then WF_mls_private_message
     else WF_mls_public_message
   in
-  let* sign_nonce = gen_sign_nonce in
+  let*? sign_nonce = gen_sign_nonce in
   let*? res = return_prob (MLS.TreeDEM.API.authenticate_non_commit st.treedem wire_format msg sign_nonce) in
   return_prob (return (unrefine res))
 
@@ -1202,7 +1213,7 @@ let _send_authenticated_message #bytes #cb #entropy_t #entropy_tc #asp st params
   )
   | WF_mls_private_message -> (
     // TODO padding should happen here with params.padding or something
-    let* reuse_guard = extract_entropy #bytes #_ #entropy_t 4 in
+    let*? reuse_guard = extract_entropy #bytes #_ #entropy_t 4 in
     let*? (priv_msg, new_treedem) = return_prob (MLS.TreeDEM.API.protect_private st.treedem msg reuse_guard) in
     return_prob (return (M_mls10 (M_private_message priv_msg), { st with treedem = new_treedem; }))
   )
@@ -1345,7 +1356,7 @@ let _create_group_info #bytes #cb #entropy_t #entropy_tc #asp st params =
     confirmation_tag = params.confirmation_tag;
     signer = my_leaf_index;
   } in
-  let* group_info_sign_nonce = gen_sign_nonce in
+  let*? group_info_sign_nonce = gen_sign_nonce in
   return_prob (sign_welcome_group_info st.my_signature_key group_info_tbs group_info_sign_nonce)
 
 type create_welcome_parameters (bytes:Type0) {|bytes_like bytes|} = {
@@ -1364,7 +1375,7 @@ let _create_welcome #bytes #cb #entropy_t #entropy_tc #asp st group_info params 
     return_prob (return None)
   else (
     let*? joiner_secret = return_prob (mk_mls_bytes params.joiner_secret "_create_welcome" "joiner_secret") in
-    let* encrypt_welcome_rand = extract_randomness _ in
+    let*? encrypt_welcome_rand = extract_randomness _ in
     let*? welcome_msg = return_prob (encrypt_welcome group_info joiner_secret params.key_packages_and_path_secrets encrypt_welcome_rand) in
     return_prob (return (Some welcome_msg))
   )
@@ -1401,6 +1412,32 @@ let _mk_path_secret #bytes #bl path_secret =
   let? res = mk_mls_bytes path_secret "_mk_path_secret" "path_secret" in
   return (Some res)
 
+// Begin workaround for FStarLang/FStar#3312
+// (i.e. copy-pasting the content of FStar.List.Pure.Base)
+#push-options "--fuel 1 --ifuel 1"
+val map2 (#a1 #a2 #b: Type)
+  (f: a1 -> a2 -> b)
+  (l1:list a1)
+  (l2:list a2)
+  : Pure (list b)
+    (requires (List.Tot.length l1 == List.Tot.length l2))
+    (ensures (fun _ -> True))
+    (decreases l1)
+let rec map2 #a1 #a2 #b f l1 l2 =
+  match l1, l2 with
+  | [], [] -> []
+  | x1::xs1, x2::xs2 -> f x1 x2 :: map2 f xs1 xs2
+
+(** [zip] takes a pair of list of the same length and returns
+    the list of index-wise pairs *)
+val zip (#a1 #a2:Type) (l1:list a1) (l2:list a2)
+  : Pure (list (a1 * a2))
+    (requires (let n = List.Tot.length l1 in n == List.Tot.length l2))
+    (ensures (fun _ -> True))
+let zip #a1 #a2 l1 l2 = map2 (fun x y -> x, y) l1 l2
+#pop-options
+// End of workaround
+
 val _generate_update_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #entropy_t:Type0 -> {|entropy bytes entropy_t|} ->
@@ -1420,7 +1457,7 @@ let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st lnparams pro
     else return_prob (return (() <: squash (st.my_leaf_index < pow2 st.treesync.levels)))
   ) in
 
-  let* prepare_create_commit_rand = extract_randomness _ in
+  let*? prepare_create_commit_rand = extract_randomness _ in
   let*? (pending_create_commit, pre_update_path) = return_prob (MLS.TreeKEM.API.prepare_create_commit st.treekem prepare_create_commit_rand) in
 
   let*? (update_path_sync, update_path_token) = (
@@ -1428,7 +1465,7 @@ let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st lnparams pro
     let*? update_path_token = return_prob (from_option "_generate_update_path: my leaf is blanked" (MLS.Tree.leaf_at st.treesync.tokens st.my_leaf_index)) in
     let*? my_new_leaf_package_data = return_prob (_make_new_leaf_package_data lnparams my_old_leaf_package) in
     let*? ext_update_path: MLS.TreeSync.Types.external_pathsync bytes tkt _ _ _ = return_prob (MLS.TreeSyncTreeKEMBinder.treekem_to_treesync my_new_leaf_package_data pre_update_path) in
-    let* sign_nonce = gen_sign_nonce in
+    let*? sign_nonce = gen_sign_nonce in
     assume((MLS.Tree.get_path_leaf ext_update_path).source == LNS_update);
     let*? update_path_sync = return_prob (MLS.TreeSync.API.authenticate_external_path st.treesync ext_update_path st.my_signature_key sign_nonce) in
     return_prob (return (update_path_sync, update_path_token))
@@ -1446,7 +1483,7 @@ let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st lnparams pro
     return { st.group_context with tree_hash; epoch }
   ) in
 
-  let* continue_create_commit_rand = extract_randomness _ in
+  let*? continue_create_commit_rand = extract_randomness _ in
   let*? (pending_commit, commit_result) = return_prob (MLS.TreeKEM.API.continue_create_commit pending_create_commit (List.Tot.map snd new_members) provisional_group_context continue_create_commit_rand) in
   let commit_result: MLS.TreeKEM.API.continue_create_commit_result _ = commit_result in
 
@@ -1456,7 +1493,7 @@ let _generate_update_path #bytes #cb #entropy_t #entropy_tc #asp st lnparams pro
   let*? added_leaves_path_secrets = return_prob (mapM _mk_path_secret commit_result.added_leaves_path_secrets) in
   let added_leaves_path_secrets = unrefine added_leaves_path_secrets in
   assume(List.Tot.length (List.Tot.map fst new_members) == List.Tot.length added_leaves_path_secrets);
-  let key_packages_and_path_secrets = List.Pure.zip (List.Tot.map fst new_members) added_leaves_path_secrets in
+  let key_packages_and_path_secrets = zip (List.Tot.map fst new_members) added_leaves_path_secrets in
 
   return_prob (return ({
     provisional_group_context;
@@ -1483,7 +1520,7 @@ val _authenticate_commit:
   prob (result (authenticate_commit_result bytes st.my_leaf_index))
 let _authenticate_commit #bytes #cb #entropy_t #entropy_tc #asp st params msg provisional_group_context pending_commit =
   // The ugly #_ #_ #_ #(result (_:...{_})) are here as a workaround to FStarLang#3310
-  let* nonce = gen_sign_nonce in
+  let*? nonce = gen_sign_nonce in
   let*? half_auth_commit = return_prob #_ #_ #_ #(result(_:MLS.TreeDEM.API.half_authenticated_commit bytes{_})) (MLS.TreeDEM.API.start_authenticate_commit st.treedem WF_mls_private_message msg nonce) in
   let*? confirmed_transcript_hash: mls_bytes bytes = return_prob (
     let? confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag (MLS.TreeKEM.API.get_epoch_keys st.treekem).confirmation_key st.group_context.confirmed_transcript_hash in

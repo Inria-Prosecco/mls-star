@@ -65,7 +65,7 @@ let test () =
   let dummy256 = bytes_of_list dummy256 in
   let s = extract (MLS_Crypto_Derived.derive_secret cb dummy32 "dummy") in
   debug_buffer s;
-  let s1, _, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } dummy32) in
+  let s1, _, s2 = extract (MLS.fresh_key_package dummy64 { signature_key = dummy32; identity = dummy32 } { public_key = dummy32; private_key = dummy32; }) in
   debug_buffer s1;
   debug_buffer s2;
 
@@ -76,7 +76,7 @@ let test () =
   let sign_pub_a, sign_priv_a = extract (MLS.fresh_key_pair (bytes_of_list dummy_sign_a)) in
   print_endline "... pub/priv sign keypair for a";
   debug_buffer sign_pub_a;
-  debug_buffer sign_priv_a;
+  (* debug_buffer sign_priv_a; *)
   let cred_a = { MLS.identity = bytes_of_list dummy_user_a; signature_key = sign_pub_a } in
   print_endline "... jonathan's key package";
   ignore (MLS.fresh_key_package dummy64 cred_a sign_priv_a);
@@ -119,7 +119,7 @@ let test () =
       failwith "could not parse back add message"; ;
   (* print_endline "... a's encryption secret:"; *)
   (* debug_buffer s.MLS.encryption_secret; *)
-  Printf.printf "... a's epoch: %d\n" (Z.to_int s.MLS.epoch);
+  Printf.printf "... a's epoch: %d\n" (Z.to_int (MLS.current_epoch s));
 
   print_endline "\n\n*** We create b's state from the welcome message (process_welcome_message)";
   let group_id, s_b = extract (MLS.process_welcome_message welcome_msg (sign_pub_b, sign_priv_b)
@@ -131,7 +131,7 @@ let test () =
   print_endline "... b processed welcome message";
   (* print_endline "... b's encryption secret:"; *)
   (* debug_buffer s_b.MLS.encryption_secret; *)
-  Printf.printf "... b's epoch: %d\n" (Z.to_int s.MLS.epoch);
+  Printf.printf "... b's epoch: %d\n" (Z.to_int (MLS.current_epoch s));
   print_endline "... b's group id:";
   debug_ascii group_id;
 

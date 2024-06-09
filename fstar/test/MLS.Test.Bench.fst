@@ -24,13 +24,14 @@ let guard b =
   if b then ()
   else failwith "guard failed"
 
+noeq
 type ident = {
   key_package: bytes;
   key_package_hash: bytes;
   leaf_secret: bytes;
   cred: credential;
   sign_pub: bytes;
-  sign_priv: bytes;
+  sign_priv: signature_key;
 }
 
 val mk_mls_bytes: bytes -> ML (mls_bytes bytes)

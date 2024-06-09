@@ -9,7 +9,7 @@ open MLS.Crypto
 
 [@@FStar.Tactics.Typeclasses.fundeps [0;1]]
 class entropy (bytes:Type0) (t:Type) = {
-  extract_entropy: nat -> t -> (bytes & t)
+  extract_entropy: nat -> t -> ((result bytes) & t)
 }
 
 type prob (#bytes:Type0) (#entropy_t:Type) {|entropy bytes entropy_t|} (a:Type) = entropy_t -> (a & entropy_t)
@@ -162,7 +162,12 @@ val epoch_authenticator:
 val epoch:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   mls_group bytes ->
-  result FStar.UInt64.t
+  FStar.UInt64.t
+
+val group_id:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
+  bytes
 
 // TODO: get resumption PSK? Or is it useless for the application?
 

@@ -125,7 +125,10 @@ let epoch_authenticator #bytes #cb st =
   return (MLS.API.High.epoch_authenticator st)
 
 let epoch #bytes #cb st =
-  return (MLS.API.High.epoch st)
+  MLS.API.High.epoch st
+
+let group_id #bytes #cb st =
+  MLS.API.High.group_id st
 
 let get_new_credentials #bytes #cb commit =
   magic()
