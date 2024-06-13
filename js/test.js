@@ -57,6 +57,11 @@ var test_main = () => {
   ({ state: state_B, groupId } = MLS.processWelcomeMessage(welcomeMessage.payload, signKeyPair_B,
     (hash) => {
       console.log("looking into B's store", hash);
+      let v = store_B[hash];
+      if (!v)
+        console.log("hash not found in B's store");
+      else
+        console.log("hash found in B's store, value is", v);
       return (store_B[hash] || null)
     }));
   console.log("B joined the group", groupId);

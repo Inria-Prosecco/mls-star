@@ -33,7 +33,7 @@ let _ =
       | Success (key_package, hash, priv_key) ->
           Js.some (object%js
             val keyPackage = uint8array_of_bytes key_package
-            val privKey = priv_key
+            val privKey = uint8array_of_bytes priv_key
             val hash = uint8array_of_bytes hash
           end)
       | InternalError s ->
@@ -139,7 +139,9 @@ let _ =
       let payload = bytes_of_uint8array payload in
       let lookup hash =
         let priv: _ Js.Opt.t = Js.Unsafe.fun_call lookup [| Js.Unsafe.inject (uint8array_of_bytes hash) |] in
-        Option.map bytes_of_uint8array (Js.Opt.to_option priv)
+        let priv = Js.Opt.to_option priv in
+        Printf.printf "lookup was successful? %b\n" (Option.is_some priv);
+        Option.map bytes_of_uint8array priv
       in
       let key_pair = bytes_of_uint8array keyPair##.pubKey, keyPair##.privKey in
       match MLS.process_welcome_message (FStar_Seq_Base.empty (), payload) key_pair lookup with
