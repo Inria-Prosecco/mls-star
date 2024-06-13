@@ -16,7 +16,7 @@ let _ =
       | Success (pub_key, priv_key) ->
           Js.some (object%js
             val pubKey = uint8array_of_bytes pub_key
-            val privKey = uint8array_of_bytes priv_key
+            val privKey = priv_key
           end)
       | InternalError s ->
           print_endline ("InternalError: " ^ s);
@@ -25,15 +25,15 @@ let _ =
           print_endline ("ProtocolError: " ^ s);
           Js.null
 
-    method freshKeyPackage1 (e: Typed_array.uint8Array Js.t) (credential: _ Js.t) (priv: Typed_array.uint8Array Js.t) =
+    method freshKeyPackage1 (e: Typed_array.uint8Array Js.t) (credential: _ Js.t) (priv: MLS.signature_key) =
       let e = bytes_of_uint8array e in
       let identity = bytes_of_js_string credential##.identity in
       let signature_key = bytes_of_uint8array credential##.signPubKey in
-      match MLS.fresh_key_package e { MLS.identity; signature_key } (bytes_of_uint8array priv) with
+      match MLS.fresh_key_package e { MLS.identity; signature_key } (priv) with
       | Success (key_package, hash, priv_key) ->
           Js.some (object%js
             val keyPackage = uint8array_of_bytes key_package
-            val privKey = uint8array_of_bytes priv_key
+            val privKey = priv_key
             val hash = uint8array_of_bytes hash
           end)
       | InternalError s ->
@@ -44,16 +44,15 @@ let _ =
           Js.null
 
     method currentEpoch (s: MLS.state) =
-      Z.to_int s.MLS.epoch
+      Z.to_int (MLS.current_epoch s)
 
-    method create1 (e: Typed_array.uint8Array Js.t) (credential: _ Js.t) (priv: Typed_array.uint8Array Js.t)
+    method create1 (e: Typed_array.uint8Array Js.t) (credential: _ Js.t) (priv: MLS.signature_key)
       (group_id: Js.js_string Js.t)
     =
       let e = bytes_of_uint8array e in
       let identity = bytes_of_js_string credential##.identity in
       let signature_key = bytes_of_uint8array credential##.signPubKey in
       let group_id = bytes_of_js_string group_id in
-      let priv = bytes_of_uint8array priv in
       match MLS.create e { MLS.identity; signature_key } priv group_id with
       | Success s ->
           Js.some s
@@ -142,7 +141,7 @@ let _ =
         let priv: _ Js.Opt.t = Js.Unsafe.fun_call lookup [| Js.Unsafe.inject (uint8array_of_bytes hash) |] in
         Option.map bytes_of_uint8array (Js.Opt.to_option priv)
       in
-      let key_pair = bytes_of_uint8array keyPair##.pubKey, bytes_of_uint8array keyPair##.privKey in
+      let key_pair = bytes_of_uint8array keyPair##.pubKey, keyPair##.privKey in
       match MLS.process_welcome_message (FStar_Seq_Base.empty (), payload) key_pair lookup with
       | Success (group_id, state) ->
           Js.some (object%js
