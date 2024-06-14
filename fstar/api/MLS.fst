@@ -53,11 +53,7 @@ let add state key_package e =
     padding_size = 0;
     authenticated_data = Seq.empty;
   } in
-  let? add_proposal =
-    match Comparse.parse (MLS.Bootstrap.NetworkTypes.key_package_nt bytes MLS.TreeKEM.NetworkTypes.tkt) key_package with
-    | Some key_package -> return (MLS.TreeDEM.NetworkTypes.P_add { key_package })
-    | None -> error "add: malformed key package"
-  in
+  let? add_proposal = MLS.API.create_add_proposal key_package in
   let cparams = {
     // Extra proposals to include in the commit
     proposals = [add_proposal];
@@ -84,13 +80,8 @@ let add state key_package e =
 
 let remove state p e =
   //TODO breaking abstraction here
-  let? removed = MLS.API.High.find_credential (MLS.NetworkTypes.C_basic p) (MLS.Tree.get_leaf_list state.treesync.tree) in
-  let? (): squash (removed < pow2 32) =
-    if not (removed < pow2 32) then
-      internal_failure "remove: removed too big"
-    else
-      return ()
-  in
+  //exploiting the fact that the function do not look for the public key (but maybe it should?)
+  let? remove_proposal = MLS.API.create_remove_proposal state ({ cred = MLS.NetworkTypes.C_basic p; signature_public_key = Comparse.empty #bytes }) in
   let fparams = {
     encrypt = true;
     padding_size = 0;
@@ -98,7 +89,7 @@ let remove state p e =
   } in
   let cparams = {
     // Extra proposals to include in the commit
-    proposals = [MLS.TreeDEM.NetworkTypes.P_remove {removed}];
+    proposals = [remove_proposal];
     // Should we inline the ratchet tree in the Welcome messages?
     inline_tree = true;
     // Should we force the UpdatePath even if we could do an add-only commit?

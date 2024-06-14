@@ -23,6 +23,7 @@ val validated_commit: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
 val credential: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
 val credential_pair: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
 val signature_keypair: bytes:Type0 -> {|crypto_bytes bytes|} -> Type0
+val proposal: bytes:Type0 -> {|bytes_like bytes|} -> Type0
 
 type framing_params (bytes:Type0) = {
   // Should we encrypt the message?
@@ -40,7 +41,7 @@ type leaf_node_params (bytes:Type0) {|bytes_like bytes|} = {
 noeq
 type commit_params (bytes:Type0) {|bytes_like bytes|} = {
   // Extra proposals to include in the commit
-  proposals: list (MLS.TreeDEM.NetworkTypes.proposal_nt bytes);
+  proposals: list (proposal bytes);
   // Should we inline the ratchet tree in the Welcome messages?
   inline_tree: bool;
   // Should we force the UpdatePath even if we could do an add-only commit?
@@ -285,3 +286,16 @@ val create_commit:
   framing_params bytes ->
   commit_params bytes ->
   prob (result (create_commit_result bytes & mls_group bytes))
+
+(*** Create proposals to inline in a commit ***)
+
+val create_add_proposal:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  key_package:bytes ->
+  result (proposal bytes)
+
+val create_remove_proposal:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  mls_group bytes ->
+  removed:credential bytes ->
+  result (proposal bytes)

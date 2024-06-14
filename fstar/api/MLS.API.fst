@@ -42,6 +42,7 @@ type validated_commit bytes #cb = MLS.API.High.validated_commit bytes no_asp
 type credential bytes #cb = MLS.API.High.credential bytes
 type credential_pair bytes #cb = MLS.API.High.credential_pair bytes no_asp
 type signature_keypair bytes #cb = MLS.API.High.signature_keypair bytes
+type proposal bytes #bl = MLS.TreeDEM.NetworkTypes.proposal_nt bytes
 
 let generate_signature_keypair #bytes #cb #entropy_t #entropy_tc =
   MLS.API.High.generate_signature_keypair
@@ -257,3 +258,16 @@ let create_commit #bytes #cb st fparams cparams =
     );
     group_info = serialize _ group_info;
   }, st))
+
+let create_add_proposal #bytes #cb key_package =
+  match Comparse.parse (MLS.Bootstrap.NetworkTypes.key_package_nt bytes MLS.TreeKEM.NetworkTypes.tkt) key_package with
+  | Some key_package -> return (MLS.TreeDEM.NetworkTypes.P_add { key_package })
+  | None -> error "create_add_proposal: malformed key package"
+
+let create_remove_proposal #bytes #cb st removed_cred =
+  let? removed = MLS.API.High.find_credential removed_cred.cred (MLS.Tree.get_leaf_list st.treesync.tree) in
+  let? (): squash(removed < pow2 32) = (
+    if not (removed < pow2 32) then error "create_remove_proposal: removed too big"
+    else return ()
+  ) in
+  return (MLS.TreeDEM.NetworkTypes.P_remove { removed })
