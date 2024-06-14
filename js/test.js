@@ -6,7 +6,7 @@ var HaclWasm = require("./wasm/api.js");
 ////////////////////////////////////////////////////////////////////////////////
 
 var test_main = () => {
-  // A demo of how to drive the high-level API.
+  // A demo of how to drive the (OLD) high-level API.
   console.log("Page loaded");
 
   // A self-test mostly for my own debugging.

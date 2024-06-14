@@ -1,7 +1,7 @@
 var debug = true;
 
 ////////////////////////////////////////////////////////////////////////////////
-// MLS Lib                                                                    //
+// OLD MLS Lib                                                                //
 ////////////////////////////////////////////////////////////////////////////////
 
 let freshKeyPairDebug = 0;
@@ -162,52 +162,9 @@ function HaclCrypto(Hacl) {
   };
 }
 
-// WIP, TODO: port all primitives to node-crypto
-function NodeCrypto(Hacl) {
-  return {
-    sha2_256_hash: (b) => node_crypto.createHash('sha256').update(b).digest(),
-
-    hkdf_sha2_256_extract: (salt, ikm) => Hacl.HKDF.extract_sha2_256(salt, ikm)[0],
-
-    hkdf_sha2_256_expand: (prk, info, size) => Hacl.HKDF.expand_sha2_256(prk, info, size)[0],
-
-    sha2_512_hash: (b) => node_crypto.createHash('sha512').update(b).digest(),
-
-    // const ecdh = node_crypto.createECDH("X25519");
-    // ecdh.setPrivateKey(sk);
-    // return new Uint8Array(ecdh.getPrivateKey().buffer);
-    ed25519_secret_to_public: (sk) => Hacl.Ed25519.secret_to_public(sk)[0],
-
-    ed25519_sign: (sk, msg) => Hacl.Ed25519.sign(sk, msg)[0],
-
-    ed25519_verify: (pk, msg, signature) => Hacl.Ed25519.verify(pk, msg, signature)[0],
-
-    chacha20_poly1305_encrypt: (key, iv, ad, pt) => {
-      let cipher = node_crypto.createCipheriv('chacha20-poly1305', key, iv, { authTagLength: 16 });
-      cipher.setAAD(ad);
-      let ct = cipher.update(pt);
-      cipher.final();
-      return [ new Uint8Array(ct.buffer), new Uint8Array(cipher.getAuthTag().buffer) ];
-    },
-
-    chacha20_poly1305_decrypt: (key, iv, ad, ct, tag) => {
-      let decipher = node_crypto.createDecipheriv("chacha20-poly1305", key, iv, { authTagLength: 16 });
-      decipher.setAAD(ad);
-      let pt = decipher.update(ct);
-      decipher.setAuthTag(tag);
-      try {
-        decipher.final();
-        return pt;
-      } catch (e) {
-        return null;
-      }
-    }
-  };
-}
-
 if (typeof module !== undefined)
   module.exports = {
-    // MLS API
+    // OLD MLS API
     freshKeyPair,
     freshKeyPackage,
     create,
@@ -217,6 +174,12 @@ if (typeof module !== undefined)
     processGroupMessage,
     processWelcomeMessage,
     currentEpoch: MLS.currentEpoch,
+    // NEW MLS API
+    setEntropy: MLS.setEntropy,
+    setCiphersuite: MLS.setCiphersuite, 
+    createCommit: MLS.createCommit,
+    createAddProposal: MLS.createAddProposal,
+    createRemoveProposal: MLS.createRemoveProposal,
     // MLS Crypto API (the individual primitives)
     setCrypto: MLS.setCrypto,
     HaclCrypto,
