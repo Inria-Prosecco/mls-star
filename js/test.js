@@ -158,7 +158,7 @@ var test_new = () => {
   console.log((new TextDecoder()).decode(content.message, "ascii"));
 
   // A receives the message
-  ({ message, group: group_A } = MLS.processMessage(group_A, message));
+  ({ group: group_A, processed_message: { content } } = MLS.processMessage(group_A, message));
   console.assert(content.kind == "ApplicationMessage", "Processed message is not an application message!!");
   console.log((new TextDecoder()).decode(content.message, "ascii"));
 };
