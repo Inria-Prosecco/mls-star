@@ -56,38 +56,55 @@ let option_bytes_of_uint8array o =
 
 let framing_params_of_js o = {
   encrypt = o##.encrypt;
-  padding_size = Z.of_int o##.padding_size;
-  authenticated_data = bytes_of_uint8array o##.authenticated_data;
+  padding_size = Z.of_int o##.padding_size_;
+  authenticated_data = bytes_of_uint8array o##.authenticated_data_;
 }
 
 let leaf_node_params_of_js o =
   { nothing_yet = () }
 
 let commit_params_of_js o =
-  let proposals = Array.to_list o##.proposals in
-  let inline_tree = o##.inline_tree in
-  let force_update = o##.force_update in
-  let leaf_node_params = leaf_node_params_of_js o##.leaf_node_params in
+  let proposals = Array.to_list (Js.to_array o##.proposals) in
+  let inline_tree = o##.inline_tree_ in
+  let force_update = o##.force_update_ in
+  let leaf_node_params = leaf_node_params_of_js o##.leaf_node_params_ in
   { proposals; inline_tree; force_update; leaf_node_params }
 
 let js_of_create_commit_result { commit; welcome; group_info } = object%js
   val commit = uint8array_of_bytes commit
   val welcome = Js.Opt.option (Option.map uint8array_of_bytes welcome)
-  val group_info = uint8array_of_bytes group_info
+  val group_info_ = uint8array_of_bytes group_info
 end
 
 let js_of_create_key_package_result { key_package; keystore_key; keystore_value } = object%js
-  val key_package = uint8array_of_bytes key_package
+  val key_package_ = uint8array_of_bytes key_package
   val keystore_key_ = uint8array_of_bytes keystore_key
   val keystore_value_ = uint8array_of_bytes keystore_value
 end
 
+let js_of_processed_message_content = function
+  | ApplicationMessage bytes ->
+      Obj.magic object%js
+        val kind = Js.string "ApplicationMessage"
+        val message = uint8array_of_bytes bytes
+      end
+  | Proposal uv ->
+      Obj.magic object%js
+        val kind = Js.string "Proposal"
+        val unvalidated_proposal_ = uv
+      end
+  | Commit uc ->
+      Obj.magic object%js
+        val kind = Js.string "Commit"
+        val unvalidated_commit_ = uc
+      end
+
 let js_of_processed_message { group_id; epoch; sender; authenticated_data1; content } = object%js
-  val group_id = uint8array_of_bytes group_id
+  val group_id_ = uint8array_of_bytes group_id
   val epoch = 0 (* TODO *)
   val sender = sender (* TODO *)
-  val authenticated_data = uint8array_of_bytes authenticated_data1
-  val content = content
+  val authenticated_data_ = uint8array_of_bytes authenticated_data1
+  val content = js_of_processed_message_content content
 end
 
 let _ =
@@ -131,7 +148,7 @@ let _ =
       Js.some cp
 
     method mkX509Credential kp chain =
-      let chain = List.map bytes_of_uint8array (Array.to_list chain) in
+      let chain = List.map bytes_of_uint8array (Array.to_list (Js.to_array chain)) in
       let* cp = call_c mk_x509_credential kp chain in
       Js.some cp
 
@@ -141,7 +158,7 @@ let _ =
 
     method createKeyPackage cp =
       let$ ckpr = call_ce create_key_package cp in
-      Js.some ckpr
+      Js.some (js_of_create_key_package_result ckpr)
 
     method createGroup cp =
       let$ g = call_ce create_group cp in
@@ -185,7 +202,7 @@ let _ =
 
     method getNewCredentials uv =
       let* r = call_c get_new_credentials uv in
-      Js.some (Array.of_list r)
+      Js.some (Js.array (Array.of_list r))
 
     method getNewCredential uv =
       let* r = call_c get_new_credential uv in
@@ -195,19 +212,19 @@ let _ =
       let bytes = bytes_of_uint8array bytes in
       let* pm, g = call_c process_message g bytes in
       Js.some (object%js
-        val processed_message = js_of_processed_message pm
+        val processed_message_ = js_of_processed_message pm
         val group = g
       end)
 
     method iHerebyDeclareThatIHaveCheckedTheNewCredentialsAndValidateTheCommit uv =
-      Js.some (i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_commit uv)
+      Js.some (call_c i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_commit uv)
 
     method mergeCommit g vc =
       let* g = call_c merge_commit g vc in
       Js.some g
 
     method iHerebyDeclareThatIHaveCheckedTheNewCredentialsAndValidateTheProposal up =
-      Js.some (i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_proposal up)
+      Js.some (call_c i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_proposal up)
 
     method queueNewProposal g vp =
       let* g = call_c queue_new_proposal g vp in
@@ -216,7 +233,7 @@ let _ =
     method sendApplicationMessage g fp m =
       let fp = framing_params_of_js fp in
       let m = bytes_of_uint8array m in
-      let$ message, g = call_ce g fp m in
+      let$ message, g = call_ce send_application_message g fp m in
       Js.some (object%js
         val message = uint8array_of_bytes message
         val group = g
@@ -253,8 +270,8 @@ let _ =
       let commit_params = commit_params_of_js commit_params in
       let$ create_commit_result, mls_group = call_ce create_commit mls_group framing_params commit_params in
       Js.some object%js
-        val create_commit_result = js_of_create_commit_result create_commit_result
-        val mls_group = mls_group
+        val create_commit_result_ = js_of_create_commit_result create_commit_result
+        val group_ = mls_group
       end
 
     method createAddProposal kp =
