@@ -16,6 +16,14 @@ let (let*) r f =
       print_endline ("ProtocolError: " ^ s);
       Js.null
 
+let entropy_state: Obj.t = Obj.repr ()
+
+(* Destruct something that is in prob (result ...). *)
+let (let$) r f =
+  let r, _ = r entropy_state in
+  let* r = r in
+  f r
+
 let print_and_fail s =
   (* Makes sure something shows up in the JS console *)
   print_endline ("ERROR: " ^ s);
@@ -23,9 +31,7 @@ let print_and_fail s =
 
 (* GLOBAL STATE: entroy, bytes instance, etc. *)
 
-let entropy_state: Obj.t = Obj.repr ()
-
-let extract_entropy: (MLS_Crypto_Builtins.hacl_star_bytes, Obj.t) MLS_API.entropy ref =
+let entropy: (MLS_Crypto_Builtins.hacl_star_bytes, Obj.t) MLS_API.entropy ref =
   ref { extract_entropy = fun _ _ -> print_and_fail "Please call setEntropy first" }
 
 let crypto_bytes_ = ref None
@@ -35,7 +41,18 @@ let crypto_bytes () =
   | Some cb -> cb
   | None -> print_endline ("Must call setCiphersuite first"); assert false
 
+(* Call a function that takes crypto bytes *)
+let call_c f =
+  f (crypto_bytes ())
+
+(* Call a function that takes crypto bytes followed by entropy *)
+let call_ce f =
+  f (crypto_bytes ()) () !entropy
+
 (* CONVERSIONS *)
+
+let option_bytes_of_uint8array o =
+  Option.map bytes_of_uint8array (Js.Opt.to_option o)
 
 let framing_params_of_js o = {
   encrypt = o##.encrypt;
@@ -59,6 +76,20 @@ let js_of_create_commit_result { commit; welcome; group_info } = object%js
   val group_info = uint8array_of_bytes group_info
 end
 
+let js_of_create_key_package_result { key_package; keystore_key; keystore_value } = object%js
+  val key_package = uint8array_of_bytes key_package
+  val keystore_key_ = uint8array_of_bytes keystore_key
+  val keystore_value_ = uint8array_of_bytes keystore_value
+end
+
+let js_of_processed_message { group_id; epoch; sender; authenticated_data1; content } = object%js
+  val group_id = uint8array_of_bytes group_id
+  val epoch = 0 (* TODO *)
+  val sender = sender (* TODO *)
+  val authenticated_data = uint8array_of_bytes authenticated_data1
+  val content = content
+end
+
 let _ =
   Js.export_all (object%js
 
@@ -70,7 +101,7 @@ let _ =
     (* Expects a JS function that takes a Number and returns that many random
        bytes as a UInt8Array. *)
     method setEntropy (f: _ Js.t) =
-      extract_entropy := { extract_entropy = fun n state ->
+      entropy := { extract_entropy = fun n state ->
         let bytes = bytes_of_uint8array (Js.Unsafe.fun_call f [| Js.Unsafe.inject (Z.to_int n) |]) in
         MLS_Result.Success bytes, state
       }
@@ -85,25 +116,153 @@ let _ =
           crypto_bytes_ := Some MLS_Crypto_Builtins.(mk_concrete_crypto_bytes AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519)
 
     (* NEW API: binders for MLS.API.fst (via MLS_API.ml) *)
+
+    method generateSignatureKeyPair =
+      let$ kp = call_ce generate_signature_keypair in
+      Js.some kp
+
+    method getSignaturePublicKey kp =
+      let pk = call_c get_signature_public_key kp in
+      Js.some (uint8array_of_bytes pk)
+
+    method mkBasicCredential kp identity =
+      let identity = bytes_of_uint8array identity in
+      let* cp = call_c mk_basic_credential kp identity in
+      Js.some cp
+
+    method mkX509Credential kp chain =
+      let chain = List.map bytes_of_uint8array (Array.to_list chain) in
+      let* cp = call_c mk_x509_credential kp chain in
+      Js.some cp
+
+    method getPublicCredential cp =
+      let c = call_c get_public_credential cp in
+      Js.some c
+
+    method createKeyPackage cp =
+      let$ ckpr = call_ce create_key_package cp in
+      Js.some ckpr
+
+    method createGroup cp =
+      let$ g = call_ce create_group cp in
+      Js.some g
+
+    method startJoinGroup welcome lookup =
+      let welcome = bytes_of_uint8array welcome in
+      let* sjgo = call_c start_join_group welcome (fun b ->
+        let b = uint8array_of_bytes b in
+        option_bytes_of_uint8array (Js.Unsafe.fun_call lookup [| Js.Unsafe.inject b |])
+      ) in
+      Js.some sjgo
+
+    method continueJoinGroup sjgo ort =
+      let ort = option_bytes_of_uint8array ort in
+      let* cjgo = call_c continue_join_group sjgo ort in
+      Js.some cjgo
+
+    method finalizeJoinGroup sb =
+      let* g = call_c finalize_join_group sb in
+      Js.some g
+
+    method exportSecret g l ctx len =
+      let l = Js.to_string l in
+      let ctx = bytes_of_uint8array ctx in
+      let len = Z.of_int len in
+      let* r = call_c export_secret g l ctx len in
+      Js.some (uint8array_of_bytes r)
+
+    method epochAuthenticator g =
+      let* r = call_c epoch_authenticator g in
+      Js.some (uint8array_of_bytes r)
+
+    method epoch g =
+      let r = call_c epoch g in
+      Js.some (Z.to_int (FStar_UInt64.v r))
+
+    method groupId g =
+      let r = call_c group_id g in
+      Js.some (uint8array_of_bytes r)
+
+    method getNewCredentials uv =
+      let* r = call_c get_new_credentials uv in
+      Js.some (Array.of_list r)
+
+    method getNewCredential uv =
+      let* r = call_c get_new_credential uv in
+      Js.some (Js.Opt.option r)
+
+    method processMessage g bytes =
+      let bytes = bytes_of_uint8array bytes in
+      let* pm, g = call_c process_message g bytes in
+      Js.some (object%js
+        val processed_message = js_of_processed_message pm
+        val group = g
+      end)
+
+    method iHerebyDeclareThatIHaveCheckedTheNewCredentialsAndValidateTheCommit uv =
+      Js.some (i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_commit uv)
+
+    method mergeCommit g vc =
+      let* g = call_c merge_commit g vc in
+      Js.some g
+
+    method iHerebyDeclareThatIHaveCheckedTheNewCredentialsAndValidateTheProposal up =
+      Js.some (i_hereby_declare_that_i_have_checked_the_new_credentials_and_validate_the_proposal up)
+
+    method queueNewProposal g vp =
+      let* g = call_c queue_new_proposal g vp in
+      Js.some g
+
+    method sendApplicationMessage g fp m =
+      let fp = framing_params_of_js fp in
+      let m = bytes_of_uint8array m in
+      let$ message, g = call_ce g fp m in
+      Js.some (object%js
+        val message = uint8array_of_bytes message
+        val group = g
+      end)
+
+    method proposeAddMember g fp kp =
+      let fp = framing_params_of_js fp in
+      let kp = bytes_of_uint8array kp in
+      let$ message, g = call_ce propose_add_member g fp kp in
+      Js.some (object%js
+        val message = uint8array_of_bytes message
+        val group = g
+      end)
+
+    method proposeRemoveMember g fp c =
+      let fp = framing_params_of_js fp in
+      let$ message, g = call_ce propose_remove_member g fp c in
+      Js.some (object%js
+        val message = uint8array_of_bytes message
+        val group = g
+      end)
+
+    method proposeRemoveMyself g fp =
+      let fp = framing_params_of_js fp in
+      let$ message, g = call_ce propose_remove_myself g fp in
+      Js.some (object%js
+        val message = uint8array_of_bytes message
+        val group = g
+      end)
+
     method createCommit mls_group framing_params commit_params =
       (* mls_group is left "as is" and is not roundtripped via serialization *)
       let framing_params = framing_params_of_js framing_params in
       let commit_params = commit_params_of_js commit_params in
-      let res, _entropy_state = create_commit (crypto_bytes ()) ()
-        (!extract_entropy) mls_group framing_params commit_params entropy_state
-      in
-      let* create_commit_result, mls_group = res in
+      let$ create_commit_result, mls_group = call_ce create_commit mls_group framing_params commit_params in
       Js.some object%js
         val create_commit_result = js_of_create_commit_result create_commit_result
         val mls_group = mls_group
       end
 
     method createAddProposal kp =
-      let* p = create_add_proposal (crypto_bytes ()) (bytes_of_uint8array kp) in
+      let* p = call_c create_add_proposal (bytes_of_uint8array kp) in
       Js.some p
 
     method createRemoveProposal group removed =
-      let* p = create_remove_proposal (crypto_bytes ()) group removed in
+      let* p = call_c create_remove_proposal group removed in
       Js.some p
 
     (* INTERNAL SELF-TEST *)
