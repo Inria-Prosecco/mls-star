@@ -534,7 +534,7 @@ let create_group_with_group_id #bytes #bl #entropy_t #entropy_tc #asp cred_pair 
   let*? tree_hash = return_prob (mk_mls_bytes tree_hash "create_group_with_group_id" "tree_hash") in
   let group_context: group_context_nt bytes = {
     version = PV_mls10;
-    cipher_suite = CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519;
+    cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes);
     group_id;
     epoch;
     tree_hash;
