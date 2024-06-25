@@ -82,11 +82,32 @@ let chacha20_poly1305_decrypt ~key ~iv ~ad ~ct ~tag =
   | Some pt -> Some (H.bytes_of_uint8array pt)
   | None -> None
 
+external whacl_aes128gcm_encrypt:
+  js_u8array -> js_u8array -> js_u8array -> js_u8array -> js_u8array Js.js_array Js.t
+= "whacl_aes128gcm_encrypt"
 
 let aes128gcm_encrypt ~key ~iv ~ad ~pt =
-  ignore (key, iv, ad, pt);
-  failwith "Not implemented in JS: aes128gcm_encrypt"
+  let key = H.uint8array_of_bytes key in
+  let iv = H.uint8array_of_bytes iv in
+  let ad = H.uint8array_of_bytes ad in
+  let pt = H.uint8array_of_bytes pt in
+  let ret = whacl_aes128gcm_encrypt key iv ad pt in
+  let ret = Js.to_array ret in
+  let ct = H.bytes_of_uint8array ret.(0) in
+  let tag = H.bytes_of_uint8array ret.(1) in
+  FStar_Seq_Base.append ct tag
+
+external whacl_aes128gcm_decrypt:
+  js_u8array -> js_u8array -> js_u8array -> js_u8array -> js_u8array -> js_u8array Js.Opt.t
+= "whacl_aes128gcm_decrypt"
 
 let aes128gcm_decrypt ~key ~iv ~ad ~ct ~tag =
-  ignore (key, iv, ad, ct, tag);
-  failwith "Not implemented in JS: aes128gcm_decrypt"
+  let key = H.uint8array_of_bytes key in
+  let iv = H.uint8array_of_bytes iv in
+  let ad = H.uint8array_of_bytes ad in
+  let ct = H.uint8array_of_bytes ct in
+  let tag = H.uint8array_of_bytes tag in
+  match Js.Opt.to_option (whacl_aes128gcm_decrypt key iv ad ct tag) with
+  | Some pt -> Some (H.bytes_of_uint8array pt)
+  | None -> None
+

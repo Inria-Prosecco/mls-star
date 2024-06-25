@@ -47,6 +47,16 @@ function whacl_chacha20_poly1305_decrypt(key, iv, ad, ct, tag) {
   return joo_global_object.MyCrypto.chacha20_poly1305_decrypt(key, iv, ad, ct, tag);
 }
 
+//Provides:whacl_aes128gcm_encrypt
+function whacl_aes128gcm_encrypt(key, iv, ad, pt) {
+  return joo_global_object.MyCrypto.aes128gcm_encrypt(key, iv, ad, pt);
+}
+
+//Provides:whacl_aes128gcm_decrypt
+function whacl_aes128gcm_decrypt(key, iv, ad, ct, tag) {
+  return joo_global_object.MyCrypto.aes128gcm_decrypt(key, iv, ad, ct, tag);
+}
+
 // OCaml system stuff
 
 //Provides: caml_thread_initialize const

@@ -125,12 +125,18 @@ let _ =
 
     (* Expects a JS string that contains the expected ciphersuite *)
     method setCiphersuite (cs: _ Js.t) =
-      match Js.to_string cs with
-      | _ ->
-          (* TODO: actually offer more ciphersuites *)
-          if !crypto_bytes_ <> None then
-            print_and_fail "Cannot dynamically change ciphersuites";
-          crypto_bytes_ := Some MLS_Crypto_Builtins.(mk_concrete_crypto_bytes AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519)
+      let cs = Js.to_string cs in
+      if !crypto_bytes_ <> None then
+        print_and_fail "Cannot dynamically change ciphersuites";
+      let ac = match cs with
+        | "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519" ->
+            MLS_Crypto_Builtins.AC_mls_128_dhkemx25519_aes128gcm_sha256_ed25519
+        | "MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519" ->
+            AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+        | _ ->
+            print_and_fail ("Unsupported ciphersuite: " ^ cs)
+      in
+      crypto_bytes_ := Some MLS_Crypto_Builtins.(mk_concrete_crypto_bytes ac)
 
     (* NEW API: binders for MLS.API.fst (via MLS_API.ml) *)
 

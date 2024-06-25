@@ -158,8 +158,31 @@ function HaclCrypto(Hacl) {
         return plain;
       else
         return null;
+    },
+
+    // AES128-GCM implementation relying on OpenSSL via node-crypto to get the
+    // benefits of hardware acceleration with AESNI
+    aes128gcm_encrypt: (key, iv, ad, pt) => {
+      let cipher = node_crypto.createCipheriv("id-aes128-GCM", key, iv, { authTagLength: 16 });
+      cipher.setAAD(ad);
+      let ct = cipher.update(pt);
+      cipher.final();
+      return [ new Uint8Array(ct.buffer), new Uint8Array(cipher.getAuthTag().buffer) ];
+    },
+
+    aes128gcm_decrypt: (key, iv, ad, ct, tag) => {
+      let decipher = node_crypto.createDecipheriv("id-aes128-GCM", key, iv, { authTagLength: 16 });
+      decipher.setAAD(ad);
+      let pt = decipher.update(ct);
+      decipher.setAuthTag(tag);
+      try {
+        decipher.final();
+        return pt;
+      } catch (e) {
+        return null;
+      }
     }
-  };
+  }
 }
 
 if (typeof module !== undefined)

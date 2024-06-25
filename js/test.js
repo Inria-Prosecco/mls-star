@@ -87,8 +87,10 @@ var test_main = () => {
 var test_new = () => {
   // A test for the new, more general API. We start with some warm-up.
 
-  // This is the only supported one for now, we plan to expose AES-GCM soo.
-  MLS.setCiphersuite("mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519");
+  // Pick either one.
+  // MLS.setCiphersuite("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519");
+  MLS.setCiphersuite("MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519");
+
   // The source of entropy is customizable.
   MLS.setEntropy((n) => crypto.getRandomValues(new Uint8Array(n)));
 

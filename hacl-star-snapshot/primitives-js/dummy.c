@@ -37,3 +37,11 @@ CAMLprim value whacl_chacha20_poly1305_encrypt() {
 CAMLprim value whacl_chacha20_poly1305_decrypt() {
   caml_failwith(error_msg);
 }
+
+CAMLprim value whacl_aes128gcm_encrypt() {
+  caml_failwith(error_msg);
+}
+
+CAMLprim value whacl_aes128gcm_decrypt() {
+  caml_failwith(error_msg);
+}
