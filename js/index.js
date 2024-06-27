@@ -1,103 +1,14 @@
 var debug = true;
 
 ////////////////////////////////////////////////////////////////////////////////
-// OLD MLS Lib                                                                //
-////////////////////////////////////////////////////////////////////////////////
-
-let freshKeyPairDebug = 0;
-
-function freshKeyPair() {
-  let dummy32s = [
-    new Uint8Array([32, 253, 20, 170, 202, 227, 238, 210, 27, 101, 42, 60, 111, 102, 230, 67, 215, 226, 241, 122, 209, 115, 47, 6, 56, 238, 190, 255, 224, 93, 78, 19]),
-    new Uint8Array([35, 90, 128, 221, 81, 223, 92, 59, 75, 242, 32, 175, 171, 153, 103, 118, 79, 18, 173, 160, 6, 102, 242, 54, 173, 120, 38, 90, 24, 142, 151, 198]),
-    new Uint8Array([156, 11, 245, 228, 136, 5, 116, 12, 190, 194, 163, 35, 133, 176, 85, 85, 181, 16, 7, 77, 225, 131, 43, 71, 252, 151, 14, 126, 17, 132, 152, 31])
-  ];
-  let random32 = crypto.getRandomValues(new Uint8Array(32));
-  return MLS.freshKeyPair1(dummy32s[freshKeyPairDebug++%3]);
-}
-
-function freshKeyPackage(cred, priv) {
-  let dummy64 = new Uint8Array([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  ]);
-  let random64 = crypto.getRandomValues(new Uint8Array(64));
-  return MLS.freshKeyPackage1(dummy64, cred, priv);
-}
-
-function create(cred, priv, groupId) {
-  let dummy96 = new Uint8Array([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  ]);
-  let random96 = crypto.getRandomValues(new Uint8Array(96));
-  return MLS.create1(dummy96, cred, priv, groupId);
-}
-
-function add(state, keyPackage) {
-  let dummy36 = new Uint8Array([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3
-  ]);
-  let random36 = crypto.getRandomValues(new Uint8Array(36));
-  return MLS.add1(state, keyPackage, dummy36);
-}
-
-function send(state, data) {
-  let dummy4 = new Uint8Array([
-    0, 1, 2, 3
-  ]);
-  let random4 = crypto.getRandomValues(new Uint8Array(4));
-  return MLS.send1(state, dummy4, data);
-}
-
-function remove(state, identity) {
-  let dummy36 = new Uint8Array([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3
-  ]);
-  let random36 = crypto.getRandomValues(new Uint8Array(36));
-  return MLS.remove1(state, identity, dummy36);
-}
-
-
-function processGroupMessage(state, payload) {
-  return MLS.processGroupMessage1(state, payload);
-}
-
-function processWelcomeMessage(payload, keyPair, lookup) {
-  return MLS.processWelcomeMessage1(payload, keyPair, lookup);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // Crypto Lib                                                                 //
 ////////////////////////////////////////////////////////////////////////////////
 
 if (typeof module !== "undefined") {
   var MLS = require("./js/MLS_JS.bc.js");
-  var node_crypto = require("crypto");
-  // for getRandomValues, hardcoded above
-  var crypto = node_crypto.webcrypto;
+  // UNCOMMENT THIS TO GET AES-GCM VIA NODE-CRYPTO
+  // var node_crypto = require("crypto");
+  // var crypto = node_crypto.webcrypto;
 }
 
 // Implementation of the (fast) crypto. Currently calling our own verified HACL-WASM
@@ -129,7 +40,11 @@ var hacl_modules = [
   "Hacl_Chacha20",
   "Hacl_Chacha20_Vec32",
   "Hacl_MAC_Poly1305",
-  "Hacl_AEAD_Chacha20Poly1305"
+  "Hacl_AEAD_Chacha20Poly1305",
+  "Hacl_Lib",
+  "Hacl_AES_128_CTR32_BitSlice",
+  "Hacl_Gf128_CT64",
+  "Hacl_AES_128_GCM_CT64"
 ];
 
 
@@ -162,41 +77,55 @@ function HaclCrypto(Hacl) {
 
     // AES128-GCM implementation relying on OpenSSL via node-crypto to get the
     // benefits of hardware acceleration with AESNI
-    aes128gcm_encrypt: (key, iv, ad, pt) => {
-      let cipher = node_crypto.createCipheriv("id-aes128-GCM", key, iv, { authTagLength: 16 });
-      cipher.setAAD(ad);
-      let ct = cipher.update(pt);
-      cipher.final();
-      return [ new Uint8Array(ct.buffer), new Uint8Array(cipher.getAuthTag().buffer) ];
+    // aes128gcm_encrypt: (key, iv, ad, pt) => {
+    //   let cipher = node_crypto.createCipheriv("id-aes128-GCM", key, iv, { authTagLength: 16 });
+    //   cipher.setAAD(ad);
+    //   let ct = cipher.update(pt);
+    //   cipher.final();
+    //   return [ new Uint8Array(ct.buffer), new Uint8Array(cipher.getAuthTag().buffer) ];
+    // },
+
+    // aes128gcm_decrypt: (key, iv, ad, ct, tag) => {
+    //   let decipher = node_crypto.createDecipheriv("id-aes128-GCM", key, iv, { authTagLength: 16 });
+    //   decipher.setAAD(ad);
+    //   let pt = decipher.update(ct);
+    //   decipher.setAuthTag(tag);
+    //   try {
+    //     decipher.final();
+    //     return pt;
+    //   } catch (e) {
+    //     return null;
+    //   }
+    // }
+
+    aes128gcm_encrypt: (key, iv, aad, plain) => {
+      let [ ctx ] = Hacl.AES128_GCM.expand(key);
+      let [ cipher_and_tag ] = Hacl.AES128_GCM.encrypt(ctx, plain, aad, iv);
+      let cipher = cipher_and_tag.subarray(0, plain.byteLength);
+      let tag = cipher_and_tag.subarray(plain.byteLength);
+      if (tag.byteLength != 16)
+        throw new Error("incorrect tag length");
+      return [ cipher, tag ];
     },
 
-    aes128gcm_decrypt: (key, iv, ad, ct, tag) => {
-      let decipher = node_crypto.createDecipheriv("id-aes128-GCM", key, iv, { authTagLength: 16 });
-      decipher.setAAD(ad);
-      let pt = decipher.update(ct);
-      decipher.setAuthTag(tag);
-      try {
-        decipher.final();
-        return pt;
-      } catch (e) {
+    aes128gcm_decrypt: (key, iv, aad, cipher, tag) => {
+      if (tag.byteLength != 16)
+        throw new Error("incorrect tag length");
+      let cipher_and_tag = new Uint8Array(cipher.length + 16);
+      cipher_and_tag.set(cipher, 0);
+      cipher_and_tag.set(tag, cipher.byteLength);
+      let [ ctx ] = Hacl.AES128_GCM.expand(key);
+      let [ ok, plain ] = Hacl.AES128_GCM.decrypt(ctx, cipher_and_tag, aad, iv);
+      if (ok)
+        return plain;
+      else
         return null;
-      }
     }
   }
 }
 
 if (typeof module !== undefined)
   module.exports = {
-    // OLD MLS API
-    freshKeyPair,
-    freshKeyPackage,
-    create,
-    add,
-    send,
-    remove,
-    processGroupMessage,
-    processWelcomeMessage,
-    currentEpoch: MLS.currentEpoch,
     // NEW MLS API
     setEntropy: MLS.setEntropy,
     setCiphersuite: MLS.setCiphersuite, 

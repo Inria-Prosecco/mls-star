@@ -33,6 +33,10 @@ HACL_MODULES=(
   Hacl_Chacha20_Vec32
   Hacl_MAC_Poly1305
   Hacl_AEAD_Chacha20Poly1305
+  Hacl_Lib
+  Hacl_AES_128_CTR32_BitSlice
+  Hacl_Gf128_CT64
+  Hacl_AES_128_GCM_CT64
 )
 
 for m in ${HACL_MODULES[@]}; do
