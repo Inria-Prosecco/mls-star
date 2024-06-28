@@ -67,13 +67,13 @@ let add state key_package e =
   let (commit_result, e) = MLS.API.create_commit state fparams cparams e in
   let? (commit_result, st) = commit_result in
   let? identity =
-    match Comparse.parse (MLS.Bootstrap.NetworkTypes.key_package_nt bytes MLS.TreeKEM.NetworkTypes.tkt) key_package with
-    | None -> error "add: not a key package"
-    | Some kp -> (
+    match Comparse.parse (MLS.TreeDEM.NetworkTypes.mls_message_nt bytes) key_package with
+    | Some (MLS.TreeDEM.NetworkTypes.M_mls10 (MLS.TreeDEM.NetworkTypes.M_key_package kp)) -> (
       match kp.tbs.leaf_node.data.credential with
       | MLS.NetworkTypes.C_basic identity -> return identity
       | _ -> error "add: bad credential type"
     )
+    | _ -> error "add: not a key package"
   in
   let? welcome = from_option "expected a welcome" (commit_result.welcome) in
   return (st, ((MLS.API.group_id state, commit_result.commit), (identity, welcome)))

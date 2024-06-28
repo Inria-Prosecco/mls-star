@@ -67,7 +67,7 @@ let get_public_credential #bytes #cb cred_pair =
 let create_key_package #bytes #cb #entropy #entropy_t cred_pair =
   let*? res = MLS.API.High.create_key_package cred_pair in
   MLS.API.High.return_prob (return ({
-    key_package = serialize _ res.key_package;
+    key_package = serialize _ (M_mls10 (M_key_package res.key_package));
     keystore_key = res.keystore_key;
     keystore_value = serialize _ res.keystore_value;
   } <: create_key_package_result bytes))
@@ -87,7 +87,12 @@ let lift_key_lookup #bytes #cb key_lookup b =
   | Some k -> parse _ k
 
 let start_join_group #bytes #cb welcome_bytes key_lookup =
-  let? welcome = from_option "start_join_group: malformed welcome" (parse _ welcome_bytes) in
+  let? welcome_message = from_option "start_join_group: malformed welcome" (parse _ welcome_bytes) in
+  let? welcome = (
+    match welcome_message with
+    | M_mls10 (M_welcome welcome) -> return welcome
+    | _ -> error "start_join_group: not a welcome"
+  ) in
   MLS.API.High.start_join_group welcome (lift_key_lookup key_lookup)
 
 let continue_join_group_output bytes #cb = MLS.API.High.continue_join_group_output bytes
@@ -214,7 +219,12 @@ let send_application_message #bytes #cb #entropy_t #entropy_tc st fparams messag
   MLS.API.High.return_prob (return (serialize _ msg, st))
 
 let propose_add_member #bytes #cb #entropy_t #entropy_tc st fparams key_package_bytes =
-  let*? key_package = MLS.API.High.return_prob (from_option "propose_add_member: malformed key package" (parse _ key_package_bytes)) in
+  let*? key_package_message = MLS.API.High.return_prob (from_option "propose_add_member: malformed key package" (parse _ key_package_bytes)) in
+  let*? key_package = MLS.API.High.return_prob (
+    match key_package_message with
+    | M_mls10 (M_key_package key_package) -> return key_package
+    | _ -> error "propose_add_member: not a keypackage"
+  ) in
   let*? (msg, st) = MLS.API.High.propose_add_member st (translate_framing_params fparams) key_package in
   MLS.API.High.return_prob (return (serialize _ msg, st))
 
@@ -254,15 +264,19 @@ let create_commit #bytes #cb st fparams cparams =
     welcome = (
       match opt_welcome with
       | None -> None
-      | Some welcome -> Some (serialize _ welcome)
+      | Some welcome -> Some (serialize _ (M_mls10 (M_welcome welcome)))
     );
-    group_info = serialize _ group_info;
+    group_info = serialize _ (M_mls10 (M_group_info group_info));
   }, st))
 
-let create_add_proposal #bytes #cb key_package =
-  match Comparse.parse (MLS.Bootstrap.NetworkTypes.key_package_nt bytes MLS.TreeKEM.NetworkTypes.tkt) key_package with
-  | Some key_package -> return (MLS.TreeDEM.NetworkTypes.P_add { key_package })
-  | None -> error "create_add_proposal: malformed key package"
+let create_add_proposal #bytes #cb key_package_bytes =
+  let? key_package_message = from_option "create_add_member: malformed key package" (parse _ key_package_bytes) in
+  let? key_package = (
+    match key_package_message with
+    | M_mls10 (M_key_package key_package) -> return key_package
+    | _ -> error "create_add_member: not a keypackage"
+  ) in
+  return (MLS.TreeDEM.NetworkTypes.P_add { key_package })
 
 let create_remove_proposal #bytes #cb st removed_cred =
   let? removed = MLS.API.High.find_credential removed_cred.cred (MLS.Tree.get_leaf_list st.treesync.tree) in
