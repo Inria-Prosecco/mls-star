@@ -60,7 +60,7 @@ type processed_message_content (bytes:Type0) {|crypto_bytes bytes|} =
 noeq
 type processed_message (bytes:Type0) {|crypto_bytes bytes|} = {
   group_id: bytes;
-  epoch: nat_lbytes 8;
+  epoch: FStar.UInt64.t;
   sender: unit; //TODO
   authenticated_data: bytes;
   content: processed_message_content bytes;

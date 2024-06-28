@@ -304,7 +304,7 @@ type processed_message_content (bytes:Type0) {|bytes_like bytes|} =
 noeq
 type processed_message (bytes:Type0) {|bytes_like bytes|} = {
   group_id: bytes;
-  epoch: nat_lbytes 8;
+  epoch: FStar.UInt64.t;
   sender: unit; //TODO
   authenticated_data: bytes;
   content: processed_message_content bytes;
@@ -844,7 +844,7 @@ let process_message #bytes #cb #asp st msg =
 
   return ({
     group_id = auth_msg.content.group_id;
-    epoch = auth_msg.content.epoch;
+    epoch = FStar.UInt64.uint_to_t auth_msg.content.epoch;
     sender = ();
     authenticated_data = auth_msg.content.authenticated_data;
     content;
