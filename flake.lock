@@ -88,15 +88,16 @@
     "hacl-packages-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1704452057,
-        "narHash": "sha256-bEn+Y20vqazLAQHgKq9IYPGfI3Lviz35/arhb1hyZto=",
+        "lastModified": 1719499641,
+        "narHash": "sha256-/fn8vrRY9v4caKyLlKWRyy92ZykeQ80c9Wm7eDwkGFY=",
         "owner": "cryspen",
         "repo": "hacl-packages",
-        "rev": "b9998466f7138d6928e8b6b256392a063b823b1c",
+        "rev": "6b02a7d0f8d29204d1517dff4ac739dd1f8f6ed7",
         "type": "github"
       },
       "original": {
         "owner": "cryspen",
+        "ref": "dev_aes_gcm_wasm",
         "repo": "hacl-packages",
         "type": "github"
       }

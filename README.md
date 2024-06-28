@@ -30,7 +30,7 @@ as well as two libraries:
 - [DY\*](https://github.com/REPROSEC/dolev-yao-star-extrinsic), for symbolic security proofs
 
 The Javascript extraction of MLS\* furthermore rely on:
-- [HACL Packages](https://github.com/cryspen/hacl-packages), for the WASM build of HACL\* and its Javascript wrapper
+- [HACL Packages](https://github.com/cryspen/hacl-packages) (branch `dev_aes_gcm_wasm`), for the WASM build of HACL\* and its Javascript wrapper
 
 ### Installing F\*
 
@@ -107,7 +107,7 @@ opam install js_of_ocaml js_of_ocaml-ppx integers_stubs_js
 - [HACL Packages](https://github.com/cryspen/hacl-packages), must be cloned in `HACL_PACKAGES_HOME`
 
 ```bash
-git clone git@github.com:cryspen/hacl-packages.git
+git clone -b dev_aes_gcm_wasm git@github.com:cryspen/hacl-packages.git
 export HACL_PACKAGES_HOME=$(cd hacl-packages; pwd)
 ```
 

@@ -17,7 +17,7 @@
     };
 
     hacl-packages-src = {
-      url = "github:cryspen/hacl-packages";
+      url = "github:cryspen/hacl-packages?ref=dev_aes_gcm_wasm";
       flake = false;
     };
   };
