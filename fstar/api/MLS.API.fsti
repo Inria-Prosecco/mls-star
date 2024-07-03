@@ -299,3 +299,10 @@ val create_remove_proposal:
   mls_group bytes ->
   removed:credential bytes ->
   result (proposal bytes)
+
+(*** Helper function ***)
+
+val parse_message:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes ->
+  result (MLS.TreeDEM.NetworkTypes.mls_message_nt bytes)

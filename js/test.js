@@ -36,6 +36,7 @@ var test_new = () => {
   console.log(completeKeyPackage_A);
   store_A[completeKeyPackage_A.keystore_key] = completeKeyPackage_A.keystore_value;
   let keyPackage_A = completeKeyPackage_A.key_package;
+  console.log("keyPackage_A", MLS.parseMessage(keyPackage_A));
 
   let group_A = MLS.createGroup(credPair_A);
   console.log("Updated the store =", store_A, "and created a group with just A, epoch =", MLS.epoch(group_A));
@@ -48,6 +49,7 @@ var test_new = () => {
   console.log(completeKeyPackage_B);
   store_B[completeKeyPackage_B.keystore_key] = completeKeyPackage_B.keystore_value;
   let keyPackage_B = completeKeyPackage_B.key_package;
+  console.log("keyPackage_B", MLS.parseMessage(keyPackage_B));
 
   // TODO: perhaps we would want to allow authenticated_data being null?
   let framingParams = { encrypt: true, padding_size: 0, authenticated_data: new Uint8Array([]) };
@@ -65,6 +67,9 @@ var test_new = () => {
   ({ create_commit_result: { welcome, commit, group_info }, group: group_A } = MLS.createCommit(group_A, framingParams, commitParams));
   console.log("welcome message for B", welcome);
   console.log("commit message", commit);
+  console.log("commit", MLS.parseMessage(commit));
+  console.log("welcome", MLS.parseMessage(welcome));
+  console.log("group_info", MLS.parseMessage(group_info));
 
   // A processes the echo of the add
   ({ group: group_A, processed_message: { content } }  = MLS.processMessage(group_A, commit));
@@ -83,6 +88,7 @@ var test_new = () => {
 
   // B says hello
   ({ message, group: group_B } = MLS.sendApplicationMessage(group_B, framingParams, Buffer.from("hello", "ascii")));
+  console.log("message", MLS.parseMessage(message));
 
   // B processes the echo of the message
   ({ group: group_B, processed_message: { content } } = MLS.processMessage(group_B, message));

@@ -107,6 +107,428 @@ let js_of_processed_message { group_id; epoch; sender; authenticated_data1; cont
   val content = js_of_processed_message_content content
 end
 
+let js_of_protocol_version_nt v =
+  let open MLS_NetworkTypes in
+  match v with
+  | PV_mls_reserved -> Js.string "reserved"
+  | PV_mls10 -> Js.string "mls10"
+  | PV_unknown n -> Js.string ("unknown " ^ string_of_int (Z.to_int n))
+
+let js_of_cipher_suite_nt c =
+  let open MLS_NetworkTypes in
+  match c with
+  | CS_reserved -> Js.string "RESERVED"
+  | CS_mls_128_dhkemx25519_aes128gcm_sha256_ed25519 -> Js.string "MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519"
+  | CS_mls_128_dhkemp256_aes128gcm_sha256_p256 -> Js.string "MLS_128_DHKEMP256_AES128GCM_SHA256_P256"
+  | CS_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519 -> Js.string "MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519"
+  | CS_mls_256_dhkemx448_aes256gcm_sha512_ed448 -> Js.string "MLS_256_DHKEMX448_AES256GCM_SHA512_ED448"
+  | CS_mls_256_dhkemp521_aes256gcm_sha512_p521 -> Js.string "MLS_256_DHKEMP521_AES256GCM_SHA512_P521"
+  | CS_mls_256_dhkemx448_chacha20poly1305_sha512_ed448 -> Js.string "MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448"
+  | CS_mls_256_dhkemp384_aes256gcm_sha384_p384 -> Js.string "MLS_256_DHKEMP384_AES256GCM_SHA384_P384"
+  | CS_unknown n -> Js.string ("UNKNOWN " ^ string_of_int (Z.to_int n))
+
+let js_of_hpke_ciphertext_nt c =
+  let open MLS_TreeKEM_NetworkTypes in
+  object%js
+    val kem_output_ = c.kem_output
+    val ciphertext = c.ciphertext
+  end
+
+let js_of_content_type_nt c =
+  let open MLS_TreeDEM_NetworkTypes in
+  match c with
+  | CT_application -> Js.string "application"
+  | CT_proposal -> Js.string "proposal"
+  | CT_commit -> Js.string "commit"
+
+let js_of_extension_type_nt ext_type =
+  let open MLS_NetworkTypes in
+  match ext_type with
+  | ET_reserved -> Js.string "reserved"
+  | ET_application_id -> Js.string "application_id"
+  | ET_ratchet_tree -> Js.string "ratchet_tree"
+  | ET_required_capabilities -> Js.string "required_capabilities"
+  | ET_external_pub -> Js.string "external_pub"
+  | ET_external_senders -> Js.string "external_senders"
+  | ET_unknown n -> Js.string ("unknown " ^ (string_of_int (Z.to_int n)))
+
+let js_of_extension_nt ext =
+  let open MLS_NetworkTypes in
+  object%js
+    val extension_type_ = js_of_extension_type_nt ext.extension_type
+    val extension_data_ = uint8array_of_bytes ext.extension_data
+  end
+
+let js_of_credential_type_nt ct =
+  let open MLS_NetworkTypes in
+  match ct with
+  | CT_reserved -> Js.string "reserved"
+  | CT_basic -> Js.string "basic"
+  | CT_x509 -> Js.string "x509"
+  | CT_unknown n -> Js.string ("reserved " ^ string_of_int (Z.to_int n))
+
+let js_of_credential_nt cred =
+  let open MLS_NetworkTypes in
+  match cred with
+  | C_basic identity ->
+    Obj.magic object%js
+      val credential_type_ = Js.string "basic"
+      val identity = uint8array_of_bytes identity
+    end
+  | C_x509 chain ->
+    Obj.magic object%js
+      val credential_type_ = Js.string "x509"
+      val certificates = Js.array (Array.of_list (List.map uint8array_of_bytes chain))
+    end
+
+let js_of_proposal_type_nt pt =
+  let open MLS_NetworkTypes in
+  match pt with
+  | PT_reserved -> Js.string "reserved"
+  | PT_add -> Js.string "add"
+  | PT_update -> Js.string "update"
+  | PT_remove -> Js.string "remove"
+  | PT_psk -> Js.string "psk"
+  | PT_reinit -> Js.string "reinit"
+  | PT_external_init -> Js.string "external_init"
+  | PT_group_context_extensions -> Js.string "group_context_extensions"
+  | PT_unknown n -> Js.string ("unknown " ^ string_of_int (Z.to_int n))
+
+let js_of_capabilities_nt capabilities =
+  let open MLS_TreeSync_NetworkTypes in
+  object%js
+    val versions = Js.array (Array.of_list (List.map js_of_protocol_version_nt capabilities.versions))
+    val cipher_suites_ = Js.array (Array.of_list (List.map js_of_cipher_suite_nt capabilities.ciphersuites))
+    val extensions = Js.array (Array.of_list (List.map js_of_extension_type_nt capabilities.extensions))
+    val proposals = Js.array (Array.of_list (List.map js_of_proposal_type_nt capabilities.proposals))
+    val credentials = Js.array (Array.of_list (List.map js_of_credential_type_nt capabilities.credentials))
+  end
+
+let js_of_lifetime_nt lifetime =
+  let open MLS_TreeSync_NetworkTypes in
+  object%js
+    val not_before_ = lifetime.not_before
+    val not_after_ = lifetime.not_after
+  end
+
+let js_of_leaf_node_nt ln =
+  let open MLS_TreeSync_NetworkTypes in
+  (* Big copy-paste, can we do better? *)
+  match ln.data.source with
+  | LNS_key_package ->
+    Obj.magic object%js
+      val encryption_key_ = uint8array_of_bytes (Obj.magic ln.data.content)
+      val signature_key_ = uint8array_of_bytes ln.data.signature_key
+      val credential = js_of_credential_nt ln.data.credential
+      val capabilities = js_of_capabilities_nt ln.data.capabilities
+      val leaf_node_source_ = Js.string "key_package"
+      val lifetime = js_of_lifetime_nt (Obj.magic ln.data.lifetime)
+      val extensions = Js.array (Array.of_list (List.map js_of_extension_nt ln.data.extensions1))
+      val signature = uint8array_of_bytes ln.signature
+    end
+  | LNS_update ->
+    Obj.magic object%js
+      val encryption_key_ = uint8array_of_bytes (Obj.magic ln.data.content)
+      val signature_key_ = uint8array_of_bytes ln.data.signature_key
+      val credential = js_of_credential_nt ln.data.credential
+      val capabilities = js_of_capabilities_nt ln.data.capabilities
+      val leaf_node_source_ = Js.string "update"
+      val extensions = Js.array (Array.of_list (List.map js_of_extension_nt ln.data.extensions1))
+      val signature = uint8array_of_bytes ln.signature
+    end
+  | LNS_commit ->
+    Obj.magic object%js
+      val encryption_key_ = uint8array_of_bytes (Obj.magic ln.data.content)
+      val signature_key_ = uint8array_of_bytes ln.data.signature_key
+      val credential = js_of_credential_nt ln.data.credential
+      val capabilities = js_of_capabilities_nt ln.data.capabilities
+      val leaf_node_source_ = Js.string "commit"
+      val parent_hash_ = uint8array_of_bytes (Obj.magic ln.data.parent_hash)
+      val extensions = Js.array (Array.of_list (List.map js_of_extension_nt ln.data.extensions1))
+      val signature = uint8array_of_bytes ln.signature
+    end
+
+let js_of_key_package_nt kp =
+  let open MLS_Bootstrap_NetworkTypes in
+  object%js
+    val version = js_of_protocol_version_nt kp.tbs.version
+    val cipher_suite_ = js_of_cipher_suite_nt kp.tbs.cipher_suite
+    val init_key_ = uint8array_of_bytes kp.tbs.init_key
+    val leaf_node_ = js_of_leaf_node_nt kp.tbs.leaf_node
+    val extensions = Js.array (Array.of_list (List.map js_of_extension_nt kp.tbs.extensions))
+    val signature = uint8array_of_bytes kp.signature
+  end
+
+let js_of_sender_nt sender =
+  let open MLS_TreeDEM_NetworkTypes in
+  match sender with
+  | S_member leaf_index ->
+    Obj.magic object%js
+      val sender_type_ = Js.string "member"
+      val leaf_index_ = Z.to_int leaf_index
+    end
+  | S_external sender_index ->
+    Obj.magic object%js
+      val sender_type_ = Js.string "external"
+      val sender_index_ = Z.to_int sender_index
+    end
+  | S_new_member_proposal ->
+    Obj.magic object%js
+      val sender_type_ = Js.string "new_member_proposal"
+    end
+  | S_new_member_commit ->
+    Obj.magic object%js
+      val sender_type_ = Js.string "new_member_commit"
+    end
+
+let js_of_pre_shared_key_id psk_id =
+  let open MLS_TreeKEM_NetworkTypes in
+  match psk_id with
+  | PSKI_external (psk_id, psk_nonce) ->
+    Obj.magic object%js
+      val psktype = Js.string "external"
+      val psk_id_ = uint8array_of_bytes psk_id
+      val psk_nonce_ = uint8array_of_bytes psk_nonce
+    end
+  | PSKI_resumption (usage, psk_group_id, psk_epoch, psk_nonce) ->
+    Obj.magic object%js
+      val usage =
+        match usage with
+        | RPSKU_application -> Js.string "application"
+        | RPSKU_reinit -> Js.string "reinit"
+        | RPSKU_branch -> Js.string "branch"
+      val psk_group_id_ = uint8array_of_bytes psk_group_id
+      val psk_epoch_ = Z.to_int psk_epoch
+      val psk_nonce_ = uint8array_of_bytes psk_nonce
+    end
+
+let js_of_proposal_nt proposal =
+  let open MLS_TreeDEM_NetworkTypes in
+  match proposal with
+  | P_add add ->
+    Obj.magic object%js
+      val proposal_type_ = Js.string "add"
+      val key_package_ = js_of_key_package_nt add.key_package
+    end
+  | P_update update ->
+    Obj.magic object%js
+      val proposal_type_ = Js.string "update"
+      val leaf_node_ = js_of_leaf_node_nt update.leaf_node
+    end
+  | P_remove remove ->
+    Obj.magic object%js
+      val proposal_type_ = Js.string "remove"
+      val removed = Z.to_int remove.removed
+    end
+  | P_psk psk ->
+    Obj.magic object%js
+      val proposal_type_ = Js.string "psk"
+      val psk = js_of_pre_shared_key_id psk.psk
+    end
+  | P_reinit reinit ->
+    Obj.magic object%js
+      val proposal_type_ = Js.string "reinit"
+      val group_id_ = uint8array_of_bytes reinit.group_id
+      val version = js_of_protocol_version_nt reinit.version
+      val cipher_suite_ = js_of_cipher_suite_nt reinit.cipher_suite
+      val extensions = Js.array (Array.of_list (List.map js_of_extension_nt reinit.extensions))
+    end
+  | P_external_init external_init ->
+    Obj.magic object%js
+      val proposal_type_ = Js.string "external_init"
+      val kem_output_ = uint8array_of_bytes external_init.kem_output
+    end
+  | P_group_context_extensions group_context_extensions ->
+    Obj.magic object%js
+      val proposal_type_ = Js.string "group_context_extensions"
+      val extensions = Js.array (Array.of_list (List.map js_of_extension_nt group_context_extensions.extensions1))
+    end
+
+let js_of_proposal_or_ref_nt por =
+  let open MLS_TreeDEM_NetworkTypes in
+  match por with
+  | POR_proposal proposal ->
+    Obj.magic object%js
+      val type_ = Js.string "proposal"
+      val proposal = js_of_proposal_nt proposal
+    end
+  | POR_reference ref ->
+    Obj.magic object%js
+      val type_ = Js.string "reference"
+      val reference = uint8array_of_bytes ref
+    end
+
+let js_of_update_path_node_nt node =
+  let open MLS_TreeKEM_NetworkTypes in
+  object%js
+    val encryption_key_ = uint8array_of_bytes node.encryption_key
+    val encrypted_path_secret_ = Js.array (Array.of_list (List.map js_of_hpke_ciphertext_nt node.encrypted_path_secret))
+  end
+
+let js_of_update_path_nt path =
+  let open MLS_TreeKEM_NetworkTypes in
+  object%js
+    val leaf_node_ = js_of_leaf_node_nt path.leaf_node
+    val nodes = Js.array (Array.of_list (List.map js_of_update_path_node_nt path.nodes))
+  end
+
+let js_of_commit_nt commit =
+  let open MLS_TreeDEM_NetworkTypes in
+  object%js
+    val proposals = Js.array (Array.of_list (List.map js_of_proposal_or_ref_nt commit.proposals))
+    val path = Js.Opt.option (Option.map js_of_update_path_nt commit.path)
+  end
+
+let js_of_framed_content_nt content =
+  let open MLS_TreeDEM_NetworkTypes in
+  match content.content1.content_type with
+  | CT_application ->
+    Obj.magic object%js
+      val group_id_ = uint8array_of_bytes content.group_id1
+      val epoch = Z.to_int content.epoch
+      val sender = js_of_sender_nt content.sender
+      val authenticated_data_ = uint8array_of_bytes content.authenticated_data
+      val content_type_ = Js.string "application"
+      val application_data_ = uint8array_of_bytes (Obj.magic content.content1.content)
+    end
+  | CT_proposal ->
+    Obj.magic object%js
+      val group_id_ = uint8array_of_bytes content.group_id1
+      val epoch = Z.to_int content.epoch
+      val sender = js_of_sender_nt content.sender
+      val authenticated_data_ = uint8array_of_bytes content.authenticated_data
+      val content_type_ = Js.string "proposal"
+      val proposal = js_of_proposal_nt (Obj.magic content.content1.content)
+    end
+  | CT_commit ->
+    Obj.magic object%js
+      val group_id_ = uint8array_of_bytes content.group_id1
+      val epoch = Z.to_int content.epoch
+      val sender = js_of_sender_nt content.sender
+      val authenticated_data_ = uint8array_of_bytes content.authenticated_data
+      val content_type_ = Js.string "commit"
+      val commit = js_of_commit_nt (Obj.magic content.content1.content)
+    end
+
+let js_of_framed_content_auth_data_nt auth ct =
+  let open MLS_TreeDEM_NetworkTypes in
+  match ct with
+  | CT_commit ->
+    Obj.magic object%js
+      val signature = uint8array_of_bytes auth.signature
+      val confirmation_tag_ = uint8array_of_bytes (Obj.magic auth.confirmation_tag)
+    end
+  | _ ->
+    Obj.magic object%js
+      val signature = uint8array_of_bytes auth.signature
+    end
+
+let js_of_public_message_nt msg =
+  let open MLS_TreeDEM_NetworkTypes in
+  match msg.content4.sender with
+  | S_member _ ->
+    Obj.magic object%js
+      val content = js_of_framed_content_nt msg.content4
+      val auth = js_of_framed_content_auth_data_nt msg.auth2 msg.content4.content1.content_type
+      val membership_tag_ = uint8array_of_bytes (Obj.magic msg.membership_tag)
+    end
+  | _ ->
+    Obj.magic object%js
+      val content = js_of_framed_content_nt msg.content4
+      val auth = js_of_framed_content_auth_data_nt msg.auth2
+    end
+
+let js_of_private_message_nt msg =
+  let open MLS_TreeDEM_NetworkTypes in
+  object%js
+    val group_id_ = uint8array_of_bytes msg.group_id2
+    val epoch = Z.to_int msg.epoch1
+    val content_type_ = js_of_content_type_nt msg.content_type1
+    val authenticated_data_ = uint8array_of_bytes msg.authenticated_data1
+    val encrypted_sender_data_ = uint8array_of_bytes msg.encrypted_sender_data
+    val ciphertext = uint8array_of_bytes msg.ciphertext
+  end
+
+let js_of_encrypted_group_secrets_nt egs =
+  let open MLS_Bootstrap_NetworkTypes in
+  object%js
+    val new_member_ = uint8array_of_bytes egs.new_member
+    val encrypted_group_secrets_ = js_of_hpke_ciphertext_nt egs.encrypted_group_secrets
+  end
+
+let js_of_welcome_nt w =
+  let open MLS_Bootstrap_NetworkTypes in
+  object%js
+    val cipher_suite_ = js_of_cipher_suite_nt w.cipher_suite1
+    val secrets = Js.array (Array.of_list (List.map js_of_encrypted_group_secrets_nt w.secrets))
+    val encrypted_group_info_ = uint8array_of_bytes w.encrypted_group_info
+  end
+
+let js_of_group_context_nt gc =
+  let open MLS_NetworkTypes in
+  object%js
+    val version = js_of_protocol_version_nt gc.version
+    val cipher_suite_ = js_of_cipher_suite_nt gc.cipher_suite
+    val group_id_ = uint8array_of_bytes gc.group_id
+    val epoch = gc.epoch
+    val tree_hash_ = uint8array_of_bytes gc.tree_hash
+    val confirmed_transcript_hash_ = uint8array_of_bytes gc.confirmed_transcript_hash
+    val extensions = Js.array (Array.of_list (List.map js_of_extension_nt gc.extensions))
+  end
+
+let js_of_group_info_nt gi =
+  let open MLS_Bootstrap_NetworkTypes in
+  object%js
+    val group_context_ = js_of_group_context_nt gi.tbs1.group_context
+    val extensions = Js.array (Array.of_list (List.map js_of_extension_nt gi.tbs1.extensions1))
+    val confirmation_tag_ = uint8array_of_bytes gi.tbs1.confirmation_tag
+    val signer = gi.tbs1.signer
+    val signature = uint8array_of_bytes gi.signature1
+  end
+
+let js_of_mls_message_nt msg =
+  let open MLS_TreeDEM_NetworkTypes in
+  match msg with
+  | M_mls10 msg10 -> (
+    match msg10 with
+    | M_public_message pub_msg -> (
+      Obj.magic object%js
+        val version = Js.string "mls10"
+        val wire_format_ = Js.string "mls_public_message"
+        val public_message_ = js_of_public_message_nt pub_msg
+      end
+    )
+    | M_private_message priv_msg -> (
+      Obj.magic object%js
+        val version = Js.string "mls10"
+        val wire_format_ = Js.string "mls_private_message"
+        val private_message_ = js_of_private_message_nt priv_msg
+      end
+    )
+    | M_welcome welcome -> (
+      Obj.magic object%js
+        val version = Js.string "mls10"
+        val wire_format_ = Js.string "mls_welcome"
+        val welcome = js_of_welcome_nt welcome
+      end
+    )
+    | M_group_info group_info -> (
+      Obj.magic object%js
+        val version = Js.string "mls10"
+        val wire_format_ = Js.string "mls_group_info"
+        val group_info_ = js_of_group_info_nt group_info
+      end
+    )
+    | M_key_package key_package -> (
+      Obj.magic object%js
+        val version = Js.string "mls10"
+        val wire_format_ = Js.string "mls_key_package"
+        val key_package_ = js_of_key_package_nt key_package
+      end
+    )
+  )
+  | _ -> Js.null
+
 let _ =
   Js.export_all (object%js
 
@@ -287,6 +709,10 @@ let _ =
     method createRemoveProposal group removed =
       let* p = call_c create_remove_proposal group removed in
       Js.some p
+
+    method parseMessage msg_bytes =
+      let* msg = call_c parse_message (bytes_of_uint8array msg_bytes) in
+      Js.some (js_of_mls_message_nt msg)
 
     (* INTERNAL SELF-TEST *)
 

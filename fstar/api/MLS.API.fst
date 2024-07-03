@@ -285,3 +285,6 @@ let create_remove_proposal #bytes #cb st removed_cred =
     else return ()
   ) in
   return (MLS.TreeDEM.NetworkTypes.P_remove { removed })
+
+let parse_message #bytes #cb msg_bytes =
+  from_option "parse_message: malformed message" (parse _ msg_bytes)

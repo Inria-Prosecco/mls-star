@@ -157,6 +157,7 @@ if (typeof module !== undefined)
     createCommit: MLS.createCommit,
     createAddProposal: MLS.createAddProposal,
     createRemoveProposal: MLS.createRemoveProposal,
+    parseMessage: MLS.parseMessage,
     // MLS Crypto API (the individual primitives)
     setCrypto: MLS.setCrypto,
     HaclCrypto,
