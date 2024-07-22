@@ -36,11 +36,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1716558569,
-        "narHash": "sha256-pZ/O9UslWHEJDRHfitlvkWy/Tu89iF/PlF4r0znpBjw=",
+        "lastModified": 1721649266,
+        "narHash": "sha256-M5zka8Ig1K/XY4SxeiOL0G4jQrrOM7YQtuA6A329Vg8=",
         "owner": "REPROSEC",
         "repo": "dolev-yao-star-extrinsic",
-        "rev": "32994e43100e7d915c48e4ed25e60acfb3a28339",
+        "rev": "ee46696a0c4ac9789c72d12e3234f429388303d3",
         "type": "github"
       },
       "original": {
@@ -72,11 +72,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1710871305,
-        "narHash": "sha256-4bqvrVXX8JVlvswJx9apdVJu/HvoAEVsYxGI8IZt14s=",
+        "lastModified": 1721552334,
+        "narHash": "sha256-FDfp4JquvP5e4obYdG7hpe5hwMOTxYwe4ArtNXKHvcY=",
         "owner": "FStarLang",
         "repo": "FStar",
-        "rev": "41299bb12072a7475c036262b9851f7cdc287387",
+        "rev": "e5cef6f266ece8a8b55ef4cd9b61cdf103520d38",
         "type": "github"
       },
       "original": {

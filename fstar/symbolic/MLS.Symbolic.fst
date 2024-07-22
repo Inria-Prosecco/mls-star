@@ -4,7 +4,7 @@ open Comparse
 open DY.Core
 open MLS.Crypto
 open MLS.NetworkTypes
-open DY.Lib.SplitPredicate
+open DY.Lib.SplitFunction
 open MLS.Result
 
 #push-options "--fuel 0 --ifuel 0"
@@ -124,34 +124,42 @@ type mls_sign_pred {|crypto_usages|} = {
   ;
 }
 
-let split_sign_pred_func {|crypto_usages|}: split_predicate_input_values = {
-  local_pred = mls_sign_pred;
-  global_pred = trace -> verif_key_t -> dy_bytes -> prop;
+let split_sign_pred_params {|crypto_usages|}: split_function_parameters = {
+  tag_set_t = valid_label;
+  tag_t = mls_ascii_string;
+  is_disjoint = unequal;
+  tag_belong_to = (fun tag tag_set ->
+    tag = get_mls_label tag_set
+  );
+  cant_belong_to_disjoint_sets = (fun tag tag_set_1 tag_set_2 ->
+    FStar.Classical.move_requires_2 get_mls_label_inj tag_set_1 tag_set_2
+  );
 
-  raw_data_t = (trace & verif_key_t & dy_bytes);
   tagged_data_t = (trace & verif_key_t & dy_bytes);
-
-  apply_local_pred = (fun pred (tr, vk, content) -> pred.pred tr vk content);
-  apply_global_pred = (fun pred (tr, vk, msg) -> pred tr vk msg);
-  mk_global_pred = (fun pred tr vk msg -> pred (tr, vk, msg));
-  apply_mk_global_pred = (fun _ _ -> ());
-
-  tag_t = valid_label;
-  encoded_tag_t = mls_ascii_string;
-
-  encode_tag = get_mls_label;
-  encode_tag_inj = get_mls_label_inj;
+  raw_data_t = (trace & verif_key_t & dy_bytes);
+  output_t = prop;
 
   decode_tagged_data = (fun (tr, key, data) -> (
     match parse (sign_content_nt dy_bytes) data with
     | Some ({label; content}) -> Some (label, (tr, key, content))
     | None -> None
   ));
+
+  local_fun_t = mls_sign_pred;
+  global_fun_t = trace -> verif_key_t -> dy_bytes -> prop;
+
+  default_global_fun = (fun tr vk content -> False);
+
+
+  apply_local_fun = (fun pred (tr, vk, content) -> pred.pred tr vk content);
+  apply_global_fun = (fun pred (tr, vk, msg) -> pred tr vk msg);
+  mk_global_fun = (fun pred tr vk msg -> pred (tr, vk, msg));
+  apply_mk_global_fun = (fun _ _ -> ());
 }
 
 val has_sign_pred: crypto_invariants -> (valid_label & mls_sign_pred) -> prop
 let has_sign_pred ci (lab, spred) =
-  has_local_pred split_sign_pred_func (sign_pred #ci) (lab, spred)
+  has_local_fun split_sign_pred_params (sign_pred #ci) (lab, spred)
 
 #push-options "--z3rlimit 25"
 val bytes_invariant_sign_with_label:
@@ -180,7 +188,7 @@ let bytes_invariant_sign_with_label #ci spred tr sk lab msg nonce =
   serialize_wf_lemma (sign_content_nt dy_bytes) (bytes_invariant tr) sign_content;
   serialize_wf_lemma (sign_content_nt dy_bytes) (is_knowable_by (get_label msg) tr) sign_content;
   let sign_content_bytes = serialize _ sign_content in
-  assert(split_sign_pred_func.decode_tagged_data (tr, (vk sk), sign_content_bytes) == Some (split_sign_pred_func.encode_tag lab, (tr, (vk sk), msg)))
+  assert(split_sign_pred_params.decode_tagged_data (tr, (vk sk), sign_content_bytes) == Some (get_mls_label lab, (tr, (vk sk), msg)))
 #pop-options
 
 val bytes_invariant_verify_with_label:
@@ -210,7 +218,7 @@ let bytes_invariant_verify_with_label #ci spred tr vk lab content signature =
   serialize_wf_lemma (sign_content_nt dy_bytes) (bytes_invariant tr) sign_content;
   let sign_content_bytes = serialize _ sign_content in
   if SigKey? (get_signkey_usage vk) then
-    assert(split_sign_pred_func.decode_tagged_data (tr, vk, sign_content_bytes) == Some (split_sign_pred_func.encode_tag lab, (tr, vk, content)))
+    assert(split_sign_pred_params.decode_tagged_data (tr, vk, sign_content_bytes) == Some (get_mls_label lab, (tr, vk, content)))
   else ()
 
 val mk_sign_pred:
@@ -219,7 +227,7 @@ val mk_sign_pred:
   trace -> verif_key_t -> dy_bytes ->
   prop
 let mk_sign_pred l tr key msg =
-  mk_global_pred split_sign_pred_func l tr key msg
+  mk_global_fun split_sign_pred_params l tr key msg
 
 #push-options "--ifuel 1"
 val mk_sign_pred_later:
@@ -234,18 +242,15 @@ val mk_sign_pred_later:
   )
   (ensures mk_sign_pred lspred tr2 vk msg)
 let mk_sign_pred_later lspred tr1 tr2 vk msg =
-  mk_global_pred_eq split_sign_pred_func lspred (tr1, vk, msg);
-  eliminate exists tag spred raw_data.
-    List.Tot.memP (tag, spred) lspred /\
-    split_sign_pred_func.apply_local_pred spred raw_data /\
-    split_sign_pred_func.decode_tagged_data (tr1, vk, msg) == Some (split_sign_pred_func.encode_tag tag, raw_data)
-  returns mk_sign_pred lspred tr2 vk msg
-  with _. (
-    let Some (_, (_, _, msg_sub)) = split_sign_pred_func.decode_tagged_data (tr1, vk, msg) in
-    spred.pred_later tr1 tr2 vk msg_sub;
-    mk_global_pred_eq split_sign_pred_func lspred (tr2, vk, msg);
-    assert(split_sign_pred_func.apply_local_pred spred (tr2, vk, msg_sub))
-  )
+  mk_global_fun_eq split_sign_pred_params lspred (tr1, vk, msg);
+  mk_global_fun_eq split_sign_pred_params lspred (tr2, vk, msg);
+
+  introduce forall lpred content. split_sign_pred_params.apply_local_fun lpred (tr1, vk, content) ==> split_sign_pred_params.apply_local_fun lpred (tr2, vk, content) with (
+    introduce _ ==> _ with _. lpred.pred_later tr1 tr2 vk content
+  );
+  match parse (sign_content_nt dy_bytes) msg with
+  | Some _ -> ()
+  | None -> ()
 #pop-options
 
 #push-options "--ifuel 1"
@@ -259,5 +264,6 @@ val mk_sign_pred_correct:
   (ensures for_allP (has_sign_pred ci) lspred)
 let mk_sign_pred_correct ci lspred =
   for_allP_eq (has_sign_pred ci) lspred;
-  FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (mk_global_pred_correct split_sign_pred_func lspred))
+  no_repeats_p_implies_for_all_pairsP_unequal (List.Tot.map fst lspred);
+  FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (mk_global_fun_correct split_sign_pred_params lspred))
 #pop-options
