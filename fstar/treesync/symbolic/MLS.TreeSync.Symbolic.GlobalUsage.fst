@@ -27,10 +27,12 @@ let all_sign_preds tkt = [
 val treesync_crypto_predicates: treekem_types dy_bytes -> crypto_predicates treesync_crypto_usages
 let treesync_crypto_predicates tkt = {
   default_crypto_predicates treesync_crypto_usages with
-  sign_pred = mk_sign_pred (all_sign_preds tkt);
-  sign_pred_later = (fun tr1 tr2 vk msg ->
-    mk_sign_pred_later (all_sign_preds tkt) tr1 tr2 vk msg
-  );
+  sign_pred = {
+    pred = mk_sign_pred (all_sign_preds tkt);
+    pred_later = (fun tr1 tr2 vk msg ->
+      mk_sign_pred_later (all_sign_preds tkt) tr1 tr2 vk msg
+    );
+  }
 }
 
 instance treesync_crypto_invariants (tkt:treekem_types dy_bytes): crypto_invariants = {
@@ -49,7 +51,7 @@ let all_state_predicates tkt = [
 
 val treesync_trace_invariants: tkt:treekem_types dy_bytes -> trace_invariants (treesync_crypto_invariants tkt)
 let treesync_trace_invariants tkt = {
-  state_pred = mk_state_predicate (treesync_crypto_invariants tkt) (all_state_predicates tkt);
+  state_pred = mk_state_pred (treesync_crypto_invariants tkt) (all_state_predicates tkt);
   event_pred = mk_event_pred [];
 }
 
@@ -78,7 +80,7 @@ let treesync_global_usage_has_leaf_node_tbs_invariant tkt =
 val all_state_predicates_has_all_state_predicates: tkt:treekem_types dy_bytes -> Lemma (norm [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP (has_local_bytes_state_predicate (treesync_protocol_invariants tkt)) (all_state_predicates tkt)))
 let all_state_predicates_has_all_state_predicates tkt =
   assert_norm(List.Tot.no_repeats_p (List.Tot.map fst (all_state_predicates tkt)));
-  mk_global_local_bytes_state_predicate_correct (treesync_protocol_invariants tkt) (all_state_predicates tkt);
+  mk_state_pred_correct (treesync_protocol_invariants tkt) (all_state_predicates tkt);
   norm_spec [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP (has_local_bytes_state_predicate (treesync_protocol_invariants tkt)) (all_state_predicates tkt))
 
 val treesync_protocol_invariants_has_as_cache_invariant: tkt:treekem_types dy_bytes -> Lemma

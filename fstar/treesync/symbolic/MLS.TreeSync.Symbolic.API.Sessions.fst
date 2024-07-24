@@ -222,7 +222,7 @@ instance parseable_serializeable_treesync_private_state: parseable_serializeable
 val treesync_private_state_pred: {|crypto_invariants|} -> local_state_predicate treesync_private_state
 let treesync_private_state_pred #ci = {
   pred = (fun tr prin state_id st ->
-    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key
+    is_signature_key (SigKey "MLS.LeafSignKey" empty) (principal_label prin) tr st.signature_key
   );
   pred_later = (fun tr1 tr2 prin state_id st -> ());
   pred_knowable = (fun tr prin state_id st -> ());
@@ -254,7 +254,7 @@ val new_private_treesync_state_proof:
   tr:trace ->
   Lemma
   (requires
-    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key /\
+    is_signature_key (SigKey "MLS.LeafSignKey" empty) (principal_label prin) tr st.signature_key /\
     trace_invariant tr /\
     has_treesync_private_state_invariant invs
   )
@@ -276,7 +276,7 @@ val set_private_treesync_state_proof:
   tr:trace ->
   Lemma
   (requires
-    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key /\
+    is_signature_key (SigKey "MLS.LeafSignKey" empty) (principal_label prin) tr st.signature_key /\
     trace_invariant tr /\
     has_treesync_private_state_invariant invs
   )
@@ -307,7 +307,7 @@ val get_private_treesync_state_proof:
       match opt_result with
       | None -> True
       | Some st ->
-        is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key
+        is_signature_key (SigKey "MLS.LeafSignKey" empty) (principal_label prin) tr st.signature_key
     )
   ))
 let get_private_treesync_state_proof #invs prin state_id tr = ()

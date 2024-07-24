@@ -46,7 +46,7 @@ let dy_asp #ci tr = {
   credential_ok = (fun (vk, cred) token ->
     token.time <= (DY.Core.Trace.Type.length tr) /\
     bytes_invariant (prefix tr token.time) vk /\
-    get_signkey_usage vk == SigKey "MLS.LeafSignKey" /\
+    get_signkey_usage vk == SigKey "MLS.LeafSignKey" empty /\
     get_signkey_label vk == principal_label token.who
   );
   valid_successor = (fun (vk_old, cred_old) (vk_new, cred_new) ->
@@ -657,7 +657,7 @@ val is_msg_external_path_to_path:
     is_well_formed _ (is_knowable_by label tr) t /\
     is_well_formed _ (is_knowable_by label tr) p /\
     is_knowable_by label tr group_id /\
-    bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" /\
+    bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" empty /\
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
     get_label sk == principal_label prin /\
     get_label nonce == principal_label prin /\
@@ -713,7 +713,7 @@ val is_msg_sign_leaf_node_data_key_package:
     Success? (sign_leaf_node_data_key_package ln_data sk nonce) /\
     leaf_node_has_event prin tr ({data = ln_data; group_id = (); leaf_index = ();}) /\
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_knowable_by label tr) ln_data /\
-    bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" /\
+    bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" empty /\
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
     get_label sk == principal_label prin /\
     get_label nonce == principal_label prin /\
@@ -743,7 +743,7 @@ val is_msg_sign_leaf_node_data_update:
     tree_has_event prin tr group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_knowable_by label tr) ln_data /\
     is_knowable_by label tr group_id /\
-    bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" /\
+    bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" empty /\
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
     get_label sk == principal_label prin /\
     get_label nonce == principal_label prin /\

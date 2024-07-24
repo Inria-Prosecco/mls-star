@@ -159,7 +159,7 @@ let split_sign_pred_params {|crypto_usages|}: split_function_parameters = {
 
 val has_sign_pred: crypto_invariants -> (valid_label & mls_sign_pred) -> prop
 let has_sign_pred ci (lab, spred) =
-  has_local_fun split_sign_pred_params (sign_pred #ci) (lab, spred)
+  has_local_fun split_sign_pred_params ((sign_pred #ci).pred) (lab, spred)
 
 #push-options "--z3rlimit 25"
 val bytes_invariant_sign_with_label:
@@ -258,7 +258,7 @@ val mk_sign_pred_correct:
   ci:crypto_invariants -> lspred:list (valid_label & mls_sign_pred) ->
   Lemma
   (requires
-    sign_pred == mk_sign_pred lspred /\
+    sign_pred.pred == mk_sign_pred lspred /\
     List.Tot.no_repeats_p (List.Tot.map fst lspred)
   )
   (ensures for_allP (has_sign_pred ci) lspred)

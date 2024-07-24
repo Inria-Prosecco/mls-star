@@ -43,7 +43,7 @@ let as_cache_pred #ci = {
     value.time <= DY.Core.Trace.Type.length tr /\
     is_publishable (prefix tr value.time) key.verification_key /\
     get_signkey_label key.verification_key == principal_label value.who /\
-    get_signkey_usage key.verification_key == SigKey value.usg /\
+    get_signkey_usage key.verification_key == SigKey value.usg empty /\
     is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable (prefix tr value.time)) key.credential
   );
   pred_later = (fun tr1 tr2 prin state_id key value -> ());

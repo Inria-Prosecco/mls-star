@@ -494,7 +494,7 @@ val create_signature_keypair:
   p:principal ->
   traceful (option (state_id & signature_public_key_nt dy_bytes))
 let create_signature_keypair p =
-  let* signature_key = mk_rand (SigKey "MLS.LeafSignKey") (principal_label p) 32 in
+  let* signature_key = mk_rand (SigKey "MLS.LeafSignKey" empty) (principal_label p) 32 in
   let verification_key = vk signature_key in
   guard (length (signature_key <: dy_bytes) < pow2 30);*?
   guard (length (verification_key <: dy_bytes) < pow2 30);*?
@@ -517,7 +517,7 @@ val create_signature_keypair_proof:
       match opt_res with
       | None -> True
       | Some (private_si, verification_key) ->
-        is_verification_key "MLS.LeafSignKey" (principal_label p) tr_out verification_key
+        is_verification_key (SigKey "MLS.LeafSignKey" empty) (principal_label p) tr_out verification_key
     )
   ))
 let create_signature_keypair_proof #invs p tr = ()
