@@ -21,6 +21,7 @@ open MLS.TreeSync.Proofs.ParentHashGuarantees
 open MLS.TreeSync.API.Types
 open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.Symbolic.Parsers
+open MLS.Crypto.Derived.Symbolic.SignWithLabel
 open MLS.Symbolic
 open MLS.Result
 
@@ -134,7 +135,7 @@ let leaf_node_label = "LeafNodeTBS"
 #push-options "--fuel 0 --z3rlimit 25"
 val leaf_node_sign_pred:
   {|crypto_usages|} -> treekem_types dy_bytes ->
-  mls_sign_pred
+  signwithlabel_crypto_pred
 let leaf_node_sign_pred #cu tkt = {
   pred = (fun tr vk ln_tbs_bytes ->
     match (parse (leaf_node_tbs_nt dy_bytes tkt) ln_tbs_bytes) with
@@ -169,14 +170,14 @@ let leaf_node_sign_pred #cu tkt = {
 }
 #pop-options
 
+val leaf_node_tbs_tag_and_invariant: {|crypto_usages|} -> treekem_types dy_bytes -> (valid_label & signwithlabel_crypto_pred)
+let leaf_node_tbs_tag_and_invariant #cu tkt = (leaf_node_label, leaf_node_sign_pred tkt)
+
 val has_leaf_node_tbs_invariant:
   treekem_types dy_bytes -> crypto_invariants ->
   prop
 let has_leaf_node_tbs_invariant tkt ci =
-  has_sign_pred ci (leaf_node_label, leaf_node_sign_pred tkt)
-
-val leaf_node_tbs_tag_and_invariant: {|crypto_usages|} -> treekem_types dy_bytes -> (valid_label & mls_sign_pred)
-let leaf_node_tbs_tag_and_invariant #cu tkt = (leaf_node_label, leaf_node_sign_pred tkt)
+  has_mls_signwithlabel_pred (leaf_node_tbs_tag_and_invariant tkt)
 
 (*** Proof of verification, for a tree ***)
 
