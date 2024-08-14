@@ -26,18 +26,18 @@ let all_signwithlabel_preds tkt = [
   leaf_node_tbs_tag_and_invariant tkt;
 ]
 
-val mls_sign_pred: treekem_types dy_bytes -> sign_crypto_predicate treesync_crypto_usages
+val mls_sign_pred: treekem_types dy_bytes -> sign_crypto_predicate
 let mls_sign_pred tkt =
   mk_mls_sign_pred (all_signwithlabel_preds tkt)
 
-val all_sign_preds: treekem_types dy_bytes -> list (string & sign_crypto_predicate treesync_crypto_usages)
+val all_sign_preds: treekem_types dy_bytes -> list (string & sign_crypto_predicate)
 let all_sign_preds tkt = [
   ("MLS.LeafSignKey", mls_sign_pred tkt)
 ]
 
-val treesync_crypto_predicates: treekem_types dy_bytes -> crypto_predicates treesync_crypto_usages
+val treesync_crypto_predicates: treekem_types dy_bytes -> crypto_predicates
 let treesync_crypto_predicates tkt = {
-  default_crypto_predicates treesync_crypto_usages with
+  default_crypto_predicates with
   sign_pred = mk_sign_predicate (all_sign_preds tkt);
 }
 
@@ -55,14 +55,13 @@ let all_state_predicates tkt = [
   treesync_private_state_tag_and_invariant;
 ]
 
-val treesync_trace_invariants: tkt:treekem_types dy_bytes -> trace_invariants (treesync_crypto_invariants tkt)
+val treesync_trace_invariants: tkt:treekem_types dy_bytes -> trace_invariants
 let treesync_trace_invariants tkt = {
-  state_pred = mk_state_pred (treesync_crypto_invariants tkt) (all_state_predicates tkt);
+  state_pred = mk_state_pred (all_state_predicates tkt);
   event_pred = mk_event_pred [];
 }
 
-val treesync_protocol_invariants: treekem_types dy_bytes -> protocol_invariants
-let treesync_protocol_invariants tkt = {
+instance treesync_protocol_invariants (tkt:treekem_types dy_bytes): protocol_invariants = {
   crypto_invs = treesync_crypto_invariants tkt;
   trace_invs = treesync_trace_invariants tkt;
 }
@@ -78,22 +77,22 @@ let all_signwithlabel_preds_has_all_signwithlabel_preds tkt =
 #pop-options
 
 #push-options "--ifuel 1 --fuel 1"
-val all_sign_preds_has_all_sign_preds: tkt:treekem_types dy_bytes -> Lemma (norm [delta_only [`%all_sign_preds; `%for_allP]; iota; zeta] (for_allP (has_sign_predicate (treesync_crypto_invariants tkt)) (all_sign_preds tkt)))
+val all_sign_preds_has_all_sign_preds: tkt:treekem_types dy_bytes -> Lemma (norm [delta_only [`%all_sign_preds; `%for_allP]; iota; zeta] (for_allP has_sign_predicate (all_sign_preds tkt)))
 let all_sign_preds_has_all_sign_preds tkt =
   assert_norm(List.Tot.no_repeats_p (List.Tot.map fst (all_sign_preds tkt)));
-  mk_sign_predicate_correct (treesync_crypto_invariants tkt) (all_sign_preds tkt);
-  norm_spec [delta_only [`%all_sign_preds; `%for_allP]; iota; zeta] (for_allP (has_sign_predicate (treesync_crypto_invariants tkt)) (all_sign_preds tkt))
+  mk_sign_predicate_correct (all_sign_preds tkt);
+  norm_spec [delta_only [`%all_sign_preds; `%for_allP]; iota; zeta] (for_allP has_sign_predicate (all_sign_preds tkt))
 #pop-options
 
-val all_state_predicates_has_all_state_predicates: tkt:treekem_types dy_bytes -> Lemma (norm [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP (has_local_bytes_state_predicate (treesync_protocol_invariants tkt)) (all_state_predicates tkt)))
+val all_state_predicates_has_all_state_predicates: tkt:treekem_types dy_bytes -> Lemma (norm [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP has_local_bytes_state_predicate (all_state_predicates tkt)))
 let all_state_predicates_has_all_state_predicates tkt =
   assert_norm(List.Tot.no_repeats_p (List.Tot.map fst (all_state_predicates tkt)));
-  mk_state_pred_correct (treesync_protocol_invariants tkt) (all_state_predicates tkt);
-  norm_spec [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP (has_local_bytes_state_predicate (treesync_protocol_invariants tkt)) (all_state_predicates tkt))
+  mk_state_pred_correct (all_state_predicates tkt);
+  norm_spec [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP has_local_bytes_state_predicate (all_state_predicates tkt))
 
 val treesync_protocol_invariants_has_has_treesync_invariants: tkt:treekem_types dy_bytes -> Lemma
-  (has_treesync_invariants tkt (treesync_protocol_invariants tkt))
-  [SMTPat (has_treesync_invariants tkt (treesync_protocol_invariants tkt))]
+  (has_treesync_invariants tkt)
+  [SMTPat (has_treesync_invariants tkt)]
 let treesync_protocol_invariants_has_has_treesync_invariants tkt =
   all_signwithlabel_preds_has_all_signwithlabel_preds tkt;
   all_sign_preds_has_all_sign_preds tkt;

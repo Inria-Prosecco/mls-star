@@ -52,9 +52,9 @@ let as_cache_pred #ci = {
   );
 }
 
-val has_as_cache_invariant: protocol_invariants -> prop
-let has_as_cache_invariant invs =
-  has_map_session_invariant invs as_cache_pred
+val has_as_cache_invariant: {|protocol_invariants|} -> prop
+let has_as_cache_invariant #invs =
+  has_map_session_invariant as_cache_pred
 
 val as_cache_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
 let as_cache_tag_and_invariant #ci = (as_cache_types.tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant as_cache_pred))

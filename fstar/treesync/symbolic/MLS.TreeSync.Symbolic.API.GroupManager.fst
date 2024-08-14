@@ -40,9 +40,9 @@ let group_manager_pred #ci = {
   pred_knowable = (fun tr prin state_id key value -> ());
 }
 
-val has_group_manager_invariant: protocol_invariants -> prop
-let has_group_manager_invariant invs =
-  has_map_session_invariant invs group_manager_pred
+val has_group_manager_invariant: {|protocol_invariants|} -> prop
+let has_group_manager_invariant #invs =
+  has_map_session_invariant group_manager_pred
 
 val group_manager_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
 let group_manager_tag_and_invariant #ci = (group_manager_types.tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant group_manager_pred))

@@ -59,7 +59,7 @@ let split_signwithlabel_crypto_pred_params {|crypto_usages|}: split_function_par
 }
 
 #push-options "--ifuel 1"
-val has_signwithlabel_pred: {|cusgs:crypto_usages|} -> sign_crypto_predicate cusgs -> (valid_label & signwithlabel_crypto_pred) -> prop
+val has_signwithlabel_pred: {|crypto_usages|} -> sign_crypto_predicate -> (valid_label & signwithlabel_crypto_pred) -> prop
 let has_signwithlabel_pred #cusgs sign_pred (lab, local_pred) =
   forall tr vk msg.
     {:pattern sign_pred.pred tr vk msg}
@@ -74,8 +74,8 @@ let has_signwithlabel_pred #cusgs sign_pred (lab, local_pred) =
 #pop-options
 
 val intro_has_signwithlabel_pred:
-  {|cusgs:crypto_usages|} ->
-  sign_pred:sign_crypto_predicate cusgs -> tagged_local_pred:(valid_label & signwithlabel_crypto_pred) ->
+  {|crypto_usages|} ->
+  sign_pred:sign_crypto_predicate -> tagged_local_pred:(valid_label & signwithlabel_crypto_pred) ->
   Lemma
   (requires has_local_fun split_signwithlabel_crypto_pred_params sign_pred.pred tagged_local_pred)
   (ensures has_signwithlabel_pred sign_pred tagged_local_pred)
@@ -123,9 +123,9 @@ let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 vk msg =
 #pop-options
 
 val mk_mls_sign_pred:
-  {|cusgs:crypto_usages|} ->
+  {|crypto_usages|} ->
   list (valid_label & signwithlabel_crypto_pred) ->
-  sign_crypto_predicate cusgs
+  sign_crypto_predicate
 let mk_mls_sign_pred #cusgs tagged_local_preds = {
   pred = mk_global_mls_sign_pred tagged_local_preds;
   pred_later = mk_global_mls_sign_pred_later tagged_local_preds;
@@ -133,15 +133,15 @@ let mk_mls_sign_pred #cusgs tagged_local_preds = {
 
 #push-options "--ifuel 1"
 val mk_mls_sign_pred_correct:
-  {|cusgs:crypto_usages|} ->
-  sign_pred:sign_crypto_predicate cusgs -> tagged_local_preds:list (valid_label & signwithlabel_crypto_pred) ->
+  {|crypto_usages|} ->
+  sign_pred:sign_crypto_predicate -> tagged_local_preds:list (valid_label & signwithlabel_crypto_pred) ->
   Lemma
   (requires
     sign_pred == mk_mls_sign_pred tagged_local_preds /\
     List.Tot.no_repeats_p (List.Tot.map fst tagged_local_preds)
   )
   (ensures for_allP (has_signwithlabel_pred sign_pred) tagged_local_preds)
-let mk_mls_sign_pred_correct sign_pred tagged_local_preds =
+let mk_mls_sign_pred_correct #cusgs sign_pred tagged_local_preds =
   for_allP_eq (has_signwithlabel_pred sign_pred) tagged_local_preds;
   no_repeats_p_implies_for_all_pairsP_unequal (List.Tot.map fst tagged_local_preds);
   FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (mk_global_fun_correct split_signwithlabel_crypto_pred_params tagged_local_preds));
@@ -153,7 +153,7 @@ let mk_mls_sign_pred_correct sign_pred tagged_local_preds =
 val has_mls_signwithlabel_pred: {|crypto_invariants|} -> (valid_label & signwithlabel_crypto_pred) -> prop
 let has_mls_signwithlabel_pred #cinvs tagged_local_pred =
   exists mls_sign_pred.
-    has_sign_predicate cinvs ("MLS.LeafSignKey", mls_sign_pred) /\
+    has_sign_predicate ("MLS.LeafSignKey", mls_sign_pred) /\
     has_signwithlabel_pred mls_sign_pred tagged_local_pred
 
 (*** Lemmas on SignWithLabel and VerifyWithLabel ***)

@@ -174,9 +174,9 @@ val leaf_node_tbs_tag_and_invariant: {|crypto_usages|} -> treekem_types dy_bytes
 let leaf_node_tbs_tag_and_invariant #cu tkt = (leaf_node_label, leaf_node_sign_pred tkt)
 
 val has_leaf_node_tbs_invariant:
-  treekem_types dy_bytes -> crypto_invariants ->
+  treekem_types dy_bytes -> {|crypto_invariants|} ->
   prop
-let has_leaf_node_tbs_invariant tkt ci =
+let has_leaf_node_tbs_invariant tkt #ci =
   has_mls_signwithlabel_pred (leaf_node_tbs_tag_and_invariant tkt)
 
 (*** Proof of verification, for a tree ***)
@@ -305,14 +305,14 @@ let rec is_well_formed_leaf_at #bytes #bl #tkt #l #i pre t li =
 /// we conclude.
 #push-options "--z3rlimit 100"
 val parent_hash_implies_event:
-  {|ci:crypto_invariants|} ->
+  {|crypto_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   #l:nat -> #i:tree_index l ->
   tr:trace ->
   group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp tr).token_t l i ->
   Lemma
   (requires
-    has_leaf_node_tbs_invariant tkt ci /\
+    has_leaf_node_tbs_invariant tkt /\
     unmerged_leaves_ok t /\
     parent_hash_invariant t /\
     valid_leaves_invariant group_id t /\
@@ -440,13 +440,13 @@ let rec all_credentials_ok_subtree #bytes #cb #tkt #asp #lp #ld #ip #id d p ast_
 /// - or the principal at the leaf is corrupt.
 /// This theorem is mostly a wrapper around `parent_hash_implies_event`.
 val state_implies_event:
-  {|ci:crypto_invariants|} ->
+  {|crypto_invariants|} ->
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> #l:nat -> #i:tree_index l ->
   tr:trace ->
   st:treesync_state dy_bytes tkt dy_as_token group_id -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp tr).token_t l i ->
   Lemma
   (requires
-    has_leaf_node_tbs_invariant tkt ci /\
+    has_leaf_node_tbs_invariant tkt /\
     node_has_parent_hash t /\
     is_well_formed _ (bytes_invariant tr) (st.tree <: treesync _ _ _ _) /\
     bytes_invariant tr group_id /\
@@ -642,7 +642,7 @@ let external_path_has_event #tkt #l #li prin tr t p group_id =
 /// With label= SecrecyLabels.private_label, we get a version with `is_valid`.
 #push-options "--z3rlimit 100"
 val is_msg_external_path_to_path:
-  {|ci:crypto_invariants|} ->
+  {|crypto_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   #l:nat -> #li:leaf_index l 0 ->
   prin:principal -> label:label -> tr:trace ->
@@ -662,7 +662,7 @@ val is_msg_external_path_to_path:
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
     get_label sk == principal_label prin /\
     get_label nonce == principal_label prin /\
-    has_leaf_node_tbs_invariant tkt ci
+    has_leaf_node_tbs_invariant tkt
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (external_path_to_path t p group_id sk nonce)))
 let is_msg_external_path_to_path #ci #tkt #l #li prin label tr t p group_id sk nonce =
@@ -703,7 +703,7 @@ let is_msg_external_path_to_path #ci #tkt #l #li prin label tr t p group_id sk n
 
 #push-options "--z3rlimit 25"
 val is_msg_sign_leaf_node_data_key_package:
-  {|ci:crypto_invariants|} ->
+  {|crypto_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   prin:principal -> label:label -> tr:trace ->
   ln_data:leaf_node_data_nt dy_bytes tkt ->
@@ -718,7 +718,7 @@ val is_msg_sign_leaf_node_data_key_package:
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
     get_label sk == principal_label prin /\
     get_label nonce == principal_label prin /\
-    has_leaf_node_tbs_invariant tkt ci
+    has_leaf_node_tbs_invariant tkt
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (sign_leaf_node_data_key_package ln_data sk nonce)))
 let is_msg_sign_leaf_node_data_key_package #ci #tkt prin label tr ln_data sk nonce =
@@ -731,7 +731,7 @@ let is_msg_sign_leaf_node_data_key_package #ci #tkt prin label tr ln_data sk non
 
 #push-options "--z3rlimit 25"
 val is_msg_sign_leaf_node_data_update:
-  {|ci:crypto_invariants|} ->
+  {|crypto_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   prin:principal -> label:label -> tr:trace ->
   ln_data:leaf_node_data_nt dy_bytes tkt -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
@@ -748,7 +748,7 @@ val is_msg_sign_leaf_node_data_update:
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
     get_label sk == principal_label prin /\
     get_label nonce == principal_label prin /\
-    has_leaf_node_tbs_invariant tkt ci
+    has_leaf_node_tbs_invariant tkt
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce)))
 let is_msg_sign_leaf_node_data_update #ci #tkt prin label tr ln_data group_id leaf_index sk nonce =
