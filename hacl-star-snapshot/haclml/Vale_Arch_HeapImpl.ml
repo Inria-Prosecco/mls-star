@@ -133,7 +133,7 @@ let (empty_vale_heap_layout_inner : vale_heap -> vale_heap_layout_inner) =
       vl_heaplet_sets = (fun uu___ -> FStar_Set.empty ());
       vl_old_heap = h;
       vl_buffers = (FStar_Seq_Base.empty ());
-      vl_mod_loc = LowStar_Monotonic_Buffer.loc_none
+      vl_mod_loc = ();
     }
 let (empty_heaplet : vale_heap -> Prims.nat -> vale_heap) =
   fun h ->
