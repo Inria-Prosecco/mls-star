@@ -139,7 +139,11 @@ val sorted_append:
 let rec sorted_append #a lt cutoff l1 l2 =
   match l1 with
   | [] -> ()
-  | [h] -> ()
+  | [h] -> (
+    match l2 with
+    | [] -> ()
+    | _::_ -> ()
+  )
   | h::t -> sorted_append lt cutoff t l2
 #pop-options
 
