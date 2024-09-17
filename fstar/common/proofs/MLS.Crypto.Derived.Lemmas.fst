@@ -2,7 +2,7 @@ module MLS.Crypto.Derived.Lemmas
 
 open MLS.Crypto.Derived
 
-#push-options "--fuel 0 --ifuel 0"
+#set-options "--fuel 0 --ifuel 0"
 
 val get_mls_label_inj:
   l1:valid_label -> l2:valid_label ->

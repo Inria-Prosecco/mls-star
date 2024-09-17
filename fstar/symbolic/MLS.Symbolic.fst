@@ -5,7 +5,7 @@ open DY.Core
 open MLS.Crypto
 open MLS.Result
 
-#push-options "--fuel 0 --ifuel 0"
+#set-options "--fuel 0 --ifuel 0"
 
 (*** Typeclass instantiation on DY* ***)
 

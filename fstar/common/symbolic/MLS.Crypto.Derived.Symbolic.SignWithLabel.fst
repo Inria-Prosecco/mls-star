@@ -9,7 +9,7 @@ open MLS.Crypto.Derived.Lemmas
 open MLS.Symbolic
 open MLS.Result
 
-#push-options "--fuel 0 --ifuel 0"
+#set-options "--fuel 0 --ifuel 0"
 
 (*** Split predicate for SignWithLabel ***)
 

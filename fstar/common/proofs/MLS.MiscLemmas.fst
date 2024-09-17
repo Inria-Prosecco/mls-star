@@ -3,7 +3,7 @@ module MLS.MiscLemmas
 open FStar.List.Tot
 open Comparse
 
-#push-options "--fuel 1 --ifuel 1"
+#set-options "--fuel 1 --ifuel 1"
 
 val list_for_all_eq:
   #a:eqtype ->

@@ -2,7 +2,7 @@ module Lib.IntTypes
 
 open FStar.Math.Lemmas
 
-#push-options "--max_fuel 0 --max_ifuel 1 --z3rlimit 200"
+#set-options "--max_fuel 0 --max_ifuel 1 --z3rlimit 200"
 
 let pow2_2 _   = assert_norm (pow2 2 = 4)
 let pow2_3 _   = assert_norm (pow2 3 = 8)
@@ -768,6 +768,7 @@ let shift_left #t #l a b =
   | S32  -> Int32.shift_left a b
   | S64  -> Int64.shift_left a b
   | S128 -> Int128.shift_left a b
+#pop-options
 
 #push-options "--max_fuel 1"
 
@@ -1009,6 +1010,7 @@ let conditional_subtract #t #l t' a =
   let a3 = a `sub` pow2_bits in
   logand_lemma mask pow2_bits;
   a3 `add` (mask `logand` pow2_bits)
+#pop-options
 
 #push-options "--z3rlimit 500 --quake 1/25"
 let cast_mod #t #l t' l' a =
@@ -1023,8 +1025,6 @@ let cast_mod #t #l t' l' a =
     let b = conditional_subtract t' (a `logand` mod_mask m) in
     cast t' l' b
     end
-#pop-options
-
 #pop-options
 
 [@(strict_on_arguments [0])]
