@@ -40,9 +40,9 @@ instance as_cache_types: map_types as_cache_key as_cache_value = {
 val as_cache_pred: {|crypto_invariants|} -> map_predicate as_cache_key as_cache_value #_
 let as_cache_pred #ci = {
   pred = (fun tr prin state_id key value ->
-    value.time <= DY.Core.Trace.Type.length tr /\
+    value.time <= DY.Core.Trace.Base.length tr /\
     is_publishable (prefix tr value.time) key.verification_key /\
-    get_signkey_label key.verification_key == principal_label value.who /\
+    get_signkey_label tr key.verification_key == principal_label value.who /\
     get_signkey_usage key.verification_key == SigKey value.usg empty /\
     is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable (prefix tr value.time)) key.credential
   );

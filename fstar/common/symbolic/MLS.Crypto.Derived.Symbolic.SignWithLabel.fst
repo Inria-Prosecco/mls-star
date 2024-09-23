@@ -20,7 +20,12 @@ type signwithlabel_crypto_pred {|crypto_usages|} = {
     tr1:trace -> tr2:trace ->
     vk:bytes{SigKey? (get_signkey_usage vk)} -> msg:bytes ->
     Lemma
-    (requires pred tr1 vk msg /\ tr1 <$ tr2)
+    (requires
+      pred tr1 vk msg /\
+      bytes_well_formed tr1 vk /\
+      bytes_well_formed tr1 msg /\
+      tr1 <$ tr2
+    )
     (ensures pred tr2 vk msg)
   ;
 }
@@ -111,14 +116,19 @@ val mk_global_mls_sign_pred_later:
   Lemma
   (requires
     mk_global_mls_sign_pred tagged_local_preds tr1 vk msg /\
+    bytes_well_formed tr1 vk /\
+    bytes_well_formed tr1 msg /\
     tr1 <$ tr2
   )
   (ensures mk_global_mls_sign_pred tagged_local_preds tr2 vk msg)
 let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 vk msg =
   mk_global_fun_eq split_signwithlabel_crypto_pred_params tagged_local_preds (tr1, vk, msg);
   mk_global_fun_eq split_signwithlabel_crypto_pred_params tagged_local_preds (tr2, vk, msg);
-  introduce forall lpred content. split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, vk, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr2, vk, content) with (
-    introduce _ ==> _ with _. lpred.pred_later tr1 tr2 vk content
+  FStar.Classical.move_requires (parse_wf_lemma (sign_content_nt bytes) (bytes_well_formed tr1)) msg;
+  introduce forall lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, vk, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr2, vk, content) with (
+    introduce _ ==> _ with _. (
+      lpred.pred_later tr1 tr2 vk content
+    )
   )
 #pop-options
 
@@ -168,13 +178,13 @@ val bytes_invariant_sign_with_label:
     bytes_invariant tr msg /\
     get_usage sk == SigKey "MLS.LeafSignKey" empty /\
     SigNonce? (get_usage nonce) /\
-    (get_label sk) `can_flow tr` (get_label nonce) /\
+    (get_label tr sk) `can_flow tr` (get_label tr nonce) /\
     spred.pred tr (vk sk) msg /\
     has_mls_signwithlabel_pred (lab, spred)
   )
   (ensures
     bytes_invariant tr (Success?.v (sign_with_label sk lab msg nonce)) /\
-    (get_label (Success?.v (sign_with_label sk lab msg nonce))) `can_flow tr` (get_label msg)
+    (get_label tr (Success?.v (sign_with_label sk lab msg nonce))) `can_flow tr` (get_label tr msg)
   )
 let bytes_invariant_sign_with_label #ci spred tr sk lab msg nonce =
   let sign_content: sign_content_nt bytes = {
@@ -182,7 +192,7 @@ let bytes_invariant_sign_with_label #ci spred tr sk lab msg nonce =
     content = msg;
   } in
   serialize_wf_lemma (sign_content_nt bytes) (bytes_invariant tr) sign_content;
-  serialize_wf_lemma (sign_content_nt bytes) (is_knowable_by (get_label msg) tr) sign_content
+  serialize_wf_lemma (sign_content_nt bytes) (is_knowable_by (get_label tr msg) tr) sign_content
 
 val bytes_invariant_verify_with_label:
   {|ci:crypto_invariants|} -> spred:signwithlabel_crypto_pred -> tr:trace ->
@@ -200,7 +210,7 @@ val bytes_invariant_verify_with_label:
       get_signkey_usage vk == SigKey "MLS.LeafSignKey" empty ==>
       spred.pred tr vk content
     ) \/ (
-      (get_signkey_label vk) `can_flow tr` public 
+      (get_signkey_label tr vk) `can_flow tr` public
     )
   )
 let bytes_invariant_verify_with_label #ci spred tr vk lab content signature =

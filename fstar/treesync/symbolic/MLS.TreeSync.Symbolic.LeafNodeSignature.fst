@@ -45,10 +45,10 @@ val dy_asp: {|crypto_invariants|} -> trace -> as_parameters dy_bytes
 let dy_asp #ci tr = {
   token_t = dy_as_token;
   credential_ok = (fun (vk, cred) token ->
-    token.time <= (DY.Core.Trace.Type.length tr) /\
+    token.time <= (DY.Core.Trace.Base.length tr) /\
     bytes_invariant (prefix tr token.time) vk /\
     get_signkey_usage vk == SigKey "MLS.LeafSignKey" empty /\
-    get_signkey_label vk == principal_label token.who
+    get_signkey_label tr vk == principal_label token.who
   );
   valid_successor = (fun (vk_old, cred_old) (vk_new, cred_new) ->
     True
@@ -146,7 +146,7 @@ let leaf_node_sign_pred #cu tkt = {
         match ln_tbs.data.source with
         | LNS_commit -> (
           exists (tl: tree_list dy_bytes tkt).
-            get_signkey_label vk == principal_label prin /\
+            get_signkey_label tr vk == principal_label prin /\
             tree_list_starts_with_tbs tl ln_tbs_bytes /\
             tree_list_is_parent_hash_linkedP tl /\
             tree_list_ends_at_root tl /\
@@ -154,7 +154,7 @@ let leaf_node_sign_pred #cu tkt = {
             tree_list_has_event prin tr ln_tbs.group_id tl
         )
         | LNS_update -> (
-          get_signkey_label vk == principal_label prin /\
+          get_signkey_label tr vk == principal_label prin /\
           tree_has_event prin tr ln_tbs.group_id (|0, ln_tbs.leaf_index, TLeaf (Some ({data = ln_tbs.data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|)
         )
         | LNS_key_package -> True
@@ -162,6 +162,7 @@ let leaf_node_sign_pred #cu tkt = {
     )
   );
   pred_later = (fun tr1 tr2 vk ln_tbs_bytes ->
+    parse_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (bytes_well_formed tr1) ln_tbs_bytes;
     introduce forall prin tr group_id (tl:tree_list dy_bytes tkt). tree_list_has_event prin tr group_id tl <==> (forall x. List.Tot.memP x tl ==> tree_has_event prin tr group_id x)
     with (
       for_allP_eq (tree_has_event prin tr group_id) tl
@@ -357,7 +358,7 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
       parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
 
       eliminate exists (prin:principal) (leaf_tl: tree_list dy_bytes tkt).
-        get_signkey_label ln.data.signature_key == principal_label prin /\
+        get_signkey_label tr ln.data.signature_key == principal_label prin /\
         tree_list_starts_with_tbs leaf_tl ln_tbs_bytes /\
         tree_list_is_parent_hash_linkedP leaf_tl /\
         tree_list_ends_at_root leaf_tl /\
@@ -660,8 +661,8 @@ val is_msg_external_path_to_path:
     is_knowable_by label tr group_id /\
     bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" empty /\
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
-    get_label sk == principal_label prin /\
-    get_label nonce == principal_label prin /\
+    get_label tr sk == principal_label prin /\
+    get_label tr nonce == principal_label prin /\
     has_leaf_node_tbs_invariant tkt
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (external_path_to_path t p group_id sk nonce)))
@@ -686,7 +687,7 @@ let is_msg_external_path_to_path #ci #tkt #l #li prin label tr t p group_id sk n
   let tl = path_to_tree_list t unsigned_path in
   path_to_tree_list_lemma t unsigned_path;
   introduce exists prin tl.
-    get_signkey_label (vk sk) == principal_label prin /\
+    get_signkey_label tr (vk sk) == principal_label prin /\
     tree_list_starts_with_tbs tl new_ln_tbs_bytes /\
     tree_list_is_parent_hash_linkedP tl /\
     tree_list_ends_at_root tl /\
@@ -716,8 +717,8 @@ val is_msg_sign_leaf_node_data_key_package:
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_knowable_by label tr) ln_data /\
     bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" empty /\
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
-    get_label sk == principal_label prin /\
-    get_label nonce == principal_label prin /\
+    get_label tr sk == principal_label prin /\
+    get_label tr nonce == principal_label prin /\
     has_leaf_node_tbs_invariant tkt
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (sign_leaf_node_data_key_package ln_data sk nonce)))
@@ -746,8 +747,8 @@ val is_msg_sign_leaf_node_data_update:
     is_knowable_by label tr group_id /\
     bytes_invariant tr sk /\ get_usage sk == SigKey "MLS.LeafSignKey" empty /\
     bytes_invariant tr nonce /\ get_usage nonce == SigNonce /\
-    get_label sk == principal_label prin /\
-    get_label nonce == principal_label prin /\
+    get_label tr sk == principal_label prin /\
+    get_label tr nonce == principal_label prin /\
     has_leaf_node_tbs_invariant tkt
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce)))

@@ -432,7 +432,7 @@ let commit #tkt #l #li p as_session gmgr_session group_id path =
   set_public_treesync_state p group_session.si_public new_st;*
   return (Some ())
 
-#push-options "--z3rlimit 50"
+#push-options "--z3rlimit 100"
 val commit_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
