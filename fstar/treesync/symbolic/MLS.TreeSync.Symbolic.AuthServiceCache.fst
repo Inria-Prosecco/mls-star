@@ -23,8 +23,6 @@ type as_cache_key = {
 [@@ with_bytes dy_bytes]
 type as_cache_value = {
   who: principal;
-  [@@@ with_parser #bytes ps_string]
-  usg: string;
   time: nat;
 }
 
@@ -43,7 +41,7 @@ let as_cache_pred #ci = {
     value.time <= DY.Core.Trace.Base.length tr /\
     is_publishable (prefix tr value.time) key.verification_key /\
     get_signkey_label tr key.verification_key == principal_label value.who /\
-    get_signkey_usage key.verification_key == SigKey value.usg empty /\
+    get_signkey_usage key.verification_key == mk_mls_sigkey_usage value.who /\
     is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable (prefix tr value.time)) key.credential
   );
   pred_later = (fun tr1 tr2 prin state_id key value -> ());

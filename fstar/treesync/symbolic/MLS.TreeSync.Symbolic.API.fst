@@ -58,8 +58,7 @@ val get_token_for:
   inp:as_input dy_bytes ->
   traceful (option dy_as_token)
 let get_token_for p as_session (verification_key, credential) =
-  let*? { who; usg; time; } = find_verified_credential p as_session ({ verification_key; credential; }) in
-  guard (usg = "MLS.LeafSignKey");*?
+  let*? { who; time; } = find_verified_credential p as_session ({ verification_key; credential; }) in
   return (Some ({ who; time; } <: dy_as_token))
 
 val get_token_for_proof:
@@ -494,7 +493,7 @@ val create_signature_keypair:
   p:principal ->
   traceful (option (state_id & signature_public_key_nt dy_bytes))
 let create_signature_keypair p =
-  let* signature_key = mk_rand (SigKey "MLS.LeafSignKey" empty) (principal_label p) 32 in
+  let* signature_key = mk_rand (mk_mls_sigkey_usage p) (principal_label p) 32 in
   let verification_key = vk signature_key in
   guard (length (signature_key <: dy_bytes) < pow2 30);*?
   guard (length (verification_key <: dy_bytes) < pow2 30);*?
@@ -517,7 +516,7 @@ val create_signature_keypair_proof:
       match opt_res with
       | None -> True
       | Some (private_si, verification_key) ->
-        is_verification_key (SigKey "MLS.LeafSignKey" empty) (principal_label p) tr_out verification_key
+        is_verification_key (mk_mls_sigkey_usage p) (principal_label p) tr_out verification_key
     )
   ))
 let create_signature_keypair_proof #invs p tr = ()

@@ -97,3 +97,16 @@ let dy_bytes_has_crypto acs = {
 #pop-options
 
 instance crypto_dy_bytes: crypto_bytes dy_bytes = dy_bytes_has_crypto AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+
+type mls_principal = {
+  who: principal;
+}
+
+%splice [ps_mls_principal] (gen_parser (`mls_principal))
+
+instance parseable_serializeable_bytes_mls_principal: parseable_serializeable bytes mls_principal =
+  mk_parseable_serializeable ps_mls_principal
+
+val mk_mls_sigkey_usage: principal -> usage
+let mk_mls_sigkey_usage who =
+  SigKey "MLS.LeafSignKey" (serialize _ { who })

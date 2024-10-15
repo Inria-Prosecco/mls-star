@@ -171,14 +171,15 @@ let has_mls_signwithlabel_pred #cinvs tagged_local_pred =
 (*** Lemmas on SignWithLabel and VerifyWithLabel ***)
 
 val bytes_invariant_sign_with_label:
-  {|crypto_invariants|} -> spred:signwithlabel_crypto_pred -> tr:trace ->
+  {|crypto_invariants|} -> spred:signwithlabel_crypto_pred ->
+  tr:trace -> prin:principal ->
   sk:bytes -> lab:valid_label -> msg:mls_bytes bytes -> nonce:sign_nonce bytes ->
   Lemma
   (requires
     bytes_invariant tr sk /\
     bytes_invariant tr nonce /\
     bytes_invariant tr msg /\
-    get_usage sk == SigKey "MLS.LeafSignKey" empty /\
+    get_usage sk == mk_mls_sigkey_usage prin /\
     SigNonce? (get_usage nonce) /\
     (get_label tr sk) `can_flow tr` (get_label tr nonce) /\
     spred.pred tr (vk sk) msg /\
@@ -188,7 +189,7 @@ val bytes_invariant_sign_with_label:
     bytes_invariant tr (Success?.v (sign_with_label sk lab msg nonce)) /\
     (get_label tr (Success?.v (sign_with_label sk lab msg nonce))) `can_flow tr` (get_label tr msg)
   )
-let bytes_invariant_sign_with_label #ci spred tr sk lab msg nonce =
+let bytes_invariant_sign_with_label #ci spred tr prin sk lab msg nonce =
   let sign_content: sign_content_nt bytes = {
     label = get_mls_label lab;
     content = msg;
@@ -197,7 +198,8 @@ let bytes_invariant_sign_with_label #ci spred tr sk lab msg nonce =
   serialize_wf_lemma (sign_content_nt bytes) (is_knowable_by (get_label tr msg) tr) sign_content
 
 val bytes_invariant_verify_with_label:
-  {|ci:crypto_invariants|} -> spred:signwithlabel_crypto_pred -> tr:trace ->
+  {|ci:crypto_invariants|} -> spred:signwithlabel_crypto_pred ->
+  tr:trace -> prin:principal ->
   vk:bytes -> lab:valid_label -> content:mls_bytes bytes -> signature:bytes ->
   Lemma
   (requires
@@ -209,13 +211,13 @@ val bytes_invariant_verify_with_label:
   )
   (ensures
     (
-      get_signkey_usage vk == SigKey "MLS.LeafSignKey" empty ==>
+      get_signkey_usage vk == mk_mls_sigkey_usage prin ==>
       spred.pred tr vk content
     ) \/ (
       (get_signkey_label tr vk) `can_flow tr` public
     )
   )
-let bytes_invariant_verify_with_label #ci spred tr vk lab content signature =
+let bytes_invariant_verify_with_label #ci spred tr prin vk lab content signature =
   let sign_content: sign_content_nt bytes = {
     label = get_mls_label lab;
     content = content;
