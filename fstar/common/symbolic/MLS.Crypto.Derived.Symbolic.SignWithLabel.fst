@@ -51,7 +51,7 @@ let split_signwithlabel_crypto_pred_params {|crypto_usages|}: split_function_par
     | None -> None
   ));
 
-  local_fun_t = signwithlabel_crypto_pred;
+  local_fun_t = mk_dependent_type signwithlabel_crypto_pred;
   global_fun_t = trace -> vk:bytes{SigKey? (get_signkey_usage vk)} -> bytes -> prop;
 
   default_global_fun = (fun tr vk content -> False);
@@ -80,11 +80,11 @@ let has_signwithlabel_pred #cusgs sign_pred (lab, local_pred) =
 
 val intro_has_signwithlabel_pred:
   {|crypto_usages|} ->
-  sign_pred:sign_crypto_predicate -> tagged_local_pred:(valid_label & signwithlabel_crypto_pred) ->
+  sign_pred:sign_crypto_predicate -> tag:valid_label -> local_pred:signwithlabel_crypto_pred ->
   Lemma
-  (requires has_local_fun split_signwithlabel_crypto_pred_params sign_pred.pred tagged_local_pred)
-  (ensures has_signwithlabel_pred sign_pred tagged_local_pred)
-let intro_has_signwithlabel_pred #cusgs sign_pred (tag, local_pred) =
+  (requires has_local_fun split_signwithlabel_crypto_pred_params sign_pred.pred (|tag, local_pred|))
+  (ensures has_signwithlabel_pred sign_pred (tag, local_pred))
+let intro_has_signwithlabel_pred #cusgs sign_pred tag local_pred =
   introduce
     forall tr vk msg.
       match parse (sign_content_nt bytes) msg with
@@ -105,7 +105,7 @@ val mk_global_mls_sign_pred:
   trace -> vk:bytes{SigKey? (get_signkey_usage vk)} -> bytes ->
   prop
 let mk_global_mls_sign_pred tagged_local_preds vk msg =
-  mk_global_fun split_signwithlabel_crypto_pred_params tagged_local_preds vk msg
+  mk_global_fun split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) vk msg
 
 #push-options "--ifuel 2"
 val mk_global_mls_sign_pred_later:
@@ -122,10 +122,10 @@ val mk_global_mls_sign_pred_later:
   )
   (ensures mk_global_mls_sign_pred tagged_local_preds tr2 vk msg)
 let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 vk msg =
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params tagged_local_preds (tr1, vk, msg);
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params tagged_local_preds (tr2, vk, msg);
+  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr1, vk, msg);
+  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr2, vk, msg);
   FStar.Classical.move_requires (parse_wf_lemma (sign_content_nt bytes) (bytes_well_formed tr1)) msg;
-  introduce forall lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, vk, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr2, vk, content) with (
+  introduce forall tag_set lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, vk, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun #tag_set lpred (tr2, vk, content) with (
     introduce _ ==> _ with _. (
       lpred.pred_later tr1 tr2 vk content
     )
@@ -152,10 +152,12 @@ val mk_mls_sign_pred_correct:
   )
   (ensures for_allP (has_signwithlabel_pred sign_pred) tagged_local_preds)
 let mk_mls_sign_pred_correct #cusgs sign_pred tagged_local_preds =
-  for_allP_eq (has_signwithlabel_pred sign_pred) tagged_local_preds;
   no_repeats_p_implies_for_all_pairsP_unequal (List.Tot.map fst tagged_local_preds);
-  FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (mk_global_fun_correct split_signwithlabel_crypto_pred_params tagged_local_preds));
-  FStar.Classical.forall_intro (FStar.Classical.move_requires (intro_has_signwithlabel_pred sign_pred))
+  map_dfst_mk_dependent_tagged_local_funs tagged_local_preds;
+  for_allP_eq (has_signwithlabel_pred sign_pred) tagged_local_preds;
+  FStar.Classical.forall_intro_2 (memP_mk_dependent_tagged_local_funs tagged_local_preds);
+  FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (mk_global_fun_correct split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds)));
+  FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (intro_has_signwithlabel_pred sign_pred))
 #pop-options
 
 (*** ***)
