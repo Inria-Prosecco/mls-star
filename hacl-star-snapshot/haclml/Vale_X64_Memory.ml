@@ -113,7 +113,7 @@ type ('t, 'h, 'b) buffer_readable = Obj.t
 type ('t, 'b) buffer_writeable = unit
 
 type loc = LowStar_Monotonic_Buffer.loc
-let (loc_none : loc) = LowStar_Monotonic_Buffer.loc_none
+let (loc_none : loc) = ()
 
 
 type ('s1, 's2) loc_disjoint =

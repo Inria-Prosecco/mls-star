@@ -3,11 +3,9 @@ module MLS.Symbolic
 open Comparse
 open DY.Core
 open MLS.Crypto
-open MLS.NetworkTypes
-open DY.Lib.SplitPredicate
 open MLS.Result
 
-#push-options "--fuel 0 --ifuel 0"
+#set-options "--fuel 0 --ifuel 0"
 
 (*** Typeclass instantiation on DY* ***)
 
@@ -100,164 +98,15 @@ let dy_bytes_has_crypto acs = {
 
 instance crypto_dy_bytes: crypto_bytes dy_bytes = dy_bytes_has_crypto AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
 
-(*** Labeled signature predicate ***)
-
-val get_mls_label_inj:
-  l1:valid_label -> l2:valid_label ->
-  Lemma
-  (requires get_mls_label l1 == get_mls_label l2)
-  (ensures l1 == l2)
-let get_mls_label_inj l1 l2 =
-  String.concat_injective "MLS 1.0 " "MLS 1.0 " l1 l2
-
-type verif_key_t {|crypto_usages|} = vk:dy_bytes{SigKey? (get_signkey_usage vk)}
-
-noeq
-type mls_sign_pred {|crypto_usages|} = {
-  pred: trace -> key:verif_key_t -> msg:dy_bytes -> prop;
-  pred_later:
-    tr1:trace -> tr2:trace ->
-    key:verif_key_t -> msg:dy_bytes ->
-    Lemma
-    (requires pred tr1 key msg /\ tr1 <$ tr2)
-    (ensures pred tr2 key msg)
-  ;
+type mls_principal = {
+  who: principal;
 }
 
-let split_sign_pred_func {|crypto_usages|}: split_predicate_input_values = {
-  local_pred = mls_sign_pred;
-  global_pred = trace -> verif_key_t -> dy_bytes -> prop;
+%splice [ps_mls_principal] (gen_parser (`mls_principal))
 
-  raw_data_t = (trace & verif_key_t & dy_bytes);
-  tagged_data_t = (trace & verif_key_t & dy_bytes);
+instance parseable_serializeable_bytes_mls_principal: parseable_serializeable bytes mls_principal =
+  mk_parseable_serializeable ps_mls_principal
 
-  apply_local_pred = (fun pred (tr, vk, content) -> pred.pred tr vk content);
-  apply_global_pred = (fun pred (tr, vk, msg) -> pred tr vk msg);
-  mk_global_pred = (fun pred tr vk msg -> pred (tr, vk, msg));
-  apply_mk_global_pred = (fun _ _ -> ());
-
-  tag_t = valid_label;
-  encoded_tag_t = mls_ascii_string;
-
-  encode_tag = get_mls_label;
-  encode_tag_inj = get_mls_label_inj;
-
-  decode_tagged_data = (fun (tr, key, data) -> (
-    match parse (sign_content_nt dy_bytes) data with
-    | Some ({label; content}) -> Some (label, (tr, key, content))
-    | None -> None
-  ));
-}
-
-val has_sign_pred: crypto_invariants -> (valid_label & mls_sign_pred) -> prop
-let has_sign_pred ci (lab, spred) =
-  has_local_pred split_sign_pred_func (sign_pred #ci) (lab, spred)
-
-#push-options "--z3rlimit 25"
-val bytes_invariant_sign_with_label:
-  {|ci:crypto_invariants|} -> spred:mls_sign_pred -> tr:trace ->
-  sk:dy_bytes -> lab:valid_label -> msg:mls_bytes dy_bytes -> nonce:sign_nonce dy_bytes ->
-  Lemma
-  (requires
-    bytes_invariant tr sk /\
-    bytes_invariant tr nonce /\
-    bytes_invariant tr msg /\
-    SigKey? (get_usage sk) /\
-    SigNonce? (get_usage nonce) /\
-    (get_label sk) `can_flow tr` (get_label nonce) /\
-    has_sign_pred ci (lab, spred) /\
-    spred.pred tr (vk sk) msg
-  )
-  (ensures
-    bytes_invariant tr (Success?.v (sign_with_label sk lab msg nonce)) /\
-    (get_label (Success?.v (sign_with_label sk lab msg nonce))) `can_flow tr` (get_label msg)
-  )
-let bytes_invariant_sign_with_label #ci spred tr sk lab msg nonce =
-  let sign_content: sign_content_nt dy_bytes = {
-    label = get_mls_label lab;
-    content = msg;
-  } in
-  serialize_wf_lemma (sign_content_nt dy_bytes) (bytes_invariant tr) sign_content;
-  serialize_wf_lemma (sign_content_nt dy_bytes) (is_knowable_by (get_label msg) tr) sign_content;
-  let sign_content_bytes = serialize _ sign_content in
-  assert(split_sign_pred_func.decode_tagged_data (tr, (vk sk), sign_content_bytes) == Some (split_sign_pred_func.encode_tag lab, (tr, (vk sk), msg)))
-#pop-options
-
-val bytes_invariant_verify_with_label:
-  {|ci:crypto_invariants|} -> spred:mls_sign_pred -> tr:trace ->
-  vk:dy_bytes -> lab:valid_label -> content:mls_bytes dy_bytes -> signature:dy_bytes ->
-  Lemma
-  (requires
-    has_sign_pred ci (lab, spred) /\
-    bytes_invariant tr vk /\
-    bytes_invariant tr content /\
-    bytes_invariant tr signature /\
-    verify_with_label vk lab content signature
-  )
-  (ensures
-    (
-      SigKey? (get_signkey_usage vk) ==>
-      spred.pred tr vk content
-    ) \/ (
-      (get_signkey_label vk) `can_flow tr` public 
-    )
-  )
-let bytes_invariant_verify_with_label #ci spred tr vk lab content signature =
-  let sign_content: sign_content_nt dy_bytes = {
-    label = get_mls_label lab;
-    content = content;
-  } in
-  serialize_wf_lemma (sign_content_nt dy_bytes) (bytes_invariant tr) sign_content;
-  let sign_content_bytes = serialize _ sign_content in
-  if SigKey? (get_signkey_usage vk) then
-    assert(split_sign_pred_func.decode_tagged_data (tr, vk, sign_content_bytes) == Some (split_sign_pred_func.encode_tag lab, (tr, vk, content)))
-  else ()
-
-val mk_sign_pred:
-  {|crypto_usages|} ->
-  list (valid_label & mls_sign_pred) ->
-  trace -> verif_key_t -> dy_bytes ->
-  prop
-let mk_sign_pred l tr key msg =
-  mk_global_pred split_sign_pred_func l tr key msg
-
-#push-options "--ifuel 1"
-val mk_sign_pred_later:
-  {|crypto_usages|} ->
-  lspred:list (valid_label & mls_sign_pred) ->
-  tr1:trace -> tr2:trace ->
-  vk:verif_key_t -> msg:dy_bytes ->
-  Lemma
-  (requires
-    mk_sign_pred lspred tr1 vk msg /\
-    tr1 <$ tr2
-  )
-  (ensures mk_sign_pred lspred tr2 vk msg)
-let mk_sign_pred_later lspred tr1 tr2 vk msg =
-  mk_global_pred_eq split_sign_pred_func lspred (tr1, vk, msg);
-  eliminate exists tag spred raw_data.
-    List.Tot.memP (tag, spred) lspred /\
-    split_sign_pred_func.apply_local_pred spred raw_data /\
-    split_sign_pred_func.decode_tagged_data (tr1, vk, msg) == Some (split_sign_pred_func.encode_tag tag, raw_data)
-  returns mk_sign_pred lspred tr2 vk msg
-  with _. (
-    let Some (_, (_, _, msg_sub)) = split_sign_pred_func.decode_tagged_data (tr1, vk, msg) in
-    spred.pred_later tr1 tr2 vk msg_sub;
-    mk_global_pred_eq split_sign_pred_func lspred (tr2, vk, msg);
-    assert(split_sign_pred_func.apply_local_pred spred (tr2, vk, msg_sub))
-  )
-#pop-options
-
-#push-options "--ifuel 1"
-val mk_sign_pred_correct:
-  ci:crypto_invariants -> lspred:list (valid_label & mls_sign_pred) ->
-  Lemma
-  (requires
-    sign_pred == mk_sign_pred lspred /\
-    List.Tot.no_repeats_p (List.Tot.map fst lspred)
-  )
-  (ensures for_allP (has_sign_pred ci) lspred)
-let mk_sign_pred_correct ci lspred =
-  for_allP_eq (has_sign_pred ci) lspred;
-  FStar.Classical.forall_intro_2 (FStar.Classical.move_requires_2 (mk_global_pred_correct split_sign_pred_func lspred))
-#pop-options
+val mk_mls_sigkey_usage: principal -> usage
+let mk_mls_sigkey_usage who =
+  SigKey "MLS.LeafSignKey" (serialize _ { who })

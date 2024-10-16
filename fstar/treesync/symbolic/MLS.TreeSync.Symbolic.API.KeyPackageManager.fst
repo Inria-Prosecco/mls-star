@@ -35,9 +35,9 @@ let key_package_manager_pred #ci tkt = {
   );
 }
 
-val has_key_package_manager_invariant: treekem_types dy_bytes -> protocol_invariants -> prop
-let has_key_package_manager_invariant tkt invs =
-  has_map_session_invariant invs (key_package_manager_pred tkt)
+val has_key_package_manager_invariant: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
+let has_key_package_manager_invariant tkt #invs =
+  has_map_session_invariant (key_package_manager_pred tkt)
 
 val key_package_manager_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> string & local_bytes_state_predicate
 let key_package_manager_tag_and_invariant #ci tkt = ((key_package_manager_types tkt).tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant (key_package_manager_pred tkt)))

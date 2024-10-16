@@ -23,8 +23,6 @@ type as_cache_key = {
 [@@ with_bytes dy_bytes]
 type as_cache_value = {
   who: principal;
-  [@@@ with_parser #bytes ps_string]
-  usg: string;
   time: nat;
 }
 
@@ -40,10 +38,10 @@ instance as_cache_types: map_types as_cache_key as_cache_value = {
 val as_cache_pred: {|crypto_invariants|} -> map_predicate as_cache_key as_cache_value #_
 let as_cache_pred #ci = {
   pred = (fun tr prin state_id key value ->
-    value.time <= DY.Core.Trace.Type.length tr /\
+    value.time <= DY.Core.Trace.Base.length tr /\
     is_publishable (prefix tr value.time) key.verification_key /\
-    get_signkey_label key.verification_key == principal_label value.who /\
-    get_signkey_usage key.verification_key == SigKey value.usg /\
+    get_signkey_label tr key.verification_key == principal_label value.who /\
+    get_signkey_usage key.verification_key == mk_mls_sigkey_usage value.who /\
     is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable (prefix tr value.time)) key.credential
   );
   pred_later = (fun tr1 tr2 prin state_id key value -> ());
@@ -52,9 +50,9 @@ let as_cache_pred #ci = {
   );
 }
 
-val has_as_cache_invariant: protocol_invariants -> prop
-let has_as_cache_invariant invs =
-  has_map_session_invariant invs as_cache_pred
+val has_as_cache_invariant: {|protocol_invariants|} -> prop
+let has_as_cache_invariant #invs =
+  has_map_session_invariant as_cache_pred
 
 val as_cache_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
 let as_cache_tag_and_invariant #ci = (as_cache_types.tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant as_cache_pred))

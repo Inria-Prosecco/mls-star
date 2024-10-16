@@ -14,7 +14,7 @@ open MLS.TreeSync.Invariants.ValidLeaves.Proofs
 open MLS.TreeSync.Refined.Types
 open MLS.Result
 
-#push-options "--fuel 0 --ifuel 0"
+#set-options "--fuel 0 --ifuel 0"
 
 val tree_create:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->

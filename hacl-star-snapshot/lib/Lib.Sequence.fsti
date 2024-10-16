@@ -463,6 +463,7 @@ val lemma_map_blocks:
 
 
 (* Computes the block of the i-th element of (map_blocks blocksize input f g) *)
+#push-options "--z3rlimit 100 --split_queries always"
 let get_block
   (#a:Type)
   (#len:nat)
@@ -476,6 +477,7 @@ let get_block
   let j: block len blocksize = i / blocksize in
   let b: lseq a blocksize = Seq.slice inp (j * blocksize) ((j + 1) * blocksize) in
   f j b
+#pop-options
 
 
 (* Computes the last block of (map_blocks blocksize input f g) *)

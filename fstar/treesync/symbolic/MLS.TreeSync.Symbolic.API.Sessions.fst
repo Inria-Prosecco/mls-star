@@ -89,9 +89,9 @@ let treesync_public_state_pred #ci tkt = {
 instance local_state_bare_treesync_state (tkt:treekem_types dy_bytes): local_state (bare_treesync_state tkt) =
   mk_local_state_instance "MLS.TreeSync.PublicState"
 
-val has_treesync_public_state_invariant: treekem_types dy_bytes -> protocol_invariants -> prop
-let has_treesync_public_state_invariant tkt invs =
-  has_local_state_predicate invs (treesync_public_state_pred tkt)
+val has_treesync_public_state_invariant: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
+let has_treesync_public_state_invariant tkt #invs =
+  has_local_state_predicate (treesync_public_state_pred tkt)
 
 val treesync_public_state_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> string & local_bytes_state_predicate
 let treesync_public_state_tag_and_invariant #ci tkt = ((local_state_bare_treesync_state tkt).tag, local_state_predicate_to_local_bytes_state_predicate (treesync_public_state_pred tkt))
@@ -120,7 +120,7 @@ let new_public_treesync_state #tkt #group_id prin st =
   return state_id
 
 val new_public_treesync_state_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> 
   prin:principal ->
   st:treesync_state dy_bytes tkt dy_as_token group_id ->
@@ -131,7 +131,7 @@ val new_public_treesync_state_proof:
     is_well_formed _ (is_publishable tr) (st.tree <: treesync _ _ _ _) /\
     treesync_state_valid (dy_asp tr) st /\
     trace_invariant tr /\
-    has_treesync_public_state_invariant tkt invs
+    has_treesync_public_state_invariant tkt
   )
   (ensures (
     let (_, tr_out) = new_public_treesync_state prin st tr in
@@ -148,7 +148,7 @@ let set_public_treesync_state #tkt #group_id prin state_id st =
   set_state prin state_id (treesync_state_to_bare_treesync_state st)
 
 val set_public_treesync_state_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
   prin:principal -> state_id:state_id ->
   st:treesync_state dy_bytes tkt dy_as_token group_id ->
@@ -159,7 +159,7 @@ val set_public_treesync_state_proof:
     is_well_formed _ (is_publishable tr) (st.tree <: treesync _ _ _ _) /\
     treesync_state_valid (dy_asp tr) st /\
     trace_invariant tr /\
-    has_treesync_public_state_invariant tkt invs
+    has_treesync_public_state_invariant tkt
   )
   (ensures (
     let ((), tr_out) = set_public_treesync_state prin state_id st tr in
@@ -184,14 +184,14 @@ let get_public_treesync_state #tkt prin state_id =
   } <: treesync_state dy_bytes tkt dy_as_token bare_st.group_id)|))
 
 val get_public_treesync_state_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   prin:principal -> state_id:state_id ->
   tr:trace ->
   Lemma
   (requires
     trace_invariant tr /\
-    has_treesync_public_state_invariant tkt invs
+    has_treesync_public_state_invariant tkt
   )
   (ensures (
     let (opt_result, tr_out) = get_public_treesync_state prin state_id tr in
@@ -222,7 +222,7 @@ instance parseable_serializeable_treesync_private_state: parseable_serializeable
 val treesync_private_state_pred: {|crypto_invariants|} -> local_state_predicate treesync_private_state
 let treesync_private_state_pred #ci = {
   pred = (fun tr prin state_id st ->
-    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key
+    is_signature_key (mk_mls_sigkey_usage prin) (principal_label prin) tr st.signature_key
   );
   pred_later = (fun tr1 tr2 prin state_id st -> ());
   pred_knowable = (fun tr prin state_id st -> ());
@@ -231,9 +231,9 @@ let treesync_private_state_pred #ci = {
 instance local_state_treesync_private_state: local_state treesync_private_state =
   mk_local_state_instance "MLS.TreeSync.PrivateState"
 
-val has_treesync_private_state_invariant: protocol_invariants -> prop
-let has_treesync_private_state_invariant invs =
-  has_local_state_predicate invs treesync_private_state_pred
+val has_treesync_private_state_invariant: {|protocol_invariants|} -> prop
+let has_treesync_private_state_invariant #invs =
+  has_local_state_predicate treesync_private_state_pred
 
 val treesync_private_state_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
 let treesync_private_state_tag_and_invariant #ci = (local_state_treesync_private_state.tag, local_state_predicate_to_local_bytes_state_predicate treesync_private_state_pred)
@@ -249,14 +249,14 @@ let new_private_treesync_state prin st =
   return state_id
 
 val new_private_treesync_state_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   prin:principal -> st:treesync_private_state ->
   tr:trace ->
   Lemma
   (requires
-    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key /\
+    is_signature_key (mk_mls_sigkey_usage prin) (principal_label prin) tr st.signature_key /\
     trace_invariant tr /\
-    has_treesync_private_state_invariant invs
+    has_treesync_private_state_invariant
   )
   (ensures (
     let (_, tr_out) = new_private_treesync_state prin st tr in
@@ -271,14 +271,14 @@ let set_private_treesync_state prin state_id st =
   set_state prin state_id st
 
 val set_private_treesync_state_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   prin:principal -> state_id:state_id -> st:treesync_private_state ->
   tr:trace ->
   Lemma
   (requires
-    is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key /\
+    is_signature_key (mk_mls_sigkey_usage prin) (principal_label prin) tr st.signature_key /\
     trace_invariant tr /\
-    has_treesync_private_state_invariant invs
+    has_treesync_private_state_invariant
   )
   (ensures (
     let ((), tr_out) = set_private_treesync_state prin state_id st tr in
@@ -293,13 +293,13 @@ let get_private_treesync_state prin state_id =
   get_state prin state_id
 
 val get_private_treesync_state_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   prin:principal -> state_id:state_id ->
   tr:trace ->
   Lemma
   (requires
     trace_invariant tr /\
-    has_treesync_private_state_invariant invs
+    has_treesync_private_state_invariant
   )
   (ensures (
     let (opt_result, tr_out) = get_private_treesync_state prin state_id tr in
@@ -307,7 +307,7 @@ val get_private_treesync_state_proof:
       match opt_result with
       | None -> True
       | Some st ->
-        is_signature_key "MLS.LeafSignKey" (principal_label prin) tr st.signature_key
+        is_signature_key (mk_mls_sigkey_usage prin) (principal_label prin) tr st.signature_key
     )
   ))
 let get_private_treesync_state_proof #invs prin state_id tr = ()

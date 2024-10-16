@@ -98,7 +98,6 @@ let ratchet_next_state #bytes #cb st =
     generation = st.generation + 1;
   })
 
-//#push-options "--fuel 1 --ifuel 1"
 val ratchet_get_generation_key:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   st:ratchet_state bytes -> i:nat{st.generation <= i} ->

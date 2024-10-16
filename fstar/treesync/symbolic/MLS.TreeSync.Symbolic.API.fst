@@ -44,33 +44,32 @@ let extract_result #a x =
   | MLS.Result.ProtocolError s -> return None
 #pop-options
 
-val has_treesync_invariants: treekem_types dy_bytes -> protocol_invariants -> prop
-let has_treesync_invariants tkt invs =
-  has_treesync_public_state_invariant tkt invs /\
-  has_treesync_private_state_invariant invs /\
-  has_group_manager_invariant invs /\
-  has_key_package_manager_invariant tkt invs /\
-  has_as_cache_invariant invs /\
-  has_leaf_node_tbs_invariant tkt invs.crypto_invs
+val has_treesync_invariants: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
+let has_treesync_invariants tkt #invs =
+  has_treesync_public_state_invariant tkt /\
+  has_treesync_private_state_invariant /\
+  has_group_manager_invariant /\
+  has_key_package_manager_invariant tkt /\
+  has_as_cache_invariant /\
+  has_leaf_node_tbs_invariant tkt
 
 val get_token_for:
   p:principal -> as_session:state_id ->
   inp:as_input dy_bytes ->
   traceful (option dy_as_token)
 let get_token_for p as_session (verification_key, credential) =
-  let*? { who; usg; time; } = find_verified_credential p as_session ({ verification_key; credential; }) in
-  guard (usg = "MLS.LeafSignKey");*?
+  let*? { who; time; } = find_verified_credential p as_session ({ verification_key; credential; }) in
   return (Some ({ who; time; } <: dy_as_token))
 
 val get_token_for_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   p:principal -> as_session:state_id ->
   inp:as_input dy_bytes ->
   tr:trace ->
   Lemma
   (requires
     trace_invariant tr /\
-    has_as_cache_invariant invs
+    has_as_cache_invariant
   )
   (ensures (
     let (opt_token, tr_out) = get_token_for p as_session inp tr in
@@ -83,7 +82,7 @@ val get_token_for_proof:
     )
   ))
   [SMTPat (get_token_for p as_session inp tr);
-   SMTPat (has_as_cache_invariant invs)]
+   SMTPat (has_as_cache_invariant)]
 let get_token_for_proof #invs p as_session (verification_key, credential) tr = ()
 
 #push-options "--fuel 1 --ifuel 1"
@@ -109,14 +108,14 @@ let rec get_tokens_for p as_session inps =
 
 #push-options "--fuel 1 --ifuel 1"
 val get_tokens_for_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   p:principal -> as_session:state_id ->
   inps:list (option (as_input dy_bytes)) ->
   tr:trace ->
   Lemma
   (requires
     trace_invariant tr /\
-    has_as_cache_invariant invs
+    has_as_cache_invariant
   )
   (ensures (
     let (opt_tokens, tr_out) = get_tokens_for p as_session inps tr in
@@ -135,7 +134,7 @@ val get_tokens_for_proof:
     )
   ))
   [SMTPat (get_tokens_for p as_session inps tr);
-   SMTPat (has_as_cache_invariant invs)]
+   SMTPat (has_as_cache_invariant)]
 let rec get_tokens_for_proof #invs p as_session inps tr =
   match inps with
   | [] -> ()
@@ -161,7 +160,7 @@ let create #tkt p as_session gmgr_session group_id ln secret_session =
   return (Some ())
 
 val create_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:state_id ->
@@ -171,7 +170,7 @@ val create_proof:
     is_publishable tr group_id /\
     is_well_formed _ (is_publishable tr) ln /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (_, tr_out) = create p as_session gmgr_session group_id ln secret_session tr in
@@ -208,7 +207,7 @@ let welcome #tkt p as_session gmgr_session kpmgr_session my_key_package group_id
   add_new_group_sessions p gmgr_session { group_id } group_sessions
 
 val welcome_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id -> kpmgr_session:state_id ->
   my_key_package:key_package_nt dy_bytes tkt ->
@@ -219,7 +218,7 @@ val welcome_proof:
     is_publishable tr group_id /\
     is_well_formed _ (is_publishable tr) t /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (_, tr_out) = welcome p as_session gmgr_session kpmgr_session my_key_package group_id l t tr in
@@ -264,7 +263,7 @@ let add #tkt p as_session gmgr_session group_id ln =
   return (Some new_leaf_index)
 
 val add_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
@@ -273,7 +272,7 @@ val add_proof:
   (requires
     is_well_formed _ (is_publishable tr) ln /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (_, tr_out) = add p as_session gmgr_session group_id ln tr in
@@ -324,7 +323,7 @@ let update #tkt p as_session gmgr_session group_id ln li =
   return (Some ())
 
 val update_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
@@ -333,7 +332,7 @@ val update_proof:
   (requires
     is_well_formed _ (is_publishable tr) ln /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (_, tr_out) = update p as_session gmgr_session group_id ln li tr in
@@ -381,7 +380,7 @@ let remove #tkt p as_session gmgr_session group_id li =
   return (Some ())
 
 val remove_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> li:nat ->
@@ -389,7 +388,7 @@ val remove_proof:
   Lemma
   (requires
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (_, tr_out) = remove #tkt p as_session gmgr_session group_id li tr in
@@ -432,9 +431,9 @@ let commit #tkt #l #li p as_session gmgr_session group_id path =
   set_public_treesync_state p group_session.si_public new_st;*
   return (Some ())
 
-#push-options "--z3rlimit 50"
+#push-options "--z3rlimit 100"
 val commit_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
@@ -443,7 +442,7 @@ val commit_proof:
   (requires
     is_well_formed _ (is_publishable tr) path /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (_, tr_out) = commit p as_session gmgr_session group_id path tr in
@@ -494,7 +493,7 @@ val create_signature_keypair:
   p:principal ->
   traceful (option (state_id & signature_public_key_nt dy_bytes))
 let create_signature_keypair p =
-  let* signature_key = mk_rand (SigKey "MLS.LeafSignKey") (principal_label p) 32 in
+  let* signature_key = mk_rand (mk_mls_sigkey_usage p) (principal_label p) 32 in
   let verification_key = vk signature_key in
   guard (length (signature_key <: dy_bytes) < pow2 30);*?
   guard (length (verification_key <: dy_bytes) < pow2 30);*?
@@ -503,13 +502,13 @@ let create_signature_keypair p =
   return (Some (private_si, (verification_key <: signature_public_key_nt dy_bytes)))
 
 val create_signature_keypair_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   p:principal ->
   tr:trace ->
   Lemma
   (requires
     trace_invariant tr /\
-    has_treesync_private_state_invariant invs
+    has_treesync_private_state_invariant
   )
   (ensures (
     let (opt_res, tr_out) = create_signature_keypair p tr in
@@ -517,7 +516,7 @@ val create_signature_keypair_proof:
       match opt_res with
       | None -> True
       | Some (private_si, verification_key) ->
-        is_verification_key "MLS.LeafSignKey" (principal_label p) tr_out verification_key
+        is_verification_key (mk_mls_sigkey_usage p) (principal_label p) tr_out verification_key
     )
   ))
 let create_signature_keypair_proof #invs p tr = ()
@@ -564,7 +563,7 @@ let authenticate_path #tkt #l p gmgr_session group_id tree path =
 
 #push-options "--z3rlimit 25"
 val authenticate_path_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> gmgr_session:state_id ->
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
@@ -574,7 +573,7 @@ val authenticate_path_proof:
     external_path_has_event p tr tree path group_id /\
     is_well_formed _ (is_publishable tr) path /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (opt_auth_path, tr_out) = authenticate_path p gmgr_session group_id tree path tr in
@@ -635,7 +634,7 @@ let authenticate_leaf_node_data_from_key_package #tkt p si_private ln_data =
   extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce)
 
 val authenticate_leaf_node_data_from_key_package_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal ->
   si_private:state_id ->
@@ -646,7 +645,7 @@ val authenticate_leaf_node_data_from_key_package_proof:
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable tr) ln_data /\
     leaf_node_has_event p tr ({data = ln_data; group_id = (); leaf_index = ();}) /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (opt_ln, tr_out) = authenticate_leaf_node_data_from_key_package p si_private ln_data tr in
@@ -689,7 +688,7 @@ let authenticate_leaf_node_data_from_update #tkt p si_private ln_data group_id l
   extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce)
 
 val authenticate_leaf_node_data_from_update_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   p:principal ->
   si_private:state_id ->
@@ -702,7 +701,7 @@ val authenticate_leaf_node_data_from_update_proof:
     leaf_node_has_event p tr ({data = ln_data; group_id; leaf_index;}) /\
     tree_has_event p tr group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
     trace_invariant tr /\
-    has_treesync_invariants tkt invs
+    has_treesync_invariants tkt
   )
   (ensures (
     let (opt_ln, tr_out) = authenticate_leaf_node_data_from_update p si_private ln_data group_id leaf_index tr in
@@ -766,7 +765,7 @@ let trigger_tree_list_event_lemma #tkt p tr group_id h t =
 
 #push-options "--ifuel 1 --fuel 1 --z3rlimit 10"
 val trigger_tree_list_event_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   group_has_event_pred: event_predicate (group_has_tree_event dy_bytes tkt) ->
   p:principal ->
@@ -776,7 +775,7 @@ val trigger_tree_list_event_proof:
   (requires
     (forall t tr_extended. List.Tot.memP t tl /\ tr <$ tr_extended ==> group_has_event_pred tr_extended p (mk_group_has_tree_event group_id t)) /\
     trace_invariant tr /\
-    has_event_pred invs group_has_event_pred
+    has_event_pred group_has_event_pred
   )
   (ensures (
     let ((), tr_out) = trigger_tree_list_event p group_id tl tr in
@@ -810,7 +809,7 @@ let trigger_leaf_node_event #tkt p ln_tbs =
   trigger_event p ln_tbs
 
 val trigger_leaf_node_event_proof:
-  {|invs:protocol_invariants|} ->
+  {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
   leaf_node_has_event_pred: event_predicate (leaf_node_tbs_nt dy_bytes tkt) ->
   p:principal ->
@@ -820,7 +819,7 @@ val trigger_leaf_node_event_proof:
   (requires
     leaf_node_has_event_pred tr p ln_tbs /\
     trace_invariant tr /\
-    has_event_pred invs leaf_node_has_event_pred
+    has_event_pred leaf_node_has_event_pred
   )
   (ensures (
     let ((), tr_out) = trigger_leaf_node_event p ln_tbs tr in

@@ -6,6 +6,8 @@ open DY.Lib
 open MLS.NetworkTypes
 open MLS.Symbolic
 
+#set-options "--fuel 0 --ifuel 0"
+
 (*** Group manager types & invariants ***)
 
 [@@ with_bytes dy_bytes]
@@ -31,6 +33,7 @@ instance group_manager_types: map_types group_manager_key group_manager_value = 
   ps_value_t = ps_group_manager_value;
 }
 
+#push-options "--ifuel 1"
 val group_manager_pred: {|crypto_invariants|} -> map_predicate group_manager_key group_manager_value #_
 let group_manager_pred #ci = {
   pred = (fun tr prin state_id key value ->
@@ -39,10 +42,11 @@ let group_manager_pred #ci = {
   pred_later = (fun tr1 tr2 prin state_id key value -> ());
   pred_knowable = (fun tr prin state_id key value -> ());
 }
+#pop-options
 
-val has_group_manager_invariant: protocol_invariants -> prop
-let has_group_manager_invariant invs =
-  has_map_session_invariant invs group_manager_pred
+val has_group_manager_invariant: {|protocol_invariants|} -> prop
+let has_group_manager_invariant #invs =
+  has_map_session_invariant group_manager_pred
 
 val group_manager_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
 let group_manager_tag_and_invariant #ci = (group_manager_types.tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant group_manager_pred))
