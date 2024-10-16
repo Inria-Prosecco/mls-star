@@ -159,6 +159,7 @@ let create #tkt p as_session gmgr_session group_id ln secret_session =
   add_new_group_sessions p gmgr_session { group_id } group_sessions;*?
   return (Some ())
 
+#push-options "--z3rlimit 25"
 val create_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
@@ -189,6 +190,7 @@ let create_proof #invs #tkt p as_session gmgr_session group_id ln secret_session
       finalize_create_valid #_ #_ #_ #(dy_asp tr) create_pend token
     )
   )
+#pop-options
 
 val welcome:
   #tkt:treekem_types dy_bytes ->

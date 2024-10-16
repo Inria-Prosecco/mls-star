@@ -15,18 +15,17 @@ open MLS.Result
 
 noeq
 type signwithlabel_crypto_pred {|crypto_usages|} = {
-  pred: trace -> vk:bytes{SigKey? (get_signkey_usage vk)} -> msg:bytes -> prop;
+  pred: trace -> sk_usg:usage{SigKey? sk_usg} -> msg:bytes -> prop;
   pred_later:
     tr1:trace -> tr2:trace ->
-    vk:bytes{SigKey? (get_signkey_usage vk)} -> msg:bytes ->
+    sk_usg:usage{SigKey? sk_usg} -> msg:bytes ->
     Lemma
     (requires
-      pred tr1 vk msg /\
-      bytes_well_formed tr1 vk /\
+      pred tr1 sk_usg msg /\
       bytes_well_formed tr1 msg /\
       tr1 <$ tr2
     )
-    (ensures pred tr2 vk msg)
+    (ensures pred tr2 sk_usg msg)
   ;
 }
 
@@ -41,8 +40,8 @@ let split_signwithlabel_crypto_pred_params {|crypto_usages|}: split_function_par
     FStar.Classical.move_requires_2 get_mls_label_inj tag_set_1 tag_set_2
   );
 
-  tagged_data_t = (trace & (vk:bytes{SigKey? (get_signkey_usage vk)}) & bytes);
-  raw_data_t = (trace & (vk:bytes{SigKey? (get_signkey_usage vk)}) & bytes);
+  tagged_data_t = (trace & (sk_usg:usage{SigKey? sk_usg}) & bytes);
+  raw_data_t = (trace & (sk_usg:usage{SigKey? sk_usg}) & bytes);
   output_t = prop;
 
   decode_tagged_data = (fun (tr, vk, data) -> (
@@ -52,7 +51,7 @@ let split_signwithlabel_crypto_pred_params {|crypto_usages|}: split_function_par
   ));
 
   local_fun_t = mk_dependent_type signwithlabel_crypto_pred;
-  global_fun_t = trace -> vk:bytes{SigKey? (get_signkey_usage vk)} -> bytes -> prop;
+  global_fun_t = trace -> sk_usg:usage{SigKey? sk_usg} -> bytes -> prop;
 
   default_global_fun = (fun tr vk content -> False);
 
@@ -102,7 +101,7 @@ let intro_has_signwithlabel_pred #cusgs sign_pred tag local_pred =
 val mk_global_mls_sign_pred:
   {|crypto_usages|} ->
   list (valid_label & signwithlabel_crypto_pred) ->
-  trace -> vk:bytes{SigKey? (get_signkey_usage vk)} -> bytes ->
+  trace -> sk_usg:usage{SigKey? sk_usg} -> bytes ->
   prop
 let mk_global_mls_sign_pred tagged_local_preds vk msg =
   mk_global_fun split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) vk msg
@@ -112,22 +111,21 @@ val mk_global_mls_sign_pred_later:
   {|crypto_usages|} ->
   tagged_local_preds:list (valid_label & signwithlabel_crypto_pred) ->
   tr1:trace -> tr2:trace ->
-  vk:bytes{SigKey? (get_signkey_usage vk)} -> msg:bytes ->
+  sk_usg:usage{SigKey? sk_usg} -> msg:bytes ->
   Lemma
   (requires
-    mk_global_mls_sign_pred tagged_local_preds tr1 vk msg /\
-    bytes_well_formed tr1 vk /\
+    mk_global_mls_sign_pred tagged_local_preds tr1 sk_usg msg /\
     bytes_well_formed tr1 msg /\
     tr1 <$ tr2
   )
-  (ensures mk_global_mls_sign_pred tagged_local_preds tr2 vk msg)
-let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 vk msg =
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr1, vk, msg);
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr2, vk, msg);
+  (ensures mk_global_mls_sign_pred tagged_local_preds tr2 sk_usg msg)
+let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 sk_usg msg =
+  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr1, sk_usg, msg);
+  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr2, sk_usg, msg);
   FStar.Classical.move_requires (parse_wf_lemma (sign_content_nt bytes) (bytes_well_formed tr1)) msg;
-  introduce forall tag_set lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, vk, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun #tag_set lpred (tr2, vk, content) with (
+  introduce forall tag_set lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, sk_usg, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun #tag_set lpred (tr2, sk_usg, content) with (
     introduce _ ==> _ with _. (
-      lpred.pred_later tr1 tr2 vk content
+      lpred.pred_later tr1 tr2 sk_usg content
     )
   )
 #pop-options
@@ -179,10 +177,13 @@ val bytes_invariant_sign_with_label:
     bytes_invariant tr sk /\
     bytes_invariant tr nonce /\
     bytes_invariant tr msg /\
-    get_usage sk == mk_mls_sigkey_usage prin /\
-    SigNonce? (get_usage nonce) /\
-    (get_label tr sk) `can_flow tr` (get_label tr nonce) /\
-    spred.pred tr (vk sk) msg /\
+    sk `has_usage tr` mk_mls_sigkey_usage prin /\
+    nonce `has_usage tr` SigNonce /\
+    (get_label tr sk) `can_flow tr` (get_label tr nonce) /\ (
+      spred.pred tr (mk_mls_sigkey_usage prin) msg
+      \/
+      get_label tr sk `can_flow tr` public
+    ) /\
     has_mls_signwithlabel_pred (lab, spred)
   )
   (ensures
@@ -206,13 +207,13 @@ val bytes_invariant_verify_with_label:
     bytes_invariant tr vk /\
     bytes_invariant tr content /\
     bytes_invariant tr signature /\
+    vk `has_signkey_usage tr` mk_mls_sigkey_usage prin /\
     verify_with_label vk lab content signature /\
     has_mls_signwithlabel_pred (lab, spred)
   )
   (ensures
     (
-      get_signkey_usage vk == mk_mls_sigkey_usage prin ==>
-      spred.pred tr vk content
+      spred.pred tr (mk_mls_sigkey_usage prin) content
     ) \/ (
       (get_signkey_label tr vk) `can_flow tr` public
     )

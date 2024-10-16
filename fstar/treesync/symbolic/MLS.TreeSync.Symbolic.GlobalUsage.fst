@@ -46,7 +46,7 @@ instance treesync_crypto_invariants (tkt:treekem_types dy_bytes): crypto_invaria
   preds = treesync_crypto_predicates tkt;
 }
 
-val all_state_predicates: tkt:treekem_types dy_bytes -> list (string & local_bytes_state_predicate)
+val all_state_predicates: tkt:treekem_types dy_bytes -> list (dtuple2 string local_bytes_state_predicate)
 let all_state_predicates tkt = [
   as_cache_tag_and_invariant;
   group_manager_tag_and_invariant;
@@ -86,7 +86,7 @@ let all_sign_preds_has_all_sign_preds tkt =
 
 val all_state_predicates_has_all_state_predicates: tkt:treekem_types dy_bytes -> Lemma (norm [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP has_local_bytes_state_predicate (all_state_predicates tkt)))
 let all_state_predicates_has_all_state_predicates tkt =
-  assert_norm(List.Tot.no_repeats_p (List.Tot.map fst (all_state_predicates tkt)));
+  assert_norm(List.Tot.no_repeats_p (List.Tot.map dfst (all_state_predicates tkt)));
   mk_state_pred_correct (all_state_predicates tkt);
   norm_spec [delta_only [`%all_state_predicates; `%for_allP]; iota; zeta] (for_allP has_local_bytes_state_predicate (all_state_predicates tkt))
 
