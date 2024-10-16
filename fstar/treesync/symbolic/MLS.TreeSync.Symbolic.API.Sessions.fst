@@ -64,6 +64,9 @@ type bare_treesync_state (tkt:treekem_types dy_bytes) =
 
 instance parseable_serializeable_bare_treesync_state (tkt:treekem_types dy_bytes): parseable_serializeable dy_bytes (bare_treesync_state tkt) = mk_parseable_serializeable (ps_bare_treesync_state_ tkt dy_as_token ps_dy_as_token)
 
+instance local_state_bare_treesync_state (tkt:treekem_types dy_bytes): local_state (bare_treesync_state tkt) =
+  mk_local_state_instance "MLS.TreeSync.PublicState"
+
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 25"
 val treesync_public_state_pred: {|crypto_invariants|} -> tkt:treekem_types dy_bytes -> local_state_predicate (bare_treesync_state tkt)
 let treesync_public_state_pred #ci tkt = {
@@ -79,22 +82,19 @@ let treesync_public_state_pred #ci tkt = {
     wf_weaken_lemma _ (is_publishable tr1) (is_publishable tr2) st.tree
   );
   pred_knowable = (fun tr prin state_id st ->
-    let pre = is_knowable_by (principal_state_label prin state_id) tr in
+    let pre = is_knowable_by (principal_typed_state_content_label prin (local_state_bare_treesync_state tkt).tag state_id st) tr in
     wf_weaken_lemma _ (is_publishable tr) pre st.tree;
     ps_dy_as_tokens_is_well_formed pre st.tokens
   );
 }
 #pop-options
 
-instance local_state_bare_treesync_state (tkt:treekem_types dy_bytes): local_state (bare_treesync_state tkt) =
-  mk_local_state_instance "MLS.TreeSync.PublicState"
-
 val has_treesync_public_state_invariant: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
 let has_treesync_public_state_invariant tkt #invs =
   has_local_state_predicate (treesync_public_state_pred tkt)
 
-val treesync_public_state_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> string & local_bytes_state_predicate
-let treesync_public_state_tag_and_invariant #ci tkt = ((local_state_bare_treesync_state tkt).tag, local_state_predicate_to_local_bytes_state_predicate (treesync_public_state_pred tkt))
+val treesync_public_state_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> dtuple2 string local_bytes_state_predicate
+let treesync_public_state_tag_and_invariant #ci tkt = (|(local_state_bare_treesync_state tkt).tag, local_state_predicate_to_local_bytes_state_predicate (treesync_public_state_pred tkt)|)
 
 (*** Traceful API for public state ***)
 
@@ -219,6 +219,9 @@ type treesync_private_state = treesync_private_state_ dy_bytes
 
 instance parseable_serializeable_treesync_private_state: parseable_serializeable dy_bytes treesync_private_state = mk_parseable_serializeable ps_treesync_private_state_
 
+instance local_state_treesync_private_state: local_state treesync_private_state =
+  mk_local_state_instance "MLS.TreeSync.PrivateState"
+
 val treesync_private_state_pred: {|crypto_invariants|} -> local_state_predicate treesync_private_state
 let treesync_private_state_pred #ci = {
   pred = (fun tr prin state_id st ->
@@ -228,15 +231,12 @@ let treesync_private_state_pred #ci = {
   pred_knowable = (fun tr prin state_id st -> ());
 }
 
-instance local_state_treesync_private_state: local_state treesync_private_state =
-  mk_local_state_instance "MLS.TreeSync.PrivateState"
-
 val has_treesync_private_state_invariant: {|protocol_invariants|} -> prop
 let has_treesync_private_state_invariant #invs =
   has_local_state_predicate treesync_private_state_pred
 
-val treesync_private_state_tag_and_invariant: {|crypto_invariants|} -> string & local_bytes_state_predicate
-let treesync_private_state_tag_and_invariant #ci = (local_state_treesync_private_state.tag, local_state_predicate_to_local_bytes_state_predicate treesync_private_state_pred)
+val treesync_private_state_tag_and_invariant: {|crypto_invariants|} -> dtuple2 string local_bytes_state_predicate
+let treesync_private_state_tag_and_invariant #ci = (|local_state_treesync_private_state.tag, local_state_predicate_to_local_bytes_state_predicate treesync_private_state_pred|)
 
 (*** Traceful API for private state ***)
 

@@ -31,7 +31,7 @@ let key_package_manager_pred #ci tkt = {
   );
   pred_later = (fun tr1 tr2 prin state_id key_package value -> ());
   pred_knowable = (fun tr prin state_id key_package value ->
-    assert(is_well_formed _ (is_knowable_by (principal_state_label prin state_id) tr) key_package)
+    assert(is_well_formed _ (is_knowable_by (principal_tag_state_label prin (key_package_manager_types tkt).tag state_id) tr) key_package)
   );
 }
 
@@ -39,8 +39,8 @@ val has_key_package_manager_invariant: treekem_types dy_bytes -> {|protocol_inva
 let has_key_package_manager_invariant tkt #invs =
   has_map_session_invariant (key_package_manager_pred tkt)
 
-val key_package_manager_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> string & local_bytes_state_predicate
-let key_package_manager_tag_and_invariant #ci tkt = ((key_package_manager_types tkt).tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant (key_package_manager_pred tkt)))
+val key_package_manager_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> dtuple2 string local_bytes_state_predicate
+let key_package_manager_tag_and_invariant #ci tkt = (|(key_package_manager_types tkt).tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant (key_package_manager_pred tkt))|)
 
 (*** KeyPackage manager API ***)
 
