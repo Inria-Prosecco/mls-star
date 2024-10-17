@@ -22,6 +22,7 @@ open MLS.TreeSync.API.Types
 open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.AuthService
+open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
 open MLS.Crypto.Derived.Symbolic.SignWithLabel
 open MLS.Symbolic
 open MLS.Result
@@ -298,7 +299,7 @@ val parent_hash_implies_event:
   )
   (ensures (
     let authentifier_li = get_authentifier_index t in
-    let authentifier = (Some?.v (leaf_at ast authentifier_li)).who in
+    let authentifier = (Some?.v (credential_to_principal (Some?.v (leaf_at t authentifier_li)).data.credential)) in
     (
       tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
     ) \/ (
@@ -320,9 +321,9 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
   } in
   let ln_tbs_bytes = get_leaf_tbs ln group_id leaf_i in
   let leaf_token = Some?.v (leaf_at ast leaf_i) in
-  let authentifier = leaf_token.who in
   let authentifier_li = leaf_i in
-  let leaf_sk_label = principal_label leaf_token.who in
+  let authentifier = (Some?.v (credential_to_principal (Some?.v (leaf_at t authentifier_li)).data.credential)) in
+  let leaf_sk_label = principal_label authentifier in
   serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (bytes_invariant tr) ln_tbs;
   bytes_invariant_verify_with_label (leaf_node_sign_pred  tkt) tr authentifier ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature;
 
@@ -351,7 +352,7 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
     )
   );
 
-  introduce (can_flow tr leaf_sk_label public) ==> is_corrupt tr (principal_label ((Some?.v (leaf_at ast (get_authentifier_index t))).who))
+  introduce (can_flow tr leaf_sk_label public) ==> is_corrupt tr (principal_label authentifier)
   with _. ()
 #pop-options
 
@@ -432,7 +433,7 @@ val state_implies_event:
     // The following line is only there as precondition for the rest of the theorem
     unmerged_leaves_ok t /\ parent_hash_invariant t /\ all_credentials_ok t ast /\ (
       let authentifier_li = get_authentifier_index t in
-      let authentifier = (Some?.v (leaf_at ast authentifier_li)).who in
+      let authentifier = (Some?.v (credential_to_principal (Some?.v (leaf_at t authentifier_li)).data.credential)) in
       (
         tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
       ) \/ (

@@ -59,8 +59,8 @@ val get_token_for:
   inp:as_input dy_bytes ->
   traceful (option dy_as_token)
 let get_token_for p as_session (verification_key, credential) =
-  let*? { who; time; } = find_verified_credential p as_session ({ verification_key; credential; }) in
-  return (Some ({ who; time; } <: dy_as_token))
+  let*? { token } = find_verified_credential p as_session ({ verification_key; credential; }) in
+  return (Some token)
 
 val get_token_for_proof:
   {|protocol_invariants|} ->

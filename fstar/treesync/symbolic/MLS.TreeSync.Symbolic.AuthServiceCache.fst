@@ -5,6 +5,7 @@ open DY.Core
 open DY.Lib
 open MLS.NetworkTypes
 open MLS.TreeSync.NetworkTypes
+open MLS.TreeSync.Symbolic.AuthService
 open MLS.Symbolic
 
 #set-options "--fuel 0 --ifuel 0"
@@ -22,8 +23,7 @@ type as_cache_key = {
 
 [@@ with_bytes dy_bytes]
 type as_cache_value = {
-  who: principal;
-  time: nat;
+  token: dy_as_token;
 }
 
 %splice [ps_as_cache_value] (gen_parser (`as_cache_value))
@@ -38,11 +38,9 @@ instance as_cache_types: map_types as_cache_key as_cache_value = {
 val as_cache_pred: {|crypto_invariants|} -> map_predicate as_cache_key as_cache_value #_
 let as_cache_pred #ci = {
   pred = (fun tr prin state_id key value ->
-    value.time <= DY.Core.Trace.Base.length tr /\
-    is_publishable (prefix tr value.time) key.verification_key /\
-    get_signkey_label tr key.verification_key == principal_label value.who /\
-    key.verification_key `has_signkey_usage tr` mk_mls_sigkey_usage value.who /\
-    is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable (prefix tr value.time)) key.credential
+    (dy_asp tr).credential_ok (key.verification_key, key.credential) value.token /\
+    is_publishable tr key.verification_key /\
+    is_well_formed_whole (ps_prefix_to_ps_whole ps_credential_nt) (is_publishable tr) key.credential
   );
   pred_later = (fun tr1 tr2 prin state_id key value -> ());
   pred_knowable = (fun tr prin state_id key value ->
