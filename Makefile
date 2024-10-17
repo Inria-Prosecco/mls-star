@@ -67,11 +67,12 @@ obj:
 
 %.checked: FSTAR_RULE_FLAGS=
 
+#
+cache/MLS.%.checked: FSTAR_RULE_FLAGS = --ext context_pruning
 # MLS.Test is the only file allowing "(Warning 272) Top-level let-bindings must be total; this term may have effects"
 cache/MLS.Test.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+272'
 # Allow more warning in dependencies
 cache/Lib.IntTypes.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+288+349'
-cache/DY.Core.Bytes.Type.fst.checked: FSTAR_RULE_FLAGS = --warn_error '+290'
 
 %.checked: | hints obj
 	$(FSTAR) $(FSTAR_FLAGS) $(FSTAR_RULE_FLAGS) $< && touch -c $@
