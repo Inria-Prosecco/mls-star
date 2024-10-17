@@ -18,8 +18,9 @@ open MLS.TreeSync.Symbolic.API.GroupManager
 open MLS.TreeSync.Symbolic.API.KeyPackageManager
 open MLS.TreeSync.Symbolic.API.Sessions
 open MLS.TreeSync.Symbolic.API.IsWellFormedInvariant
-open MLS.TreeSync.Symbolic.LeafNodeSignature
+open MLS.TreeSync.Symbolic.AuthService
 open MLS.TreeSync.Symbolic.AuthServiceCache
+open MLS.TreeSync.Symbolic.LeafNodeSignature
 open MLS.TreeSync.Symbolic.IsWellFormed
 open DY.Core
 open DY.Lib

@@ -15,6 +15,7 @@ open MLS.TreeSync.API.Types
 open MLS.Symbolic
 open MLS.TreeSync.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.IsWellFormed
+open MLS.TreeSync.Symbolic.AuthService
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 
 #set-options "--fuel 1 --ifuel 1"
