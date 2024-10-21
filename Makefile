@@ -6,7 +6,7 @@ DY_HOME       ?= $(MLS_HOME)/../dolev-yao-star
 NO_DY ?=
 USE_DY = $(if $(NO_DY),, 1)
 
-INNER_SOURCE_DIRS = api bootstrap common/code common/proofs common/symbolic glue/code glue/proofs test treedem treekem/code treekem/proofs treemath treesync/code treesync/proofs $(if $(USE_DY), symbolic treesync/symbolic)
+INNER_SOURCE_DIRS = api bootstrap/code common/code common/proofs common/symbolic glue/code glue/proofs test treedem treekem/code treekem/proofs treemath treesync/code treesync/proofs $(if $(USE_DY), symbolic treesync/symbolic)
 
 HACL_SNAPSHOT_DIR = $(MLS_HOME)/hacl-star-snapshot
 SOURCE_DIRS = $(addprefix $(MLS_HOME)/fstar/, $(INNER_SOURCE_DIRS))
