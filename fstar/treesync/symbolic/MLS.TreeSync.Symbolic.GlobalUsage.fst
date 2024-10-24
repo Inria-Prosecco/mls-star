@@ -10,6 +10,7 @@ open MLS.Crypto.Derived.Symbolic.SignWithLabel
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 open MLS.TreeSync.Symbolic.AuthServiceCache
 open MLS.TreeSync.Symbolic.API.Sessions
+open MLS.TreeSync.Symbolic.SignatureKeyState
 open MLS.TreeSync.Symbolic.API.GroupManager
 open MLS.TreeSync.Symbolic.API.KeyPackageManager
 open MLS.TreeSync.Symbolic.API
@@ -52,7 +53,7 @@ let all_state_predicates tkt = [
   group_manager_tag_and_invariant;
   key_package_manager_tag_and_invariant tkt;
   treesync_public_state_tag_and_invariant tkt;
-  treesync_private_state_tag_and_invariant;
+  treesync_signature_key_state_tag_and_invariant
 ]
 
 val treesync_trace_invariants: tkt:treekem_types dy_bytes -> trace_invariants

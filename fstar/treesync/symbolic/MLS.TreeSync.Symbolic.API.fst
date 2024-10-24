@@ -17,6 +17,7 @@ open MLS.Symbolic
 open MLS.TreeSync.Symbolic.API.GroupManager
 open MLS.TreeSync.Symbolic.API.KeyPackageManager
 open MLS.TreeSync.Symbolic.API.Sessions
+open MLS.TreeSync.Symbolic.SignatureKeyState
 open MLS.TreeSync.Symbolic.API.IsWellFormedInvariant
 open MLS.TreeSync.Symbolic.AuthService
 open MLS.TreeSync.Symbolic.AuthServiceCache
@@ -48,7 +49,7 @@ let extract_result #a x =
 val has_treesync_invariants: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
 let has_treesync_invariants tkt #invs =
   has_treesync_public_state_invariant tkt /\
-  has_treesync_private_state_invariant /\
+  has_treesync_signature_key_state_invariant /\
   has_group_manager_invariant /\
   has_key_package_manager_invariant tkt /\
   has_as_cache_invariant /\
@@ -496,12 +497,9 @@ val create_signature_keypair:
   p:principal ->
   traceful (option (state_id & signature_public_key_nt dy_bytes))
 let create_signature_keypair p =
-  let* signature_key = mk_rand (mk_mls_sigkey_usage p) (principal_label p) 32 in
-  let verification_key = vk signature_key in
-  guard (length (signature_key <: dy_bytes) < pow2 30);*?
+  let* private_si = mk_signature_key p in
+  let*? verification_key = get_signature_key_vk p private_si in
   guard (length (verification_key <: dy_bytes) < pow2 30);*?
-  let private_state: treesync_private_state = {signature_key;} in
-  let* private_si = new_private_treesync_state p private_state in
   return (Some (private_si, (verification_key <: signature_public_key_nt dy_bytes)))
 
 val create_signature_keypair_proof:
@@ -511,7 +509,7 @@ val create_signature_keypair_proof:
   Lemma
   (requires
     trace_invariant tr /\
-    has_treesync_private_state_invariant
+    has_treesync_signature_key_state_invariant
   )
   (ensures (
     let (opt_res, tr_out) = create_signature_keypair p tr in
@@ -519,7 +517,7 @@ val create_signature_keypair_proof:
       match opt_res with
       | None -> True
       | Some (private_si, verification_key) ->
-        is_verification_key (mk_mls_sigkey_usage p) (principal_label p) tr_out verification_key
+        is_signature_key_vk tr_out p verification_key
     )
   ))
 let create_signature_keypair_proof #invs p tr = ()
@@ -551,20 +549,20 @@ val authenticate_path:
   group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li{(get_path_leaf path).source == LNS_update} ->
   traceful (option (pathsync dy_bytes tkt l 0 li))
 let authenticate_path #tkt #l p gmgr_session group_id tree path =
-  let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
+  let* signature_nonce = mk_rand SigNonce secret 32 in
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
   let*? (|group_id', st|) = get_public_treesync_state #tkt p group_session.si_public in
-  let*? private_st = get_private_treesync_state p group_session.si_private in
+  let*? signature_key = get_signature_key_sk p group_session.si_private in
   guard (group_id = group_id');*?
   guard (l = st.levels);*?
   guard (tree = st.tree);*?
   guard (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes);*?
   guard (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path);*?
-  let*? auth_path = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id private_st.signature_key signature_nonce) in
+  let*? auth_path = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id signature_key signature_nonce) in
   return (Some auth_path)
 #pop-options
 
-#push-options "--z3rlimit 25"
+#push-options "--z3rlimit 50"
 val authenticate_path_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
@@ -589,7 +587,7 @@ val authenticate_path_proof:
   ))
 let authenticate_path_proof #invs #tkt #l p gmgr_session group_id tree path tr =
   let tr_in = tr in
-  let (signature_nonce, tr) = mk_rand SigNonce (principal_label p) 32 tr in
+  let (signature_nonce, tr) = mk_rand SigNonce secret 32 tr in
   let (opt_group_session, tr) = find_group_sessions p gmgr_session { group_id } tr in
   match opt_group_session with
   | None -> ()
@@ -598,10 +596,10 @@ let authenticate_path_proof #invs #tkt #l p gmgr_session group_id tree path tr =
     match opt_st with
     | None -> ()
     | Some(|group_id', st|) -> (
-      let (opt_private_st, tr) = get_private_treesync_state p group_session.si_private tr in
-      match opt_private_st with
+      let (opt_signature_key, tr) = get_signature_key_sk p group_session.si_private tr in
+      match opt_signature_key with
       | None -> ()
-      | Some private_st -> (
+      | Some signature_key -> (
         if not (group_id = group_id') then ()
         else if not (l = st.levels) then ()
         else if not (tree = st.tree) then ()
@@ -609,14 +607,14 @@ let authenticate_path_proof #invs #tkt #l p gmgr_session group_id tree path tr =
         else if not (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path) then ()
         else if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
         else (
-          let (opt_auth_path, tr) = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id private_st.signature_key signature_nonce) tr in
+          let (opt_auth_path, tr) = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id signature_key signature_nonce) tr in
           match opt_auth_path with
           | None -> ()
           | Some auth_path -> (
             let tr_out = tr in
             wf_weaken_lemma _ (is_publishable tr_in) (is_publishable tr_out) path;
             external_path_has_event_later p tr_in tr_out tree path group_id;
-            is_msg_external_path_to_path p public tr_out tree path group_id private_st.signature_key signature_nonce
+            is_msg_external_path_to_path p public tr_out tree path group_id signature_key signature_nonce
           )
         )
       )
@@ -631,11 +629,12 @@ val authenticate_leaf_node_data_from_key_package:
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
   traceful (option (leaf_node_nt dy_bytes tkt))
 let authenticate_leaf_node_data_from_key_package #tkt p si_private ln_data =
-  let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
-  let*? private_st = get_private_treesync_state p si_private in
+  let* signature_nonce = mk_rand SigNonce secret 32 in
+  let*? signature_key = get_signature_key_sk p si_private in
   guard (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes);*?
-  extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce)
+  extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data signature_key signature_nonce)
 
+#push-options "--z3rlimit 25"
 val authenticate_leaf_node_data_from_key_package_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
@@ -661,22 +660,23 @@ val authenticate_leaf_node_data_from_key_package_proof:
   ))
 let authenticate_leaf_node_data_from_key_package_proof  #invs #tkt p si_private ln_data tr =
   let tr_in = tr in
-  let (signature_nonce, tr) = mk_rand SigNonce (principal_label p) 32 tr in
-  let (opt_private_st, tr) = get_private_treesync_state p si_private tr in
-  match opt_private_st with
+  let (signature_nonce, tr) = mk_rand SigNonce secret 32 tr in
+  let (opt_signature_key, tr) = get_signature_key_sk p si_private tr in
+  match opt_signature_key with
   | None -> ()
-  | Some private_st -> (
+  | Some signature_key -> (
     if not (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes) then ()
     else (
-      let (opt_res, tr) = extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data private_st.signature_key signature_nonce) tr in
+      let (opt_res, tr) = extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data signature_key signature_nonce) tr in
       match opt_res with
       | None -> ()
       | Some res -> (
         is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable tr_in) (is_knowable_by public tr) ln_data;
-        is_msg_sign_leaf_node_data_key_package p public tr ln_data private_st.signature_key signature_nonce
+        is_msg_sign_leaf_node_data_key_package p public tr ln_data signature_key signature_nonce
       )
     )
   )
+#pop-options
 
 val authenticate_leaf_node_data_from_update:
   #tkt:treekem_types dy_bytes ->
@@ -685,11 +685,12 @@ val authenticate_leaf_node_data_from_update:
   ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
   traceful (option (leaf_node_nt dy_bytes tkt))
 let authenticate_leaf_node_data_from_update #tkt p si_private ln_data group_id leaf_index =
-  let* signature_nonce = mk_rand SigNonce (principal_label p) 32 in
-  let*? private_st = get_private_treesync_state p si_private in
+  let* signature_nonce = mk_rand SigNonce secret 32 in
+  let*? signature_key = get_signature_key_sk p si_private in
   guard (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes);*?
-  extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce)
+  extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index signature_key signature_nonce)
 
+#push-options "--z3rlimit 25"
 val authenticate_leaf_node_data_from_update_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types dy_bytes ->
@@ -717,22 +718,23 @@ val authenticate_leaf_node_data_from_update_proof:
   ))
 let authenticate_leaf_node_data_from_update_proof #invs #tkt p si_private ln_data group_id leaf_index tr =
   let tr_in = tr in
-  let (signature_nonce, tr) = mk_rand SigNonce (principal_label p) 32 tr in
-  let (opt_private_st, tr) = get_private_treesync_state p si_private tr in
-  match opt_private_st with
+  let (signature_nonce, tr) = mk_rand SigNonce secret 32 tr in
+  let (opt_signature_key, tr) = get_signature_key_sk p si_private tr in
+  match opt_signature_key with
   | None -> ()
-  | Some private_st -> (
+  | Some signature_key -> (
     if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
     else (
-      let (opt_res, tr) = extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index private_st.signature_key signature_nonce) tr in
+      let (opt_res, tr) = extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index signature_key signature_nonce) tr in
       match opt_res with
       | None -> ()
       | Some res -> (
         is_well_formed_prefix_weaken (ps_leaf_node_data_nt tkt) (is_publishable tr_in) (is_knowable_by public tr) ln_data;
-        is_msg_sign_leaf_node_data_update p public tr ln_data group_id leaf_index private_st.signature_key signature_nonce
+        is_msg_sign_leaf_node_data_update p public tr ln_data group_id leaf_index signature_key signature_nonce
       )
     )
   )
+#pop-options
 
 (*** Trigger events ***)
 

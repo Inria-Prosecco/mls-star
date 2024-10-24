@@ -6,6 +6,7 @@ open DY.Lib
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
+open MLS.TreeSync.Symbolic.SignatureKeyState
 open MLS.Symbolic
 
 #set-options "--fuel 0 --ifuel 0"
@@ -29,9 +30,7 @@ let dy_asp #ci tr = {
     | None -> False
     | Some who ->
       token.time <= (DY.Core.Trace.Base.length tr) /\
-      bytes_invariant (prefix tr token.time) vk /\
-      vk `has_signkey_usage (prefix tr token.time)` mk_mls_sigkey_usage who /\
-      get_signkey_label (prefix tr token.time) vk == principal_label who
+      is_signature_key_vk (prefix tr token.time) who vk
   );
   valid_successor = (fun (vk_old, cred_old) (vk_new, cred_new) ->
     True
