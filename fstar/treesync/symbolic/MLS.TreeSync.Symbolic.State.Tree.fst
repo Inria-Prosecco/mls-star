@@ -1,4 +1,4 @@
-module MLS.TreeSync.Symbolic.API.Sessions
+module MLS.TreeSync.Symbolic.State.Tree
 
 open Comparse
 open DY.Core

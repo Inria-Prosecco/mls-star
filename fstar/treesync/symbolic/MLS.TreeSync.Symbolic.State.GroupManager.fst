@@ -1,4 +1,4 @@
-module MLS.TreeSync.Symbolic.API.GroupManager
+module MLS.TreeSync.Symbolic.State.GroupManager
 
 open Comparse
 open DY.Core

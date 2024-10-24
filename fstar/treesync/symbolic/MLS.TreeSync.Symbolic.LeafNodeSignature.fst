@@ -23,7 +23,7 @@ open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.Symbolic.Parsers
 open MLS.TreeSync.Symbolic.AuthService
 open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
-open MLS.TreeSync.Symbolic.SignatureKeyState
+open MLS.TreeSync.Symbolic.State.SignatureKey
 open MLS.Crypto.Derived.Symbolic.SignWithLabel
 open MLS.Symbolic
 open MLS.Result

@@ -6,7 +6,7 @@ open DY.Lib
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
-open MLS.TreeSync.Symbolic.SignatureKeyState
+open MLS.TreeSync.Symbolic.State.SignatureKey
 open MLS.Symbolic
 
 #set-options "--fuel 0 --ifuel 0"

@@ -1,4 +1,4 @@
-module MLS.TreeSync.Symbolic.API.KeyPackageManager
+module MLS.TreeSync.Symbolic.State.KeyPackageManager
 
 open Comparse
 open DY.Core

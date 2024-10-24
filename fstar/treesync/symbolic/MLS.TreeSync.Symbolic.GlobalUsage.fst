@@ -8,11 +8,11 @@ open MLS.TreeSync.NetworkTypes
 open MLS.Symbolic
 open MLS.Crypto.Derived.Symbolic.SignWithLabel
 open MLS.TreeSync.Symbolic.LeafNodeSignature
-open MLS.TreeSync.Symbolic.AuthServiceCache
-open MLS.TreeSync.Symbolic.API.Sessions
-open MLS.TreeSync.Symbolic.SignatureKeyState
-open MLS.TreeSync.Symbolic.API.GroupManager
-open MLS.TreeSync.Symbolic.API.KeyPackageManager
+open MLS.TreeSync.Symbolic.State.AuthServiceCache
+open MLS.TreeSync.Symbolic.State.Tree
+open MLS.TreeSync.Symbolic.State.SignatureKey
+open MLS.TreeSync.Symbolic.State.GroupManager
+open MLS.TreeSync.Symbolic.State.KeyPackageManager
 open MLS.TreeSync.Symbolic.API
 
 #set-options "--fuel 0 --ifuel 0"

@@ -1,4 +1,4 @@
-module MLS.TreeSync.Symbolic.AuthServiceCache
+module MLS.TreeSync.Symbolic.State.AuthServiceCache
 
 open Comparse
 open DY.Core

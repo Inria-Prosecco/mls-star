@@ -1,4 +1,4 @@
-module MLS.TreeSync.Symbolic.SignatureKeyState
+module MLS.TreeSync.Symbolic.State.SignatureKey
 
 open Comparse
 open DY.Core
