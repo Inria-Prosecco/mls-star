@@ -295,7 +295,7 @@ val parent_hash_implies_event:
     valid_leaves_invariant group_id t /\
     node_has_parent_hash t /\
     all_credentials_ok t ast /\
-    is_well_formed _ (bytes_invariant tr) t /\
+    is_well_formed _ (bytes_invariant tr) (Some?.v (leaf_at t (get_authentifier_index t))) /\
     bytes_invariant tr group_id
   )
   (ensures (
@@ -315,7 +315,6 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
   tree_list_head_subtree_tail my_tl;
   leaf_at_subtree_leaf leaf t;
   leaf_at_valid_leaves group_id t leaf_i;
-  is_well_formed_leaf_at (bytes_invariant tr) t leaf_i;
   let TLeaf (Some ln) = leaf in
   let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = {
     data = ln.data;
@@ -452,6 +451,7 @@ let state_implies_event #ci #tkt #group_id #l #i tr st t ast =
   valid_leaves_invariant_subtree group_id t st.tree;
   is_well_formed_treesync_subtree (bytes_invariant tr) t st.tree;
   all_credentials_ok_subtree t st.tree ast st.tokens;
+  is_well_formed_leaf_at (bytes_invariant tr) t (get_authentifier_index t);
   parent_hash_implies_event tr group_id t ast
 
 (*** Proof of path signature ***)
