@@ -10,7 +10,7 @@ open MLS.TreeSync.Symbolic.IsWellFormed
 
 (*** KeyPackage manager types & invariants ***)
 
-[@@ with_bytes dy_bytes]
+[@@ with_bytes bytes]
 type key_package_manager_value = {
   si_private: state_id;
 }
@@ -18,13 +18,13 @@ type key_package_manager_value = {
 %splice [ps_key_package_manager_value] (gen_parser (`key_package_manager_value))
 %splice [ps_key_package_manager_value_is_well_formed] (gen_is_well_formed_lemma (`key_package_manager_value))
 
-instance key_package_manager_types (tkt:treekem_types dy_bytes): map_types (key_package_nt dy_bytes tkt) key_package_manager_value = {
+instance key_package_manager_types (tkt:treekem_types bytes): map_types (key_package_nt bytes tkt) key_package_manager_value = {
   tag = "MLS.TreeSync.KeyPackageManager";
   ps_key_t = ps_key_package_nt tkt;
   ps_value_t = ps_key_package_manager_value;
 }
 
-val key_package_manager_pred: {|crypto_invariants|} -> tkt:treekem_types dy_bytes -> map_predicate (key_package_nt dy_bytes tkt) key_package_manager_value #_
+val key_package_manager_pred: {|crypto_invariants|} -> tkt:treekem_types bytes -> map_predicate (key_package_nt bytes tkt) key_package_manager_value #_
 let key_package_manager_pred #ci tkt = {
   pred = (fun tr prin state_id key_package value ->
     is_well_formed _ (is_publishable tr) key_package
@@ -35,15 +35,15 @@ let key_package_manager_pred #ci tkt = {
   );
 }
 
-val has_key_package_manager_invariant: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
+val has_key_package_manager_invariant: treekem_types bytes -> {|protocol_invariants|} -> prop
 let has_key_package_manager_invariant tkt #invs =
   has_map_session_invariant (key_package_manager_pred tkt)
 
-val key_package_manager_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> dtuple2 string local_bytes_state_predicate
+val key_package_manager_tag_and_invariant: {|crypto_invariants|} -> treekem_types bytes -> dtuple2 string local_bytes_state_predicate
 let key_package_manager_tag_and_invariant #ci tkt = (|(key_package_manager_types tkt).tag, local_state_predicate_to_local_bytes_state_predicate (map_session_invariant (key_package_manager_pred tkt))|)
 
 (*** KeyPackage manager API ***)
 
-let initialize_key_package_manager (tkt:treekem_types dy_bytes) = initialize_map (key_package_nt dy_bytes tkt) key_package_manager_value
-let add_new_key_package_secret_session (tkt:treekem_types dy_bytes) = add_key_value #(key_package_nt dy_bytes tkt) #key_package_manager_value
-let find_key_package_secret_session (tkt:treekem_types dy_bytes) = find_value #(key_package_nt dy_bytes tkt) #key_package_manager_value
+let initialize_key_package_manager (tkt:treekem_types bytes) = initialize_map (key_package_nt bytes tkt) key_package_manager_value
+let add_new_key_package_secret_session (tkt:treekem_types bytes) = add_key_value #(key_package_nt bytes tkt) #key_package_manager_value
+let find_key_package_secret_session (tkt:treekem_types bytes) = find_value #(key_package_nt bytes tkt) #key_package_manager_value

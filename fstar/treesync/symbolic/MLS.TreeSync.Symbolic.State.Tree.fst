@@ -22,14 +22,14 @@ open MLS.TreeSync.Symbolic.LeafNodeSignature
 
 (*** Session predicate for public state ***)
 
-val ps_dy_as_tokens: l:nat -> i:tree_index l -> parser_serializer dy_bytes (as_tokens dy_bytes dy_as_token l i)
+val ps_dy_as_tokens: l:nat -> i:tree_index l -> parser_serializer bytes (as_tokens bytes dy_as_token l i)
 let ps_dy_as_tokens l i =
   ps_as_tokens ps_dy_as_token l i
 
 #push-options "--z3rlimit 25"
 val ps_dy_as_tokens_is_well_formed:
   #l:nat -> #i:tree_index l ->
-  pre:bytes_compatible_pre dy_bytes -> tokens:as_tokens dy_bytes dy_as_token l i ->
+  pre:bytes_compatible_pre bytes -> tokens:as_tokens bytes dy_as_token l i ->
   Lemma
   (is_well_formed_prefix (ps_dy_as_tokens l i) pre tokens)
 let rec ps_dy_as_tokens_is_well_formed #l #i pre tokens =
@@ -60,16 +60,16 @@ type bare_treesync_state_ (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types 
 %splice [ps_bare_treesync_state__is_well_formed] (gen_is_well_formed_lemma (`bare_treesync_state_))
 #pop-options
 
-type bare_treesync_state (tkt:treekem_types dy_bytes) =
-  bare_treesync_state_ dy_bytes tkt dy_as_token ps_dy_as_token
+type bare_treesync_state (tkt:treekem_types bytes) =
+  bare_treesync_state_ bytes tkt dy_as_token ps_dy_as_token
 
-instance parseable_serializeable_bare_treesync_state (tkt:treekem_types dy_bytes): parseable_serializeable dy_bytes (bare_treesync_state tkt) = mk_parseable_serializeable (ps_bare_treesync_state_ tkt dy_as_token ps_dy_as_token)
+instance parseable_serializeable_bare_treesync_state (tkt:treekem_types bytes): parseable_serializeable bytes (bare_treesync_state tkt) = mk_parseable_serializeable (ps_bare_treesync_state_ tkt dy_as_token ps_dy_as_token)
 
-instance local_state_bare_treesync_state (tkt:treekem_types dy_bytes): local_state (bare_treesync_state tkt) =
+instance local_state_bare_treesync_state (tkt:treekem_types bytes): local_state (bare_treesync_state tkt) =
   mk_local_state_instance "MLS.TreeSync.PublicState"
 
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 25"
-val treesync_public_state_pred: {|crypto_invariants|} -> tkt:treekem_types dy_bytes -> local_state_predicate (bare_treesync_state tkt)
+val treesync_public_state_pred: {|crypto_invariants|} -> tkt:treekem_types bytes -> local_state_predicate (bare_treesync_state tkt)
 let treesync_public_state_pred #ci tkt = {
   pred = (fun tr prin state_id st ->
     is_publishable tr st.group_id /\
@@ -77,7 +77,7 @@ let treesync_public_state_pred #ci tkt = {
     unmerged_leaves_ok st.tree /\
     parent_hash_invariant st.tree /\
     valid_leaves_invariant st.group_id st.tree /\
-    all_credentials_ok st.tree ((st.tokens <: as_tokens dy_bytes dy_as_token st.levels 0) <: as_tokens dy_bytes (dy_asp tr).token_t st.levels 0)
+    all_credentials_ok st.tree ((st.tokens <: as_tokens bytes dy_as_token st.levels 0) <: as_tokens bytes (dy_asp tr).token_t st.levels 0)
   );
   pred_later = (fun tr1 tr2 prin state_id st ->
     wf_weaken_lemma _ (is_publishable tr1) (is_publishable tr2) st.tree
@@ -90,18 +90,18 @@ let treesync_public_state_pred #ci tkt = {
 }
 #pop-options
 
-val has_treesync_public_state_invariant: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
+val has_treesync_public_state_invariant: treekem_types bytes -> {|protocol_invariants|} -> prop
 let has_treesync_public_state_invariant tkt #invs =
   has_local_state_predicate (treesync_public_state_pred tkt)
 
-val treesync_public_state_tag_and_invariant: {|crypto_invariants|} -> treekem_types dy_bytes -> dtuple2 string local_bytes_state_predicate
+val treesync_public_state_tag_and_invariant: {|crypto_invariants|} -> treekem_types bytes -> dtuple2 string local_bytes_state_predicate
 let treesync_public_state_tag_and_invariant #ci tkt = (|(local_state_bare_treesync_state tkt).tag, local_state_predicate_to_local_bytes_state_predicate (treesync_public_state_pred tkt)|)
 
 (*** Traceful API for public state ***)
 
 val treesync_state_to_bare_treesync_state:
-  #tkt:treekem_types dy_bytes ->
-  #group_id:mls_bytes dy_bytes -> st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  #tkt:treekem_types bytes ->
+  #group_id:mls_bytes bytes -> st:treesync_state bytes tkt dy_as_token group_id ->
   bare_treesync_state tkt
 let treesync_state_to_bare_treesync_state #tkt #group_id st = {
     group_id = group_id;
@@ -111,9 +111,9 @@ let treesync_state_to_bare_treesync_state #tkt #group_id st = {
   }
 
 val new_public_treesync_state:
-  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> 
+  #tkt:treekem_types bytes -> #group_id:mls_bytes bytes -> 
   principal ->
-  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  st:treesync_state bytes tkt dy_as_token group_id ->
   traceful state_id
 let new_public_treesync_state #tkt #group_id prin st =
   let* state_id = new_session_id prin in
@@ -122,9 +122,9 @@ let new_public_treesync_state #tkt #group_id prin st =
 
 val new_public_treesync_state_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> 
+  #tkt:treekem_types bytes -> #group_id:mls_bytes bytes -> 
   prin:principal ->
-  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  st:treesync_state bytes tkt dy_as_token group_id ->
   tr:trace ->
   Lemma
   (requires
@@ -141,18 +141,18 @@ val new_public_treesync_state_proof:
 let new_public_treesync_state_proof #invs #tkt #group_id prin st tr = ()
 
 val set_public_treesync_state:
-  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
+  #tkt:treekem_types bytes -> #group_id:mls_bytes bytes ->
   prin:principal -> state_id:state_id ->
-  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  st:treesync_state bytes tkt dy_as_token group_id ->
   traceful unit
 let set_public_treesync_state #tkt #group_id prin state_id st =
   set_state prin state_id (treesync_state_to_bare_treesync_state st)
 
 val set_public_treesync_state_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes ->
+  #tkt:treekem_types bytes -> #group_id:mls_bytes bytes ->
   prin:principal -> state_id:state_id ->
-  st:treesync_state dy_bytes tkt dy_as_token group_id ->
+  st:treesync_state bytes tkt dy_as_token group_id ->
   tr:trace ->
   Lemma
   (requires
@@ -169,9 +169,9 @@ val set_public_treesync_state_proof:
 let set_public_treesync_state_proof #invs #tkt #group_id prin state_id st tr = ()
 
 val get_public_treesync_state:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   prin:principal -> state_id:state_id ->
-  traceful (option (dtuple2 (mls_bytes dy_bytes) (treesync_state dy_bytes tkt dy_as_token)))
+  traceful (option (dtuple2 (mls_bytes bytes) (treesync_state bytes tkt dy_as_token)))
 let get_public_treesync_state #tkt prin state_id =
   let*? bare_st: bare_treesync_state tkt = get_state prin state_id in
   // TODO: Dynamic could be removed with REPROSEC/dolev-yao-star-extrinsic#24
@@ -182,11 +182,11 @@ let get_public_treesync_state #tkt prin state_id =
     levels = bare_st.levels;
     tree = bare_st.tree;
     tokens = bare_st.tokens;
-  } <: treesync_state dy_bytes tkt dy_as_token bare_st.group_id)|))
+  } <: treesync_state bytes tkt dy_as_token bare_st.group_id)|))
 
 val get_public_treesync_state_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   prin:principal -> state_id:state_id ->
   tr:trace ->
   Lemma
@@ -201,7 +201,7 @@ val get_public_treesync_state_proof:
       | None -> True
       | Some (|group_id, st|) -> (
         is_publishable tr_out group_id /\
-        is_well_formed _ (is_publishable tr_out) (st.tree <: treesync dy_bytes tkt _ _)
+        is_well_formed _ (is_publishable tr_out) (st.tree <: treesync bytes tkt _ _)
       )
     )
   ))

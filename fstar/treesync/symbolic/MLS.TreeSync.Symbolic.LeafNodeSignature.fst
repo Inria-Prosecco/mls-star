@@ -32,12 +32,12 @@ open MLS.Result
 
 (*** Predicates ***)
 
-instance event_leaf_node_event (tkt:treekem_types dy_bytes): event (leaf_node_tbs_nt dy_bytes tkt) =
+instance event_leaf_node_event (tkt:treekem_types bytes): event (leaf_node_tbs_nt bytes tkt) =
   mk_event_instance "MLS.TreeSync.LeafNodeEvent"
 
 val leaf_node_has_event:
-  #tkt:treekem_types dy_bytes ->
-  principal -> trace -> leaf_node_tbs_nt dy_bytes tkt ->
+  #tkt:treekem_types bytes ->
+  principal -> trace -> leaf_node_tbs_nt bytes tkt ->
   prop
 let leaf_node_has_event #tkt prin tr ln_tbs =
   event_triggered tr prin ln_tbs
@@ -69,13 +69,13 @@ let tree_has_event_arithmetic_lemma l i =
   )
 #pop-options
 
-instance event_group_has_tree_event (tkt:treekem_types dy_bytes): event (group_has_tree_event dy_bytes tkt) =
+instance event_group_has_tree_event (tkt:treekem_types bytes): event (group_has_tree_event bytes tkt) =
   mk_event_instance "MLS.TreeSync.GroupHasTreeEvent"
 
 val mk_group_has_tree_event:
-  #tkt:treekem_types dy_bytes ->
-  mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) ->
-  group_has_tree_event dy_bytes tkt
+  #tkt:treekem_types bytes ->
+  mls_bytes bytes -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
+  group_has_tree_event bytes tkt
 let mk_group_has_tree_event #tkt group_id (|l, i, t|) =
   tree_has_event_arithmetic_lemma l i;
   {
@@ -86,17 +86,17 @@ let mk_group_has_tree_event #tkt group_id (|l, i, t|) =
   }
 
 val tree_has_event:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   principal -> trace ->
-  mls_bytes dy_bytes -> (l:nat & i:tree_index l & treesync dy_bytes tkt l i) ->
+  mls_bytes bytes -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
   prop
 let tree_has_event #tkt prin tr group_id (|l, i, t|) =
   event_triggered tr prin (mk_group_has_tree_event group_id (|l, i, t|))
 
 val tree_list_has_event:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   principal -> trace ->
-  mls_bytes dy_bytes -> tree_list dy_bytes tkt ->
+  mls_bytes bytes -> tree_list bytes tkt ->
   prop
 let tree_list_has_event #tkt prin tr group_id tl =
   for_allP (tree_has_event prin tr group_id) tl
@@ -111,11 +111,11 @@ let leaf_node_label = "LeafNodeTBS"
 /// furthermore one event "GroupHasTreeEvent" was triggered for each of these trees.
 #push-options "--fuel 0 --z3rlimit 25"
 val leaf_node_sign_pred:
-  {|crypto_usages|} -> treekem_types dy_bytes ->
+  {|crypto_usages|} -> treekem_types bytes ->
   signwithlabel_crypto_pred
 let leaf_node_sign_pred #cu tkt = {
   pred = (fun tr sk_usg ln_tbs_bytes ->
-    match (parse (leaf_node_tbs_nt dy_bytes tkt) ln_tbs_bytes) with
+    match (parse (leaf_node_tbs_nt bytes tkt) ln_tbs_bytes) with
     | None -> False
     | Some ln_tbs -> (
       exists prin.
@@ -123,7 +123,7 @@ let leaf_node_sign_pred #cu tkt = {
         leaf_node_has_event prin tr ln_tbs /\ (
         match ln_tbs.data.source with
         | LNS_commit -> (
-          exists (tl: tree_list dy_bytes tkt).
+          exists (tl: tree_list bytes tkt).
             tree_list_starts_with_tbs tl ln_tbs_bytes /\
             tree_list_is_parent_hash_linkedP tl /\
             tree_list_ends_at_root tl /\
@@ -131,15 +131,15 @@ let leaf_node_sign_pred #cu tkt = {
             tree_list_has_event prin tr ln_tbs.group_id tl
         )
         | LNS_update -> (
-          tree_has_event prin tr ln_tbs.group_id (|0, ln_tbs.leaf_index, TLeaf (Some ({data = ln_tbs.data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|)
+          tree_has_event prin tr ln_tbs.group_id (|0, ln_tbs.leaf_index, TLeaf (Some ({data = ln_tbs.data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|)
         )
         | LNS_key_package -> True
         )
     )
   );
   pred_later = (fun tr1 tr2 vk ln_tbs_bytes ->
-    parse_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (bytes_well_formed tr1) ln_tbs_bytes;
-    introduce forall prin tr group_id (tl:tree_list dy_bytes tkt). tree_list_has_event prin tr group_id tl <==> (forall x. List.Tot.memP x tl ==> tree_has_event prin tr group_id x)
+    parse_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_well_formed tr1) ln_tbs_bytes;
+    introduce forall prin tr group_id (tl:tree_list bytes tkt). tree_list_has_event prin tr group_id tl <==> (forall x. List.Tot.memP x tl ==> tree_has_event prin tr group_id x)
     with (
       for_allP_eq (tree_has_event prin tr group_id) tl
     )
@@ -147,11 +147,11 @@ let leaf_node_sign_pred #cu tkt = {
 }
 #pop-options
 
-val leaf_node_tbs_tag_and_invariant: {|crypto_usages|} -> treekem_types dy_bytes -> (valid_label & signwithlabel_crypto_pred)
+val leaf_node_tbs_tag_and_invariant: {|crypto_usages|} -> treekem_types bytes -> (valid_label & signwithlabel_crypto_pred)
 let leaf_node_tbs_tag_and_invariant #cu tkt = (leaf_node_label, leaf_node_sign_pred tkt)
 
 val has_leaf_node_tbs_invariant:
-  treekem_types dy_bytes -> {|crypto_invariants|} ->
+  treekem_types bytes -> {|crypto_invariants|} ->
   prop
 let has_leaf_node_tbs_invariant tkt #ci =
   has_mls_signwithlabel_pred (leaf_node_tbs_tag_and_invariant tkt)
@@ -216,9 +216,9 @@ let rec tree_list_head_subtree_tail #bytes #cb #tkt tl =
   )
 
 val get_authentifier_index:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
-  t:treesync dy_bytes tkt l i ->
+  t:treesync bytes tkt l i ->
   Pure (leaf_index l i)
   (requires
     unmerged_leaves_ok t /\
@@ -283,10 +283,10 @@ let rec is_well_formed_leaf_at #bytes #bl #tkt #l #i pre t li =
 #push-options "--z3rlimit 100"
 val parent_hash_implies_event:
   {|crypto_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
   tr:trace ->
-  group_id:mls_bytes dy_bytes -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp tr).token_t l i ->
+  group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> ast:as_tokens bytes (dy_asp tr).token_t l i ->
   Lemma
   (requires
     has_leaf_node_tbs_invariant tkt /\
@@ -316,7 +316,7 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
   leaf_at_subtree_leaf leaf t;
   leaf_at_valid_leaves group_id t leaf_i;
   let TLeaf (Some ln) = leaf in
-  let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = {
+  let ln_tbs: leaf_node_tbs_nt bytes tkt = {
     data = ln.data;
     group_id = group_id;
     leaf_index = leaf_i;
@@ -326,15 +326,15 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
   let authentifier_li = leaf_i in
   let authentifier = (Some?.v (credential_to_principal (Some?.v (leaf_at t authentifier_li)).data.credential)) in
   let leaf_sk_label = principal_label authentifier in
-  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (bytes_invariant tr) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_invariant tr) ln_tbs;
   bytes_invariant_verify_with_label (leaf_node_sign_pred  tkt) tr authentifier ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature;
 
   introduce ((leaf_node_sign_pred tkt).pred tr (mk_mls_sigkey_usage authentifier) ln_tbs_bytes) ==> tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
   with _. (
     (
-      parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
+      parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
 
-      eliminate exists (leaf_tl: tree_list dy_bytes tkt).
+      eliminate exists (leaf_tl: tree_list bytes tkt).
         tree_list_starts_with_tbs leaf_tl ln_tbs_bytes /\
         tree_list_is_parent_hash_linkedP leaf_tl /\
         tree_list_ends_at_root leaf_tl /\
@@ -418,9 +418,9 @@ let rec all_credentials_ok_subtree #bytes #cb #tkt #asp #lp #ld #ip #id d p ast_
 /// This theorem is mostly a wrapper around `parent_hash_implies_event`.
 val state_implies_event:
   {|crypto_invariants|} ->
-  #tkt:treekem_types dy_bytes -> #group_id:mls_bytes dy_bytes -> #l:nat -> #i:tree_index l ->
+  #tkt:treekem_types bytes -> #group_id:mls_bytes bytes -> #l:nat -> #i:tree_index l ->
   tr:trace ->
-  st:treesync_state dy_bytes tkt dy_as_token group_id -> t:treesync dy_bytes tkt l i -> ast:as_tokens dy_bytes (dy_asp tr).token_t l i ->
+  st:treesync_state bytes tkt dy_as_token group_id -> t:treesync bytes tkt l i -> ast:as_tokens bytes (dy_asp tr).token_t l i ->
   Lemma
   (requires
     has_leaf_node_tbs_invariant tkt /\
@@ -594,10 +594,10 @@ let rec apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #bytes #c
     | _ -> ()
 
 val external_path_has_event:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
   prin:principal -> tr:trace ->
-  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes ->
   prop
 let external_path_has_event #tkt #l #li prin tr t p group_id =
   (get_path_leaf p).source == LNS_update /\
@@ -607,8 +607,8 @@ let external_path_has_event #tkt #l #li prin tr t p group_id =
     path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
     let Success auth_p = external_path_to_path_nosig t p group_id in
     let auth_ln = get_path_leaf auth_p in
-    compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (root_parent_hash #dy_bytes);
-    apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (root_parent_hash #dy_bytes);
+    compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (root_parent_hash #bytes);
+    apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (root_parent_hash #bytes);
     leaf_node_has_event prin tr ({data = auth_ln.data; group_id; leaf_index = li;}) /\
     tree_list_has_event prin tr group_id (path_to_tree_list t auth_p)
   )
@@ -623,11 +623,11 @@ let external_path_has_event #tkt #l #li prin tr t p group_id =
 #push-options "--z3rlimit 100"
 val is_msg_external_path_to_path:
   {|crypto_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
   prin:principal -> label:label -> tr:trace ->
-  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
-  sk:dy_bytes -> nonce:sign_nonce dy_bytes ->
+  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes ->
+  sk:bytes -> nonce:sign_nonce bytes ->
   Lemma
   (requires
     (get_path_leaf p).source == LNS_update /\
@@ -645,25 +645,25 @@ val is_msg_external_path_to_path:
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (external_path_to_path t p group_id sk nonce)))
 let is_msg_external_path_to_path #ci #tkt #l #li prin label tr t p group_id sk nonce =
-  let Success computed_parent_hash = compute_leaf_parent_hash_from_path t p (root_parent_hash #dy_bytes) in
+  let Success computed_parent_hash = compute_leaf_parent_hash_from_path t p (root_parent_hash #bytes) in
   let ln_data = get_path_leaf p in
   let new_ln_data = { ln_data with source = LNS_commit; parent_hash = computed_parent_hash; } in
-  let new_ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = new_ln_data; group_id; leaf_index = li;}) in
-  let new_ln_tbs_bytes: dy_bytes = serialize (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs in
+  let new_ln_tbs: leaf_node_tbs_nt bytes tkt = ({data = new_ln_data; group_id; leaf_index = li;}) in
+  let new_ln_tbs_bytes: bytes = serialize (leaf_node_tbs_nt bytes tkt) new_ln_tbs in
   let Success new_signature = sign_with_label sk "LeafNodeTBS" new_ln_tbs_bytes nonce in
-  let new_ln = ({ data = new_ln_data; signature = new_signature; } <: leaf_node_nt dy_bytes tkt) in
-  let new_unsigned_ln = ({ data = new_ln_data; signature = empty #dy_bytes; } <: leaf_node_nt dy_bytes tkt) in
+  let new_ln = ({ data = new_ln_data; signature = new_signature; } <: leaf_node_nt bytes tkt) in
+  let new_unsigned_ln = ({ data = new_ln_data; signature = empty #bytes; } <: leaf_node_nt bytes tkt) in
   let unsigned_path = set_path_leaf p new_unsigned_ln in
-  compute_leaf_parent_hash_from_path_set_path_leaf t p new_unsigned_ln (root_parent_hash #dy_bytes);
-  apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t unsigned_path (root_parent_hash #dy_bytes);
+  compute_leaf_parent_hash_from_path_set_path_leaf t p new_unsigned_ln (root_parent_hash #bytes);
+  apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t unsigned_path (root_parent_hash #bytes);
   path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
   path_is_filter_valid_external_path_to_path_nosig t p group_id;
   get_path_leaf_set_path_leaf p new_unsigned_ln;
-  pre_compute_leaf_parent_hash_from_path (is_knowable_by label tr) t p (root_parent_hash #dy_bytes);
+  pre_compute_leaf_parent_hash_from_path (is_knowable_by label tr) t p (root_parent_hash #bytes);
   is_well_formed_get_path_leaf (is_knowable_by label tr) p;
-  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_knowable_by label tr) ({data = new_ln_data; group_id; leaf_index = li;});
+  serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (is_knowable_by label tr) ({data = new_ln_data; group_id; leaf_index = li;});
   path_to_tree_list_lemma t unsigned_path;
-  parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) new_ln_tbs;
+  parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) new_ln_tbs;
   bytes_invariant_sign_with_label (leaf_node_sign_pred tkt) tr prin sk "LeafNodeTBS" new_ln_tbs_bytes nonce;
   is_well_formed_set_path_leaf (is_knowable_by label tr) p new_ln
 #pop-options
@@ -673,10 +673,10 @@ let is_msg_external_path_to_path #ci #tkt #l #li prin label tr t p group_id sk n
 #push-options "--z3rlimit 25"
 val is_msg_sign_leaf_node_data_key_package:
   {|crypto_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   prin:principal -> label:label -> tr:trace ->
-  ln_data:leaf_node_data_nt dy_bytes tkt ->
-  sk:dy_bytes -> nonce:sign_nonce dy_bytes ->
+  ln_data:leaf_node_data_nt bytes tkt ->
+  sk:bytes -> nonce:sign_nonce bytes ->
   Lemma
   (requires
     ln_data.source == LNS_key_package /\
@@ -690,26 +690,26 @@ val is_msg_sign_leaf_node_data_key_package:
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (sign_leaf_node_data_key_package ln_data sk nonce)))
 let is_msg_sign_leaf_node_data_key_package #ci #tkt prin label tr ln_data sk nonce =
-  let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id = (); leaf_index = ();}) in
-  let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
-  parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
-  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_knowable_by label tr) ln_tbs;
+  let ln_tbs: leaf_node_tbs_nt bytes tkt = ({data = ln_data; group_id = (); leaf_index = ();}) in
+  let ln_tbs_bytes: bytes = serialize _ ln_tbs in
+  parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (is_knowable_by label tr) ln_tbs;
   bytes_invariant_sign_with_label (leaf_node_sign_pred tkt) tr prin sk "LeafNodeTBS" ln_tbs_bytes nonce
 #pop-options
 
 #push-options "--z3rlimit 25"
 val is_msg_sign_leaf_node_data_update:
   {|crypto_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   prin:principal -> label:label -> tr:trace ->
-  ln_data:leaf_node_data_nt dy_bytes tkt -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
-  sk:dy_bytes -> nonce:sign_nonce dy_bytes ->
+  ln_data:leaf_node_data_nt bytes tkt -> group_id:mls_bytes bytes -> leaf_index:nat_lbytes 4 ->
+  sk:bytes -> nonce:sign_nonce bytes ->
   Lemma
   (requires
     ln_data.source == LNS_update /\
     Success? (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce) /\
     leaf_node_has_event prin tr ({data = ln_data; group_id; leaf_index;}) /\
-    tree_has_event prin tr group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
+    tree_has_event prin tr group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|) /\
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_knowable_by label tr) ln_data /\
     is_knowable_by label tr group_id /\
     is_signature_key_sk tr prin sk /\
@@ -719,9 +719,9 @@ val is_msg_sign_leaf_node_data_update:
   )
   (ensures is_well_formed _ (is_knowable_by label tr) (Success?.v (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce)))
 let is_msg_sign_leaf_node_data_update #ci #tkt prin label tr ln_data group_id leaf_index sk nonce =
-  let ln_tbs: leaf_node_tbs_nt dy_bytes tkt = ({data = ln_data; group_id; leaf_index;}) in
-  let ln_tbs_bytes: dy_bytes = serialize _ ln_tbs in
-  parse_serialize_inv_lemma #dy_bytes (leaf_node_tbs_nt dy_bytes tkt) ln_tbs;
-  serialize_wf_lemma (leaf_node_tbs_nt dy_bytes tkt) (is_knowable_by label tr) ln_tbs;
+  let ln_tbs: leaf_node_tbs_nt bytes tkt = ({data = ln_data; group_id; leaf_index;}) in
+  let ln_tbs_bytes: bytes = serialize _ ln_tbs in
+  parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (is_knowable_by label tr) ln_tbs;
   bytes_invariant_sign_with_label (leaf_node_sign_pred tkt) tr prin sk "LeafNodeTBS" ln_tbs_bytes nonce
 #pop-options

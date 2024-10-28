@@ -46,7 +46,7 @@ let extract_result #a x =
   | MLS.Result.ProtocolError s -> return None
 #pop-options
 
-val has_treesync_invariants: treekem_types dy_bytes -> {|protocol_invariants|} -> prop
+val has_treesync_invariants: treekem_types bytes -> {|protocol_invariants|} -> prop
 let has_treesync_invariants tkt #invs =
   has_treesync_public_state_invariant tkt /\
   has_treesync_signature_key_state_invariant /\
@@ -57,7 +57,7 @@ let has_treesync_invariants tkt #invs =
 
 val get_token_for:
   p:principal -> as_session:state_id ->
-  inp:as_input dy_bytes ->
+  inp:as_input bytes ->
   traceful (option dy_as_token)
 let get_token_for p as_session (verification_key, credential) =
   let*? { token } = find_verified_credential p as_session ({ verification_key; credential; }) in
@@ -66,7 +66,7 @@ let get_token_for p as_session (verification_key, credential) =
 val get_token_for_proof:
   {|protocol_invariants|} ->
   p:principal -> as_session:state_id ->
-  inp:as_input dy_bytes ->
+  inp:as_input bytes ->
   tr:trace ->
   Lemma
   (requires
@@ -90,7 +90,7 @@ let get_token_for_proof #invs p as_session (verification_key, credential) tr = (
 #push-options "--fuel 1 --ifuel 1"
 val get_tokens_for:
   p:principal -> as_session:state_id ->
-  inps:list (option (as_input dy_bytes)) ->
+  inps:list (option (as_input bytes)) ->
   traceful (option (l:list (option dy_as_token){List.Tot.length l == List.Tot.length inps}))
 let rec get_tokens_for p as_session inps =
   match inps with
@@ -112,7 +112,7 @@ let rec get_tokens_for p as_session inps =
 val get_tokens_for_proof:
   {|protocol_invariants|} ->
   p:principal -> as_session:state_id ->
-  inps:list (option (as_input dy_bytes)) ->
+  inps:list (option (as_input bytes)) ->
   tr:trace ->
   Lemma
   (requires
@@ -148,12 +148,12 @@ let rec get_tokens_for_proof #invs p as_session inps tr =
 (*** Process proposals ***)
 
 val create:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:state_id ->
+  group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt -> secret_session:state_id ->
   traceful (option unit)
 let create #tkt p as_session gmgr_session group_id ln secret_session =
-  let*? create_pend = extract_result (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) in
+  let*? create_pend = extract_result (prepare_create #bytes #crypto_bytes_bytes group_id ln) in
   let*? token = get_token_for p as_session (create_pend.as_input) in
   let st = finalize_create create_pend token in
   let* si_public = new_public_treesync_state p st in
@@ -164,9 +164,9 @@ let create #tkt p as_session gmgr_session group_id ln secret_session =
 #push-options "--z3rlimit 25"
 val create_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> secret_session:state_id ->
+  group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt -> secret_session:state_id ->
   tr:trace ->
   Lemma
   (requires
@@ -180,7 +180,7 @@ val create_proof:
     trace_invariant tr_out
   ))
 let create_proof #invs #tkt p as_session gmgr_session group_id ln secret_session tr =
-  let (opt_create_pend, tr) = extract_result (prepare_create #dy_bytes #crypto_dy_bytes group_id ln) tr in
+  let (opt_create_pend, tr) = extract_result (prepare_create #bytes #crypto_bytes_bytes group_id ln) tr in
   match opt_create_pend with
   | None -> ()
   | Some create_pend -> (
@@ -195,13 +195,13 @@ let create_proof #invs #tkt p as_session gmgr_session group_id ln secret_session
 #pop-options
 
 val welcome:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id -> kpmgr_session:state_id ->
-  my_key_package:key_package_nt dy_bytes tkt ->
-  group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
+  my_key_package:key_package_nt bytes tkt ->
+  group_id:mls_bytes bytes -> l:nat -> t:treesync bytes tkt l 0 ->
   traceful (option unit)
 let welcome #tkt p as_session gmgr_session kpmgr_session my_key_package group_id l t =
-  let*? welcome_pend = extract_result (prepare_welcome #dy_bytes #crypto_dy_bytes group_id t) in
+  let*? welcome_pend = extract_result (prepare_welcome #bytes #crypto_bytes_bytes group_id t) in
   welcome_pend.as_inputs_proof;
   let*? tokens = get_tokens_for p as_session welcome_pend.as_inputs in
   let st = finalize_welcome welcome_pend tokens in
@@ -212,10 +212,10 @@ let welcome #tkt p as_session gmgr_session kpmgr_session my_key_package group_id
 
 val welcome_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id -> kpmgr_session:state_id ->
-  my_key_package:key_package_nt dy_bytes tkt ->
-  group_id:mls_bytes dy_bytes -> l:nat -> t:treesync dy_bytes tkt l 0 ->
+  my_key_package:key_package_nt bytes tkt ->
+  group_id:mls_bytes bytes -> l:nat -> t:treesync bytes tkt l 0 ->
   tr:trace ->
   Lemma
   (requires
@@ -229,7 +229,7 @@ val welcome_proof:
     trace_invariant tr_out
   ))
 let welcome_proof #invs #tkt p as_session gmgr_session kpmgr_session my_key_package group_id l t tr =
-  let (opt_welcome_pend, tr) = extract_result (prepare_welcome #dy_bytes #crypto_dy_bytes group_id t) tr in
+  let (opt_welcome_pend, tr) = extract_result (prepare_welcome #bytes #crypto_bytes_bytes group_id t) tr in
   match opt_welcome_pend with
   | None -> ()
   | Some welcome_pend -> (
@@ -253,9 +253,9 @@ let welcome_proof #invs #tkt p as_session gmgr_session kpmgr_session my_key_pack
   )
 
 val add:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
+  group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt ->
   traceful (option nat)
 let add #tkt p as_session gmgr_session group_id ln =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
@@ -268,9 +268,9 @@ let add #tkt p as_session gmgr_session group_id ln =
 
 val add_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt ->
+  group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt ->
   tr:trace ->
   Lemma
   (requires
@@ -312,9 +312,9 @@ let add_proof #invs #tkt p as_session gmgr_session group_id ln tr =
   )
 
 val update:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
+  group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt -> li:nat ->
   traceful (option unit)
 let update #tkt p as_session gmgr_session group_id ln li =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
@@ -328,9 +328,9 @@ let update #tkt p as_session gmgr_session group_id ln li =
 
 val update_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> ln:leaf_node_nt dy_bytes tkt -> li:nat ->
+  group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt -> li:nat ->
   tr:trace ->
   Lemma
   (requires
@@ -370,9 +370,9 @@ let update_proof #invs #tkt p as_session gmgr_session group_id ln li tr =
   )
 
 val remove:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> li:nat ->
+  group_id:mls_bytes bytes -> li:nat ->
   traceful (option unit)
 let remove #tkt p as_session gmgr_session group_id li =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
@@ -385,9 +385,9 @@ let remove #tkt p as_session gmgr_session group_id li =
 
 val remove_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> li:nat ->
+  group_id:mls_bytes bytes -> li:nat ->
   tr:trace ->
   Lemma
   (requires
@@ -421,9 +421,9 @@ let remove_proof #invs #tkt p as_session gmgr_session group_id li tr =
   )
 
 val commit:
-  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
+  group_id:mls_bytes bytes -> path:pathsync bytes tkt l 0 li ->
   traceful (option unit)
 let commit #tkt #l #li p as_session gmgr_session group_id path =
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
@@ -438,9 +438,9 @@ let commit #tkt #l #li p as_session gmgr_session group_id path =
 #push-options "--z3rlimit 100"
 val commit_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> as_session:state_id -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> path:pathsync dy_bytes tkt l 0 li ->
+  group_id:mls_bytes bytes -> path:pathsync bytes tkt l 0 li ->
   tr:trace ->
   Lemma
   (requires
@@ -495,12 +495,12 @@ let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
 
 val create_signature_keypair:
   p:principal ->
-  traceful (option (state_id & signature_public_key_nt dy_bytes))
+  traceful (option (state_id & signature_public_key_nt bytes))
 let create_signature_keypair p =
   let* private_si = mk_signature_key p in
   let*? verification_key = get_signature_key_vk p private_si in
-  guard (length (verification_key <: dy_bytes) < pow2 30);*?
-  return (Some (private_si, (verification_key <: signature_public_key_nt dy_bytes)))
+  guard (length (verification_key <: bytes) < pow2 30);*?
+  return (Some (private_si, (verification_key <: signature_public_key_nt bytes)))
 
 val create_signature_keypair_proof:
   {|protocol_invariants|} ->
@@ -525,10 +525,10 @@ let create_signature_keypair_proof #invs p tr = ()
 (*** Sign stuff ***)
 
 val external_path_has_event_later:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
   prin:principal -> tr1:trace -> tr2:trace ->
-  t:treesync dy_bytes tkt l 0 -> p:external_pathsync dy_bytes tkt l 0 li -> group_id:mls_bytes dy_bytes ->
+  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes ->
   Lemma
   (requires
     external_path_has_event prin tr1 t p group_id /\
@@ -536,18 +536,18 @@ val external_path_has_event_later:
   )
   (ensures external_path_has_event prin tr2 t p group_id)
 let external_path_has_event_later #tkt #l #li prin tr1 tr2 t p group_id =
-  let Success auth_p = external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id in
-  path_is_parent_hash_valid_external_path_to_path_nosig #dy_bytes #crypto_dy_bytes t p group_id;
-  apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #dy_bytes #crypto_dy_bytes t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #dy_bytes);
-  for_allP_eq (tree_has_event prin tr1 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p);
-  for_allP_eq (tree_has_event prin tr2 group_id) (path_to_tree_list #dy_bytes #crypto_dy_bytes t auth_p)
+  let Success auth_p = external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id in
+  path_is_parent_hash_valid_external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id;
+  apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #bytes #crypto_bytes_bytes t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
+  for_allP_eq (tree_has_event prin tr1 group_id) (path_to_tree_list #bytes #crypto_bytes_bytes t auth_p);
+  for_allP_eq (tree_has_event prin tr2 group_id) (path_to_tree_list #bytes #crypto_bytes_bytes t auth_p)
 
 #push-options "--z3rlimit 25"
 val authenticate_path:
-  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li{(get_path_leaf path).source == LNS_update} ->
-  traceful (option (pathsync dy_bytes tkt l 0 li))
+  group_id:mls_bytes bytes -> tree:treesync bytes tkt l 0 -> path:external_pathsync bytes tkt l 0 li{(get_path_leaf path).source == LNS_update} ->
+  traceful (option (pathsync bytes tkt l 0 li))
 let authenticate_path #tkt #l p gmgr_session group_id tree path =
   let* signature_nonce = mk_rand SigNonce secret 32 in
   let*? group_session = find_group_sessions p gmgr_session { group_id } in
@@ -556,18 +556,18 @@ let authenticate_path #tkt #l p gmgr_session group_id tree path =
   guard (group_id = group_id');*?
   guard (l = st.levels);*?
   guard (tree = st.tree);*?
-  guard (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes);*?
-  guard (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path);*?
-  let*? auth_path = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id signature_key signature_nonce) in
+  guard (length (signature_nonce <: bytes) >= sign_sign_min_entropy_length #bytes);*?
+  guard (path_is_filter_valid #bytes #crypto_bytes_bytes tree path);*?
+  let*? auth_path = extract_result (external_path_to_path #bytes #crypto_bytes_bytes tree path group_id signature_key signature_nonce) in
   return (Some auth_path)
 #pop-options
 
 #push-options "--z3rlimit 50"
 val authenticate_path_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes -> #l:nat -> #li:leaf_index l 0 ->
+  #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 ->
   p:principal -> gmgr_session:state_id ->
-  group_id:mls_bytes dy_bytes -> tree:treesync dy_bytes tkt l 0 -> path:external_pathsync dy_bytes tkt l 0 li ->
+  group_id:mls_bytes bytes -> tree:treesync bytes tkt l 0 -> path:external_pathsync bytes tkt l 0 li ->
   tr:trace ->
   Lemma
   (requires
@@ -603,11 +603,11 @@ let authenticate_path_proof #invs #tkt #l p gmgr_session group_id tree path tr =
         if not (group_id = group_id') then ()
         else if not (l = st.levels) then ()
         else if not (tree = st.tree) then ()
-        else if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
-        else if not (path_is_filter_valid #dy_bytes #crypto_dy_bytes tree path) then ()
-        else if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
+        else if not (length (signature_nonce <: bytes) >= sign_sign_min_entropy_length #bytes) then ()
+        else if not (path_is_filter_valid #bytes #crypto_bytes_bytes tree path) then ()
+        else if not (length (signature_nonce <: bytes) >= sign_sign_min_entropy_length #bytes) then ()
         else (
-          let (opt_auth_path, tr) = extract_result (external_path_to_path #dy_bytes #crypto_dy_bytes tree path group_id signature_key signature_nonce) tr in
+          let (opt_auth_path, tr) = extract_result (external_path_to_path #bytes #crypto_bytes_bytes tree path group_id signature_key signature_nonce) tr in
           match opt_auth_path with
           | None -> ()
           | Some auth_path -> (
@@ -623,24 +623,24 @@ let authenticate_path_proof #invs #tkt #l p gmgr_session group_id tree path tr =
 #pop-options
 
 val authenticate_leaf_node_data_from_key_package:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal ->
   si_private:state_id ->
-  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
-  traceful (option (leaf_node_nt dy_bytes tkt))
+  ln_data:leaf_node_data_nt bytes tkt{ln_data.source == LNS_key_package} ->
+  traceful (option (leaf_node_nt bytes tkt))
 let authenticate_leaf_node_data_from_key_package #tkt p si_private ln_data =
   let* signature_nonce = mk_rand SigNonce secret 32 in
   let*? signature_key = get_signature_key_sk p si_private in
-  guard (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes);*?
-  extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data signature_key signature_nonce)
+  guard (length (signature_nonce <: bytes) = sign_sign_min_entropy_length #bytes);*?
+  extract_result (sign_leaf_node_data_key_package #bytes #crypto_bytes_bytes ln_data signature_key signature_nonce)
 
 #push-options "--z3rlimit 25"
 val authenticate_leaf_node_data_from_key_package_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal ->
   si_private:state_id ->
-  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_key_package} ->
+  ln_data:leaf_node_data_nt bytes tkt{ln_data.source == LNS_key_package} ->
   tr:trace ->
   Lemma
   (requires
@@ -665,9 +665,9 @@ let authenticate_leaf_node_data_from_key_package_proof  #invs #tkt p si_private 
   match opt_signature_key with
   | None -> ()
   | Some signature_key -> (
-    if not (length (signature_nonce <: dy_bytes) = sign_sign_min_entropy_length #dy_bytes) then ()
+    if not (length (signature_nonce <: bytes) = sign_sign_min_entropy_length #bytes) then ()
     else (
-      let (opt_res, tr) = extract_result (sign_leaf_node_data_key_package #dy_bytes #crypto_dy_bytes ln_data signature_key signature_nonce) tr in
+      let (opt_res, tr) = extract_result (sign_leaf_node_data_key_package #bytes #crypto_bytes_bytes ln_data signature_key signature_nonce) tr in
       match opt_res with
       | None -> ()
       | Some res -> (
@@ -679,31 +679,31 @@ let authenticate_leaf_node_data_from_key_package_proof  #invs #tkt p si_private 
 #pop-options
 
 val authenticate_leaf_node_data_from_update:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal ->
   si_private:state_id ->
-  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
-  traceful (option (leaf_node_nt dy_bytes tkt))
+  ln_data:leaf_node_data_nt bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes bytes -> leaf_index:nat_lbytes 4 ->
+  traceful (option (leaf_node_nt bytes tkt))
 let authenticate_leaf_node_data_from_update #tkt p si_private ln_data group_id leaf_index =
   let* signature_nonce = mk_rand SigNonce secret 32 in
   let*? signature_key = get_signature_key_sk p si_private in
-  guard (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes);*?
-  extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index signature_key signature_nonce)
+  guard (length (signature_nonce <: bytes) >= sign_sign_min_entropy_length #bytes);*?
+  extract_result (sign_leaf_node_data_update #bytes #crypto_bytes_bytes ln_data group_id leaf_index signature_key signature_nonce)
 
 #push-options "--z3rlimit 25"
 val authenticate_leaf_node_data_from_update_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal ->
   si_private:state_id ->
-  ln_data:leaf_node_data_nt dy_bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes dy_bytes -> leaf_index:nat_lbytes 4 ->
+  ln_data:leaf_node_data_nt bytes tkt{ln_data.source == LNS_update} -> group_id:mls_bytes bytes -> leaf_index:nat_lbytes 4 ->
   tr:trace ->
   Lemma
   (requires
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable tr) ln_data /\
     is_publishable tr group_id /\
     leaf_node_has_event p tr ({data = ln_data; group_id; leaf_index;}) /\
-    tree_has_event p tr group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #dy_bytes;} <: leaf_node_nt dy_bytes tkt))|) /\
+    tree_has_event p tr group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|) /\
     trace_invariant tr /\
     has_treesync_invariants tkt
   )
@@ -723,9 +723,9 @@ let authenticate_leaf_node_data_from_update_proof #invs #tkt p si_private ln_dat
   match opt_signature_key with
   | None -> ()
   | Some signature_key -> (
-    if not (length (signature_nonce <: dy_bytes) >= sign_sign_min_entropy_length #dy_bytes) then ()
+    if not (length (signature_nonce <: bytes) >= sign_sign_min_entropy_length #bytes) then ()
     else (
-      let (opt_res, tr) = extract_result (sign_leaf_node_data_update #dy_bytes #crypto_dy_bytes ln_data group_id leaf_index signature_key signature_nonce) tr in
+      let (opt_res, tr) = extract_result (sign_leaf_node_data_update #bytes #crypto_bytes_bytes ln_data group_id leaf_index signature_key signature_nonce) tr in
       match opt_res with
       | None -> ()
       | Some res -> (
@@ -740,9 +740,9 @@ let authenticate_leaf_node_data_from_update_proof #invs #tkt p si_private ln_dat
 
 #push-options "--ifuel 1"
 val trigger_tree_list_event:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal ->
-  group_id:mls_bytes dy_bytes -> tl:tree_list dy_bytes tkt ->
+  group_id:mls_bytes bytes -> tl:tree_list bytes tkt ->
   traceful unit
 let rec trigger_tree_list_event #tkt p group_id tl =
   match tl with
@@ -754,9 +754,9 @@ let rec trigger_tree_list_event #tkt p group_id tl =
 #pop-options
 
 val trigger_tree_list_event_lemma:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal -> tr:trace ->
-  group_id:mls_bytes dy_bytes -> h:(l:nat & i:tree_index l & treesync dy_bytes tkt l i) -> t:tree_list dy_bytes tkt ->
+  group_id:mls_bytes bytes -> h:(l:nat & i:tree_index l & treesync bytes tkt l i) -> t:tree_list bytes tkt ->
   Lemma(tree_list_has_event p tr group_id (h::t) <==> (tree_has_event p tr group_id h /\ tree_list_has_event p tr group_id t))
 let trigger_tree_list_event_lemma #tkt p tr group_id h t =
   let open FStar.Tactics in
@@ -771,10 +771,10 @@ let trigger_tree_list_event_lemma #tkt p tr group_id h t =
 #push-options "--ifuel 1 --fuel 1 --z3rlimit 10"
 val trigger_tree_list_event_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
-  group_has_event_pred: event_predicate (group_has_tree_event dy_bytes tkt) ->
+  #tkt:treekem_types bytes ->
+  group_has_event_pred: event_predicate (group_has_tree_event bytes tkt) ->
   p:principal ->
-  group_id:mls_bytes dy_bytes -> tl:tree_list dy_bytes tkt ->
+  group_id:mls_bytes bytes -> tl:tree_list bytes tkt ->
   tr:trace ->
   Lemma
   (requires
@@ -793,7 +793,7 @@ let rec trigger_tree_list_event_proof #invs #tkt group_has_event_pred p group_id
   | [] -> normalize_term_spec (tree_list_has_event p tr group_id tl)
   | tl_head::tl_tail -> (
     // There is a problem in the SMT encoding, hence we need to bamboozle F* like this.
-    let lem (x:group_has_tree_event dy_bytes tkt): Lemma (tr <$ snd (trigger_event p x tr)) = () in
+    let lem (x:group_has_tree_event bytes tkt): Lemma (tr <$ snd (trigger_event p x tr)) = () in
     lem (mk_group_has_tree_event group_id tl_head);
     // Similarly, this lemma should be triggered by SMT patterns.
     // Looks like F* do not like `mk_group_has_tree_event group_id tl_head`
@@ -806,19 +806,19 @@ let rec trigger_tree_list_event_proof #invs #tkt group_has_event_pred p group_id
 #pop-options
 
 val trigger_leaf_node_event:
-  #tkt:treekem_types dy_bytes ->
+  #tkt:treekem_types bytes ->
   p:principal ->
-  ln_tbs:leaf_node_tbs_nt dy_bytes tkt ->
+  ln_tbs:leaf_node_tbs_nt bytes tkt ->
   traceful unit
 let trigger_leaf_node_event #tkt p ln_tbs =
   trigger_event p ln_tbs
 
 val trigger_leaf_node_event_proof:
   {|protocol_invariants|} ->
-  #tkt:treekem_types dy_bytes ->
-  leaf_node_has_event_pred: event_predicate (leaf_node_tbs_nt dy_bytes tkt) ->
+  #tkt:treekem_types bytes ->
+  leaf_node_has_event_pred: event_predicate (leaf_node_tbs_nt bytes tkt) ->
   p:principal ->
-  ln_tbs:leaf_node_tbs_nt dy_bytes tkt ->
+  ln_tbs:leaf_node_tbs_nt bytes tkt ->
   tr:trace ->
   Lemma
   (requires

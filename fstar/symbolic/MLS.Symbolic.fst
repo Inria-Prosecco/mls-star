@@ -9,12 +9,9 @@ open MLS.Result
 
 (*** Typeclass instantiation on DY* ***)
 
-val dy_bytes: eqtype
-let dy_bytes = DY.Core.bytes
-
 #push-options "--ifuel 1"
-val dy_bytes_has_crypto: available_ciphersuite -> crypto_bytes dy_bytes
-let dy_bytes_has_crypto acs = {
+val bytes_has_crypto_bytes: available_ciphersuite -> crypto_bytes bytes
+let bytes_has_crypto_bytes acs = {
   base = DY.Lib.bytes_like_bytes;
 
   bytes_hasEq = ();
@@ -82,7 +79,7 @@ let dy_bytes_has_crypto acs = {
   );
 
   string_to_bytes = (fun s ->
-    (ps_whole_ascii_string.serialize s <: dy_bytes)
+    (ps_whole_ascii_string.serialize s <: bytes)
   );
 
   unsafe_split = (fun buf i ->
@@ -96,7 +93,7 @@ let dy_bytes_has_crypto acs = {
 }
 #pop-options
 
-instance crypto_dy_bytes: crypto_bytes dy_bytes = dy_bytes_has_crypto AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
+instance crypto_bytes_bytes: crypto_bytes bytes = bytes_has_crypto_bytes AC_mls_128_dhkemx25519_chacha20poly1305_sha256_ed25519
 
 type mls_principal = {
   who: principal;

@@ -11,7 +11,7 @@ open MLS.Symbolic
 
 #set-options "--fuel 0 --ifuel 0"
 
-[@@ with_bytes dy_bytes]
+[@@ with_bytes bytes]
 type dy_as_token = {
   time: nat;
 }
@@ -22,7 +22,7 @@ type dy_as_token = {
 /// Instantiation of the abstract "Authentication Service" for DY*.
 /// The token is a a timestamp,
 /// and the AS attests that the signature verification key belonged to that principal at that time.
-val dy_asp: {|crypto_invariants|} -> trace -> as_parameters dy_bytes
+val dy_asp: {|crypto_invariants|} -> trace -> as_parameters bytes
 let dy_asp #ci tr = {
   token_t = dy_as_token;
   credential_ok = (fun (vk, cred) token ->

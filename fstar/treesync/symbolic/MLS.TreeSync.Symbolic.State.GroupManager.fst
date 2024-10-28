@@ -10,15 +10,15 @@ open MLS.Symbolic
 
 (*** Group manager types & invariants ***)
 
-[@@ with_bytes dy_bytes]
+[@@ with_bytes bytes]
 type group_manager_key  = {
-  group_id: mls_bytes dy_bytes;
+  group_id: mls_bytes bytes;
 }
 
 %splice [ps_group_manager_key] (gen_parser (`group_manager_key))
 %splice [ps_group_manager_key_is_well_formed] (gen_is_well_formed_lemma (`group_manager_key))
 
-[@@ with_bytes dy_bytes]
+[@@ with_bytes bytes]
 type group_manager_value  = {
   si_public: state_id;
   si_private: state_id;

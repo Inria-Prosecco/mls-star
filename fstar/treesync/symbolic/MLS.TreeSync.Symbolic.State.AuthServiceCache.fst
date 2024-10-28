@@ -12,7 +12,7 @@ open MLS.Symbolic
 
 (*** AS cache types & invariants ***)
 
-[@@ with_bytes dy_bytes]
+[@@ with_bytes bytes]
 type as_cache_key = {
   verification_key: signature_public_key_nt bytes;
   credential: credential_nt bytes;
@@ -21,7 +21,7 @@ type as_cache_key = {
 %splice [ps_as_cache_key] (gen_parser (`as_cache_key))
 %splice [ps_as_cache_key_is_well_formed] (gen_is_well_formed_lemma (`as_cache_key))
 
-[@@ with_bytes dy_bytes]
+[@@ with_bytes bytes]
 type as_cache_value = {
   token: dy_as_token;
 }
