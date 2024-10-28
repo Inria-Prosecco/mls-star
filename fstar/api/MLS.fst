@@ -372,7 +372,7 @@ let create e cred private_sign_key group_id =
     //TODO AS check
     return (MLS.TreeSync.API.finalize_create create_pend ())
   ) in
-  let? treekem = treesync_to_treekem treesync_state.tree in
+  let treekem = treesync_to_treekem treesync_state.tree in
   // 10. In principle, the above process could be streamlined by having the
   // creator directly create a tree and choose a random value for first epoch's
   // epoch secret.
@@ -690,7 +690,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   ) in
   let? leaf_index = find_my_index treesync sign_pk in
   let opt_path_secret_and_inviter_ind: option (bytes & nat) = match secrets.path_secret with | None -> None | Some {path_secret} -> Some (path_secret, group_info.tbs.signer) in
-  let? treekem = treesync_to_treekem treesync in
+  let treekem = treesync_to_treekem treesync in
   assume(leaf_index < pow2 l /\ Some? (leaf_at treekem leaf_index));
   assume(MLS.TreeKEM.Invariants.treekem_invariant treekem);
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash #bytes group_info.tbs.confirmation_tag group_info.tbs.group_context.confirmed_transcript_hash in
