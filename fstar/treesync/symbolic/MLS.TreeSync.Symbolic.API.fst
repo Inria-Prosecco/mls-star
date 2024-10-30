@@ -539,8 +539,8 @@ let external_path_has_event_later #tkt #l #li prin tr1 tr2 t p group_id =
   let Success auth_p = external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id in
   path_is_parent_hash_valid_external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id;
   apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #bytes #crypto_bytes_bytes t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
-  for_allP_eq (tree_has_event prin tr1 group_id) (path_to_tree_list #bytes #crypto_bytes_bytes t auth_p);
-  for_allP_eq (tree_has_event prin tr2 group_id) (path_to_tree_list #bytes #crypto_bytes_bytes t auth_p)
+  for_allP_eq (tree_has_event prin tr1 group_id li) (path_to_tree_list #bytes #crypto_bytes_bytes t auth_p);
+  for_allP_eq (tree_has_event prin tr2 group_id li) (path_to_tree_list #bytes #crypto_bytes_bytes t auth_p)
 
 #push-options "--z3rlimit 25"
 val authenticate_path:
@@ -703,7 +703,7 @@ val authenticate_leaf_node_data_from_update_proof:
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_publishable tr) ln_data /\
     is_publishable tr group_id /\
     leaf_node_has_event p tr ({data = ln_data; group_id; leaf_index;}) /\
-    tree_has_event p tr group_id (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|) /\
+    tree_has_event p tr group_id leaf_index (|0, leaf_index, TLeaf (Some ({data = ln_data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|) /\
     trace_invariant tr /\
     has_treesync_invariants tkt
   )
@@ -742,27 +742,27 @@ let authenticate_leaf_node_data_from_update_proof #invs #tkt p si_private ln_dat
 val trigger_tree_list_event:
   #tkt:treekem_types bytes ->
   p:principal ->
-  group_id:mls_bytes bytes -> tl:tree_list bytes tkt ->
+  group_id:mls_bytes bytes -> authentifier_leaf_index:nat -> tl:tree_list bytes tkt ->
   traceful unit
-let rec trigger_tree_list_event #tkt p group_id tl =
+let rec trigger_tree_list_event #tkt p group_id authentifier_leaf_index tl =
   match tl with
   | [] -> return ()
   | h::t -> (
-    trigger_event p (mk_group_has_tree_event group_id h);*
-    trigger_tree_list_event p group_id t
+    trigger_event p (mk_group_has_tree_event group_id authentifier_leaf_index h);*
+    trigger_tree_list_event p group_id authentifier_leaf_index t
   )
 #pop-options
 
 val trigger_tree_list_event_lemma:
   #tkt:treekem_types bytes ->
   p:principal -> tr:trace ->
-  group_id:mls_bytes bytes -> h:(l:nat & i:tree_index l & treesync bytes tkt l i) -> t:tree_list bytes tkt ->
-  Lemma(tree_list_has_event p tr group_id (h::t) <==> (tree_has_event p tr group_id h /\ tree_list_has_event p tr group_id t))
-let trigger_tree_list_event_lemma #tkt p tr group_id h t =
+  group_id:mls_bytes bytes -> authentifier_leaf_index:nat -> h:(l:nat & i:tree_index l & treesync bytes tkt l i) -> t:tree_list bytes tkt ->
+  Lemma(tree_list_has_event p tr group_id authentifier_leaf_index (h::t) <==> (tree_has_event p tr group_id authentifier_leaf_index h /\ tree_list_has_event p tr group_id authentifier_leaf_index t))
+let trigger_tree_list_event_lemma #tkt p tr group_id authentifier_leaf_index h t =
   let open FStar.Tactics in
-  assert(tree_list_has_event p tr group_id (h::t) == (
-    tree_has_event p tr group_id h /\
-    tree_list_has_event p tr group_id t
+  assert(tree_list_has_event p tr group_id authentifier_leaf_index (h::t) == (
+    tree_has_event p tr group_id authentifier_leaf_index h /\
+    tree_list_has_event p tr group_id authentifier_leaf_index t
   )) by (
     norm [delta_only [`%tree_list_has_event; `%for_allP]; zeta; iota];
     trefl()
@@ -774,34 +774,34 @@ val trigger_tree_list_event_proof:
   #tkt:treekem_types bytes ->
   group_has_event_pred: event_predicate (group_has_tree_event bytes tkt) ->
   p:principal ->
-  group_id:mls_bytes bytes -> tl:tree_list bytes tkt ->
+  group_id:mls_bytes bytes -> authentifier_leaf_index:nat -> tl:tree_list bytes tkt ->
   tr:trace ->
   Lemma
   (requires
-    (forall t tr_extended. List.Tot.memP t tl /\ tr <$ tr_extended ==> group_has_event_pred tr_extended p (mk_group_has_tree_event group_id t)) /\
+    (forall t tr_extended. List.Tot.memP t tl /\ tr <$ tr_extended ==> group_has_event_pred tr_extended p (mk_group_has_tree_event group_id authentifier_leaf_index t)) /\
     trace_invariant tr /\
     has_event_pred group_has_event_pred
   )
   (ensures (
-    let ((), tr_out) = trigger_tree_list_event p group_id tl tr in
+    let ((), tr_out) = trigger_tree_list_event p group_id authentifier_leaf_index tl tr in
     trace_invariant tr_out /\
-    tree_list_has_event p tr_out group_id tl
+    tree_list_has_event p tr_out group_id authentifier_leaf_index tl
   ))
-let rec trigger_tree_list_event_proof #invs #tkt group_has_event_pred p group_id tl tr =
+let rec trigger_tree_list_event_proof #invs #tkt group_has_event_pred p group_id authentifier_leaf_index tl tr =
   let tr_in = tr in
   match tl with
-  | [] -> normalize_term_spec (tree_list_has_event p tr group_id tl)
+  | [] -> normalize_term_spec (tree_list_has_event p tr group_id authentifier_leaf_index tl)
   | tl_head::tl_tail -> (
     // There is a problem in the SMT encoding, hence we need to bamboozle F* like this.
     let lem (x:group_has_tree_event bytes tkt): Lemma (tr <$ snd (trigger_event p x tr)) = () in
-    lem (mk_group_has_tree_event group_id tl_head);
+    lem (mk_group_has_tree_event group_id authentifier_leaf_index tl_head);
     // Similarly, this lemma should be triggered by SMT patterns.
     // Looks like F* do not like `mk_group_has_tree_event group_id tl_head`
-    trigger_event_trace_invariant group_has_event_pred p (mk_group_has_tree_event group_id tl_head) tr;
-    let ((), tr) = trigger_event p (mk_group_has_tree_event group_id tl_head) tr in
-    trigger_tree_list_event_proof group_has_event_pred p group_id tl_tail tr;
-    let ((), tr) = trigger_tree_list_event p group_id tl_tail tr in
-    trigger_tree_list_event_lemma p tr group_id tl_head tl_tail
+    trigger_event_trace_invariant group_has_event_pred p (mk_group_has_tree_event group_id authentifier_leaf_index tl_head) tr;
+    let ((), tr) = trigger_event p (mk_group_has_tree_event group_id authentifier_leaf_index tl_head) tr in
+    trigger_tree_list_event_proof group_has_event_pred p group_id authentifier_leaf_index tl_tail tr;
+    let ((), tr) = trigger_tree_list_event p group_id authentifier_leaf_index tl_tail tr in
+    trigger_tree_list_event_lemma p tr group_id authentifier_leaf_index tl_head tl_tail
   )
 #pop-options
 
@@ -811,18 +811,18 @@ val trigger_leaf_node_event:
   ln_tbs:leaf_node_tbs_nt bytes tkt ->
   traceful unit
 let trigger_leaf_node_event #tkt p ln_tbs =
-  trigger_event p ln_tbs
+  trigger_event p { ln_tbs }
 
 val trigger_leaf_node_event_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types bytes ->
-  leaf_node_has_event_pred: event_predicate (leaf_node_tbs_nt bytes tkt) ->
+  leaf_node_has_event_pred: event_predicate (leaf_node_signed_event tkt) ->
   p:principal ->
   ln_tbs:leaf_node_tbs_nt bytes tkt ->
   tr:trace ->
   Lemma
   (requires
-    leaf_node_has_event_pred tr p ln_tbs /\
+    leaf_node_has_event_pred tr p { ln_tbs } /\
     trace_invariant tr /\
     has_event_pred leaf_node_has_event_pred
   )

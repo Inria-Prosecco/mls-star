@@ -81,7 +81,7 @@ val one_credential_ok:
   prop
 let one_credential_ok #bytes #bl #tkt #asp #l #i ts ast li =
   match leaf_at ts li, leaf_at ast li with
-  | Some ln, Some as_token -> asp.credential_ok ((ln <: leaf_node_nt bytes tkt).data.signature_key, (ln <: leaf_node_nt bytes tkt).data.credential) as_token
+  | Some ln, Some as_token -> asp.credential_ok (leaf_node_to_as_input ln) as_token
   | None, None -> True
   | _, _ -> False
 

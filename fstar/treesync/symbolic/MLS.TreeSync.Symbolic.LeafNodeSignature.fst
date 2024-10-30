@@ -32,18 +32,28 @@ open MLS.Result
 
 (*** Predicates ***)
 
-instance event_leaf_node_event (tkt:treekem_types bytes): event (leaf_node_tbs_nt bytes tkt) =
-  mk_event_instance "MLS.TreeSync.LeafNodeEvent"
+[@@ with_bytes bytes]
+type leaf_node_signed_event (tkt:treekem_types bytes) = {
+  ln_tbs: leaf_node_tbs_nt bytes tkt;
+}
+
+%splice [ps_leaf_node_signed_event] (gen_parser (`leaf_node_signed_event))
+
+instance event_leaf_node_signed_event (tkt:treekem_types bytes): event (leaf_node_signed_event tkt) = {
+  tag = "MLS.TreeSync.LeafNodeSigned";
+  format = mk_parseable_serializeable (ps_leaf_node_signed_event tkt);
+}
 
 val leaf_node_has_event:
   #tkt:treekem_types bytes ->
   principal -> trace -> leaf_node_tbs_nt bytes tkt ->
   prop
 let leaf_node_has_event #tkt prin tr ln_tbs =
-  event_triggered tr prin ln_tbs
+  event_triggered tr prin { ln_tbs }
 
 type group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   group_id: mls_bytes bytes;
+  authentifier_leaf_index: nat;
   [@@@ with_parser #bytes ps_nat]
   l: nat;
   [@@@ with_parser #bytes ps_nat]
@@ -53,8 +63,6 @@ type group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types 
 }
 
 %splice [ps_group_has_tree_event] (gen_parser (`group_has_tree_event))
-
-instance parseable_serializeable_group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (group_has_tree_event bytes tkt) = mk_parseable_serializeable (ps_group_has_tree_event tkt)
 
 #push-options "--z3cliopt smt.arith.nl=false"
 val tree_has_event_arithmetic_lemma:
@@ -69,17 +77,20 @@ let tree_has_event_arithmetic_lemma l i =
   )
 #pop-options
 
-instance event_group_has_tree_event (tkt:treekem_types bytes): event (group_has_tree_event bytes tkt) =
-  mk_event_instance "MLS.TreeSync.GroupHasTreeEvent"
+instance event_group_has_tree_event (tkt:treekem_types bytes): event (group_has_tree_event bytes tkt) = {
+  tag = "MLS.TreeSync.GroupHasTreeEvent";
+  format = mk_parseable_serializeable (ps_group_has_tree_event tkt);
+}
 
 val mk_group_has_tree_event:
   #tkt:treekem_types bytes ->
-  mls_bytes bytes -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
+  mls_bytes bytes -> nat -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
   group_has_tree_event bytes tkt
-let mk_group_has_tree_event #tkt group_id (|l, i, t|) =
+let mk_group_has_tree_event #tkt group_id authentifier_leaf_index (|l, i, t|) =
   tree_has_event_arithmetic_lemma l i;
   {
     group_id;
+    authentifier_leaf_index;
     l;
     i = i/(pow2 l);
     t;
@@ -88,18 +99,18 @@ let mk_group_has_tree_event #tkt group_id (|l, i, t|) =
 val tree_has_event:
   #tkt:treekem_types bytes ->
   principal -> trace ->
-  mls_bytes bytes -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
+  mls_bytes bytes -> nat -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
   prop
-let tree_has_event #tkt prin tr group_id (|l, i, t|) =
-  event_triggered tr prin (mk_group_has_tree_event group_id (|l, i, t|))
+let tree_has_event #tkt prin tr group_id authentifier_leaf_index (|l, i, t|) =
+  event_triggered tr prin (mk_group_has_tree_event group_id authentifier_leaf_index (|l, i, t|))
 
 val tree_list_has_event:
   #tkt:treekem_types bytes ->
   principal -> trace ->
-  mls_bytes bytes -> tree_list bytes tkt ->
+  mls_bytes bytes -> nat -> tree_list bytes tkt ->
   prop
-let tree_list_has_event #tkt prin tr group_id tl =
-  for_allP (tree_has_event prin tr group_id) tl
+let tree_list_has_event #tkt prin tr group_id authentifier_leaf_index tl =
+  for_allP (tree_has_event prin tr group_id authentifier_leaf_index) tl
 
 val leaf_node_label: string
 let leaf_node_label = "LeafNodeTBS"
@@ -128,10 +139,10 @@ let leaf_node_sign_pred #cu tkt = {
             tree_list_is_parent_hash_linkedP tl /\
             tree_list_ends_at_root tl /\
             tree_list_is_canonicalized ln_tbs.leaf_index tl /\
-            tree_list_has_event prin tr ln_tbs.group_id tl
+            tree_list_has_event prin tr ln_tbs.group_id ln_tbs.leaf_index tl
         )
         | LNS_update -> (
-          tree_has_event prin tr ln_tbs.group_id (|0, ln_tbs.leaf_index, TLeaf (Some ({data = ln_tbs.data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|)
+          tree_has_event prin tr ln_tbs.group_id ln_tbs.leaf_index (|0, ln_tbs.leaf_index, TLeaf (Some ({data = ln_tbs.data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|)
         )
         | LNS_key_package -> True
         )
@@ -139,9 +150,9 @@ let leaf_node_sign_pred #cu tkt = {
   );
   pred_later = (fun tr1 tr2 sk_usg vk ln_tbs_bytes ->
     parse_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_well_formed tr1) ln_tbs_bytes;
-    introduce forall prin tr group_id (tl:tree_list bytes tkt). tree_list_has_event prin tr group_id tl <==> (forall x. List.Tot.memP x tl ==> tree_has_event prin tr group_id x)
+    introduce forall prin tr group_id authentifier_leaf_index (tl:tree_list bytes tkt). tree_list_has_event prin tr group_id authentifier_leaf_index tl <==> (forall x. List.Tot.memP x tl ==> tree_has_event prin tr group_id authentifier_leaf_index x)
     with (
-      for_allP_eq (tree_has_event prin tr group_id) tl
+      for_allP_eq (tree_has_event prin tr group_id authentifier_leaf_index) tl
     )
   );
 }
@@ -216,7 +227,7 @@ let rec tree_list_head_subtree_tail #bytes #cb #tkt tl =
   )
 
 val get_authentifier_index:
-  #tkt:treekem_types bytes ->
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
   t:treesync bytes tkt l i ->
   Pure (leaf_index l i)
@@ -226,7 +237,7 @@ val get_authentifier_index:
     node_not_blank t
   )
   (ensures fun res -> Some? (leaf_at t res))
-let get_authentifier_index #tkt #l #i t =
+let get_authentifier_index #bytes #cb #tkt #l #i t =
   if l = 0 then i
   else (
     let my_tl = parent_hash_invariant_to_tree_list t in
@@ -286,7 +297,7 @@ val parent_hash_implies_event:
   #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
   tr:trace ->
-  group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> ast:as_tokens bytes (dy_asp tr).token_t l i ->
+  group_id:mls_bytes bytes -> t:treesync bytes tkt l i -> authentifier_token:(dy_asp tr).token_t ->
   Lemma
   (requires
     has_leaf_node_tbs_invariant tkt /\
@@ -294,7 +305,7 @@ val parent_hash_implies_event:
     parent_hash_invariant t /\
     valid_leaves_invariant group_id t /\
     node_has_parent_hash t /\
-    all_credentials_ok t ast /\
+    (dy_asp tr).credential_ok (leaf_node_to_as_input (Some?.v (leaf_at t (get_authentifier_index t)))) authentifier_token /\
     is_well_formed _ (bytes_invariant tr) (Some?.v (leaf_at t (get_authentifier_index t))) /\
     bytes_invariant tr group_id
   )
@@ -304,12 +315,12 @@ val parent_hash_implies_event:
     let authentifier = Some?.v (credential_to_principal authentifier_leaf_node.data.credential) in
     let authentifier_signature_key = authentifier_leaf_node.data.signature_key in
     (
-      tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
+      tree_has_event authentifier tr group_id authentifier_li (|l, i, (canonicalize t authentifier_li)|)
     ) \/ (
       is_corrupt tr (signature_key_label authentifier authentifier_signature_key)
     )
   ))
-let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
+let parent_hash_implies_event #ci #tkt #l #i tr group_id t authentifier_token =
   let my_tl = parent_hash_invariant_to_tree_list t in
   let (|leaf_l, leaf_i, leaf|) = List.Tot.hd my_tl in
   tree_list_head_subtree_tail my_tl;
@@ -322,41 +333,107 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
     leaf_index = leaf_i;
   } in
   let ln_tbs_bytes = get_leaf_tbs ln group_id leaf_i in
-  let leaf_token = Some?.v (leaf_at ast leaf_i) in
+  let leaf_token = authentifier_token in
   let authentifier_li = leaf_i in
   let authentifier = (Some?.v (credential_to_principal (Some?.v (leaf_at t authentifier_li)).data.credential)) in
   let leaf_sk_label = principal_label authentifier in
   serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_invariant tr) ln_tbs;
   bytes_invariant_verify_with_label (leaf_node_sign_pred  tkt) tr authentifier ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature;
 
-  introduce ((leaf_node_sign_pred tkt).pred tr (mk_mls_sigkey_usage authentifier) ln.data.signature_key ln_tbs_bytes) ==> tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
+  introduce ((leaf_node_sign_pred tkt).pred tr (mk_mls_sigkey_usage authentifier) ln.data.signature_key ln_tbs_bytes) ==> tree_has_event authentifier tr group_id authentifier_li (|l, i, (canonicalize t authentifier_li)|)
   with _. (
-    (
-      parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
-
-      eliminate exists (leaf_tl: tree_list bytes tkt).
-        tree_list_starts_with_tbs leaf_tl ln_tbs_bytes /\
-        tree_list_is_parent_hash_linkedP leaf_tl /\
-        tree_list_ends_at_root leaf_tl /\
-        tree_list_is_canonicalized authentifier_li leaf_tl /\
-        tree_list_has_event authentifier tr ln_tbs.group_id leaf_tl
-      returns tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
-      with _. (
-        let (b1, b2) = parent_hash_guarantee_theorem my_tl leaf_tl ln_tbs_bytes in
-        FStar.Classical.move_requires_2 hash_injective b1 b2;
-        last_tree_equivalent my_tl leaf_tl leaf_i;
-        for_allP_eq (tree_has_event authentifier tr group_id) leaf_tl;
-        let (|_, _, original_t|) = List.Tot.index leaf_tl (List.Tot.length my_tl - 1) in
-        List.Tot.lemma_index_memP leaf_tl (List.Tot.length my_tl - 1);
-        for_allP_eq (tree_is_canonicalized authentifier_li) leaf_tl;
-        canonicalize_idempotent original_t authentifier_li
-      )
+    parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
+    eliminate exists (leaf_tl: tree_list bytes tkt).
+      tree_list_starts_with_tbs leaf_tl ln_tbs_bytes /\
+      tree_list_is_parent_hash_linkedP leaf_tl /\
+      tree_list_ends_at_root leaf_tl /\
+      tree_list_is_canonicalized authentifier_li leaf_tl /\
+      tree_list_has_event authentifier tr ln_tbs.group_id authentifier_li leaf_tl
+    returns tree_has_event authentifier tr group_id authentifier_li (|l, i, (canonicalize t authentifier_li)|)
+    with _. (
+      let (b1, b2) = parent_hash_guarantee_theorem my_tl leaf_tl ln_tbs_bytes in
+      FStar.Classical.move_requires_2 hash_injective b1 b2;
+      last_tree_equivalent my_tl leaf_tl leaf_i;
+      for_allP_eq (tree_has_event authentifier tr group_id authentifier_li) leaf_tl;
+      let (|_, _, original_t|) = List.Tot.index leaf_tl (List.Tot.length my_tl - 1) in
+      List.Tot.lemma_index_memP leaf_tl (List.Tot.length my_tl - 1);
+      for_allP_eq (tree_is_canonicalized authentifier_li) leaf_tl;
+      canonicalize_idempotent original_t authentifier_li
     )
-  );
-
-  introduce (can_flow tr leaf_sk_label public) ==> is_corrupt tr (principal_label authentifier)
-  with _. ()
+  )
 #pop-options
+
+#push-options "--z3rlimit 25"
+val leaf_node_source_update_implies_event:
+  {|crypto_invariants|} ->
+  #tkt:treekem_types bytes ->
+  tr:trace ->
+  ln:leaf_node_nt bytes tkt -> group_id:mls_bytes bytes -> li:nat -> leaf_token:(dy_asp tr).token_t ->
+  Lemma
+  (requires
+    ln.data.source == LNS_update /\
+    leaf_is_valid ln group_id li /\
+    (dy_asp tr).credential_ok (leaf_node_to_as_input ln) leaf_token /\
+    is_well_formed _ (bytes_invariant tr) ln /\
+    bytes_invariant tr group_id /\
+    has_leaf_node_tbs_invariant tkt
+  )
+  (ensures (
+    let prin = Some?.v (credential_to_principal ln.data.credential) in
+    let signature_key = ln.data.signature_key in
+    (
+      tree_has_event prin tr group_id li (|0, li, canonicalize (TLeaf (Some ln)) li|)
+    ) \/ (
+      is_corrupt tr (signature_key_label prin signature_key)
+    )
+  ))
+let leaf_node_source_update_implies_event #ci #tkt tr ln group_id li leaf_token =
+  let prin = Some?.v (credential_to_principal ln.data.credential) in
+  let ln_tbs: leaf_node_tbs_nt bytes tkt = {
+    data = ln.data;
+    group_id = group_id;
+    leaf_index = li;
+  } in
+  let ln_tbs_bytes = get_leaf_tbs ln group_id li in
+  parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_invariant tr) ln_tbs;
+  bytes_invariant_verify_with_label (leaf_node_sign_pred tkt) tr prin ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature
+#pop-options
+
+val leaf_node_source_key_package_implies_event:
+  {|crypto_invariants|} ->
+  #tkt:treekem_types bytes ->
+  tr:trace ->
+  ln:leaf_node_nt bytes tkt -> group_id:mls_bytes bytes -> li:nat -> leaf_token:(dy_asp tr).token_t ->
+  Lemma
+  (requires
+    ln.data.source == LNS_key_package /\
+    leaf_is_valid ln group_id li /\
+    (dy_asp tr).credential_ok (leaf_node_to_as_input ln) leaf_token /\
+    is_well_formed _ (bytes_invariant tr) ln /\
+    bytes_invariant tr group_id /\
+    has_leaf_node_tbs_invariant tkt
+  )
+  (ensures (
+    let prin = Some?.v (credential_to_principal ln.data.credential) in
+    let signature_key = ln.data.signature_key in
+    (
+      leaf_node_has_event prin tr { data = ln.data; group_id = (); leaf_index = (); }
+    ) \/ (
+      is_corrupt tr (signature_key_label prin signature_key)
+    )
+  ))
+let leaf_node_source_key_package_implies_event #ci #tkt tr ln group_id li leaf_token =
+  let prin = Some?.v (credential_to_principal ln.data.credential) in
+  let ln_tbs: leaf_node_tbs_nt bytes tkt = {
+    data = ln.data;
+    group_id = ();
+    leaf_index = ();
+  } in
+  let ln_tbs_bytes = get_leaf_tbs ln group_id li in
+  parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
+  serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_invariant tr) ln_tbs;
+  bytes_invariant_verify_with_label (leaf_node_sign_pred tkt) tr prin ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature
 
 (*** Proof of verification, for a state ***)
 
@@ -439,7 +516,7 @@ val state_implies_event:
       let authentifier = Some?.v (credential_to_principal authentifier_leaf_node.data.credential) in
       let authentifier_signature_key = authentifier_leaf_node.data.signature_key in
       (
-        tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
+        tree_has_event authentifier tr group_id authentifier_li (|l, i, (canonicalize t authentifier_li)|)
       ) \/ (
         is_corrupt tr (signature_key_label authentifier authentifier_signature_key)
       )
@@ -452,7 +529,8 @@ let state_implies_event #ci #tkt #group_id #l #i tr st t ast =
   is_well_formed_treesync_subtree (bytes_invariant tr) t st.tree;
   all_credentials_ok_subtree t st.tree ast st.tokens;
   is_well_formed_leaf_at (bytes_invariant tr) t (get_authentifier_index t);
-  parent_hash_implies_event tr group_id t ast
+  let authentifier_li = get_authentifier_index t in
+  parent_hash_implies_event tr group_id t (Some?.v (leaf_at ast authentifier_li))
 
 (*** Proof of path signature ***)
 
@@ -610,7 +688,7 @@ let external_path_has_event #tkt #l #li prin tr t p group_id =
     compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (root_parent_hash #bytes);
     apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (root_parent_hash #bytes);
     leaf_node_has_event prin tr ({data = auth_ln.data; group_id; leaf_index = li;}) /\
-    tree_list_has_event prin tr group_id (path_to_tree_list t auth_p)
+    tree_list_has_event prin tr group_id li (path_to_tree_list t auth_p)
   )
 
 /// Proof that the path generated by `external_path_to_path`
@@ -709,7 +787,7 @@ val is_msg_sign_leaf_node_data_update:
     ln_data.source == LNS_update /\
     Success? (sign_leaf_node_data_update ln_data group_id leaf_index sk nonce) /\
     leaf_node_has_event prin tr ({data = ln_data; group_id; leaf_index;}) /\
-    tree_has_event prin tr group_id (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|) /\
+    tree_has_event prin tr group_id leaf_index (|0, (leaf_index <: nat), TLeaf (Some ({data = ln_data; signature = empty #bytes;} <: leaf_node_nt bytes tkt))|) /\
     is_well_formed_prefix (ps_leaf_node_data_nt tkt) (is_knowable_by label tr) ln_data /\
     is_knowable_by label tr group_id /\
     is_signature_key_sk tr prin sk /\
