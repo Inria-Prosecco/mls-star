@@ -2,8 +2,41 @@ module MLS.Symbolic.Parsers
 
 open Comparse
 open MLS.Tree
+open FStar.Mul
 
 #set-options "--fuel 1 --ifuel 1"
+
+val ps_tree_index_pred: l:nat -> i:nat -> bool
+let ps_tree_index_pred l i =
+  (i / (pow2 l)) * (pow2 l) = i
+
+[@@is_parser; is_parser_for (`%tree_index)]
+val ps_tree_index:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  l:nat ->
+  parser_serializer bytes (tree_index l)
+let ps_tree_index #bytes #bl l =
+  mk_isomorphism
+    (tree_index l)
+    (refine ps_nat (ps_tree_index_pred l))
+    (fun x -> x)
+    (fun x ->
+      eliminate exists k. x == k * (pow2 l)
+      returns ps_tree_index_pred l x
+      with _. (
+        FStar.Math.Lemmas.cancel_mul_div k (pow2 l)
+      );
+      x
+    )
+
+[@@is_parser; is_parser_for (`%leaf_index)]
+val ps_leaf_index:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  l:nat -> i:tree_index l ->
+  parser_serializer bytes (leaf_index l i)
+let ps_leaf_index #bytes #bl l i =
+  mk_trivial_isomorphism (refine ps_nat (leaf_index_inside l i))
+
 
 noeq type tree_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (node_t:Type0) (l:pos) (i:tree_index l) (ps_node_t:parser_serializer_prefix bytes node_t) (ps_left:parser_serializer bytes (tree leaf_t node_t (l-1) (left_index i))) (ps_right:parser_serializer bytes (tree leaf_t node_t (l-1) (right_index i))) = {
   [@@@ with_parser #bytes ps_left]
@@ -54,7 +87,8 @@ val ps_tree_is_well_formed:
 let ps_tree_is_well_formed #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i pre x =
   reveal_rec_opaque (`%ps_tree) (ps_tree ps_leaf_t ps_node_t l i)
 
-noeq type path_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (node_t:Type0) (l:pos) (i:tree_index l) (li:leaf_index l i) (ps_node_t:parser_serializer_prefix bytes node_t) (ps_next:parser_serializer bytes (path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li)) = {
+[@@ can_be_unit]
+noeq type path_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (node_t:Type0) (l:pos) (i:tree_index l) (li:leaf_index l i) (ps_node_t:parser_serializer_prefix bytes node_t) (ps_next:parser_serializer_prefix bytes (path leaf_t node_t (l-1) (if is_left_leaf li then left_index i else right_index i) li)) = {
   [@@@ with_parser #bytes ps_node_t]
   data: node_t;
   // The full implicits must be given to work in lax mode (hence, in dependency loading)
@@ -70,8 +104,8 @@ noeq type path_internal_node (bytes:Type0) {|bytes_like bytes|} (leaf_t:Type0) (
 [@@"opaque_to_smt"]
 val ps_path:
   #bytes:Type0 -> {|bytes_like bytes|} -> #leaf_t:Type0 -> #node_t:Type0 ->
-  parser_serializer bytes leaf_t -> parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> li:leaf_index l i ->
-  parser_serializer bytes (path leaf_t node_t l i li)
+  parser_serializer_prefix bytes leaf_t -> parser_serializer_prefix bytes node_t -> l:nat -> i:tree_index l -> li:leaf_index l i ->
+  parser_serializer_prefix bytes (path leaf_t node_t l i li)
 let rec ps_path #bytes #bl #leaf_t #node_t ps_leaf_t ps_node_t l i li =
   if l = 0 then (
     mk_isomorphism

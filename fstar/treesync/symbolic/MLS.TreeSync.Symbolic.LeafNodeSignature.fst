@@ -1,6 +1,5 @@
 module MLS.TreeSync.Symbolic.LeafNodeSignature
 
-open FStar.Mul
 open Comparse
 open DY.Core
 open DY.Lib
@@ -54,28 +53,13 @@ let leaf_node_has_event #tkt prin tr ln_tbs =
 type group_has_tree_event (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) = {
   group_id: mls_bytes bytes;
   authentifier_leaf_index: nat;
-  [@@@ with_parser #bytes ps_nat]
   l: nat;
-  [@@@ with_parser #bytes ps_nat]
-  i: nat;
-  [@@@ with_parser #bytes (ps_treesync tkt l (i*(pow2 l)))]
-  t: treesync bytes tkt l (i*(pow2 l));
+  i: tree_index l;
+  [@@@ with_parser #bytes (ps_treesync tkt l i)]
+  t: treesync bytes tkt l i;
 }
 
 %splice [ps_group_has_tree_event] (gen_parser (`group_has_tree_event))
-
-#push-options "--z3cliopt smt.arith.nl=false"
-val tree_has_event_arithmetic_lemma:
-  l:nat -> i:tree_index l ->
-  Lemma
-  ((i/(pow2 l))*(pow2 l) == i)
-let tree_has_event_arithmetic_lemma l i =
-  eliminate exists (k:nat). i = k*(pow2 l)
-  returns (i/(pow2 l))*(pow2 l) == i
-  with _. (
-    FStar.Math.Lemmas.cancel_mul_div k (pow2 l)
-  )
-#pop-options
 
 instance event_group_has_tree_event (tkt:treekem_types bytes): event (group_has_tree_event bytes tkt) = {
   tag = "MLS.TreeSync.GroupHasTreeEvent";
@@ -87,12 +71,11 @@ val mk_group_has_tree_event:
   mls_bytes bytes -> nat -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
   group_has_tree_event bytes tkt
 let mk_group_has_tree_event #tkt group_id authentifier_leaf_index (|l, i, t|) =
-  tree_has_event_arithmetic_lemma l i;
   {
     group_id;
     authentifier_leaf_index;
     l;
-    i = i/(pow2 l);
+    i;
     t;
   }
 

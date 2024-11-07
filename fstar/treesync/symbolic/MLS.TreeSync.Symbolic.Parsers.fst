@@ -25,14 +25,14 @@ let ps_as_tokens #bytes #bl #as_token ps_token l i =
 val ps_pathsync:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   tkt:treekem_types bytes -> l:nat -> i:tree_index l -> li:leaf_index l i ->
-  parser_serializer bytes (pathsync bytes tkt l i li)
+  parser_serializer_prefix bytes (pathsync bytes tkt l i li)
 let ps_pathsync #bytes tkt l i li =
   ps_path (ps_leaf_node_nt tkt) (ps_option tkt.ps_node_content) l i li
 
 val ps_external_pathsync:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   tkt:treekem_types bytes -> l:nat -> i:tree_index l -> li:leaf_index l i ->
-  parser_serializer bytes (external_pathsync bytes tkt l i li)
+  parser_serializer_prefix bytes (external_pathsync bytes tkt l i li)
 let ps_external_pathsync #bytes tkt l i li =
   ps_path (ps_leaf_node_data_nt tkt) (ps_option tkt.ps_node_content) l i li
 
