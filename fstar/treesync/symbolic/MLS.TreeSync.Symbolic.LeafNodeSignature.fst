@@ -520,9 +520,9 @@ let state_implies_event #ci #tkt #group_id #l #i tr st t ast =
 val external_path_to_path_aux_nosig:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source == LNS_update} -> group_id:mls_bytes bytes ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source == LNS_update} ->
   result (leaf_node_nt bytes tkt)
-let external_path_to_path_aux_nosig #bytes #cb #tkt #l #i #li t p group_id =
+let external_path_to_path_aux_nosig #bytes #cb #tkt #l #i #li t p =
   let? computed_parent_hash = compute_leaf_parent_hash_from_path t p (root_parent_hash #bytes) in
   let? computed_parent_hash = mk_mls_bytes computed_parent_hash "external_path_to_path_aux_nosig" "computed_parent_hash" in
   let lp = get_path_leaf p in
@@ -532,10 +532,10 @@ let external_path_to_path_aux_nosig #bytes #cb #tkt #l #i #li t p group_id =
 val external_path_to_path_nosig:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
-  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source == LNS_update} -> group_id:mls_bytes bytes ->
+  t:treesync bytes tkt l i -> p:external_pathsync bytes tkt l i li{(get_path_leaf p).source == LNS_update} ->
   result (pathsync bytes tkt l i li)
-let external_path_to_path_nosig #bytes #cb #tkt #l #i #li t p group_id =
-  let? new_leaf_node = external_path_to_path_aux_nosig t p group_id in
+let external_path_to_path_nosig #bytes #cb #tkt #l #i #li t p =
+  let? new_leaf_node = external_path_to_path_aux_nosig t p in
   return (set_path_leaf p new_leaf_node)
 
 val get_path_leaf_set_path_leaf:
@@ -571,15 +571,15 @@ let rec compute_leaf_parent_hash_from_path_set_path_leaf #bytes #cb #tkt #l #i #
 val path_is_parent_hash_valid_external_path_to_path_nosig:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
-  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes ->
+  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li ->
   Lemma
   (requires
     (get_path_leaf p).source == LNS_update /\
-    Success? (external_path_to_path_nosig t p group_id)
+    Success? (external_path_to_path_nosig t p)
   )
-  (ensures path_is_parent_hash_valid t (Success?.v (external_path_to_path_nosig t p group_id)))
-let path_is_parent_hash_valid_external_path_to_path_nosig #bytes #cb #tkt #l #li t p group_id =
-  let Success new_lp = external_path_to_path_aux_nosig t p group_id in
+  (ensures path_is_parent_hash_valid t (Success?.v (external_path_to_path_nosig t p)))
+let path_is_parent_hash_valid_external_path_to_path_nosig #bytes #cb #tkt #l #li t p =
+  let Success new_lp = external_path_to_path_aux_nosig t p in
   get_path_leaf_set_path_leaf p new_lp;
   compute_leaf_parent_hash_from_path_set_path_leaf t p new_lp (root_parent_hash #bytes)
 #pop-options
@@ -614,16 +614,16 @@ let rec path_is_filter_valid_set_path_leaf #bytes #cb #tkt #l #i #li t p ln =
 val path_is_filter_valid_external_path_to_path_nosig:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
-  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li -> group_id:mls_bytes bytes ->
+  t:treesync bytes tkt l 0 -> p:external_pathsync bytes tkt l 0 li ->
   Lemma
   (requires
     (get_path_leaf p).source == LNS_update /\
-    Success? (external_path_to_path_nosig t p group_id) /\
+    Success? (external_path_to_path_nosig t p) /\
     path_is_filter_valid t p
   )
-  (ensures path_is_filter_valid t (Success?.v (external_path_to_path_nosig t p group_id)))
-let path_is_filter_valid_external_path_to_path_nosig #bytes #cb #tkt #l #li t p group_id =
-  let Success new_lp = external_path_to_path_aux_nosig t p group_id in
+  (ensures path_is_filter_valid t (Success?.v (external_path_to_path_nosig t p)))
+let path_is_filter_valid_external_path_to_path_nosig #bytes #cb #tkt #l #li t p =
+  let Success new_lp = external_path_to_path_aux_nosig t p in
   path_is_filter_valid_set_path_leaf t p new_lp
 #pop-options
 
@@ -663,10 +663,10 @@ val external_path_has_event:
 let external_path_has_event #tkt #l #li prin tr t p group_id =
   (get_path_leaf p).source == LNS_update /\
   li < pow2 32 /\
-  Success? (external_path_to_path_nosig t p group_id) /\ (
+  Success? (external_path_to_path_nosig t p) /\ (
     //This lemma is useful to know that auth_ln.data.source == LNS_commit
-    path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
-    let Success auth_p = external_path_to_path_nosig t p group_id in
+    path_is_parent_hash_valid_external_path_to_path_nosig t p;
+    let Success auth_p = external_path_to_path_nosig t p in
     let auth_ln = get_path_leaf auth_p in
     compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (root_parent_hash #bytes);
     apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (root_parent_hash #bytes);
@@ -717,8 +717,8 @@ let is_msg_external_path_to_path #ci #tkt #l #li prin label tr t p group_id sk n
   let unsigned_path = set_path_leaf p new_unsigned_ln in
   compute_leaf_parent_hash_from_path_set_path_leaf t p new_unsigned_ln (root_parent_hash #bytes);
   apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t unsigned_path (root_parent_hash #bytes);
-  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
-  path_is_filter_valid_external_path_to_path_nosig t p group_id;
+  path_is_parent_hash_valid_external_path_to_path_nosig t p;
+  path_is_filter_valid_external_path_to_path_nosig t p;
   get_path_leaf_set_path_leaf p new_unsigned_ln;
   pre_compute_leaf_parent_hash_from_path (is_knowable_by label tr) t p (root_parent_hash #bytes);
   is_well_formed_get_path_leaf (is_knowable_by label tr) p;

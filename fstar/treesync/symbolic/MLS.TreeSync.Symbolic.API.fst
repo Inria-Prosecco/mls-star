@@ -536,8 +536,8 @@ val external_path_has_event_later:
   )
   (ensures external_path_has_event prin tr2 t p group_id)
 let external_path_has_event_later #tkt #l #li prin tr1 tr2 t p group_id =
-  let Success auth_p = external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id in
-  path_is_parent_hash_valid_external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id;
+  let Success auth_p = external_path_to_path_nosig #bytes #crypto_bytes_bytes t p  in
+  path_is_parent_hash_valid_external_path_to_path_nosig #bytes #crypto_bytes_bytes t p ;
   apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #bytes #crypto_bytes_bytes t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
   path_to_tree_list_pre_weaken (tree_has_event prin tr1 group_id li) (tree_has_event prin tr2 group_id li) t auth_p
 
@@ -880,9 +880,9 @@ val external_path_has_event_pre:
 let external_path_has_event_pre #tkt #l #li leaf_node_has_event_pred group_has_event_pred tr prin t p group_id =
   (get_path_leaf p).source == LNS_update /\
   li < pow2 32 /\
-  Success? (external_path_to_path_nosig t p group_id) /\ (
-    path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
-    let Success auth_p = external_path_to_path_nosig t p group_id in
+  Success? (external_path_to_path_nosig t p) /\ (
+    path_is_parent_hash_valid_external_path_to_path_nosig t p ;
+    let Success auth_p = external_path_to_path_nosig t p in
     let auth_ln = get_path_leaf auth_p in
     compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
     apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
@@ -898,10 +898,10 @@ val trigger_external_path_events:
 let trigger_external_path_events #tkt #l #li prin t p group_id =
   guard ((get_path_leaf p).source = LNS_update);*?
   guard (li < pow2 32);*?
-  guard (Success? (external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id));*?
+  guard (Success? (external_path_to_path_nosig #bytes #crypto_bytes_bytes t p));*?
 
-  path_is_parent_hash_valid_external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id;
-  let Success auth_p = external_path_to_path_nosig #bytes #crypto_bytes_bytes t p group_id in
+  path_is_parent_hash_valid_external_path_to_path_nosig #bytes #crypto_bytes_bytes t p;
+  let Success auth_p = external_path_to_path_nosig #bytes #crypto_bytes_bytes t p in
   let auth_ln = get_path_leaf auth_p in
   compute_leaf_parent_hash_from_path_set_path_leaf #bytes #crypto_bytes_bytes t p auth_ln (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
   apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed #bytes #crypto_bytes_bytes t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
@@ -933,8 +933,8 @@ val trigger_external_path_events_proof:
   ))
 let trigger_external_path_events_proof #invs #tkt #l #li leaf_node_has_event_pred group_has_event_pred prin t p group_id tr =
   let tr_in = tr in
-  path_is_parent_hash_valid_external_path_to_path_nosig t p group_id;
-  let Success auth_p = external_path_to_path_nosig t p group_id in
+  path_is_parent_hash_valid_external_path_to_path_nosig t p;
+  let Success auth_p = external_path_to_path_nosig t p in
   let auth_ln = get_path_leaf auth_p in
   compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
   apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
