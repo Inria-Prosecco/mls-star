@@ -668,12 +668,15 @@ let equal_tbs_implies_equivalence #bytes #bl #tkt #i1 #i2 t1 t2 group_id1 group_
 
 (*** Induction ***)
 
+type one_tree (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
+  dtuple3 nat tree_index (treesync bytes tkt)
+
 type tree_list (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
-  list (l:nat & i:tree_index l & treesync bytes tkt l i)
+  list (one_tree bytes tkt)
 
 val tree_parent_hash_linkedP:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
-  (l:nat & i:tree_index l & treesync bytes tkt l i) -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
+  (one_tree bytes tkt) -> (one_tree bytes tkt) ->
   prop
 let tree_parent_hash_linkedP (|ld, id, d|) (|lp, ip, p|) =
   ld < lp /\
@@ -765,7 +768,7 @@ let rec tree_list_equivalent_subset #bytes #bl #tkt tl1 tl2 li =
 
 val tree_is_canonicalized:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
-  nat -> (l:nat & i:tree_index l & treesync bytes tkt l i) ->
+  nat -> (one_tree bytes tkt) ->
   prop
 let tree_is_canonicalized #bytes #bl #tkt li (|l, i, t|) =
   leaf_index_inside l i li /\ is_canonicalized t li
@@ -969,7 +972,7 @@ val compute_parent_hash_link_aux:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #ld:nat -> #lp:nat{ld < lp} -> #id:tree_index ld -> #ip:tree_index lp ->
   d:treesync bytes tkt ld id -> p:treesync bytes tkt lp ip{node_not_blank p} ->
-  Pure (l:nat & i:tree_index l & treesync bytes tkt l i)
+  Pure (one_tree bytes tkt)
   (requires
     is_subtree_of d p /\
     node_has_parent_hash_link_aux d p
@@ -1001,7 +1004,7 @@ val compute_parent_hash_link:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #lp:pos -> #ip:tree_index lp ->
   p:treesync bytes tkt lp ip{node_not_blank p} ->
-  Pure (l:nat & i:tree_index l & treesync bytes tkt l i)
+  Pure (one_tree bytes tkt)
   (requires node_has_parent_hash_link p)
   (ensures fun (|lres, ires, res|) ->
     lres < lp /\ leaf_index_inside lp ip ires /\
@@ -1175,12 +1178,7 @@ let find_node_and_path_parent_hash_link #bytes #cb #tkt #l #i #li t p parent_par
   | TNode _ left right, PNode opt_ext_content p_next -> (
     let (child, sibling) = get_child_sibling t li in
     let Success (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
-    let (|ld, id, td, pd|) =
-      if is_left_leaf li then
-        find_node_and_path_parent_hash_link_aux left p_next new_parent_parent_hash
-      else
-        find_node_and_path_parent_hash_link_aux right p_next new_parent_parent_hash
-    in
+    let (|ld, id, td, pd|) = find_node_and_path_parent_hash_link_aux child p_next new_parent_parent_hash in
     (|ld, id, (td, pd, new_parent_parent_hash)|)
   )
 
@@ -1362,3 +1360,113 @@ let path_to_tree_list_lemma #bytes #cb #tkt #l #li t p =
   tree_list_is_canonicalized_rev li rev_tl;
   last_to_tree_list_ends_at_root (List.Tot.rev rev_tl)
 #pop-options
+
+val path_to_tree_list_pre_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  (one_tree bytes tkt -> prop) ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:bytes ->
+  squash (Success? (apply_path_aux t p parent_parent_hash)) ->
+  prop
+let rec path_to_tree_list_pre_aux #bytes #cb #tkt #l #i #li pre t p parent_parent_hash _ =
+  match t, p with
+  | TLeaf _, PLeaf ln -> pre (|l, i, TLeaf (Some ln)|)
+  | TNode _ left right, PNode opt_ext_content p_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    let Success (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+    path_to_tree_list_pre_aux pre child p_next new_parent_parent_hash () /\ (
+      match opt_ext_content with
+      | Some _ -> pre (|l, i, (Success?.v (apply_path_aux t p parent_parent_hash))|)
+      | None -> True
+    )
+  )
+
+val path_to_tree_list_pre:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  (one_tree bytes tkt -> prop) ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
+  squash (Success? (apply_path t p)) ->
+  prop
+let path_to_tree_list_pre #bytes #cb #tkt #l #li pre t p _ =
+  path_to_tree_list_pre_aux pre t p (root_parent_hash #bytes) ()
+
+#push-options "--fuel 2 --ifuel 1"
+val path_to_tree_list_pre_aux_lemma:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  pre:(one_tree bytes tkt -> prop) ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:bytes ->
+  Lemma
+  (requires
+    Success? (apply_path_aux t p parent_parent_hash)
+  )
+  (ensures (
+    let (|l', i', t', p'|) = find_node_and_path_parent_hash_link_aux t p parent_parent_hash in
+    (path_to_tree_list_pre_aux pre t p parent_parent_hash () <==> (forall one_t. List.Tot.memP one_t (path_to_tree_list_aux t' p' parent_parent_hash) ==> pre one_t))
+  ))
+let rec path_to_tree_list_pre_aux_lemma #bytes #cb #tkt #l #i #li pre t p parent_parent_hash =
+  match t, p with
+  | TLeaf _, PLeaf ln -> ()
+  | TNode _ left right, PNode opt_ext_content p_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    match opt_ext_content with
+    | Some _ -> (
+      let Success (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+      path_to_tree_list_pre_aux_lemma pre child p_next new_parent_parent_hash
+    )
+    | None -> (
+      path_to_tree_list_pre_aux_lemma pre child p_next parent_parent_hash
+    )
+  )
+#pop-options
+
+val path_to_tree_list_pre_lemma:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  pre:(one_tree bytes tkt -> prop) ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
+  Lemma
+  (requires
+    Success? (apply_path t p)
+  )
+  (ensures path_to_tree_list_pre pre t p () <==> (forall one_t. List.Tot.memP one_t (path_to_tree_list t p) ==> pre one_t))
+let path_to_tree_list_pre_lemma #bytes #cb #tkt #l #li pre t p =
+  path_to_tree_list_pre_aux_lemma pre t p (root_parent_hash #bytes);
+  FStar.Classical.forall_intro_2 (memP_rev #(one_tree bytes tkt))
+
+val path_to_tree_list_pre_aux_weaken:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
+  pre_strong:(one_tree bytes tkt -> prop) -> pre_weak:(one_tree bytes tkt -> prop) ->
+  t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:bytes ->
+  Lemma
+  (requires 
+    Success? (apply_path_aux t p parent_parent_hash) /\
+    path_to_tree_list_pre_aux pre_strong t p parent_parent_hash () /\
+    (forall x. pre_strong x ==> pre_weak x)
+  )
+  (ensures path_to_tree_list_pre_aux pre_weak t p parent_parent_hash ())
+let rec path_to_tree_list_pre_aux_weaken #bytes #cb #tkt #l #i #li pre_strong pre_weak t p parent_parent_hash =
+  match t, p with
+  | TLeaf _, PLeaf ln -> ()
+  | TNode _ left right, PNode opt_ext_content p_next -> (
+    let (child, sibling) = get_child_sibling t li in
+    let Success (_, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+    path_to_tree_list_pre_aux_weaken pre_strong pre_weak child p_next new_parent_parent_hash
+  )
+
+val path_to_tree_list_pre_weaken:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #li:leaf_index l 0 ->
+  pre_strong:(one_tree bytes tkt -> prop) -> pre_weak:(one_tree bytes tkt -> prop) ->
+  t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li ->
+  Lemma
+  (requires 
+    Success? (apply_path t p) /\
+    path_to_tree_list_pre pre_strong t p () /\
+    (forall x. pre_strong x ==> pre_weak x)
+  )
+  (ensures path_to_tree_list_pre pre_weak t p ())
+let path_to_tree_list_pre_weaken #bytes #cb #tkt #l #li pre_strong pre_weak t p =
+  path_to_tree_list_pre_aux_weaken pre_strong pre_weak t p (root_parent_hash #bytes)
