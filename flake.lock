@@ -36,11 +36,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1729090944,
-        "narHash": "sha256-v61k1JYcQUNojjJZFD3IpjZKrEvGVohOPiWSsYMK+Dk=",
+        "lastModified": 1731509593,
+        "narHash": "sha256-zQF1zZnXmLt+UgnMa9vK4QgQtrfG28EwAky/Dgac/s4=",
         "owner": "REPROSEC",
         "repo": "dolev-yao-star-extrinsic",
-        "rev": "57903cfeb6224dd788b1a72ea9fba72706a0eb76",
+        "rev": "27826bbb7745dac32317e783257e9098bcd3ff36",
         "type": "github"
       },
       "original": {

@@ -9,7 +9,7 @@ val my_mk_rand: usg:usage -> lab:(bytes -> label) -> len:nat{len <> 0} -> tracef
 let my_mk_rand usg lab len =
   let* time = get_time in
   let result = (Rand len time) in
-  add_event (RandGen usg (lab result) len);*
+  add_entry (RandGen usg (lab result) len);*
   return result
 
 /// Generating a random bytestrings always preserve the trace invariant.
@@ -29,7 +29,7 @@ val my_mk_rand_trace_invariant:
   [SMTPat (my_mk_rand usg lab len tr); SMTPat (trace_invariant tr)]
 let my_mk_rand_trace_invariant #invs usg lab len tr =
   let result = (Rand len (DY.Core.Trace.Base.length tr)) in
-  add_event_invariant (RandGen usg (lab result) len) tr;
+  add_entry_invariant (RandGen usg (lab result) len) tr;
   reveal_opaque (`%my_mk_rand) (my_mk_rand)
 #pop-options
 
