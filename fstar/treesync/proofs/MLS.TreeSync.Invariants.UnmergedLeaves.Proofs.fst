@@ -22,7 +22,7 @@ val unmerged_leaves_ok_tree_create:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   ln:leaf_node_nt bytes tkt ->
   Lemma
-  (unmerged_leaves_ok (tree_create (Some ln)))
+  (unmerged_leaves_ok (tree_create ln))
 let unmerged_leaves_ok_tree_create #bytes #bl #tkt ln = ()
 
 (*** Update/Remove ***)

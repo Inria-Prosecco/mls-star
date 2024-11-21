@@ -19,7 +19,7 @@ val valid_leaves_invariant_tree_create:
   group_id:mls_bytes bytes -> ln:leaf_node_nt bytes tkt ->
   Lemma
   (requires leaf_is_valid ln group_id 0)
-  (ensures valid_leaves_invariant group_id (tree_create (Some ln)))
+  (ensures valid_leaves_invariant group_id (tree_create ln))
 let valid_leaves_invariant_tree_create #bytes #cb #tkt group_id ln = ()
 
 val valid_leaves_invariant_tree_add:

@@ -9,9 +9,9 @@ open MLS.Tree
 val tree_create:
   #leaf_t:Type -> #node_t:Type ->
   leaf_t ->
-  tree leaf_t node_t 0 0
+  tree (option leaf_t) node_t 0 0
 let tree_create lp =
-  TLeaf lp
+  TLeaf (Some lp)
 
 (*** Common tree operations ***)
 

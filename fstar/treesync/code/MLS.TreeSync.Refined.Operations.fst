@@ -27,7 +27,7 @@ let tree_create #bytes #cb #tkt #group_id ln =
   unmerged_leaves_ok_tree_create ln;
   parent_hash_invariant_tree_create ln;
   valid_leaves_invariant_tree_create group_id ln;
-  tree_create (Some ln)
+  tree_create ln
 
 val tree_add:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->

@@ -94,7 +94,7 @@ let finalize_create #bytes #cb #tkt #asp #group_id #ln pend token =
   ({
     levels = 0;
     tree = tree_create ln;
-    tokens = MLS.TreeCommon.tree_create (Some token);
+    tokens = MLS.TreeCommon.tree_create token;
   })
 
 val finalize_create_valid:

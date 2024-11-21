@@ -570,7 +570,7 @@ val parent_hash_invariant_tree_create:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   ln:leaf_node_nt bytes tkt ->
   Lemma
-  (parent_hash_invariant (tree_create (Some ln)))
+  (parent_hash_invariant (tree_create ln))
 let parent_hash_invariant_tree_create #bytes #cb #tkt ln = ()
 
 val parent_hash_invariant_mk_blank_tree: #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> l:nat -> i:tree_index l -> Lemma (parent_hash_invariant (mk_blank_tree l i <: treesync bytes tkt l i))

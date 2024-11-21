@@ -23,7 +23,7 @@ val create:
 let create #bytes #cb dec_key enc_key =
   {
     levels = 0;
-    tree = TLeaf (Some ({public_key = enc_key} <: treekem_leaf bytes));
+    tree = tree_create ({public_key = enc_key} <: treekem_leaf bytes);
     priv = PLeaf dec_key
   }
 

@@ -30,7 +30,7 @@ val all_credentials_ok_tree_create:
   ln:leaf_node_nt bytes tkt -> token:asp.token_t ->
   Lemma
   (requires asp.credential_ok (ln.data.signature_key, ln.data.credential) token)
-  (ensures all_credentials_ok (tree_create (Some ln)) (tree_create (Some token)))
+  (ensures all_credentials_ok (tree_create ln) (tree_create token))
 let all_credentials_ok_tree_create #bytes #bl #tkt ln token = ()
 
 val all_credentials_ok_tree_add:
