@@ -11,6 +11,9 @@ open MLS.Result
 
 #set-options "--fuel 1 --ifuel 1"
 
+val nat_lbytes_to_nat: #sz:nat -> nat_lbytes sz -> nat
+let nat_lbytes_to_nat #sz x = x
+
 val treesync_to_treekem_node:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   parent_node_nt bytes tkt ->
@@ -18,7 +21,7 @@ val treesync_to_treekem_node:
 let treesync_to_treekem_node #bytes #cb node =
   {
     public_key = node.content;
-    unmerged_leaves = List.Tot.map #(nat_lbytes 4) #nat (fun x -> x) node.unmerged_leaves;
+    unmerged_leaves = List.Tot.map nat_lbytes_to_nat node.unmerged_leaves;
   }
 
 // This does not contain any internal TreeKEM data. To be used then joining a new group.
