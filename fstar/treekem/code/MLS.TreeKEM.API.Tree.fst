@@ -98,6 +98,24 @@ let update #bytes #cb #leaf_ind st lp i =
 
 (*** Remove ***)
 
+val truncate_one:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  st:treekem_tree_state bytes leaf_ind{1 <= st.levels && is_tree_empty (TNode?.right st.tree)} ->
+  res:treekem_tree_state bytes leaf_ind{res.levels == st.levels-1}
+let truncate_one #bytes #cb #leaf_ind st =
+  if leaf_ind >= pow2 (st.levels-1) then (
+    MLS.TreeCommon.Lemmas.is_tree_empty_leaf_at (TNode?.right st.tree) leaf_ind;
+    false_elim ()
+  ) else (
+    treekem_invariant_truncate st.tree;
+    treekem_priv_invariant_truncate st.tree st.priv;
+    {
+      levels = st.levels-1;
+      tree = tree_truncate st.tree;
+      priv = path_truncate st.priv;
+    }
+  )
+
 val fully_truncate:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_tree_state bytes leaf_ind ->
@@ -105,32 +123,29 @@ val fully_truncate:
   (decreases st.levels)
 let rec fully_truncate #bytes #cb #leaf_ind st =
   if 1 <= st.levels && is_tree_empty (TNode?.right st.tree) then (
-    if leaf_ind >= pow2 (st.levels-1) then (
-      MLS.TreeCommon.Lemmas.is_tree_empty_leaf_at (TNode?.right st.tree) leaf_ind;
-      false_elim ()
-    ) else (
-      treekem_invariant_truncate st.tree;
-      treekem_priv_invariant_truncate st.tree st.priv;
-      fully_truncate {
-        levels = st.levels-1;
-        tree = tree_truncate st.tree;
-        priv = path_truncate st.priv;
-      }
-    )
+    fully_truncate (truncate_one st)
   ) else (
     st
   )
+
+val remove_aux:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  st:treekem_tree_state bytes leaf_ind -> i:treekem_index st{i <> leaf_ind} ->
+  treekem_tree_state bytes leaf_ind
+let remove_aux #bytes #cb #leaf_ind st i =
+  treekem_invariant_remove st.tree i;
+  treekem_priv_invariant_remove st.tree st.priv i;
+  { st with
+    tree = tree_remove st.tree i;
+    priv = path_blank st.priv i;
+  }
 
 val remove:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_tree_state bytes leaf_ind -> i:treekem_index st{i <> leaf_ind} ->
   treekem_tree_state bytes leaf_ind
 let remove #bytes #cb #leaf_ind st i =
-  treekem_invariant_remove st.tree i;
-  treekem_priv_invariant_remove st.tree st.priv i;
-  fully_truncate { st with
-    tree = tree_remove st.tree i;
-  }
+  fully_truncate (remove_aux st i)
 
 (*** Process Commit ***)
 
