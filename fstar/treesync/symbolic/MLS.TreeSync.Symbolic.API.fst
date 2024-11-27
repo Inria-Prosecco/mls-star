@@ -435,7 +435,7 @@ let commit #tkt #l #li p as_session gmgr_session group_id path =
   set_public_treesync_state p group_session.si_public new_st;*
   return (Some ())
 
-#push-options "--z3rlimit 100"
+#push-options "--z3rlimit 50"
 val commit_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types bytes -> #l:nat -> #li:leaf_index l 0 ->
@@ -452,7 +452,6 @@ val commit_proof:
     let (_, tr_out) = commit p as_session gmgr_session group_id path tr in
     trace_invariant tr_out
   ))
-#restart-solver
 let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
   let (opt_group_session, tr) = find_group_sessions p gmgr_session { group_id } tr in
   match opt_group_session with
@@ -477,11 +476,8 @@ let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
             match opt_new_st with
             | None -> ()
             | Some new_st -> (
-              FStar.Pure.BreakVC.break_vc ();
               is_well_formed_finalize_commit (is_publishable tr) commit_pend token;
               finalize_commit_valid #_ #_ #_ #(dy_asp tr) commit_pend token;
-              set_public_treesync_state_proof p group_session.si_public new_st tr;
-              let (_, tr) = set_public_treesync_state p group_session.si_public new_st tr in
               ()
             )
           )

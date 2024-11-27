@@ -110,6 +110,7 @@ let treesync_state_to_bare_treesync_state #tkt #group_id st = {
     tokens = st.tokens;
   }
 
+[@"opaque_to_smt"]
 val new_public_treesync_state:
   #tkt:treekem_types bytes -> #group_id:mls_bytes bytes -> 
   principal ->
@@ -120,6 +121,7 @@ let new_public_treesync_state #tkt #group_id prin st =
   set_state prin state_id (treesync_state_to_bare_treesync_state st);*
   return state_id
 
+[@"opaque_to_smt"]
 val new_public_treesync_state_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types bytes -> #group_id:mls_bytes bytes -> 
@@ -138,8 +140,11 @@ val new_public_treesync_state_proof:
     let (_, tr_out) = new_public_treesync_state prin st tr in
     trace_invariant tr_out
   ))
-let new_public_treesync_state_proof #invs #tkt #group_id prin st tr = ()
+  [SMTPat (new_public_treesync_state prin st tr); SMTPat (trace_invariant tr)]
+let new_public_treesync_state_proof #invs #tkt #group_id prin st tr =
+  reveal_opaque (`%new_public_treesync_state) (new_public_treesync_state #tkt #group_id)
 
+[@"opaque_to_smt"]
 val set_public_treesync_state:
   #tkt:treekem_types bytes -> #group_id:mls_bytes bytes ->
   prin:principal -> state_id:state_id ->
@@ -166,8 +171,11 @@ val set_public_treesync_state_proof:
     let ((), tr_out) = set_public_treesync_state prin state_id st tr in
     trace_invariant tr_out
   ))
-let set_public_treesync_state_proof #invs #tkt #group_id prin state_id st tr = ()
+  [SMTPat (set_public_treesync_state prin state_id st tr); SMTPat (trace_invariant tr)]
+let set_public_treesync_state_proof #invs #tkt #group_id prin state_id st tr =
+  reveal_opaque (`%set_public_treesync_state) (set_public_treesync_state #tkt #group_id)
 
+[@"opaque_to_smt"]
 val get_public_treesync_state:
   #tkt:treekem_types bytes ->
   prin:principal -> state_id:state_id ->
@@ -184,6 +192,7 @@ let get_public_treesync_state #tkt prin state_id =
     tokens = bare_st.tokens;
   } <: treesync_state bytes tkt dy_as_token bare_st.group_id)|))
 
+#push-options "--fuel 0 --ifuel 0"
 val get_public_treesync_state_proof:
   {|protocol_invariants|} ->
   #tkt:treekem_types bytes ->
@@ -201,8 +210,12 @@ val get_public_treesync_state_proof:
       | None -> True
       | Some (|group_id, st|) -> (
         is_publishable tr_out group_id /\
-        is_well_formed _ (is_publishable tr_out) (st.tree <: treesync bytes tkt _ _)
+        is_well_formed _ (is_publishable tr_out) (st.tree <: treesync bytes tkt _ _) /\
+        treesync_state_valid (dy_asp tr) st
       )
     )
   ))
-let get_public_treesync_state_proof #invs #tkt prin state_id tr = ()
+  [SMTPat (get_public_treesync_state #tkt prin state_id tr); SMTPat (trace_invariant tr)]
+let get_public_treesync_state_proof #invs #tkt prin state_id tr =
+  reveal_opaque (`%get_public_treesync_state) (get_public_treesync_state #tkt)
+#pop-options
