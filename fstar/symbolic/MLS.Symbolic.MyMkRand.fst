@@ -23,12 +23,11 @@ val my_mk_rand_trace_invariant:
   (ensures (
     let (b, tr_out) = my_mk_rand usg lab len tr in
     trace_invariant tr_out /\
-    1 <= DY.Core.Trace.Base.length tr_out /\
-    rand_generated_at tr_out (DY.Core.Trace.Base.length tr_out - 1) b
+    rand_just_generated tr_out b
   ))
   [SMTPat (my_mk_rand usg lab len tr); SMTPat (trace_invariant tr)]
 let my_mk_rand_trace_invariant #invs usg lab len tr =
-  let result = (Rand len (DY.Core.Trace.Base.length tr)) in
+  let result = (Rand len (trace_length tr)) in
   add_entry_invariant (RandGen usg (lab result) len) tr;
   reveal_opaque (`%my_mk_rand) (my_mk_rand)
 #pop-options
