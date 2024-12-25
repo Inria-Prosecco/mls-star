@@ -54,7 +54,7 @@ let test_welcome_one t =
       failwith "test_welcome_one: bad signature"
     );
 
-    let group_context = (ps_prefix_to_ps_whole ps_group_context_nt).serialize (gen_group_context (ciphersuite #bytes) group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch group_info.tbs.group_context.tree_hash group_info.tbs.group_context.confirmed_transcript_hash) in
+    let group_context = gen_group_context (ciphersuite #bytes) group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch group_info.tbs.group_context.tree_hash group_info.tbs.group_context.confirmed_transcript_hash in
     let joiner_secret = group_secrets.joiner_secret in
     let epoch_secret = extract_result (secret_joiner_to_epoch joiner_secret [] group_context) in
     let confirmation_key = extract_result (secret_epoch_to_confirmation #bytes epoch_secret) in

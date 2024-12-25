@@ -2,13 +2,14 @@ module MLS.TreeKEM.KeySchedule
 
 open Comparse
 open MLS.Crypto
+open MLS.NetworkTypes
 open MLS.TreeKEM.NetworkTypes
 open MLS.TreeKEM.PSK
 open MLS.Result
 
 val secret_init_to_joiner:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> option bytes -> bytes ->
+  bytes -> option bytes -> group_context_nt bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_init_to_joiner #bytes #cb init_secret opt_commit_secret group_context =
   let commit_secret =
@@ -17,7 +18,7 @@ let secret_init_to_joiner #bytes #cb init_secret opt_commit_secret group_context
     | None -> zero_vector #bytes
   in
   let? prk = kdf_extract init_secret commit_secret in
-  expand_with_label #bytes prk "joiner" group_context (kdf_length #bytes)
+  expand_with_label #bytes prk "joiner" (serialize _ group_context) (kdf_length #bytes)
 
 // this version is tested in the test vectors
 val secret_joiner_to_welcome_internal:
@@ -39,15 +40,15 @@ let secret_joiner_to_welcome #bytes #cb joiner_secret psks =
 // this version is tested in the test vectors
 val secret_joiner_to_epoch_internal:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> bytes -> bytes ->
+  bytes -> bytes -> group_context_nt bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_joiner_to_epoch_internal #bytes #cb joiner_secret psk_secret group_context =
   let? prk = kdf_extract joiner_secret psk_secret in
-  expand_with_label #bytes prk "epoch" group_context (kdf_length #bytes)
+  expand_with_label #bytes prk "epoch" (serialize _ group_context) (kdf_length #bytes)
 
 val secret_joiner_to_epoch:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> list (pre_shared_key_id_nt bytes & bytes) -> bytes ->
+  bytes -> list (pre_shared_key_id_nt bytes & bytes) -> group_context_nt bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_joiner_to_epoch #bytes #cb joiner_secret psks group_context =
   let? psk_secret = compute_psk_secret psks in

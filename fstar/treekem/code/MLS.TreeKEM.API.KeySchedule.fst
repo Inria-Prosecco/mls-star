@@ -48,8 +48,8 @@ val commit:
   group_context_nt bytes ->
   result (treekem_keyschedule_state bytes & bytes & secrets_for_welcome bytes)
 let commit #bytes #cb st opt_commit_secret psks new_group_context =
-  let? joiner_secret: bytes = secret_init_to_joiner st.init_secret opt_commit_secret (serialize _ new_group_context) in
-  let? epoch_secret: bytes = secret_joiner_to_epoch joiner_secret psks (serialize _ new_group_context) in
+  let? joiner_secret: bytes = secret_init_to_joiner st.init_secret opt_commit_secret new_group_context in
+  let? epoch_secret: bytes = secret_joiner_to_epoch joiner_secret psks new_group_context in
   let? welcome_secret: bytes = secret_joiner_to_welcome joiner_secret psks in
   let? (new_st, encryption_secret) = create epoch_secret in
   return (new_st, encryption_secret, {
