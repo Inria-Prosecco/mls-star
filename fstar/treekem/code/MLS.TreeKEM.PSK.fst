@@ -13,10 +13,10 @@ val compute_psk_secret_step:
   psk_label_nt bytes -> bytes -> bytes ->
   result bytes
 let compute_psk_secret_step #bytes #cb label psk prev_psk_secret =
-    let? psk_extracted = kdf_extract (zero_vector #bytes) psk in
-    let? psk_input = expand_with_label #bytes psk_extracted "derived psk" (serialize (psk_label_nt bytes) label) (kdf_length #bytes) in
-    let? new_psk_secret = kdf_extract psk_input prev_psk_secret in
-    return (new_psk_secret <: bytes)
+  let? psk_extracted = kdf_extract (zero_vector #bytes) psk in
+  let? psk_input = expand_with_label #bytes psk_extracted "derived psk" (serialize (psk_label_nt bytes) label) (kdf_length #bytes) in
+  let? new_psk_secret = kdf_extract psk_input prev_psk_secret in
+  return (new_psk_secret <: bytes)
 
 // Compute psk_secret[n] given psk_secret[ind]
 val compute_psk_secret_aux:
@@ -46,3 +46,12 @@ val compute_psk_secret:
   result bytes
 let compute_psk_secret #bytes #cb l =
   compute_psk_secret_aux l 0 (zero_vector #bytes)
+
+#push-options "--fuel 1 --ifuel 1"
+val compute_empty_psk_secret_sanity_check:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  Lemma (
+    compute_psk_secret #bytes [] == Success (zero_vector #bytes)
+  )
+let compute_empty_psk_secret_sanity_check #bytes #cb = ()
+#pop-options

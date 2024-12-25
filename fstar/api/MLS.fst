@@ -214,7 +214,7 @@ let process_commit state wire_format message message_auth =
     match message_content.path with
     | None -> (
       let? pend = MLS.TreeKEM.API.prepare_process_add_only_commit state.treekem_state in
-      let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.finalize_process_commit pend None new_group_context in
+      let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.finalize_process_commit pend [] new_group_context in
       return ({ state with treekem_state;}, encryption_secret)
     )
     | Some path ->
@@ -243,7 +243,7 @@ let process_commit state wire_format message message_auth =
             excluded_leaves = (List.Tot.map snd added_leaves);
             provisional_group_context;
           } in
-          MLS.TreeKEM.API.finalize_process_commit pend None new_group_context
+          MLS.TreeKEM.API.finalize_process_commit pend [] new_group_context
         )
       in
       return ({ state with treesync_state; treekem_state;}, encryption_secret)
@@ -572,7 +572,7 @@ let generate_commit state e proposals =
   let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash WF_mls_private_message msg half_auth_commit.signature state.interim_transcript_hash in
   let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "generate_commit" "confirmed_transcipt_hash" in
   let new_group_context = { provisional_group_context with confirmed_transcript_hash } in
-  let? commit_result = MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context None in
+  let? commit_result = MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context [] in
   let state = { state with pending_updatepath = (update_path, (commit_result.new_state, commit_result.encryption_secret))::state.pending_updatepath } in
   let? auth_commit = MLS.TreeDEM.API.finish_authenticate_commit half_auth_commit (MLS.TreeKEM.API.get_epoch_keys commit_result.new_state).confirmation_key confirmed_transcript_hash in
   let? reuse_guard, e = chop_entropy e 4 in
@@ -696,7 +696,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash #bytes group_info.tbs.confirmation_tag group_info.tbs.group_context.confirmed_transcript_hash in
   let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
   let? group_context = compute_group_context group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch tree_hash group_info.tbs.group_context.confirmed_transcript_hash in
-  let? epoch_secret = MLS.TreeKEM.KeySchedule.secret_joiner_to_epoch (secrets.joiner_secret <: bytes) None (serialize _ group_context) in
+  let? epoch_secret = MLS.TreeKEM.KeySchedule.secret_joiner_to_epoch (secrets.joiner_secret <: bytes) [] (serialize _ group_context) in
   let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.welcome treekem leaf_decryption_key opt_path_secret_and_inviter_ind leaf_index epoch_secret in
 
   let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in

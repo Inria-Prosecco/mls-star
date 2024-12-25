@@ -5,6 +5,7 @@ open MLS.Crypto
 open MLS.NetworkTypes
 open MLS.Tree
 open MLS.NetworkBinder.Properties
+open MLS.TreeKEM.NetworkTypes
 open MLS.TreeKEM.Types
 open MLS.TreeKEM.Invariants
 open MLS.TreeKEM.API.KeySchedule.Types
@@ -115,10 +116,10 @@ let prepare_process_add_only_commit #bytes #cb #leaf_ind st =
 
 val finalize_process_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat -> #st:treekem_state bytes leaf_ind ->
-  pending_process_commit st -> option bytes -> group_context_nt bytes ->
+  pending_process_commit st -> list (pre_shared_key_id_nt bytes & bytes) -> group_context_nt bytes ->
   result (treekem_state bytes leaf_ind & bytes)
-let finalize_process_commit #bytes #cb #leaf_ind #st pend opt_psk new_group_context =
-  let? (keyschedule_state, encryption_secret, _) = KS.commit st.keyschedule_state pend.opt_commit_secret opt_psk new_group_context in
+let finalize_process_commit #bytes #cb #leaf_ind #st pend psks new_group_context =
+  let? (keyschedule_state, encryption_secret, _) = KS.commit st.keyschedule_state pend.opt_commit_secret psks new_group_context in
   return ({
     tree_state = pend.next_tree_state;
     keyschedule_state;
@@ -193,10 +194,10 @@ type create_commit_result (bytes:Type0) {|crypto_bytes bytes|} (leaf_ind: nat) =
 val finalize_create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   pending_create_commit_2 bytes leaf_ind  ->
-  group_context_nt bytes -> option bytes ->
+  group_context_nt bytes -> list (pre_shared_key_id_nt bytes & bytes) ->
   result (create_commit_result bytes leaf_ind)
-let finalize_create_commit #bytes #cb #leaf_ind pending new_group_context opt_psk =
-  let? (keyschedule_state, encryption_secret, additional_secrets) = KS.commit pending.new_state.keyschedule_state (Some pending.commit_secret) opt_psk new_group_context in
+let finalize_create_commit #bytes #cb #leaf_ind pending new_group_context psks =
+  let? (keyschedule_state, encryption_secret, additional_secrets) = KS.commit pending.new_state.keyschedule_state (Some pending.commit_secret) psks new_group_context in
   return {
     new_state = {
       pending.new_state with

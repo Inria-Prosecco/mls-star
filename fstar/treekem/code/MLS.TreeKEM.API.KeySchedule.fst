@@ -3,6 +3,7 @@ module MLS.TreeKEM.API.KeySchedule
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes
+open MLS.TreeKEM.NetworkTypes
 open MLS.TreeKEM.API.KeySchedule.Types
 open MLS.TreeKEM.KeySchedule
 open MLS.Result
@@ -43,13 +44,13 @@ val commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   treekem_keyschedule_state bytes ->
   option bytes ->
-  option bytes ->
+  list (pre_shared_key_id_nt bytes & bytes) ->
   group_context_nt bytes ->
   result (treekem_keyschedule_state bytes & bytes & secrets_for_welcome bytes)
-let commit #bytes #cb st opt_commit_secret opt_psk new_group_context =
+let commit #bytes #cb st opt_commit_secret psks new_group_context =
   let? joiner_secret: bytes = secret_init_to_joiner st.init_secret opt_commit_secret (serialize _ new_group_context) in
-  let? epoch_secret: bytes = secret_joiner_to_epoch joiner_secret opt_psk (serialize _ new_group_context) in
-  let? welcome_secret: bytes = secret_joiner_to_welcome joiner_secret opt_psk in
+  let? epoch_secret: bytes = secret_joiner_to_epoch joiner_secret psks (serialize _ new_group_context) in
+  let? welcome_secret: bytes = secret_joiner_to_welcome joiner_secret psks in
   let? (new_st, encryption_secret) = create epoch_secret in
   return (new_st, encryption_secret, {
     joiner_secret;

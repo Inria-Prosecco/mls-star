@@ -2,40 +2,56 @@ module MLS.TreeKEM.KeySchedule
 
 open Comparse
 open MLS.Crypto
+open MLS.TreeKEM.NetworkTypes
+open MLS.TreeKEM.PSK
 open MLS.Result
-
-val opt_secret_to_secret:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  option bytes ->
-  bytes
-let opt_secret_to_secret #bytes #cb opt_secret =
-  match opt_secret with
-  | Some secret -> secret
-  | None -> zero_vector #bytes
 
 val secret_init_to_joiner:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes -> option bytes -> bytes ->
   result (lbytes bytes (kdf_length #bytes))
 let secret_init_to_joiner #bytes #cb init_secret opt_commit_secret group_context =
-  let? prk = kdf_extract init_secret (opt_secret_to_secret opt_commit_secret) in
+  let commit_secret =
+    match opt_commit_secret with
+    | Some commit_secret -> commit_secret
+    | None -> zero_vector #bytes
+  in
+  let? prk = kdf_extract init_secret commit_secret in
   expand_with_label #bytes prk "joiner" group_context (kdf_length #bytes)
+
+// this version is tested in the test vectors
+val secret_joiner_to_welcome_internal:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> bytes ->
+  result (lbytes bytes (kdf_length #bytes))
+let secret_joiner_to_welcome_internal #bytes #cb joiner_secret psk_secret =
+  let? prk = kdf_extract joiner_secret psk_secret in
+  derive_secret #bytes prk "welcome"
 
 val secret_joiner_to_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> option bytes ->
+  bytes -> list (pre_shared_key_id_nt bytes & bytes) ->
   result (lbytes bytes (kdf_length #bytes))
-let secret_joiner_to_welcome #bytes #cb joiner_secret opt_psk_secret =
-  let? prk = kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret) in
-  derive_secret #bytes prk "welcome"
+let secret_joiner_to_welcome #bytes #cb joiner_secret psks =
+  let? psk_secret = compute_psk_secret psks in
+  secret_joiner_to_welcome_internal joiner_secret psk_secret
+
+// this version is tested in the test vectors
+val secret_joiner_to_epoch_internal:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> bytes -> bytes ->
+  result (lbytes bytes (kdf_length #bytes))
+let secret_joiner_to_epoch_internal #bytes #cb joiner_secret psk_secret group_context =
+  let? prk = kdf_extract joiner_secret psk_secret in
+  expand_with_label #bytes prk "epoch" group_context (kdf_length #bytes)
 
 val secret_joiner_to_epoch:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> option bytes -> bytes ->
+  bytes -> list (pre_shared_key_id_nt bytes & bytes) -> bytes ->
   result (lbytes bytes (kdf_length #bytes))
-let secret_joiner_to_epoch #bytes #cb joiner_secret opt_psk_secret group_context =
-  let? prk = kdf_extract joiner_secret (opt_secret_to_secret opt_psk_secret) in
-  expand_with_label #bytes prk "epoch" group_context (kdf_length #bytes)
+let secret_joiner_to_epoch #bytes #cb joiner_secret psks group_context =
+  let? psk_secret = compute_psk_secret psks in
+  secret_joiner_to_epoch_internal joiner_secret psk_secret group_context
 
 val secret_epoch_to_sender_data:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->

@@ -61,7 +61,7 @@ val decrypt_group_info:
   bytes -> bytes ->
   result (group_info_nt bytes)
 let decrypt_group_info #bytes #cb joiner_secret encrypted_group_info =
-  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret None (*TODO psk*) in
+  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret [] (*TODO psk*) in
   let? welcome_key = welcome_secret_to_key #bytes welcome_secret in
   let? welcome_nonce = welcome_secret_to_nonce welcome_secret in
   let? group_info_bytes = aead_decrypt welcome_key welcome_nonce empty encrypted_group_info in
@@ -141,7 +141,7 @@ val encrypt_group_info:
   bytes -> group_info_nt bytes ->
   result (mls_bytes bytes)
 let encrypt_group_info #bytes #cb joiner_secret group_info =
-  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret None (*TODO psk*) in
+  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret [] (*TODO psk*) in
   let? welcome_key = welcome_secret_to_key #bytes welcome_secret in
   let? welcome_nonce = welcome_secret_to_nonce welcome_secret in
   let group_info_bytes = serialize (group_info_nt bytes) group_info in
