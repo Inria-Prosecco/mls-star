@@ -29,7 +29,7 @@ val create:
   result (treekem_state bytes 0 & bytes)
 let create #bytes #cb dec_key enc_key epoch_secret =
   let tree_state = T.create dec_key enc_key in
-  let? (keyschedule_state, encryption_secret) = KS.create epoch_secret in
+  let? (keyschedule_state, encryption_secret) = KS.create_from_epoch_secret epoch_secret in
   return ({
     tree_state;
     keyschedule_state;
@@ -41,11 +41,11 @@ val welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat ->
   t:treekem bytes l 0{treekem_invariant t} -> hpke_private_key bytes -> option (bytes & nat) -> leaf_ind:nat{leaf_ind < pow2 l /\ Some? (leaf_at t leaf_ind)} ->
-  bytes ->
+  bytes -> list (pre_shared_key_id_nt bytes & bytes) -> group_context_nt bytes ->
   result (treekem_state bytes leaf_ind & bytes)
-let welcome #bytes #cb #l t leaf_decryption_key opt_path_secret_and_inviter_ind leaf_ind epoch_secret =
+let welcome #bytes #cb #l t leaf_decryption_key opt_path_secret_and_inviter_ind leaf_ind joiner_secret psks group_context =
   let? tree_state = T.welcome t leaf_decryption_key opt_path_secret_and_inviter_ind leaf_ind in
-  let? (keyschedule_state, encryption_secret) = KS.create epoch_secret in
+  let? (keyschedule_state, encryption_secret) = KS.create_from_joiner_secret joiner_secret psks group_context in
   return ({
     tree_state;
     keyschedule_state;

@@ -8,11 +8,11 @@ open MLS.TreeKEM.API.KeySchedule.Types
 open MLS.TreeKEM.KeySchedule
 open MLS.Result
 
-val create:
+val create_from_epoch_secret:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes ->
   result (treekem_keyschedule_state bytes & bytes)
-let create #bytes #cb epoch_secret =
+let create_from_epoch_secret #bytes #cb epoch_secret =
   let? sender_data_secret = secret_epoch_to_sender_data epoch_secret in
   let? encryption_secret = secret_epoch_to_encryption epoch_secret in
   let? exporter_secret = secret_epoch_to_exporter epoch_secret in
@@ -35,6 +35,14 @@ let create #bytes #cb epoch_secret =
     init_secret;
   } <: treekem_keyschedule_state bytes), (encryption_secret <: bytes))
 
+val create_from_joiner_secret:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> list (pre_shared_key_id_nt bytes & bytes) -> group_context_nt bytes ->
+  result (treekem_keyschedule_state bytes & bytes)
+let create_from_joiner_secret #bytes #cb joiner_secret psks group_context =
+  let? epoch_secret = secret_joiner_to_epoch joiner_secret psks group_context in
+  create_from_epoch_secret (epoch_secret <: bytes)
+
 type secrets_for_welcome (bytes:Type0) = {
   joiner_secret: bytes;
   welcome_secret: bytes;
@@ -51,7 +59,7 @@ let commit #bytes #cb st opt_commit_secret psks new_group_context =
   let? joiner_secret: bytes = secret_init_to_joiner st.init_secret opt_commit_secret new_group_context in
   let? epoch_secret: bytes = secret_joiner_to_epoch joiner_secret psks new_group_context in
   let? welcome_secret: bytes = secret_joiner_to_welcome joiner_secret psks in
-  let? (new_st, encryption_secret) = create epoch_secret in
+  let? (new_st, encryption_secret) = create_from_epoch_secret epoch_secret in
   return (new_st, encryption_secret, {
     joiner_secret;
     welcome_secret;
