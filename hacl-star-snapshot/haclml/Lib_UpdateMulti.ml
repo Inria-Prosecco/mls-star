@@ -1,6 +1,5 @@
 open Prims
 type uint8 = FStar_UInt8.t
-
 let (split_block :
   Prims.pos ->
     uint8 FStar_Seq_Base.seq ->
@@ -106,5 +105,3 @@ let update_full_lazy :
             | (blocks, rest) ->
                 update_last (mk_update_multi block_length update acc blocks)
                   rest
-
-

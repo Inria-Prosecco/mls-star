@@ -1,7 +1,3 @@
-module FStar_Seq_Properties = struct
-  include FStar_Seq_Base
-  include FStar_Seq_Properties
-end
 open Prims
 type 'p is_gctr_plain_LE = unit
 type gctr_plain_LE = Vale_Def_Words_s.nat8 FStar_Seq_Base.seq
@@ -20,7 +16,7 @@ let (inc32 : Vale_Def_Types_s.quad32 -> Prims.int -> Vale_Def_Types_s.quad32)
 let (gctr_encrypt_block :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 ->
-      Vale_AES_AES_s.algorithm ->
+      Vale_AES_AES_common_s.algorithm ->
         Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
           Prims.int -> Vale_Def_Types_s.quad32)
   =
@@ -36,7 +32,7 @@ let (gctr_encrypt_block :
 let rec (gctr_encrypt_recursive :
   Vale_Def_Types_s.quad32 ->
     gctr_plain_internal_LE ->
-      Vale_AES_AES_s.algorithm ->
+      Vale_AES_AES_common_s.algorithm ->
         unit Vale_AES_AES_s.aes_key_LE ->
           Prims.int -> Vale_Def_Types_s.quad32 FStar_Seq_Base.seq)
   =
@@ -48,7 +44,7 @@ let rec (gctr_encrypt_recursive :
             if (FStar_Seq_Base.length plain) = Prims.int_zero
             then FStar_Seq_Base.empty ()
             else
-              FStar_Seq_Properties.cons
+              FStar_Seq_Base.cons
                 (gctr_encrypt_block icb_BE (FStar_Seq_Properties.head plain)
                    alg key i)
                 (gctr_encrypt_recursive icb_BE
@@ -69,7 +65,7 @@ let (pad_to_128_bits :
 let (gctr_encrypt_LE_def :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
-      Vale_AES_AES_s.algorithm ->
+      Vale_AES_AES_common_s.algorithm ->
         Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
           Vale_Def_Words_s.nat8 FStar_Seq_Base.seq)
   =
@@ -114,7 +110,7 @@ let (gctr_encrypt_LE_def :
 let (gctr_encrypt_LE :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
-      Vale_AES_AES_s.algorithm ->
+      Vale_AES_AES_common_s.algorithm ->
         Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
           Vale_Def_Words_s.nat8 FStar_Seq_Base.seq)
   = Vale_Def_Opaque_s.opaque_make gctr_encrypt_LE_def

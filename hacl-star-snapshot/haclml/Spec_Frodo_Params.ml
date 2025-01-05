@@ -19,8 +19,6 @@ let (uu___is_SHAKE128 : frodo_gen_a -> Prims.bool) =
   fun projectee -> match projectee with | SHAKE128 -> true | uu___ -> false
 let (uu___is_AES128 : frodo_gen_a -> Prims.bool) =
   fun projectee -> match projectee with | AES128 -> true | uu___ -> false
-
-
 let (params_n : frodo_alg -> Prims.pos) =
   fun a ->
     match a with
@@ -123,10 +121,6 @@ let (crypto_secretkeybytes : frodo_alg -> Prims.pos) =
       + (bytes_pkhash a)
 let (crypto_ciphertextbytes : frodo_alg -> Prims.pos) =
   fun a -> (ct1bytes_len a) + (ct2bytes_len a)
-
-
-
-
 let (frodo_shake :
   frodo_alg ->
     Prims.nat ->
@@ -293,6 +287,3 @@ let (cdf_table : frodo_alg -> (FStar_UInt16.t, unit) Lib_Sequence.lseq) =
            FStar_UInt16.uint_to_t (Prims.of_int (32725));
            FStar_UInt16.uint_to_t (Prims.of_int (32765));
            FStar_UInt16.uint_to_t (Prims.of_int (32767))])
-
-
-

@@ -13,24 +13,18 @@ let (square_while : unit -> FStar_UInt32.t) =
   fun uu___ ->
     FStar_HyperStack_ST.push_frame ();
     (let l =
-       [FStar_UInt32.uint_to_t Prims.int_one;
-       FStar_UInt32.uint_to_t (Prims.of_int (2));
-       FStar_UInt32.uint_to_t (Prims.of_int (3))] in
+       [Stdint.Uint32.one;
+       (Stdint.Uint32.of_int (2));
+       (Stdint.Uint32.of_int (3))] in
      let b = LowStar_Monotonic_Buffer.malloca_of_list l in
      let r =
-       LowStar_Monotonic_Buffer.malloca
-         (FStar_UInt32.uint_to_t Prims.int_zero)
-         (FStar_UInt32.uint_to_t Prims.int_one) in
+       LowStar_Monotonic_Buffer.malloca Stdint.Uint32.zero Stdint.Uint32.one in
      let h = FStar_HyperStack_ST.get () in
      let h0 = FStar_HyperStack_ST.get () in
      Obj.magic (fun h1 -> ());
-     Obj.magic
-       (fun h1 ->
-          FStar_UInt32.lt (Obj.magic ())
-            (FStar_UInt32.uint_to_t (Prims.of_int (3))));
      (let test uu___3 =
         let uu___4 = LowStar_BufferOps.op_Bang_Star r in
-        FStar_UInt32.lt uu___4 (FStar_UInt32.uint_to_t (Prims.of_int (3))) in
+        FStar_UInt32.lt uu___4 (Stdint.Uint32.of_int (3)) in
       C_Loops.while1 test
         (fun uu___3 ->
            (let uu___5 = LowStar_BufferOps.op_Bang_Star r in
@@ -46,11 +40,8 @@ let (square_while : unit -> FStar_UInt32.t) =
             LowStar_Monotonic_Buffer.upd' b uu___5 uu___6);
            (let uu___5 =
               let uu___6 = LowStar_BufferOps.op_Bang_Star r in
-              FStar_UInt32.add uu___6 (FStar_UInt32.uint_to_t Prims.int_one) in
+              FStar_UInt32.add uu___6 Stdint.Uint32.one in
             let h1 = FStar_HyperStack_ST.get () in
-            LowStar_Monotonic_Buffer.upd' r
-              (FStar_UInt32.uint_to_t Prims.int_zero) uu___5)));
-     (let x =
-        LowStar_Monotonic_Buffer.index b
-          (FStar_UInt32.uint_to_t (Prims.of_int (2))) in
+            LowStar_Monotonic_Buffer.upd' r Stdint.Uint32.zero uu___5)));
+     (let x = LowStar_Monotonic_Buffer.index b (Stdint.Uint32.of_int (2)) in
       FStar_HyperStack_ST.pop_frame (); x))

@@ -256,7 +256,6 @@ let (frodo_gen_matrix_aes :
                                      (k * (Prims.of_int (2)))
                                      (Prims.of_int (2))) in
                               FStar_UInt16.uint_to_t n2)) res2) res1) res
-
 let (frodo_gen_matrix_shake1_ind :
   Prims.nat ->
     (FStar_UInt8.t, unit) Lib_Sequence.lseq ->
@@ -297,7 +296,6 @@ let (frodo_gen_matrix_shake_4x1_ind :
           | (r0, r1, r2, r3) ->
               Lib_LoopCombinators.repeati_inductive' n ()
                 (frodo_gen_matrix_shake_4x0 n i r0 r1 r2 r3) res
-
 let (frodo_gen_matrix_shake_4x_ind :
   Prims.nat ->
     (FStar_UInt8.t, unit) Lib_Sequence.lseq ->

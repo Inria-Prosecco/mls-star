@@ -2,7 +2,6 @@ open Prims
 type u256 = FStar_UInt64.t LowStar_Buffer.buffer
 type u512 = FStar_UInt64.t LowStar_Buffer.buffer
 type u1024 = FStar_UInt64.t LowStar_Buffer.buffer
-
 type uint64 = FStar_UInt64.t
 let as_t : 'a . 'a -> 'a = fun x -> x
 let as_normal_t : 'a . 'a -> 'a = fun x -> x
@@ -28,22 +27,20 @@ let (fmul_dom : (unit, Vale_Interop_Base.td) Vale_Interop_X64.arity_ok) =
 let (fmul_regs_modified : Vale_X64_Machine_s.reg_64 -> Prims.bool) =
   fun r ->
     if
-      ((((((((((((r = Prims.int_zero) || (r = Prims.int_one)) ||
-                  (r = (Prims.of_int (2))))
-                 || (r = (Prims.of_int (3))))
-                || (r = (Prims.of_int (5))))
-               || (r = (Prims.of_int (4))))
-              || (r = (Prims.of_int (8))))
-             || (r = (Prims.of_int (9))))
-            || (r = (Prims.of_int (10))))
-           || (r = (Prims.of_int (11))))
-          || (r = (Prims.of_int (13))))
-         || (r = (Prims.of_int (14))))
-        || (r = (Prims.of_int (15)))
+      (((((((((((r = Prims.int_zero) || (r = Prims.int_one)) ||
+                 (r = (Prims.of_int (2))))
+                || (r = (Prims.of_int (3))))
+               || (r = (Prims.of_int (5))))
+              || (r = (Prims.of_int (4))))
+             || (r = (Prims.of_int (8))))
+            || (r = (Prims.of_int (9))))
+           || (r = (Prims.of_int (10))))
+          || (r = (Prims.of_int (11))))
+         || (r = (Prims.of_int (13))))
+        || (r = (Prims.of_int (14)))
     then true
     else false
 let fmul_xmms_modified : 'uuuuu . 'uuuuu -> Prims.bool = fun uu___ -> false
-
 
 let (code_Fmul :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode) =
@@ -97,7 +94,6 @@ let (lowstar_fmul_normal_t :
           fun uu___ ->
             (Obj.magic (as_normal_t lowstar_fmul)) uu___4 uu___3 uu___2
               uu___1 uu___
-
 let (fmul :
   FStar_UInt64.t LowStar_Buffer.buffer ->
     FStar_UInt64.t LowStar_Buffer.buffer ->
@@ -125,7 +121,6 @@ let (fmul_code_inline : unit -> Prims.int) =
       FStar_Pervasives_Native.None (FStar_List_Tot_Base.length fmul_dom)
       fmul_dom fmul_names (Obj.magic code_Fmul) fmul_of_arg
       fmul_regs_modified fmul_comments
-
 
 
 
@@ -204,7 +199,6 @@ let (fmul1_regs_modified : Vale_X64_Machine_s.reg_64 -> Prims.bool) =
     then true
     else false
 let fmul1_xmms_modified : 'uuuuu . 'uuuuu -> Prims.bool = fun uu___ -> false
-
 
 let (code_Fmul1 :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode) =

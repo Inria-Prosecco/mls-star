@@ -20,28 +20,38 @@ let (iand :
   Prims.nat ->
     unit Vale_Def_Words_s.natN ->
       unit Vale_Def_Words_s.natN -> unit Vale_Def_Words_s.natN)
-  = fun n -> fun a -> fun b -> failwith "Not yet implemented:iand"
+  =
+  fun n ->
+    fun a -> fun b -> failwith "Not yet implemented: Vale.Def.Types_s.iand"
 let (ixor :
   Prims.nat ->
     unit Vale_Def_Words_s.natN ->
       unit Vale_Def_Words_s.natN -> unit Vale_Def_Words_s.natN)
-  = fun n -> fun a -> fun b -> failwith "Not yet implemented:ixor"
+  =
+  fun n ->
+    fun a -> fun b -> failwith "Not yet implemented: Vale.Def.Types_s.ixor"
 let (ior :
   Prims.nat ->
     unit Vale_Def_Words_s.natN ->
       unit Vale_Def_Words_s.natN -> unit Vale_Def_Words_s.natN)
-  = fun n -> fun a -> fun b -> failwith "Not yet implemented:ior"
+  =
+  fun n ->
+    fun a -> fun b -> failwith "Not yet implemented: Vale.Def.Types_s.ior"
 let (inot :
   Prims.nat -> unit Vale_Def_Words_s.natN -> unit Vale_Def_Words_s.natN) =
-  fun n -> fun a -> failwith "Not yet implemented:inot"
+  fun n -> fun a -> failwith "Not yet implemented: Vale.Def.Types_s.inot"
 let (ishl :
   Prims.nat ->
     unit Vale_Def_Words_s.natN -> Prims.int -> unit Vale_Def_Words_s.natN)
-  = fun n -> fun a -> fun s -> failwith "Not yet implemented:ishl"
+  =
+  fun n ->
+    fun a -> fun s -> failwith "Not yet implemented: Vale.Def.Types_s.ishl"
 let (ishr :
   Prims.nat ->
     unit Vale_Def_Words_s.natN -> Prims.int -> unit Vale_Def_Words_s.natN)
-  = fun n -> fun a -> fun s -> failwith "Not yet implemented:ishr"
+  =
+  fun n ->
+    fun a -> fun s -> failwith "Not yet implemented: Vale.Def.Types_s.ishr"
 let (nat32_xor :
   Vale_Def_Words_s.nat32 -> Vale_Def_Words_s.nat32 -> Vale_Def_Words_s.nat32)
   = fun x -> fun y -> ixor (Prims.parse_int "0x100000000") x y
@@ -84,7 +94,6 @@ let (quad32_xor_def : quad32 -> quad32 -> quad32) =
                })
 let (quad32_xor : quad32 -> quad32 -> quad32) =
   Vale_Def_Opaque_s.opaque_make quad32_xor_def
-
 let (select_word : quad32 -> twobits -> Vale_Def_Words_s.nat32) =
   fun q -> fun selector -> Vale_Def_Words_Four_s.four_select q selector
 let (insert_nat32 : quad32 -> Vale_Def_Words_s.nat32 -> twobits -> quad32) =
@@ -101,7 +110,6 @@ let (insert_nat64_def :
 let (insert_nat64 :
   quad32 -> Vale_Def_Words_s.nat64 -> Vale_Def_Words_s.nat1 -> quad32) =
   Vale_Def_Opaque_s.opaque_make insert_nat64_def
-
 let (le_bytes_to_nat32 :
   Vale_Def_Words_s.nat8 Vale_Def_Words_Seq_s.seq4 -> Vale_Def_Words_s.nat32)
   =
@@ -139,7 +147,6 @@ let (le_bytes_to_nat64_def :
 let (le_bytes_to_nat64 :
   Vale_Def_Words_s.nat8 FStar_Seq_Base.seq -> Vale_Def_Words_s.nat64) =
   Vale_Def_Opaque_s.opaque_make le_bytes_to_nat64_def
-
 let (le_nat64_to_bytes_def :
   Vale_Def_Words_s.nat64 -> Vale_Def_Words_s.nat8 FStar_Seq_Base.seq) =
   fun b ->
@@ -149,7 +156,6 @@ let (le_nat64_to_bytes_def :
 let (le_nat64_to_bytes :
   Vale_Def_Words_s.nat64 -> Vale_Def_Words_s.nat8 FStar_Seq_Base.seq) =
   Vale_Def_Opaque_s.opaque_make le_nat64_to_bytes_def
-
 let (le_bytes_to_quad32_def :
   Vale_Def_Words_s.nat8 FStar_Seq_Base.seq -> quad32) =
   fun b ->
@@ -159,7 +165,6 @@ let (le_bytes_to_quad32_def :
          (Vale_Def_Words_Seq_s.seq_to_seq_four_LE b))
 let (le_bytes_to_quad32 : Vale_Def_Words_s.nat8 FStar_Seq_Base.seq -> quad32)
   = Vale_Def_Opaque_s.opaque_make le_bytes_to_quad32_def
-
 let (be_bytes_to_quad32_def :
   Vale_Def_Words_s.nat8 FStar_Seq_Base.seq -> quad32) =
   fun b ->
@@ -169,7 +174,6 @@ let (be_bytes_to_quad32_def :
          (Vale_Def_Words_Seq_s.seq_to_seq_four_BE b))
 let (be_bytes_to_quad32 : Vale_Def_Words_s.nat8 FStar_Seq_Base.seq -> quad32)
   = Vale_Def_Opaque_s.opaque_make be_bytes_to_quad32_def
-
 let (le_quad32_to_bytes : quad32 -> Vale_Def_Words_s.nat8 FStar_Seq_Base.seq)
   =
   fun b ->
@@ -185,8 +189,6 @@ let (le_seq_quad32_to_bytes_def :
 let (le_seq_quad32_to_bytes :
   quad32 FStar_Seq_Base.seq -> Vale_Def_Words_s.nat8 FStar_Seq_Base.seq) =
   Vale_Def_Opaque_s.opaque_make le_seq_quad32_to_bytes_def
-
-
 let (le_bytes_to_seq_quad32 :
   Vale_Def_Words_s.nat8 FStar_Seq_Base.seq -> quad32 FStar_Seq_Base.seq) =
   fun b ->
@@ -203,7 +205,6 @@ let (reverse_bytes_nat32_def :
     be_bytes_to_nat32 (Vale_Lib_Seqs_s.reverse_seq (nat32_to_be_bytes n))
 let (reverse_bytes_nat32 : Vale_Def_Words_s.nat32 -> Vale_Def_Words_s.nat32)
   = Vale_Def_Opaque_s.opaque_make reverse_bytes_nat32_def
-
 let (reverse_bytes_nat64_def :
   Vale_Def_Words_s.nat64 -> Vale_Def_Words_s.nat64) =
   fun n ->
@@ -217,10 +218,12 @@ let (reverse_bytes_nat64_def :
           }
 let (reverse_bytes_nat64 : Vale_Def_Words_s.nat64 -> Vale_Def_Words_s.nat64)
   = Vale_Def_Opaque_s.opaque_make reverse_bytes_nat64_def
-
 let (reverse_bytes_quad32 : quad32 -> quad32) =
-  fun q -> failwith "Not yet implemented:reverse_bytes_quad32"
+  fun q ->
+    failwith "Not yet implemented: Vale.Def.Types_s.reverse_bytes_quad32"
 let (reverse_bytes_nat32_seq :
   Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
     Vale_Def_Words_s.nat32 FStar_Seq_Base.seq)
-  = fun s -> failwith "Not yet implemented:reverse_bytes_nat32_seq"
+  =
+  fun s ->
+    failwith "Not yet implemented: Vale.Def.Types_s.reverse_bytes_nat32_seq"

@@ -2,7 +2,6 @@ open Prims
 type u256 = FStar_UInt64.t LowStar_Buffer.buffer
 type u512 = FStar_UInt64.t LowStar_Buffer.buffer
 type u1024 = FStar_UInt64.t LowStar_Buffer.buffer
-
 type uint64 = FStar_UInt64.t
 let as_t : 'a . 'a -> 'a = fun x -> x
 let as_normal_t : 'a . 'a -> 'a = fun x -> x
@@ -34,7 +33,6 @@ let (cswap_regs_modified : Vale_X64_Machine_s.reg_64 -> Prims.bool) =
     then true
     else false
 let cswap_xmms_modified : 'uuuuu . 'uuuuu -> Prims.bool = fun uu___ -> false
-
 
 let (code_cswap :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode) =

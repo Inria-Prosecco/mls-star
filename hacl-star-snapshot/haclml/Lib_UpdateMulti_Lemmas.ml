@@ -1,7 +1,5 @@
 open Prims
 type uint8 = FStar_UInt8.t
-
-
 let repeat_f :
   'a .
     Prims.pos ->
@@ -18,4 +16,3 @@ let repeat_l :
   fun block_length ->
     fun update_last ->
       fun input -> fun l -> fun s -> fun acc -> update_last acc s
-

@@ -3,30 +3,10 @@ type ('maxuarity, 'argureg, 'pre, 'code, 'args, 'h0) prediction_pre_rel =
   unit
 type ('maxuarity, 'post, 'code, 'args, 'h0, 'us0, 'raxufuelumem,
   's1) prediction_post_rel = Obj.t
-
-
-
 type ('h, 'a) arg_is_registered_root = Obj.t
-
-
-
-
 type ('maxuarity, 'argureg, 'n, 'args, 'regs) register_args' = Obj.t
-
-
-
-
 type ('maxuarity, 'n, 'args, 'rsp, 'stack) stack_args' = Obj.t
-
-
-
-
-
-
 type ('c, 's0, 'f0, 's1) eval_code_ts = Obj.t
-
-
-
 
 let rec (pre_rel_generic :
   Prims.nat ->

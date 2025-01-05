@@ -100,9 +100,6 @@ let is_lt_option :
             -> (is_le x1 y1) && (x1 <> y1)
         | uu___ -> true
 type ('a, 'b, 'isule, 't, 'lo, 'hi) inv = Obj.t
-
-
-
 type ('a, 'b) map' =
   | Map of ('a -> 'a -> Prims.bool) * ('a, 'b) tree * 'b * unit 
 let uu___is_Map : 'a 'b . ('a, 'b) map' -> Prims.bool = fun projectee -> true
@@ -116,7 +113,6 @@ let __proj__Map__item__t : 'a 'b . ('a, 'b) map' -> ('a, 'b) tree =
 let __proj__Map__item__default_v : 'a 'b . ('a, 'b) map' -> 'b =
   fun projectee ->
     match projectee with | Map (is_le, t, default_v, invs) -> default_v
-
 type ('a, 'b) map = ('a, 'b) map'
 let const : 'a 'b . ('a -> 'a -> Prims.bool) -> 'b -> ('a, 'b) map =
   fun is_le -> fun d -> Map (is_le, Empty, d, ())
@@ -135,5 +131,3 @@ let upd : 'a 'b . ('a, 'b) map -> 'a -> 'b -> ('a, 'b) map =
         match uu___ with
         | Map (is_le, t, d, uu___1) ->
             let t' = put is_le t key value in Map (is_le, t', d, ())
-
-

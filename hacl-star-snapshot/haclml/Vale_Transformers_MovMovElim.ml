@@ -45,4 +45,3 @@ let (mov_mov_elim_ph : Vale_Transformers_PeepHole.pre_peephole) =
          else FStar_Pervasives_Native.None);
     Vale_Transformers_PeepHole.input_hint = (Prims.of_int (2))
   }
-

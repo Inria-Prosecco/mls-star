@@ -38,17 +38,6 @@ let (op_Amp_Dot :
 let (op_Bar_Dot :
   Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly)
   = Vale_Math_Poly2.poly_or
-
-
-
-
-
-
-
-
-
-
-
 let (poly_length : Vale_Math_Poly2_s.poly -> Prims.nat) =
   fun p -> Prims.int_one + (Vale_Math_Poly2_s.degree p)
 let (sum_of_bools :
@@ -263,23 +252,3 @@ let (fmul : Spec_GaloisField.field -> Obj.t -> Obj.t -> Obj.t) =
             p1
 let (d : Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_Defs_s.poly) =
   fun uu___ -> (fun a -> Obj.magic a) uu___
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,7 +1,3 @@
-module FStar_Seq_Properties = struct
-  include FStar_Seq_Base
-  include FStar_Seq_Properties
-end
 open Prims
 type ('n, 'a) seqn = 'a FStar_Seq_Base.seq
 type 'a seq2 = (unit, 'a) seqn
@@ -39,13 +35,11 @@ let seq_to_four_BE : 'a . 'a seq4 -> 'a Vale_Def_Words_s.four =
 let two_to_seq_LE : 'a . 'a Vale_Def_Words_s.two -> 'a seq2 =
   fun x ->
     let l = [x.Vale_Def_Words_s.lo; x.Vale_Def_Words_s.hi] in
-    let s = FStar_Seq_Properties.seq_of_list l in
-    FStar_Seq_Properties.seq_of_list l
+    let s = FStar_Seq_Base.seq_of_list l in FStar_Seq_Base.seq_of_list l
 let two_to_seq_BE : 'a . 'a Vale_Def_Words_s.two -> 'a seq2 =
   fun x ->
     let l = [x.Vale_Def_Words_s.hi; x.Vale_Def_Words_s.lo] in
-    let s = FStar_Seq_Properties.seq_of_list l in
-    FStar_Seq_Properties.seq_of_list l
+    let s = FStar_Seq_Base.seq_of_list l in FStar_Seq_Base.seq_of_list l
 let four_to_seq_LE : 'a . 'a Vale_Def_Words_s.four -> 'a seq4 =
   fun x ->
     let l =
@@ -53,8 +47,7 @@ let four_to_seq_LE : 'a . 'a Vale_Def_Words_s.four -> 'a seq4 =
       x.Vale_Def_Words_s.lo1;
       x.Vale_Def_Words_s.hi2;
       x.Vale_Def_Words_s.hi3] in
-    let s = FStar_Seq_Properties.seq_of_list l in
-    FStar_Seq_Properties.seq_of_list l
+    let s = FStar_Seq_Base.seq_of_list l in FStar_Seq_Base.seq_of_list l
 let four_to_seq_BE : 'a . 'a Vale_Def_Words_s.four -> 'a seq4 =
   fun x ->
     let l =
@@ -62,8 +55,7 @@ let four_to_seq_BE : 'a . 'a Vale_Def_Words_s.four -> 'a seq4 =
       x.Vale_Def_Words_s.hi2;
       x.Vale_Def_Words_s.lo1;
       x.Vale_Def_Words_s.lo0] in
-    let s = FStar_Seq_Properties.seq_of_list l in
-    FStar_Seq_Properties.seq_of_list l
+    let s = FStar_Seq_Base.seq_of_list l in FStar_Seq_Base.seq_of_list l
 let seq_two_to_seq_LE :
   'a . 'a Vale_Def_Words_s.two FStar_Seq_Base.seq -> 'a FStar_Seq_Base.seq =
   fun x ->

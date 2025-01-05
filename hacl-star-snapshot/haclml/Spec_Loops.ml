@@ -33,8 +33,6 @@ let rec repeat : 'a . Prims.nat -> ('a -> 'a) -> 'a -> 'a =
     fun f ->
       fun x ->
         if n = Prims.int_zero then x else repeat (n - Prims.int_one) f (f x)
-
-
 let rec repeat_range :
   'a . Prims.nat -> Prims.nat -> ('a -> Prims.nat -> 'a) -> 'a -> 'a =
   fun min ->
@@ -44,17 +42,12 @@ let rec repeat_range :
           if min = max
           then x
           else repeat_range (min + Prims.int_one) max f (f x min)
-
-
 let repeat_spec :
   'uuuuu . unit -> Prims.nat -> ('uuuuu -> 'uuuuu) -> 'uuuuu -> 'uuuuu =
   fun uu___ -> repeat
-
-
 let repeat_range_spec :
   'uuuuu .
     unit ->
       Prims.nat ->
         Prims.nat -> ('uuuuu -> Prims.nat -> 'uuuuu) -> 'uuuuu -> 'uuuuu
   = fun uu___ -> repeat_range
-

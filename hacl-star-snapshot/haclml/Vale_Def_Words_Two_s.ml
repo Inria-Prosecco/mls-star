@@ -42,7 +42,8 @@ let (nat_to_two_unfold :
         | uu___ when uu___ = Prims.int_zero -> Prims.int_one
         | uu___ ->
             (Prims.of_int (2)) *
-              (Prims.pow2 (((Prims.of_int (2)) * size) - Prims.int_one)) in
+              (Prims.pow2
+                 ((FStar_Mul.op_Star (Prims.of_int (2)) size) - Prims.int_one)) in
       {
         Vale_Def_Words_s.lo = (n mod n1);
         Vale_Def_Words_s.hi = ((n / n1) mod n1)
@@ -63,7 +64,8 @@ let (nat_to_two :
         | uu___ when uu___ = Prims.int_zero -> Prims.int_one
         | uu___ ->
             (Prims.of_int (2)) *
-              (Prims.pow2 (((Prims.of_int (2)) * size) - Prims.int_one)) in
+              (Prims.pow2
+                 ((FStar_Mul.op_Star (Prims.of_int (2)) size) - Prims.int_one)) in
       {
         Vale_Def_Words_s.lo = (n mod n1);
         Vale_Def_Words_s.hi = ((n / n1) mod n1)
@@ -84,7 +86,8 @@ let (two_to_nat_unfold :
         | uu___ when uu___ = Prims.int_zero -> Prims.int_one
         | uu___ ->
             (Prims.of_int (2)) *
-              (Prims.pow2 (((Prims.of_int (2)) * size) - Prims.int_one)) in
+              (Prims.pow2
+                 ((FStar_Mul.op_Star (Prims.of_int (2)) size) - Prims.int_one)) in
       let uu___ = x in
       match uu___ with
       | { Vale_Def_Words_s.lo = x0; Vale_Def_Words_s.hi = x1;_} ->
@@ -105,7 +108,8 @@ let (two_to_nat :
         | uu___ when uu___ = Prims.int_zero -> Prims.int_one
         | uu___ ->
             (Prims.of_int (2)) *
-              (Prims.pow2 (((Prims.of_int (2)) * size) - Prims.int_one)) in
+              (Prims.pow2
+                 ((FStar_Mul.op_Star (Prims.of_int (2)) size) - Prims.int_one)) in
       let uu___ = x in
       match uu___ with
       | { Vale_Def_Words_s.lo = x0; Vale_Def_Words_s.hi = x1;_} ->

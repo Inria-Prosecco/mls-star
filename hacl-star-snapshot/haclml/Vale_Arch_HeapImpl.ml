@@ -44,7 +44,6 @@ let (uu___is_ValeHeap : vale_heap -> Prims.bool) = fun projectee -> true
 let (__proj__ValeHeap__item__mh :
   vale_heap -> Vale_Arch_MachineHeap_s.machine_heap) =
   fun projectee -> match projectee with | ValeHeap (mh, ih, heapletId) -> mh
-
 let (__proj__ValeHeap__item__heapletId :
   vale_heap -> heaplet_id FStar_Pervasives_Native.option) =
   fun projectee ->
@@ -56,7 +55,7 @@ type vale_heap_layout_inner =
   vl_heaplet_sets: heaplet_id -> Prims.int FStar_Set.set ;
   vl_old_heap: vale_heap ;
   vl_buffers: buffer_info FStar_Seq_Base.seq ;
-  vl_mod_loc: LowStar_Monotonic_Buffer.loc }
+  vl_mod_loc: unit }
 let (__proj__Mkvale_heap_layout_inner__item__vl_heaplets_initialized :
   vale_heap_layout_inner -> Prims.bool) =
   fun projectee ->
@@ -89,12 +88,6 @@ let (__proj__Mkvale_heap_layout_inner__item__vl_buffers :
     match projectee with
     | { vl_heaplets_initialized; vl_heaplet_map; vl_heaplet_sets;
         vl_old_heap; vl_buffers; vl_mod_loc;_} -> vl_buffers
-let (__proj__Mkvale_heap_layout_inner__item__vl_mod_loc :
-  vale_heap_layout_inner -> LowStar_Monotonic_Buffer.loc) =
-  fun projectee ->
-    match projectee with
-    | { vl_heaplets_initialized; vl_heaplet_map; vl_heaplet_sets;
-        vl_old_heap; vl_buffers; vl_mod_loc;_} -> vl_mod_loc
 type vale_heap_layout =
   {
   vl_inner: vale_heap_layout_inner ;
@@ -133,7 +126,7 @@ let (empty_vale_heap_layout_inner : vale_heap -> vale_heap_layout_inner) =
       vl_heaplet_sets = (fun uu___ -> FStar_Set.empty ());
       vl_old_heap = h;
       vl_buffers = (FStar_Seq_Base.empty ());
-      vl_mod_loc = ();
+      vl_mod_loc = ()
     }
 let (empty_heaplet : vale_heap -> Prims.nat -> vale_heap) =
   fun h ->
@@ -144,7 +137,6 @@ let (empty_heaplet : vale_heap -> Prims.nat -> vale_heap) =
           ValeHeap (mh, (), (FStar_Pervasives_Native.Some n))
 let (empty_vale_heaplets : vale_heap -> vale_heaplets) =
   fun h -> Vale_Lib_Map16.init (empty_heaplet h)
-
 let (mi_heap_upd :
   vale_heap -> Vale_Arch_MachineHeap_s.machine_heap -> vale_heap) =
   fun vh ->

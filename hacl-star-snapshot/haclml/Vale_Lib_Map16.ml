@@ -63,9 +63,6 @@ let upd16 : 'a . 'a map16 -> Prims.int -> 'a -> 'a map16 =
             if n < (Prims.of_int (8))
             then ((upd8 m0 n v), m1)
             else (m0, (upd8 m1 (n - (Prims.of_int (8))) v))
-
-
-
 let sel : 'a . 'a map16 -> Prims.int -> 'a = fun m -> fun n -> sel16 m n
 let upd : 'a . 'a map16 -> Prims.int -> 'a -> 'a map16 =
   fun m -> fun n -> fun v -> upd16 m n v
@@ -86,14 +83,7 @@ let eta16 : 'a . 'a map16 -> 'a map16 =
         ((get m (Prims.of_int (14))), (get m (Prims.of_int (15))))) in
     ((m0_3, m4_7), (m8_11, m12_15))
 let eta : 'a . 'a map16 -> 'a map16 = fun m -> eta16 m
-
-
-
-
-
 type ('a, 'm1, 'm2) equal = unit
-
-
 let rec init_rec : 'a . (Prims.nat -> 'a) -> Prims.nat -> 'a map16 =
   fun f ->
     fun n ->
@@ -106,4 +96,3 @@ let rec init_rec : 'a . (Prims.nat -> 'a) -> Prims.nat -> 'a map16 =
           (f (n - Prims.int_one))
 let init : 'a . (Prims.nat -> 'a) -> 'a map16 =
   fun f -> init_rec f (Prims.of_int (16))
-

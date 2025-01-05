@@ -10,18 +10,13 @@ let (fmul : elem -> elem -> elem) = fun x -> fun y -> (x * y) mod prime
 let (op_Plus_Percent : elem -> elem -> elem) = fadd
 let (op_Subtraction_Percent : elem -> elem -> elem) = fsub
 let (op_Star_Percent : elem -> elem -> elem) = fmul
-let rec (fpow : elem -> Prims.pos -> elem) =
-  fun a ->
-    fun b ->
-      if b = Prims.int_one
-      then a
-      else
-        if (b mod (Prims.of_int (2))) = Prims.int_zero
-        then fpow (op_Star_Percent a a) (b / (Prims.of_int (2)))
-        else
-          op_Star_Percent a
-            (fpow (op_Star_Percent a a) (b / (Prims.of_int (2))))
-let (op_Star_Star_Percent : elem -> Prims.pos -> elem) = fpow
+let (fpow : elem -> Prims.nat -> elem) =
+  fun x -> fun b -> Lib_NatMod.pow_mod prime x b
+let (op_Star_Star_Percent : elem -> Prims.nat -> elem) = fpow
+let (finv : elem -> elem) =
+  fun x -> op_Star_Star_Percent x (prime - (Prims.of_int (2)))
+let (op_Slash_Percent : elem -> elem -> elem) =
+  fun x -> fun y -> op_Star_Percent x (finv y)
 type scalar = (FStar_UInt8.t, unit) Lib_Sequence.lseq
 type serialized_point = (FStar_UInt8.t, unit) Lib_Sequence.lseq
 type proj_point = (elem * elem)
@@ -65,9 +60,7 @@ let (encodePoint : proj_point -> serialized_point) =
        let uu___ = p in
        match uu___ with
        | (x, z) ->
-           let p1 =
-             op_Star_Percent x
-               (op_Star_Star_Percent z (prime - (Prims.of_int (2)))) in
+           let p1 = op_Slash_Percent x z in
            Obj.magic
              (Lib_ByteSequence.nat_to_intseq_le_ Lib_IntTypes.U8
                 Lib_IntTypes.SEC (Prims.of_int (32)) p1)) uu___
@@ -181,72 +174,72 @@ let (scalarmult : scalar -> serialized_point -> serialized_point) =
       let u1 = decodePoint u in
       let res = montgomery_ladder u1 k in encodePoint res
 let (basepoint_list : FStar_UInt8.t Prims.list) =
-  [FStar_UInt8.uint_to_t (Prims.of_int (9));
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero;
-  FStar_UInt8.uint_to_t Prims.int_zero]
+  [9;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0;
+  0]
 let (basepoint_lseq : (FStar_UInt8.t, unit) Lib_Sequence.lseq) =
   Lib_Sequence.of_list
-    [FStar_UInt8.uint_to_t (Prims.of_int (9));
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero;
-    FStar_UInt8.uint_to_t Prims.int_zero]
+    [9;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0;
+    0]
 let (secret_to_public :
   (FStar_UInt8.t, unit) Lib_Sequence.lseq ->
     (FStar_UInt8.t, unit) Lib_Sequence.lseq)

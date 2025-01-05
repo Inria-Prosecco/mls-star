@@ -23,9 +23,11 @@ let (add : poly -> poly -> poly) =
 let (mul : poly -> poly -> poly) =
   fun a -> fun b -> Vale_Math_Poly2_Defs_s.mul a b
 let (undefined_div_by_zero : poly -> poly) =
-  fun a -> failwith "Not yet implemented:undefined_div_by_zero"
+  fun a ->
+    failwith "Not yet implemented: Vale.Math.Poly2_s.undefined_div_by_zero"
 let (undefined_mod_by_zero : poly -> poly) =
-  fun a -> failwith "Not yet implemented:undefined_mod_by_zero"
+  fun a ->
+    failwith "Not yet implemented: Vale.Math.Poly2_s.undefined_mod_by_zero"
 let (div : poly -> poly -> poly) =
   fun a ->
     fun b ->

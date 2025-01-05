@@ -1,7 +1,3 @@
-module FStar_Seq_Properties = struct
-  include FStar_Seq_Base
-  include FStar_Seq_Properties
-end
 open Prims
 let (k224_256_l : (FStar_UInt32.t, unit) FStar_List_Tot_Properties.llist) =
   [FStar_UInt32.uint_to_t (Prims.parse_int "0x428a2f98");
@@ -69,7 +65,7 @@ let (k224_256_l : (FStar_UInt32.t, unit) FStar_List_Tot_Properties.llist) =
   FStar_UInt32.uint_to_t (Prims.parse_int "0xbef9a3f7");
   FStar_UInt32.uint_to_t (Prims.parse_int "0xc67178f2")]
 let (k224_256 : FStar_UInt32.t FStar_Seq_Base.seq) =
-  FStar_Seq_Properties.seq_of_list
+  FStar_Seq_Base.seq_of_list
     [FStar_UInt32.uint_to_t (Prims.parse_int "0x428a2f98");
     FStar_UInt32.uint_to_t (Prims.parse_int "0x71374491");
     FStar_UInt32.uint_to_t (Prims.parse_int "0xb5c0fbcf");
@@ -216,7 +212,7 @@ let (k384_512_l : (FStar_UInt64.t, unit) FStar_List_Tot_Properties.llist) =
   FStar_UInt64.uint_to_t (Prims.parse_int "0x5fcb6fab3ad6faec");
   FStar_UInt64.uint_to_t (Prims.parse_int "0x6c44198c4a475817")]
 let (k384_512 : FStar_UInt64.t FStar_Seq_Base.seq) =
-  FStar_Seq_Properties.seq_of_list
+  FStar_Seq_Base.seq_of_list
     [FStar_UInt64.uint_to_t (Prims.parse_int "0x428a2f98d728ae22");
     FStar_UInt64.uint_to_t (Prims.parse_int "0x7137449123ef65cd");
     FStar_UInt64.uint_to_t (Prims.parse_int "0xb5c0fbcfec4d3b2f");
@@ -307,7 +303,7 @@ let (h224_l : (FStar_UInt32.t, unit) FStar_List_Tot_Properties.llist) =
   FStar_UInt32.uint_to_t (Prims.parse_int "0x64f98fa7");
   FStar_UInt32.uint_to_t (Prims.parse_int "0xbefa4fa4")]
 let (h224 : FStar_UInt32.t FStar_Seq_Base.seq) =
-  FStar_Seq_Properties.seq_of_list
+  FStar_Seq_Base.seq_of_list
     [FStar_UInt32.uint_to_t (Prims.parse_int "0xc1059ed8");
     FStar_UInt32.uint_to_t (Prims.parse_int "0x367cd507");
     FStar_UInt32.uint_to_t (Prims.parse_int "0x3070dd17");
@@ -326,7 +322,7 @@ let (h256_l : (FStar_UInt32.t, unit) FStar_List_Tot_Properties.llist) =
   FStar_UInt32.uint_to_t (Prims.parse_int "0x1f83d9ab");
   FStar_UInt32.uint_to_t (Prims.parse_int "0x5be0cd19")]
 let (h256 : FStar_UInt32.t FStar_Seq_Base.seq) =
-  FStar_Seq_Properties.seq_of_list
+  FStar_Seq_Base.seq_of_list
     [FStar_UInt32.uint_to_t (Prims.parse_int "0x6a09e667");
     FStar_UInt32.uint_to_t (Prims.parse_int "0xbb67ae85");
     FStar_UInt32.uint_to_t (Prims.parse_int "0x3c6ef372");
@@ -345,7 +341,7 @@ let (h384_l : (FStar_UInt64.t, unit) FStar_List_Tot_Properties.llist) =
   FStar_UInt64.uint_to_t (Prims.parse_int "0xdb0c2e0d64f98fa7");
   FStar_UInt64.uint_to_t (Prims.parse_int "0x47b5481dbefa4fa4")]
 let (h384 : FStar_UInt64.t FStar_Seq_Base.seq) =
-  FStar_Seq_Properties.seq_of_list
+  FStar_Seq_Base.seq_of_list
     [FStar_UInt64.uint_to_t (Prims.parse_int "0xcbbb9d5dc1059ed8");
     FStar_UInt64.uint_to_t (Prims.parse_int "0x629a292a367cd507");
     FStar_UInt64.uint_to_t (Prims.parse_int "0x9159015a3070dd17");
@@ -364,7 +360,7 @@ let (h512_l : (FStar_UInt64.t, unit) FStar_List_Tot_Properties.llist) =
   FStar_UInt64.uint_to_t (Prims.parse_int "0x1f83d9abfb41bd6b");
   FStar_UInt64.uint_to_t (Prims.parse_int "0x5be0cd19137e2179")]
 let (h512 : FStar_UInt64.t FStar_Seq_Base.seq) =
-  FStar_Seq_Properties.seq_of_list
+  FStar_Seq_Base.seq_of_list
     [FStar_UInt64.uint_to_t (Prims.parse_int "0x6a09e667f3bcc908");
     FStar_UInt64.uint_to_t (Prims.parse_int "0xbb67ae8584caa73b");
     FStar_UInt64.uint_to_t (Prims.parse_int "0x3c6ef372fe94f82b");

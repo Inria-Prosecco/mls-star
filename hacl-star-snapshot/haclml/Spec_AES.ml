@@ -647,7 +647,7 @@ let (aes_ctr_add_counter :
           Obj.magic
             (Lib_ByteSequence.nat_to_intseq_be_ Lib_IntTypes.U8
                Lib_IntTypes.SEC (Prims.of_int (16)) n') in
-        let uu___ = st in { key_ex = (uu___.key_ex); block = nblock' }
+        { key_ex = (st.key_ex); block = nblock' }
 let (aes_ctr_init :
   variant ->
     unit aes_key ->

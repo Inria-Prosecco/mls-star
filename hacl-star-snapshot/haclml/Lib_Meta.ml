@@ -67,5 +67,4 @@ let rec (as_uint8s :
 let (from_hex :
   Prims.string -> (FStar_UInt8.t, unit) FStar_Seq_Properties.lseq) =
   fun s ->
-    FStar_Seq_Base.seq_of_list
-      (as_uint8s [] (FStar_String.list_of_string s))
+    FStar_Seq_Base.seq_of_list (as_uint8s [] (FStar_String.list_of_string s))

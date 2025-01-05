@@ -51,14 +51,13 @@ let (core_state :
   =
   fun ignore_ghost ->
     fun s ->
-      let uu___ = s in
       {
         Vale_X64_Machine_Semantics_s.ms_ok =
-          (uu___.Vale_X64_Machine_Semantics_s.ms_ok);
+          (s.Vale_X64_Machine_Semantics_s.ms_ok);
         Vale_X64_Machine_Semantics_s.ms_regs =
-          (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
+          (s.Vale_X64_Machine_Semantics_s.ms_regs);
         Vale_X64_Machine_Semantics_s.ms_flags =
-          (uu___.Vale_X64_Machine_Semantics_s.ms_flags);
+          (s.Vale_X64_Machine_Semantics_s.ms_flags);
         Vale_X64_Machine_Semantics_s.ms_heap =
           (if ignore_ghost
            then
@@ -66,58 +65,18 @@ let (core_state :
                s.Vale_X64_Machine_Semantics_s.ms_heap
            else s.Vale_X64_Machine_Semantics_s.ms_heap);
         Vale_X64_Machine_Semantics_s.ms_stack =
-          (uu___.Vale_X64_Machine_Semantics_s.ms_stack);
+          (s.Vale_X64_Machine_Semantics_s.ms_stack);
         Vale_X64_Machine_Semantics_s.ms_stackTaint =
-          (uu___.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+          (s.Vale_X64_Machine_Semantics_s.ms_stackTaint);
         Vale_X64_Machine_Semantics_s.ms_trace = []
       }
 type ('ignoreughost, 's1, 's2) state_eq_S = unit
 type ('ignoreughost, 's1, 's2) state_eq_opt = Obj.t
 type ('c, 's0, 'f0, 's1) eval_code = Obj.t
-
-
-
 let (havoc_flags : Vale_X64_Flags.t) =
   Vale_X64_Flags.of_fun Vale_X64_Machine_Semantics_s.havoc_flags
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 type ('g, 'c, 's0, 'f0, 's1) eval_code_ts = Obj.t
-
-
-
-
-
-
-
-
-
-
-
-
-
 let (compute_merge_total : Prims.nat -> Prims.nat -> Prims.nat) =
   fun f0 -> fun fM -> if f0 > fM then f0 else fM
-
-
-
-
-
-
 type ('c, 's0, 'fW, 'sW) eval_while_inv_temp = unit
 type ('c, 's0, 'fW, 'sW) eval_while_inv = unit
-
-
-

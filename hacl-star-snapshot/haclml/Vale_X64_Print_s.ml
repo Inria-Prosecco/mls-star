@@ -272,7 +272,7 @@ let (print_mov128_op :
       | Vale_X64_Machine_s.OStack (m, uu___) ->
           print_maddr m "xmmword" print_reg_int p
 let print_any : 'a . 'a -> Prims.string =
-  fun uu___ -> failwith "Not yet implemented:print_any"
+  fun uu___ -> failwith "Not yet implemented: Vale.X64.Print_s.print_any"
 let (print_shift_operand :
   Vale_X64_Machine_s.operand64 -> printer -> Prims.string) =
   fun o ->
@@ -303,7 +303,6 @@ let (cmp_not :
         Vale_X64_Bytes_Code_s.OGe (o1, o2)
     | Vale_X64_Bytes_Code_s.OGt (o1, o2) ->
         Vale_X64_Bytes_Code_s.OLe (o1, o2)
-
 let (print_pair : Prims.string -> Prims.string -> printer -> Prims.string) =
   fun dst ->
     fun src ->
@@ -326,7 +325,7 @@ let (print_instr :
                 (false,
                   (if p.sha256rnds2_explicit_xmm0 ()
                    then
-                     FStar_List_Tot_Base.append oprs
+                     FStar_List_Tot_Base.op_At oprs
                        [Vale_X64_Instruction_s.PXmm
                           (Vale_X64_Machine_s.OReg Prims.int_zero)]
                    else oprs)) in
@@ -664,4 +663,23 @@ let (gcc : printer) =
     proc_name;
     ret;
     sha256rnds2_explicit_xmm0 = (fun unit -> false)
+  }
+let (gcc_linux : printer) =
+  let footer uu___ = ".section .note.GNU-stack,\"\",%progbits\n" in
+  {
+    print_reg_name = (gcc.print_reg_name);
+    print_reg32_name = (gcc.print_reg32_name);
+    print_small_reg_name = (gcc.print_small_reg_name);
+    reg_prefix = (gcc.reg_prefix);
+    mem_prefix = (gcc.mem_prefix);
+    maddr = (gcc.maddr);
+    const = (gcc.const);
+    ins_name = (gcc.ins_name);
+    op_order = (gcc.op_order);
+    align = (gcc.align);
+    header = (gcc.header);
+    footer;
+    proc_name = (gcc.proc_name);
+    ret = (gcc.ret);
+    sha256rnds2_explicit_xmm0 = (gcc.sha256rnds2_explicit_xmm0)
   }

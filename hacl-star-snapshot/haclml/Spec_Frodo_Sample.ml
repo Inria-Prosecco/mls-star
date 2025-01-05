@@ -67,7 +67,6 @@ let (frodo_sample_f :
                      i)))
         then Prims.int_one
         else Prims.int_zero
-
 let (frodo_sample_res :
   Spec_Frodo_Params.frodo_alg ->
     FStar_UInt16.t -> Prims.nat -> FStar_UInt16.t)
@@ -84,8 +83,7 @@ let (frodo_sample :
   Spec_Frodo_Params.frodo_alg -> FStar_UInt16.t -> FStar_UInt16.t) =
   fun a ->
     fun r ->
-      let t =
-        FStar_UInt16.shift_right r (FStar_UInt32.uint_to_t Prims.int_one) in
+      let t = FStar_UInt16.shift_right r Stdint.Uint32.one in
       let r0 = FStar_UInt16.logand r (FStar_UInt16.uint_to_t Prims.int_one) in
       let e =
         Lib_LoopCombinators.repeati_inductive

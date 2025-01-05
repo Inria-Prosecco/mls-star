@@ -21,4 +21,3 @@ let (remove_between :
     fun start ->
       fun finish ->
         if finish <= start then s else remove_between' s start finish
-

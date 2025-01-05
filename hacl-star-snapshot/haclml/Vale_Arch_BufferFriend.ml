@@ -8,19 +8,6 @@ let (to_bytes :
 let (of_bytes :
   FStar_UInt8.t Lib_Sequence.seq -> FStar_UInt8.t FStar_Seq_Base.seq) =
   fun b -> b
-
-
-
-
-
-
-
-
-
-
-
-
-
 let rec (le_to_n_indexed_rec :
   FStar_Endianness.bytes -> Prims.nat -> Prims.nat) =
   fun b ->
@@ -35,4 +22,3 @@ let rec (le_to_n_indexed_rec :
              (le_to_n_indexed_rec b (i - Prims.int_one)))
 let (le_to_n_indexed : FStar_Endianness.bytes -> Prims.nat) =
   fun b -> le_to_n_indexed_rec b (FStar_Seq_Base.length b)
-

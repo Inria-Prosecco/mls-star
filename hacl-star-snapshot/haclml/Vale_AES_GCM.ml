@@ -15,25 +15,8 @@ let (lower3_equal :
       ((q0.Vale_Def_Words_s.lo0 = q1.Vale_Def_Words_s.lo0) &&
          (q0.Vale_Def_Words_s.lo1 = q1.Vale_Def_Words_s.lo1))
         && (q0.Vale_Def_Words_s.hi2 = q1.Vale_Def_Words_s.hi2)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 let (gcm_decrypt_LE_tag :
-  Vale_AES_AES_s.algorithm ->
+  Vale_AES_AES_common_s.algorithm ->
     Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
       Vale_AES_GCM_s.supported_iv_LE ->
         Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
@@ -83,5 +66,3 @@ let (gcm_decrypt_LE_tag :
               Vale_AES_GCTR_s.gctr_encrypt_LE j0_BE
                 (Vale_Def_Types_s.le_quad32_to_bytes s_LE) alg key_LE in
             t
-
-

@@ -2,7 +2,6 @@ open Prims
 type u256 = FStar_UInt64.t LowStar_Buffer.buffer
 type u512 = FStar_UInt64.t LowStar_Buffer.buffer
 type u1024 = FStar_UInt64.t LowStar_Buffer.buffer
-
 type uint64 = FStar_UInt64.t
 let as_t : 'a . 'a -> 'a = fun x -> x
 let as_normal_t : 'a . 'a -> 'a = fun x -> x
@@ -36,7 +35,6 @@ let (add1_regs_modified : Vale_X64_Machine_s.reg_64 -> Prims.bool) =
     then true
     else false
 let add1_xmms_modified : 'uuuuu . 'uuuuu -> Prims.bool = fun uu___ -> false
-
 
 let (code_add1 :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode) =
@@ -85,13 +83,10 @@ let (lowstar_add1_normal_t :
           (Obj.magic (as_normal_t lowstar_add1)) uu___3 uu___2 uu___1 uu___
 let (add_scalar :
   FStar_UInt64.t LowStar_Buffer.buffer ->
-    FStar_UInt64.t LowStar_Buffer.buffer -> FStar_UInt64.t -> FStar_UInt64.t)
+    FStar_UInt64.t LowStar_Buffer.buffer -> FStar_UInt64.t -> unit)
   =
   fun out ->
-    fun f1 ->
-      fun f2 ->
-        let uu___ = lowstar_add1_normal_t out f1 f2 () in
-        match uu___ with | (x, uu___1) -> x
+    fun f1 -> fun f2 -> let uu___ = lowstar_add1_normal_t out f1 f2 () in ()
 let (add1_comments : Prims.string Prims.list) =
   ["Computes the addition of four-element f1 with value in f2";
   "and returns the carry (if any)"]
@@ -105,9 +100,9 @@ let (add1_names : Prims.nat -> Prims.string) =
 let (add1_code_inline : unit -> Prims.int) =
   fun uu___ ->
     Vale_X64_Print_Inline_s.print_inline "add_scalar" Prims.int_zero
-      (FStar_Pervasives_Native.Some "carry_r")
-      (FStar_List_Tot_Base.length dom) dom add1_names (Obj.magic code_add1)
-      of_arg add1_regs_modified add1_comments
+      FStar_Pervasives_Native.None (FStar_List_Tot_Base.length dom) dom
+      add1_names (Obj.magic code_add1) of_arg add1_regs_modified
+      add1_comments
 let (fadd_dom : Vale_Interop_Base.td Vale_Interop_X64.arity_ok_stdcall) =
   let y = [t64_mod; t64_no_mod; t64_no_mod] in y
 
@@ -124,7 +119,6 @@ let (fadd_regs_modified : Vale_X64_Machine_s.reg_64 -> Prims.bool) =
     then true
     else false
 let fadd_xmms_modified : 'uuuuu . 'uuuuu -> Prims.bool = fun uu___ -> false
-
 
 let (code_Fadd :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode) =
@@ -188,7 +182,6 @@ let (fsub_regs_modified : Vale_X64_Machine_s.reg_64 -> Prims.bool) =
     then true
     else false
 let fsub_xmms_modified : 'uuuuu . 'uuuuu -> Prims.bool = fun uu___ -> false
-
 
 let (code_Fsub :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode) =

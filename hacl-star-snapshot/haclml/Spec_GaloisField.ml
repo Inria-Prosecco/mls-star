@@ -146,7 +146,7 @@ let (mask_shift_right_mod : field -> Obj.t -> Obj.t) =
     fun y ->
       fadd f
         (Lib_IntTypes.shift_right (__proj__GF__item__t f) Lib_IntTypes.SEC y
-           (FStar_UInt32.uint_to_t Prims.int_one))
+           Stdint.Uint32.one)
         (Lib_IntTypes.logand (__proj__GF__item__t f) Lib_IntTypes.SEC
            (__proj__GF__item__irred f)
            (Lib_IntTypes.eq_mask (__proj__GF__item__t f)

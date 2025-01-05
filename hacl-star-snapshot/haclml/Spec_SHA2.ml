@@ -1,8 +1,3 @@
-module FStar_Seq_Properties = struct
-  include FStar_Seq_Base
-  include FStar_Seq_Properties
-end
-
 open Prims
 let (size_k_w : Spec_Hash_Definitions.sha2_alg -> Prims.nat) =
   fun uu___ ->
@@ -105,96 +100,96 @@ let (__proj__Mkops__item__e5 : ops -> FStar_UInt32.t) =
     | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} -> e5
 let (op224_256 : ops) =
   {
-    c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-    c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-    c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-    c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-    c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-    c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-    e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-    e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-    e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-    e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-    e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-    e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+    c0 = (Stdint.Uint32.of_int (2));
+    c1 = (Stdint.Uint32.of_int (13));
+    c2 = (Stdint.Uint32.of_int (22));
+    c3 = (Stdint.Uint32.of_int (6));
+    c4 = (Stdint.Uint32.of_int (11));
+    c5 = (Stdint.Uint32.of_int (25));
+    e0 = (Stdint.Uint32.of_int (7));
+    e1 = (Stdint.Uint32.of_int (18));
+    e2 = (Stdint.Uint32.of_int (3));
+    e3 = (Stdint.Uint32.of_int (17));
+    e4 = (Stdint.Uint32.of_int (19));
+    e5 = (Stdint.Uint32.of_int (10))
   }
 let (op384_512 : ops) =
   {
-    c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-    c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-    c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-    c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-    c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-    c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-    e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-    e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-    e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-    e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-    e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-    e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+    c0 = (Stdint.Uint32.of_int (28));
+    c1 = (Stdint.Uint32.of_int (34));
+    c2 = (Stdint.Uint32.of_int (39));
+    c3 = (Stdint.Uint32.of_int (14));
+    c4 = (Stdint.Uint32.of_int (18));
+    c5 = (Stdint.Uint32.of_int (41));
+    e0 = Stdint.Uint32.one;
+    e1 = (Stdint.Uint32.of_int (8));
+    e2 = (Stdint.Uint32.of_int (7));
+    e3 = (Stdint.Uint32.of_int (19));
+    e4 = (Stdint.Uint32.of_int (61));
+    e5 = (Stdint.Uint32.of_int (6))
   }
 let (op0 : Spec_Hash_Definitions.sha2_alg -> ops) =
   fun uu___ ->
     match uu___ with
     | Spec_Hash_Definitions.SHA2_224 ->
         {
-          c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-          c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-          c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-          c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-          c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-          c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-          e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-          e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-          e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-          e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-          e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-          e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+          c0 = (Stdint.Uint32.of_int (2));
+          c1 = (Stdint.Uint32.of_int (13));
+          c2 = (Stdint.Uint32.of_int (22));
+          c3 = (Stdint.Uint32.of_int (6));
+          c4 = (Stdint.Uint32.of_int (11));
+          c5 = (Stdint.Uint32.of_int (25));
+          e0 = (Stdint.Uint32.of_int (7));
+          e1 = (Stdint.Uint32.of_int (18));
+          e2 = (Stdint.Uint32.of_int (3));
+          e3 = (Stdint.Uint32.of_int (17));
+          e4 = (Stdint.Uint32.of_int (19));
+          e5 = (Stdint.Uint32.of_int (10))
         }
     | Spec_Hash_Definitions.SHA2_256 ->
         {
-          c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-          c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-          c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-          c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-          c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-          c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-          e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-          e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-          e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-          e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-          e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-          e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+          c0 = (Stdint.Uint32.of_int (2));
+          c1 = (Stdint.Uint32.of_int (13));
+          c2 = (Stdint.Uint32.of_int (22));
+          c3 = (Stdint.Uint32.of_int (6));
+          c4 = (Stdint.Uint32.of_int (11));
+          c5 = (Stdint.Uint32.of_int (25));
+          e0 = (Stdint.Uint32.of_int (7));
+          e1 = (Stdint.Uint32.of_int (18));
+          e2 = (Stdint.Uint32.of_int (3));
+          e3 = (Stdint.Uint32.of_int (17));
+          e4 = (Stdint.Uint32.of_int (19));
+          e5 = (Stdint.Uint32.of_int (10))
         }
     | Spec_Hash_Definitions.SHA2_384 ->
         {
-          c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-          c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-          c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-          c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-          c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-          c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-          e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-          e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-          e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-          e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-          e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-          e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+          c0 = (Stdint.Uint32.of_int (28));
+          c1 = (Stdint.Uint32.of_int (34));
+          c2 = (Stdint.Uint32.of_int (39));
+          c3 = (Stdint.Uint32.of_int (14));
+          c4 = (Stdint.Uint32.of_int (18));
+          c5 = (Stdint.Uint32.of_int (41));
+          e0 = Stdint.Uint32.one;
+          e1 = (Stdint.Uint32.of_int (8));
+          e2 = (Stdint.Uint32.of_int (7));
+          e3 = (Stdint.Uint32.of_int (19));
+          e4 = (Stdint.Uint32.of_int (61));
+          e5 = (Stdint.Uint32.of_int (6))
         }
     | Spec_Hash_Definitions.SHA2_512 ->
         {
-          c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-          c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-          c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-          c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-          c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-          c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-          e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-          e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-          e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-          e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-          e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-          e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+          c0 = (Stdint.Uint32.of_int (28));
+          c1 = (Stdint.Uint32.of_int (34));
+          c2 = (Stdint.Uint32.of_int (39));
+          c3 = (Stdint.Uint32.of_int (14));
+          c4 = (Stdint.Uint32.of_int (18));
+          c5 = (Stdint.Uint32.of_int (41));
+          e0 = Stdint.Uint32.one;
+          e1 = (Stdint.Uint32.of_int (8));
+          e2 = (Stdint.Uint32.of_int (7));
+          e3 = (Stdint.Uint32.of_int (19));
+          e4 = (Stdint.Uint32.of_int (61));
+          e5 = (Stdint.Uint32.of_int (6))
         }
 let (op_Plus_Dot : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t -> Obj.t)
   =
@@ -534,63 +529,63 @@ let (_Sigma0 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
            (match match a with
                   | Spec_Hash_Definitions.SHA2_224 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_256 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_384 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
                   | Spec_Hash_Definitions.SHA2_512 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
             with
             | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -656,63 +651,63 @@ let (_Sigma0 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -765,63 +760,63 @@ let (_Sigma0 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -890,63 +885,63 @@ let (_Sigma1 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
            (match match a with
                   | Spec_Hash_Definitions.SHA2_224 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_256 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_384 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
                   | Spec_Hash_Definitions.SHA2_512 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
             with
             | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1012,63 +1007,63 @@ let (_Sigma1 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1121,63 +1116,63 @@ let (_Sigma1 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1246,63 +1241,63 @@ let (_sigma0 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
            (match match a with
                   | Spec_Hash_Definitions.SHA2_224 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_256 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_384 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
                   | Spec_Hash_Definitions.SHA2_512 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
             with
             | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1368,63 +1363,63 @@ let (_sigma0 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1449,63 +1444,63 @@ let (_sigma0 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1574,63 +1569,63 @@ let (_sigma1 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
            (match match a with
                   | Spec_Hash_Definitions.SHA2_224 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_256 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                        e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                        c0 = (Stdint.Uint32.of_int (2));
+                        c1 = (Stdint.Uint32.of_int (13));
+                        c2 = (Stdint.Uint32.of_int (22));
+                        c3 = (Stdint.Uint32.of_int (6));
+                        c4 = (Stdint.Uint32.of_int (11));
+                        c5 = (Stdint.Uint32.of_int (25));
+                        e0 = (Stdint.Uint32.of_int (7));
+                        e1 = (Stdint.Uint32.of_int (18));
+                        e2 = (Stdint.Uint32.of_int (3));
+                        e3 = (Stdint.Uint32.of_int (17));
+                        e4 = (Stdint.Uint32.of_int (19));
+                        e5 = (Stdint.Uint32.of_int (10))
                       }
                   | Spec_Hash_Definitions.SHA2_384 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
                   | Spec_Hash_Definitions.SHA2_512 ->
                       {
-                        c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                        c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                        c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                        c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                        c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                        c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                        e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                        e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                        e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                        e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                        e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                        e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                        c0 = (Stdint.Uint32.of_int (28));
+                        c1 = (Stdint.Uint32.of_int (34));
+                        c2 = (Stdint.Uint32.of_int (39));
+                        c3 = (Stdint.Uint32.of_int (14));
+                        c4 = (Stdint.Uint32.of_int (18));
+                        c5 = (Stdint.Uint32.of_int (41));
+                        e0 = Stdint.Uint32.one;
+                        e1 = (Stdint.Uint32.of_int (8));
+                        e2 = (Stdint.Uint32.of_int (7));
+                        e3 = (Stdint.Uint32.of_int (19));
+                        e4 = (Stdint.Uint32.of_int (61));
+                        e5 = (Stdint.Uint32.of_int (6))
                       }
             with
             | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1696,63 +1691,63 @@ let (_sigma1 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
@@ -1777,68 +1772,69 @@ let (_sigma1 : Spec_Hash_Definitions.sha2_alg -> Obj.t -> Obj.t) =
               (match match a with
                      | Spec_Hash_Definitions.SHA2_224 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_256 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (13)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (22)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (11)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (25)));
-                           e0 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (17)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (10)))
+                           c0 = (Stdint.Uint32.of_int (2));
+                           c1 = (Stdint.Uint32.of_int (13));
+                           c2 = (Stdint.Uint32.of_int (22));
+                           c3 = (Stdint.Uint32.of_int (6));
+                           c4 = (Stdint.Uint32.of_int (11));
+                           c5 = (Stdint.Uint32.of_int (25));
+                           e0 = (Stdint.Uint32.of_int (7));
+                           e1 = (Stdint.Uint32.of_int (18));
+                           e2 = (Stdint.Uint32.of_int (3));
+                           e3 = (Stdint.Uint32.of_int (17));
+                           e4 = (Stdint.Uint32.of_int (19));
+                           e5 = (Stdint.Uint32.of_int (10))
                          }
                      | Spec_Hash_Definitions.SHA2_384 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                      | Spec_Hash_Definitions.SHA2_512 ->
                          {
-                           c0 = (FStar_UInt32.uint_to_t (Prims.of_int (28)));
-                           c1 = (FStar_UInt32.uint_to_t (Prims.of_int (34)));
-                           c2 = (FStar_UInt32.uint_to_t (Prims.of_int (39)));
-                           c3 = (FStar_UInt32.uint_to_t (Prims.of_int (14)));
-                           c4 = (FStar_UInt32.uint_to_t (Prims.of_int (18)));
-                           c5 = (FStar_UInt32.uint_to_t (Prims.of_int (41)));
-                           e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                           e1 = (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                           e2 = (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                           e3 = (FStar_UInt32.uint_to_t (Prims.of_int (19)));
-                           e4 = (FStar_UInt32.uint_to_t (Prims.of_int (61)));
-                           e5 = (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                           c0 = (Stdint.Uint32.of_int (28));
+                           c1 = (Stdint.Uint32.of_int (34));
+                           c2 = (Stdint.Uint32.of_int (39));
+                           c3 = (Stdint.Uint32.of_int (14));
+                           c4 = (Stdint.Uint32.of_int (18));
+                           c5 = (Stdint.Uint32.of_int (41));
+                           e0 = Stdint.Uint32.one;
+                           e1 = (Stdint.Uint32.of_int (8));
+                           e2 = (Stdint.Uint32.of_int (7));
+                           e3 = (Stdint.Uint32.of_int (19));
+                           e4 = (Stdint.Uint32.of_int (61));
+                           e5 = (Stdint.Uint32.of_int (6))
                          }
                with
                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
                    Obj.magic e5)))
-let (h0 : Spec_Hash_Definitions.sha2_alg -> Obj.t FStar_Seq_Base.seq) =
+let (h0 : Spec_Hash_Definitions.sha2_alg -> (Obj.t, unit) Lib_Sequence.lseq)
+  =
   fun uu___ ->
     (fun uu___ ->
        match uu___ with
@@ -1867,7 +1863,9 @@ let op_String_Access :
   fun uu___ -> FStar_Seq_Base.index
 let (shuffle_core_pre_ :
   Spec_Hash_Definitions.sha2_alg ->
-    Obj.t -> Obj.t -> Obj.t FStar_Seq_Base.seq -> Obj.t FStar_Seq_Base.seq)
+    Obj.t ->
+      Obj.t ->
+        (Obj.t, unit) Lib_Sequence.lseq -> (Obj.t, unit) Lib_Sequence.lseq)
   =
   fun a ->
     fun k_t ->
@@ -2035,159 +2033,63 @@ let (shuffle_core_pre_ :
                              (match match a with
                                     | Spec_Hash_Definitions.SHA2_224 ->
                                         {
-                                          c0 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (2)));
-                                          c1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (13)));
-                                          c2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (22)));
-                                          c3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (6)));
-                                          c4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (11)));
-                                          c5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (25)));
-                                          e0 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (7)));
-                                          e1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (18)));
-                                          e2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (3)));
-                                          e3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (17)));
-                                          e4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (19)));
-                                          e5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (10)))
+                                          c0 = (Stdint.Uint32.of_int (2));
+                                          c1 = (Stdint.Uint32.of_int (13));
+                                          c2 = (Stdint.Uint32.of_int (22));
+                                          c3 = (Stdint.Uint32.of_int (6));
+                                          c4 = (Stdint.Uint32.of_int (11));
+                                          c5 = (Stdint.Uint32.of_int (25));
+                                          e0 = (Stdint.Uint32.of_int (7));
+                                          e1 = (Stdint.Uint32.of_int (18));
+                                          e2 = (Stdint.Uint32.of_int (3));
+                                          e3 = (Stdint.Uint32.of_int (17));
+                                          e4 = (Stdint.Uint32.of_int (19));
+                                          e5 = (Stdint.Uint32.of_int (10))
                                         }
                                     | Spec_Hash_Definitions.SHA2_256 ->
                                         {
-                                          c0 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (2)));
-                                          c1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (13)));
-                                          c2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (22)));
-                                          c3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (6)));
-                                          c4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (11)));
-                                          c5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (25)));
-                                          e0 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (7)));
-                                          e1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (18)));
-                                          e2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (3)));
-                                          e3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (17)));
-                                          e4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (19)));
-                                          e5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (10)))
+                                          c0 = (Stdint.Uint32.of_int (2));
+                                          c1 = (Stdint.Uint32.of_int (13));
+                                          c2 = (Stdint.Uint32.of_int (22));
+                                          c3 = (Stdint.Uint32.of_int (6));
+                                          c4 = (Stdint.Uint32.of_int (11));
+                                          c5 = (Stdint.Uint32.of_int (25));
+                                          e0 = (Stdint.Uint32.of_int (7));
+                                          e1 = (Stdint.Uint32.of_int (18));
+                                          e2 = (Stdint.Uint32.of_int (3));
+                                          e3 = (Stdint.Uint32.of_int (17));
+                                          e4 = (Stdint.Uint32.of_int (19));
+                                          e5 = (Stdint.Uint32.of_int (10))
                                         }
                                     | Spec_Hash_Definitions.SHA2_384 ->
                                         {
-                                          c0 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (28)));
-                                          c1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (34)));
-                                          c2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (39)));
-                                          c3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (14)));
-                                          c4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (18)));
-                                          c5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (41)));
-                                          e0 =
-                                            (FStar_UInt32.uint_to_t
-                                               Prims.int_one);
-                                          e1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (8)));
-                                          e2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (7)));
-                                          e3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (19)));
-                                          e4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (61)));
-                                          e5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (6)))
+                                          c0 = (Stdint.Uint32.of_int (28));
+                                          c1 = (Stdint.Uint32.of_int (34));
+                                          c2 = (Stdint.Uint32.of_int (39));
+                                          c3 = (Stdint.Uint32.of_int (14));
+                                          c4 = (Stdint.Uint32.of_int (18));
+                                          c5 = (Stdint.Uint32.of_int (41));
+                                          e0 = Stdint.Uint32.one;
+                                          e1 = (Stdint.Uint32.of_int (8));
+                                          e2 = (Stdint.Uint32.of_int (7));
+                                          e3 = (Stdint.Uint32.of_int (19));
+                                          e4 = (Stdint.Uint32.of_int (61));
+                                          e5 = (Stdint.Uint32.of_int (6))
                                         }
                                     | Spec_Hash_Definitions.SHA2_512 ->
                                         {
-                                          c0 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (28)));
-                                          c1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (34)));
-                                          c2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (39)));
-                                          c3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (14)));
-                                          c4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (18)));
-                                          c5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (41)));
-                                          e0 =
-                                            (FStar_UInt32.uint_to_t
-                                               Prims.int_one);
-                                          e1 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (8)));
-                                          e2 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (7)));
-                                          e3 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (19)));
-                                          e4 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (61)));
-                                          e5 =
-                                            (FStar_UInt32.uint_to_t
-                                               (Prims.of_int (6)))
+                                          c0 = (Stdint.Uint32.of_int (28));
+                                          c1 = (Stdint.Uint32.of_int (34));
+                                          c2 = (Stdint.Uint32.of_int (39));
+                                          c3 = (Stdint.Uint32.of_int (14));
+                                          c4 = (Stdint.Uint32.of_int (18));
+                                          c5 = (Stdint.Uint32.of_int (41));
+                                          e0 = Stdint.Uint32.one;
+                                          e1 = (Stdint.Uint32.of_int (8));
+                                          e2 = (Stdint.Uint32.of_int (7));
+                                          e3 = (Stdint.Uint32.of_int (19));
+                                          e4 = (Stdint.Uint32.of_int (61));
+                                          e5 = (Stdint.Uint32.of_int (6))
                                         }
                               with
                               | { c0 = c01; c1; c2; c3; c4; c5; e0 = e01; 
@@ -2277,159 +2179,63 @@ let (shuffle_core_pre_ :
                                 (match match a with
                                        | Spec_Hash_Definitions.SHA2_224 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (2)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (13)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (22)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (11)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (25)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (3)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (17)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (10)))
+                                             c0 = (Stdint.Uint32.of_int (2));
+                                             c1 = (Stdint.Uint32.of_int (13));
+                                             c2 = (Stdint.Uint32.of_int (22));
+                                             c3 = (Stdint.Uint32.of_int (6));
+                                             c4 = (Stdint.Uint32.of_int (11));
+                                             c5 = (Stdint.Uint32.of_int (25));
+                                             e0 = (Stdint.Uint32.of_int (7));
+                                             e1 = (Stdint.Uint32.of_int (18));
+                                             e2 = (Stdint.Uint32.of_int (3));
+                                             e3 = (Stdint.Uint32.of_int (17));
+                                             e4 = (Stdint.Uint32.of_int (19));
+                                             e5 = (Stdint.Uint32.of_int (10))
                                            }
                                        | Spec_Hash_Definitions.SHA2_256 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (2)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (13)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (22)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (11)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (25)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (3)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (17)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (10)))
+                                             c0 = (Stdint.Uint32.of_int (2));
+                                             c1 = (Stdint.Uint32.of_int (13));
+                                             c2 = (Stdint.Uint32.of_int (22));
+                                             c3 = (Stdint.Uint32.of_int (6));
+                                             c4 = (Stdint.Uint32.of_int (11));
+                                             c5 = (Stdint.Uint32.of_int (25));
+                                             e0 = (Stdint.Uint32.of_int (7));
+                                             e1 = (Stdint.Uint32.of_int (18));
+                                             e2 = (Stdint.Uint32.of_int (3));
+                                             e3 = (Stdint.Uint32.of_int (17));
+                                             e4 = (Stdint.Uint32.of_int (19));
+                                             e5 = (Stdint.Uint32.of_int (10))
                                            }
                                        | Spec_Hash_Definitions.SHA2_384 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (28)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (34)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (39)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (14)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (41)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  Prims.int_one);
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (8)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (61)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)))
+                                             c0 = (Stdint.Uint32.of_int (28));
+                                             c1 = (Stdint.Uint32.of_int (34));
+                                             c2 = (Stdint.Uint32.of_int (39));
+                                             c3 = (Stdint.Uint32.of_int (14));
+                                             c4 = (Stdint.Uint32.of_int (18));
+                                             c5 = (Stdint.Uint32.of_int (41));
+                                             e0 = Stdint.Uint32.one;
+                                             e1 = (Stdint.Uint32.of_int (8));
+                                             e2 = (Stdint.Uint32.of_int (7));
+                                             e3 = (Stdint.Uint32.of_int (19));
+                                             e4 = (Stdint.Uint32.of_int (61));
+                                             e5 = (Stdint.Uint32.of_int (6))
                                            }
                                        | Spec_Hash_Definitions.SHA2_512 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (28)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (34)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (39)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (14)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (41)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  Prims.int_one);
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (8)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (61)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)))
+                                             c0 = (Stdint.Uint32.of_int (28));
+                                             c1 = (Stdint.Uint32.of_int (34));
+                                             c2 = (Stdint.Uint32.of_int (39));
+                                             c3 = (Stdint.Uint32.of_int (14));
+                                             c4 = (Stdint.Uint32.of_int (18));
+                                             c5 = (Stdint.Uint32.of_int (41));
+                                             e0 = Stdint.Uint32.one;
+                                             e1 = (Stdint.Uint32.of_int (8));
+                                             e2 = (Stdint.Uint32.of_int (7));
+                                             e3 = (Stdint.Uint32.of_int (19));
+                                             e4 = (Stdint.Uint32.of_int (61));
+                                             e5 = (Stdint.Uint32.of_int (6))
                                            }
                                  with
                                  | { c0 = c01; c1; c2; c3; c4; c5; e0 = e01;
@@ -2494,159 +2300,63 @@ let (shuffle_core_pre_ :
                                 (match match a with
                                        | Spec_Hash_Definitions.SHA2_224 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (2)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (13)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (22)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (11)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (25)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (3)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (17)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (10)))
+                                             c0 = (Stdint.Uint32.of_int (2));
+                                             c1 = (Stdint.Uint32.of_int (13));
+                                             c2 = (Stdint.Uint32.of_int (22));
+                                             c3 = (Stdint.Uint32.of_int (6));
+                                             c4 = (Stdint.Uint32.of_int (11));
+                                             c5 = (Stdint.Uint32.of_int (25));
+                                             e0 = (Stdint.Uint32.of_int (7));
+                                             e1 = (Stdint.Uint32.of_int (18));
+                                             e2 = (Stdint.Uint32.of_int (3));
+                                             e3 = (Stdint.Uint32.of_int (17));
+                                             e4 = (Stdint.Uint32.of_int (19));
+                                             e5 = (Stdint.Uint32.of_int (10))
                                            }
                                        | Spec_Hash_Definitions.SHA2_256 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (2)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (13)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (22)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (11)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (25)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (3)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (17)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (10)))
+                                             c0 = (Stdint.Uint32.of_int (2));
+                                             c1 = (Stdint.Uint32.of_int (13));
+                                             c2 = (Stdint.Uint32.of_int (22));
+                                             c3 = (Stdint.Uint32.of_int (6));
+                                             c4 = (Stdint.Uint32.of_int (11));
+                                             c5 = (Stdint.Uint32.of_int (25));
+                                             e0 = (Stdint.Uint32.of_int (7));
+                                             e1 = (Stdint.Uint32.of_int (18));
+                                             e2 = (Stdint.Uint32.of_int (3));
+                                             e3 = (Stdint.Uint32.of_int (17));
+                                             e4 = (Stdint.Uint32.of_int (19));
+                                             e5 = (Stdint.Uint32.of_int (10))
                                            }
                                        | Spec_Hash_Definitions.SHA2_384 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (28)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (34)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (39)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (14)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (41)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  Prims.int_one);
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (8)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (61)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)))
+                                             c0 = (Stdint.Uint32.of_int (28));
+                                             c1 = (Stdint.Uint32.of_int (34));
+                                             c2 = (Stdint.Uint32.of_int (39));
+                                             c3 = (Stdint.Uint32.of_int (14));
+                                             c4 = (Stdint.Uint32.of_int (18));
+                                             c5 = (Stdint.Uint32.of_int (41));
+                                             e0 = Stdint.Uint32.one;
+                                             e1 = (Stdint.Uint32.of_int (8));
+                                             e2 = (Stdint.Uint32.of_int (7));
+                                             e3 = (Stdint.Uint32.of_int (19));
+                                             e4 = (Stdint.Uint32.of_int (61));
+                                             e5 = (Stdint.Uint32.of_int (6))
                                            }
                                        | Spec_Hash_Definitions.SHA2_512 ->
                                            {
-                                             c0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (28)));
-                                             c1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (34)));
-                                             c2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (39)));
-                                             c3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (14)));
-                                             c4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (18)));
-                                             c5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (41)));
-                                             e0 =
-                                               (FStar_UInt32.uint_to_t
-                                                  Prims.int_one);
-                                             e1 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (8)));
-                                             e2 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (7)));
-                                             e3 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (19)));
-                                             e4 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (61)));
-                                             e5 =
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (6)))
+                                             c0 = (Stdint.Uint32.of_int (28));
+                                             c1 = (Stdint.Uint32.of_int (34));
+                                             c2 = (Stdint.Uint32.of_int (39));
+                                             c3 = (Stdint.Uint32.of_int (14));
+                                             c4 = (Stdint.Uint32.of_int (18));
+                                             c5 = (Stdint.Uint32.of_int (41));
+                                             e0 = Stdint.Uint32.one;
+                                             e1 = (Stdint.Uint32.of_int (8));
+                                             e2 = (Stdint.Uint32.of_int (7));
+                                             e3 = (Stdint.Uint32.of_int (19));
+                                             e4 = (Stdint.Uint32.of_int (61));
+                                             e5 = (Stdint.Uint32.of_int (6))
                                            }
                                  with
                                  | { c0 = c01; c1; c2; c3; c4; c5; e0 = e01;
@@ -2803,141 +2513,63 @@ let (shuffle_core_pre_ :
                     (match match a with
                            | Spec_Hash_Definitions.SHA2_224 ->
                                {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (13)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (22)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (11)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (25)));
-                                 e0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (17)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (10)))
+                                 c0 = (Stdint.Uint32.of_int (2));
+                                 c1 = (Stdint.Uint32.of_int (13));
+                                 c2 = (Stdint.Uint32.of_int (22));
+                                 c3 = (Stdint.Uint32.of_int (6));
+                                 c4 = (Stdint.Uint32.of_int (11));
+                                 c5 = (Stdint.Uint32.of_int (25));
+                                 e0 = (Stdint.Uint32.of_int (7));
+                                 e1 = (Stdint.Uint32.of_int (18));
+                                 e2 = (Stdint.Uint32.of_int (3));
+                                 e3 = (Stdint.Uint32.of_int (17));
+                                 e4 = (Stdint.Uint32.of_int (19));
+                                 e5 = (Stdint.Uint32.of_int (10))
                                }
                            | Spec_Hash_Definitions.SHA2_256 ->
                                {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (13)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (22)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (11)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (25)));
-                                 e0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (17)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (10)))
+                                 c0 = (Stdint.Uint32.of_int (2));
+                                 c1 = (Stdint.Uint32.of_int (13));
+                                 c2 = (Stdint.Uint32.of_int (22));
+                                 c3 = (Stdint.Uint32.of_int (6));
+                                 c4 = (Stdint.Uint32.of_int (11));
+                                 c5 = (Stdint.Uint32.of_int (25));
+                                 e0 = (Stdint.Uint32.of_int (7));
+                                 e1 = (Stdint.Uint32.of_int (18));
+                                 e2 = (Stdint.Uint32.of_int (3));
+                                 e3 = (Stdint.Uint32.of_int (17));
+                                 e4 = (Stdint.Uint32.of_int (19));
+                                 e5 = (Stdint.Uint32.of_int (10))
                                }
                            | Spec_Hash_Definitions.SHA2_384 ->
                                {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (28)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (34)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (39)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (14)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (41)));
-                                 e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (61)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                                 c0 = (Stdint.Uint32.of_int (28));
+                                 c1 = (Stdint.Uint32.of_int (34));
+                                 c2 = (Stdint.Uint32.of_int (39));
+                                 c3 = (Stdint.Uint32.of_int (14));
+                                 c4 = (Stdint.Uint32.of_int (18));
+                                 c5 = (Stdint.Uint32.of_int (41));
+                                 e0 = Stdint.Uint32.one;
+                                 e1 = (Stdint.Uint32.of_int (8));
+                                 e2 = (Stdint.Uint32.of_int (7));
+                                 e3 = (Stdint.Uint32.of_int (19));
+                                 e4 = (Stdint.Uint32.of_int (61));
+                                 e5 = (Stdint.Uint32.of_int (6))
                                }
                            | Spec_Hash_Definitions.SHA2_512 ->
                                {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (28)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (34)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (39)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (14)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (41)));
-                                 e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (61)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)))
+                                 c0 = (Stdint.Uint32.of_int (28));
+                                 c1 = (Stdint.Uint32.of_int (34));
+                                 c2 = (Stdint.Uint32.of_int (39));
+                                 c3 = (Stdint.Uint32.of_int (14));
+                                 c4 = (Stdint.Uint32.of_int (18));
+                                 c5 = (Stdint.Uint32.of_int (41));
+                                 e0 = Stdint.Uint32.one;
+                                 e1 = (Stdint.Uint32.of_int (8));
+                                 e2 = (Stdint.Uint32.of_int (7));
+                                 e3 = (Stdint.Uint32.of_int (19));
+                                 e4 = (Stdint.Uint32.of_int (61));
+                                 e5 = (Stdint.Uint32.of_int (6))
                                }
                      with
                      | { c0 = c01; c1; c2; c3; c4; c5; e0 = e01; e1; 
@@ -3011,157 +2643,63 @@ let (shuffle_core_pre_ :
                        (match match a with
                               | Spec_Hash_Definitions.SHA2_224 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
+                                    c0 = (Stdint.Uint32.of_int (2));
+                                    c1 = (Stdint.Uint32.of_int (13));
+                                    c2 = (Stdint.Uint32.of_int (22));
+                                    c3 = (Stdint.Uint32.of_int (6));
+                                    c4 = (Stdint.Uint32.of_int (11));
+                                    c5 = (Stdint.Uint32.of_int (25));
+                                    e0 = (Stdint.Uint32.of_int (7));
+                                    e1 = (Stdint.Uint32.of_int (18));
+                                    e2 = (Stdint.Uint32.of_int (3));
+                                    e3 = (Stdint.Uint32.of_int (17));
+                                    e4 = (Stdint.Uint32.of_int (19));
+                                    e5 = (Stdint.Uint32.of_int (10))
                                   }
                               | Spec_Hash_Definitions.SHA2_256 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
+                                    c0 = (Stdint.Uint32.of_int (2));
+                                    c1 = (Stdint.Uint32.of_int (13));
+                                    c2 = (Stdint.Uint32.of_int (22));
+                                    c3 = (Stdint.Uint32.of_int (6));
+                                    c4 = (Stdint.Uint32.of_int (11));
+                                    c5 = (Stdint.Uint32.of_int (25));
+                                    e0 = (Stdint.Uint32.of_int (7));
+                                    e1 = (Stdint.Uint32.of_int (18));
+                                    e2 = (Stdint.Uint32.of_int (3));
+                                    e3 = (Stdint.Uint32.of_int (17));
+                                    e4 = (Stdint.Uint32.of_int (19));
+                                    e5 = (Stdint.Uint32.of_int (10))
                                   }
                               | Spec_Hash_Definitions.SHA2_384 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
+                                    c0 = (Stdint.Uint32.of_int (28));
+                                    c1 = (Stdint.Uint32.of_int (34));
+                                    c2 = (Stdint.Uint32.of_int (39));
+                                    c3 = (Stdint.Uint32.of_int (14));
+                                    c4 = (Stdint.Uint32.of_int (18));
+                                    c5 = (Stdint.Uint32.of_int (41));
+                                    e0 = Stdint.Uint32.one;
+                                    e1 = (Stdint.Uint32.of_int (8));
+                                    e2 = (Stdint.Uint32.of_int (7));
+                                    e3 = (Stdint.Uint32.of_int (19));
+                                    e4 = (Stdint.Uint32.of_int (61));
+                                    e5 = (Stdint.Uint32.of_int (6))
                                   }
                               | Spec_Hash_Definitions.SHA2_512 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
+                                    c0 = (Stdint.Uint32.of_int (28));
+                                    c1 = (Stdint.Uint32.of_int (34));
+                                    c2 = (Stdint.Uint32.of_int (39));
+                                    c3 = (Stdint.Uint32.of_int (14));
+                                    c4 = (Stdint.Uint32.of_int (18));
+                                    c5 = (Stdint.Uint32.of_int (41));
+                                    e0 = Stdint.Uint32.one;
+                                    e1 = (Stdint.Uint32.of_int (8));
+                                    e2 = (Stdint.Uint32.of_int (7));
+                                    e3 = (Stdint.Uint32.of_int (19));
+                                    e4 = (Stdint.Uint32.of_int (61));
+                                    e5 = (Stdint.Uint32.of_int (6))
                                   }
                         with
                         | { c0 = c01; c1; c2; c3; c4; c5; e0 = e01; e1; 
@@ -3214,157 +2752,63 @@ let (shuffle_core_pre_ :
                        (match match a with
                               | Spec_Hash_Definitions.SHA2_224 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
+                                    c0 = (Stdint.Uint32.of_int (2));
+                                    c1 = (Stdint.Uint32.of_int (13));
+                                    c2 = (Stdint.Uint32.of_int (22));
+                                    c3 = (Stdint.Uint32.of_int (6));
+                                    c4 = (Stdint.Uint32.of_int (11));
+                                    c5 = (Stdint.Uint32.of_int (25));
+                                    e0 = (Stdint.Uint32.of_int (7));
+                                    e1 = (Stdint.Uint32.of_int (18));
+                                    e2 = (Stdint.Uint32.of_int (3));
+                                    e3 = (Stdint.Uint32.of_int (17));
+                                    e4 = (Stdint.Uint32.of_int (19));
+                                    e5 = (Stdint.Uint32.of_int (10))
                                   }
                               | Spec_Hash_Definitions.SHA2_256 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
+                                    c0 = (Stdint.Uint32.of_int (2));
+                                    c1 = (Stdint.Uint32.of_int (13));
+                                    c2 = (Stdint.Uint32.of_int (22));
+                                    c3 = (Stdint.Uint32.of_int (6));
+                                    c4 = (Stdint.Uint32.of_int (11));
+                                    c5 = (Stdint.Uint32.of_int (25));
+                                    e0 = (Stdint.Uint32.of_int (7));
+                                    e1 = (Stdint.Uint32.of_int (18));
+                                    e2 = (Stdint.Uint32.of_int (3));
+                                    e3 = (Stdint.Uint32.of_int (17));
+                                    e4 = (Stdint.Uint32.of_int (19));
+                                    e5 = (Stdint.Uint32.of_int (10))
                                   }
                               | Spec_Hash_Definitions.SHA2_384 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
+                                    c0 = (Stdint.Uint32.of_int (28));
+                                    c1 = (Stdint.Uint32.of_int (34));
+                                    c2 = (Stdint.Uint32.of_int (39));
+                                    c3 = (Stdint.Uint32.of_int (14));
+                                    c4 = (Stdint.Uint32.of_int (18));
+                                    c5 = (Stdint.Uint32.of_int (41));
+                                    e0 = Stdint.Uint32.one;
+                                    e1 = (Stdint.Uint32.of_int (8));
+                                    e2 = (Stdint.Uint32.of_int (7));
+                                    e3 = (Stdint.Uint32.of_int (19));
+                                    e4 = (Stdint.Uint32.of_int (61));
+                                    e5 = (Stdint.Uint32.of_int (6))
                                   }
                               | Spec_Hash_Definitions.SHA2_512 ->
                                   {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
+                                    c0 = (Stdint.Uint32.of_int (28));
+                                    c1 = (Stdint.Uint32.of_int (34));
+                                    c2 = (Stdint.Uint32.of_int (39));
+                                    c3 = (Stdint.Uint32.of_int (14));
+                                    c4 = (Stdint.Uint32.of_int (18));
+                                    c5 = (Stdint.Uint32.of_int (41));
+                                    e0 = Stdint.Uint32.one;
+                                    e1 = (Stdint.Uint32.of_int (8));
+                                    e2 = (Stdint.Uint32.of_int (7));
+                                    e3 = (Stdint.Uint32.of_int (19));
+                                    e4 = (Stdint.Uint32.of_int (61));
+                                    e5 = (Stdint.Uint32.of_int (6))
                                   }
                         with
                         | { c0 = c01; c1; c2; c3; c4; c5; e0 = e01; e1; 
@@ -3479,11 +2923,755 @@ let (shuffle_core_pre_ :
             e0;
             f0;
             g0] in
-          FStar_Seq_Properties.seq_of_list l
+          FStar_Seq_Base.seq_of_list l
 let (shuffle_core_pre :
   Spec_Hash_Definitions.sha2_alg ->
-    Obj.t -> Obj.t -> Obj.t FStar_Seq_Base.seq -> Obj.t FStar_Seq_Base.seq)
+    Obj.t ->
+      Obj.t ->
+        (Obj.t, unit) Lib_Sequence.lseq -> (Obj.t, unit) Lib_Sequence.lseq)
   = shuffle_core_pre_
+let (ws0_pre_inner :
+  Spec_Hash_Definitions.sha2_alg ->
+    unit block_w -> Prims.nat -> unit k_w -> unit k_w)
+  =
+  fun a ->
+    fun block ->
+      fun i ->
+        fun ws -> FStar_Seq_Base.upd ws i (FStar_Seq_Base.index block i)
+let (wsi_pre_inner :
+  Spec_Hash_Definitions.sha2_alg -> Prims.nat -> unit k_w -> unit k_w) =
+  fun a ->
+    fun i ->
+      fun ws ->
+        let t16 = FStar_Seq_Base.index ws (i - (Prims.of_int (16))) in
+        let t15 = FStar_Seq_Base.index ws (i - (Prims.of_int (15))) in
+        let t7 = FStar_Seq_Base.index ws (i - (Prims.of_int (7))) in
+        let t2 = FStar_Seq_Base.index ws (i - (Prims.of_int (2))) in
+        let s1 =
+          (fun uu___1 ->
+             fun uu___ ->
+               (Obj.magic
+                  ((match a with
+                    | Spec_Hash_Definitions.SHA2_224 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                    | Spec_Hash_Definitions.SHA2_256 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                    | Spec_Hash_Definitions.SHA2_384 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)
+                    | Spec_Hash_Definitions.SHA2_512 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)) ))
+                 uu___1 uu___)
+            ((fun uu___1 ->
+                fun uu___ ->
+                  (Obj.magic
+                     ((match a with
+                       | Spec_Hash_Definitions.SHA2_224 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt32.logor
+                                    (FStar_UInt32.shift_right a1 b)
+                                    (FStar_UInt32.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (32))) b)))
+                       | Spec_Hash_Definitions.SHA2_256 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt32.logor
+                                    (FStar_UInt32.shift_right a1 b)
+                                    (FStar_UInt32.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (32))) b)))
+                       | Spec_Hash_Definitions.SHA2_384 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt64.logor
+                                    (FStar_UInt64.shift_right a1 b)
+                                    (FStar_UInt64.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (64))) b)))
+                       | Spec_Hash_Definitions.SHA2_512 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt64.logor
+                                    (FStar_UInt64.shift_right a1 b)
+                                    (FStar_UInt64.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (64))) b)))) ))
+                    uu___1 uu___) t2
+               (match match a with
+                      | Spec_Hash_Definitions.SHA2_224 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (2));
+                            c1 = (Stdint.Uint32.of_int (13));
+                            c2 = (Stdint.Uint32.of_int (22));
+                            c3 = (Stdint.Uint32.of_int (6));
+                            c4 = (Stdint.Uint32.of_int (11));
+                            c5 = (Stdint.Uint32.of_int (25));
+                            e0 = (Stdint.Uint32.of_int (7));
+                            e1 = (Stdint.Uint32.of_int (18));
+                            e2 = (Stdint.Uint32.of_int (3));
+                            e3 = (Stdint.Uint32.of_int (17));
+                            e4 = (Stdint.Uint32.of_int (19));
+                            e5 = (Stdint.Uint32.of_int (10))
+                          }
+                      | Spec_Hash_Definitions.SHA2_256 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (2));
+                            c1 = (Stdint.Uint32.of_int (13));
+                            c2 = (Stdint.Uint32.of_int (22));
+                            c3 = (Stdint.Uint32.of_int (6));
+                            c4 = (Stdint.Uint32.of_int (11));
+                            c5 = (Stdint.Uint32.of_int (25));
+                            e0 = (Stdint.Uint32.of_int (7));
+                            e1 = (Stdint.Uint32.of_int (18));
+                            e2 = (Stdint.Uint32.of_int (3));
+                            e3 = (Stdint.Uint32.of_int (17));
+                            e4 = (Stdint.Uint32.of_int (19));
+                            e5 = (Stdint.Uint32.of_int (10))
+                          }
+                      | Spec_Hash_Definitions.SHA2_384 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (28));
+                            c1 = (Stdint.Uint32.of_int (34));
+                            c2 = (Stdint.Uint32.of_int (39));
+                            c3 = (Stdint.Uint32.of_int (14));
+                            c4 = (Stdint.Uint32.of_int (18));
+                            c5 = (Stdint.Uint32.of_int (41));
+                            e0 = Stdint.Uint32.one;
+                            e1 = (Stdint.Uint32.of_int (8));
+                            e2 = (Stdint.Uint32.of_int (7));
+                            e3 = (Stdint.Uint32.of_int (19));
+                            e4 = (Stdint.Uint32.of_int (61));
+                            e5 = (Stdint.Uint32.of_int (6))
+                          }
+                      | Spec_Hash_Definitions.SHA2_512 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (28));
+                            c1 = (Stdint.Uint32.of_int (34));
+                            c2 = (Stdint.Uint32.of_int (39));
+                            c3 = (Stdint.Uint32.of_int (14));
+                            c4 = (Stdint.Uint32.of_int (18));
+                            c5 = (Stdint.Uint32.of_int (41));
+                            e0 = Stdint.Uint32.one;
+                            e1 = (Stdint.Uint32.of_int (8));
+                            e2 = (Stdint.Uint32.of_int (7));
+                            e3 = (Stdint.Uint32.of_int (19));
+                            e4 = (Stdint.Uint32.of_int (61));
+                            e5 = (Stdint.Uint32.of_int (6))
+                          }
+                with
+                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
+                    Obj.magic e3))
+            ((fun uu___1 ->
+                fun uu___ ->
+                  (Obj.magic
+                     ((match a with
+                       | Spec_Hash_Definitions.SHA2_224 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                       | Spec_Hash_Definitions.SHA2_256 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                       | Spec_Hash_Definitions.SHA2_384 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)
+                       | Spec_Hash_Definitions.SHA2_512 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)) ))
+                    uu___1 uu___)
+               ((fun uu___1 ->
+                   fun uu___ ->
+                     (Obj.magic
+                        ((match a with
+                          | Spec_Hash_Definitions.SHA2_224 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt32.logor
+                                       (FStar_UInt32.shift_right a1 b)
+                                       (FStar_UInt32.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (32))) b)))
+                          | Spec_Hash_Definitions.SHA2_256 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt32.logor
+                                       (FStar_UInt32.shift_right a1 b)
+                                       (FStar_UInt32.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (32))) b)))
+                          | Spec_Hash_Definitions.SHA2_384 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt64.logor
+                                       (FStar_UInt64.shift_right a1 b)
+                                       (FStar_UInt64.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (64))) b)))
+                          | Spec_Hash_Definitions.SHA2_512 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt64.logor
+                                       (FStar_UInt64.shift_right a1 b)
+                                       (FStar_UInt64.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (64))) b)))) ))
+                       uu___1 uu___) t2
+                  (match match a with
+                         | Spec_Hash_Definitions.SHA2_224 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_256 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_384 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                         | Spec_Hash_Definitions.SHA2_512 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                   with
+                   | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
+                       Obj.magic e4))
+               ((fun uu___1 ->
+                   fun uu___ ->
+                     (Obj.magic
+                        ((match a with
+                          | Spec_Hash_Definitions.SHA2_224 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt32.shift_right a1 b)
+                          | Spec_Hash_Definitions.SHA2_256 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt32.shift_right a1 b)
+                          | Spec_Hash_Definitions.SHA2_384 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt64.shift_right a1 b)
+                          | Spec_Hash_Definitions.SHA2_512 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt64.shift_right a1 b)) ))
+                       uu___1 uu___) t2
+                  (match match a with
+                         | Spec_Hash_Definitions.SHA2_224 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_256 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_384 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                         | Spec_Hash_Definitions.SHA2_512 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                   with
+                   | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
+                       Obj.magic e5))) in
+        let s0 =
+          (fun uu___1 ->
+             fun uu___ ->
+               (Obj.magic
+                  ((match a with
+                    | Spec_Hash_Definitions.SHA2_224 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                    | Spec_Hash_Definitions.SHA2_256 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                    | Spec_Hash_Definitions.SHA2_384 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)
+                    | Spec_Hash_Definitions.SHA2_512 ->
+                        Obj.repr
+                          (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)) ))
+                 uu___1 uu___)
+            ((fun uu___1 ->
+                fun uu___ ->
+                  (Obj.magic
+                     ((match a with
+                       | Spec_Hash_Definitions.SHA2_224 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt32.logor
+                                    (FStar_UInt32.shift_right a1 b)
+                                    (FStar_UInt32.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (32))) b)))
+                       | Spec_Hash_Definitions.SHA2_256 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt32.logor
+                                    (FStar_UInt32.shift_right a1 b)
+                                    (FStar_UInt32.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (32))) b)))
+                       | Spec_Hash_Definitions.SHA2_384 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt64.logor
+                                    (FStar_UInt64.shift_right a1 b)
+                                    (FStar_UInt64.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (64))) b)))
+                       | Spec_Hash_Definitions.SHA2_512 ->
+                           Obj.repr
+                             (fun a1 ->
+                                fun b ->
+                                  FStar_UInt64.logor
+                                    (FStar_UInt64.shift_right a1 b)
+                                    (FStar_UInt64.shift_left a1
+                                       (FStar_UInt32.sub
+                                          (FStar_UInt32.uint_to_t
+                                             (Prims.of_int (64))) b)))) ))
+                    uu___1 uu___) t15
+               (match match a with
+                      | Spec_Hash_Definitions.SHA2_224 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (2));
+                            c1 = (Stdint.Uint32.of_int (13));
+                            c2 = (Stdint.Uint32.of_int (22));
+                            c3 = (Stdint.Uint32.of_int (6));
+                            c4 = (Stdint.Uint32.of_int (11));
+                            c5 = (Stdint.Uint32.of_int (25));
+                            e0 = (Stdint.Uint32.of_int (7));
+                            e1 = (Stdint.Uint32.of_int (18));
+                            e2 = (Stdint.Uint32.of_int (3));
+                            e3 = (Stdint.Uint32.of_int (17));
+                            e4 = (Stdint.Uint32.of_int (19));
+                            e5 = (Stdint.Uint32.of_int (10))
+                          }
+                      | Spec_Hash_Definitions.SHA2_256 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (2));
+                            c1 = (Stdint.Uint32.of_int (13));
+                            c2 = (Stdint.Uint32.of_int (22));
+                            c3 = (Stdint.Uint32.of_int (6));
+                            c4 = (Stdint.Uint32.of_int (11));
+                            c5 = (Stdint.Uint32.of_int (25));
+                            e0 = (Stdint.Uint32.of_int (7));
+                            e1 = (Stdint.Uint32.of_int (18));
+                            e2 = (Stdint.Uint32.of_int (3));
+                            e3 = (Stdint.Uint32.of_int (17));
+                            e4 = (Stdint.Uint32.of_int (19));
+                            e5 = (Stdint.Uint32.of_int (10))
+                          }
+                      | Spec_Hash_Definitions.SHA2_384 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (28));
+                            c1 = (Stdint.Uint32.of_int (34));
+                            c2 = (Stdint.Uint32.of_int (39));
+                            c3 = (Stdint.Uint32.of_int (14));
+                            c4 = (Stdint.Uint32.of_int (18));
+                            c5 = (Stdint.Uint32.of_int (41));
+                            e0 = Stdint.Uint32.one;
+                            e1 = (Stdint.Uint32.of_int (8));
+                            e2 = (Stdint.Uint32.of_int (7));
+                            e3 = (Stdint.Uint32.of_int (19));
+                            e4 = (Stdint.Uint32.of_int (61));
+                            e5 = (Stdint.Uint32.of_int (6))
+                          }
+                      | Spec_Hash_Definitions.SHA2_512 ->
+                          {
+                            c0 = (Stdint.Uint32.of_int (28));
+                            c1 = (Stdint.Uint32.of_int (34));
+                            c2 = (Stdint.Uint32.of_int (39));
+                            c3 = (Stdint.Uint32.of_int (14));
+                            c4 = (Stdint.Uint32.of_int (18));
+                            c5 = (Stdint.Uint32.of_int (41));
+                            e0 = Stdint.Uint32.one;
+                            e1 = (Stdint.Uint32.of_int (8));
+                            e2 = (Stdint.Uint32.of_int (7));
+                            e3 = (Stdint.Uint32.of_int (19));
+                            e4 = (Stdint.Uint32.of_int (61));
+                            e5 = (Stdint.Uint32.of_int (6))
+                          }
+                with
+                | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
+                    Obj.magic e0))
+            ((fun uu___1 ->
+                fun uu___ ->
+                  (Obj.magic
+                     ((match a with
+                       | Spec_Hash_Definitions.SHA2_224 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                       | Spec_Hash_Definitions.SHA2_256 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
+                       | Spec_Hash_Definitions.SHA2_384 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)
+                       | Spec_Hash_Definitions.SHA2_512 ->
+                           Obj.repr
+                             (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)) ))
+                    uu___1 uu___)
+               ((fun uu___1 ->
+                   fun uu___ ->
+                     (Obj.magic
+                        ((match a with
+                          | Spec_Hash_Definitions.SHA2_224 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt32.logor
+                                       (FStar_UInt32.shift_right a1 b)
+                                       (FStar_UInt32.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (32))) b)))
+                          | Spec_Hash_Definitions.SHA2_256 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt32.logor
+                                       (FStar_UInt32.shift_right a1 b)
+                                       (FStar_UInt32.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (32))) b)))
+                          | Spec_Hash_Definitions.SHA2_384 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt64.logor
+                                       (FStar_UInt64.shift_right a1 b)
+                                       (FStar_UInt64.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (64))) b)))
+                          | Spec_Hash_Definitions.SHA2_512 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b ->
+                                     FStar_UInt64.logor
+                                       (FStar_UInt64.shift_right a1 b)
+                                       (FStar_UInt64.shift_left a1
+                                          (FStar_UInt32.sub
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (64))) b)))) ))
+                       uu___1 uu___) t15
+                  (match match a with
+                         | Spec_Hash_Definitions.SHA2_224 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_256 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_384 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                         | Spec_Hash_Definitions.SHA2_512 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                   with
+                   | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
+                       Obj.magic e1))
+               ((fun uu___1 ->
+                   fun uu___ ->
+                     (Obj.magic
+                        ((match a with
+                          | Spec_Hash_Definitions.SHA2_224 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt32.shift_right a1 b)
+                          | Spec_Hash_Definitions.SHA2_256 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt32.shift_right a1 b)
+                          | Spec_Hash_Definitions.SHA2_384 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt64.shift_right a1 b)
+                          | Spec_Hash_Definitions.SHA2_512 ->
+                              Obj.repr
+                                (fun a1 ->
+                                   fun b -> FStar_UInt64.shift_right a1 b)) ))
+                       uu___1 uu___) t15
+                  (match match a with
+                         | Spec_Hash_Definitions.SHA2_224 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_256 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (2));
+                               c1 = (Stdint.Uint32.of_int (13));
+                               c2 = (Stdint.Uint32.of_int (22));
+                               c3 = (Stdint.Uint32.of_int (6));
+                               c4 = (Stdint.Uint32.of_int (11));
+                               c5 = (Stdint.Uint32.of_int (25));
+                               e0 = (Stdint.Uint32.of_int (7));
+                               e1 = (Stdint.Uint32.of_int (18));
+                               e2 = (Stdint.Uint32.of_int (3));
+                               e3 = (Stdint.Uint32.of_int (17));
+                               e4 = (Stdint.Uint32.of_int (19));
+                               e5 = (Stdint.Uint32.of_int (10))
+                             }
+                         | Spec_Hash_Definitions.SHA2_384 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                         | Spec_Hash_Definitions.SHA2_512 ->
+                             {
+                               c0 = (Stdint.Uint32.of_int (28));
+                               c1 = (Stdint.Uint32.of_int (34));
+                               c2 = (Stdint.Uint32.of_int (39));
+                               c3 = (Stdint.Uint32.of_int (14));
+                               c4 = (Stdint.Uint32.of_int (18));
+                               c5 = (Stdint.Uint32.of_int (41));
+                               e0 = Stdint.Uint32.one;
+                               e1 = (Stdint.Uint32.of_int (8));
+                               e2 = (Stdint.Uint32.of_int (7));
+                               e3 = (Stdint.Uint32.of_int (19));
+                               e4 = (Stdint.Uint32.of_int (61));
+                               e5 = (Stdint.Uint32.of_int (6))
+                             }
+                   with
+                   | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
+                       Obj.magic e2))) in
+        FStar_Seq_Base.upd ws i
+          ((fun uu___1 ->
+              fun uu___ ->
+                (Obj.magic
+                   ((match a with
+                     | Spec_Hash_Definitions.SHA2_224 ->
+                         Obj.repr
+                           (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b)
+                     | Spec_Hash_Definitions.SHA2_256 ->
+                         Obj.repr
+                           (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b)
+                     | Spec_Hash_Definitions.SHA2_384 ->
+                         Obj.repr
+                           (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b)
+                     | Spec_Hash_Definitions.SHA2_512 ->
+                         Obj.repr
+                           (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b)) ))
+                  uu___1 uu___)
+             ((fun uu___1 ->
+                 fun uu___ ->
+                   (Obj.magic
+                      ((match a with
+                        | Spec_Hash_Definitions.SHA2_224 ->
+                            Obj.repr
+                              (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b)
+                        | Spec_Hash_Definitions.SHA2_256 ->
+                            Obj.repr
+                              (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b)
+                        | Spec_Hash_Definitions.SHA2_384 ->
+                            Obj.repr
+                              (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b)
+                        | Spec_Hash_Definitions.SHA2_512 ->
+                            Obj.repr
+                              (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b)) ))
+                     uu___1 uu___)
+                (match a with
+                 | Spec_Hash_Definitions.SHA2_224 ->
+                     Obj.repr
+                       (FStar_UInt32.add_mod (Obj.magic s1) (Obj.magic t7))
+                 | Spec_Hash_Definitions.SHA2_256 ->
+                     Obj.repr
+                       (FStar_UInt32.add_mod (Obj.magic s1) (Obj.magic t7))
+                 | Spec_Hash_Definitions.SHA2_384 ->
+                     Obj.repr
+                       (FStar_UInt64.add_mod (Obj.magic s1) (Obj.magic t7))
+                 | Spec_Hash_Definitions.SHA2_512 ->
+                     Obj.repr
+                       (FStar_UInt64.add_mod (Obj.magic s1) (Obj.magic t7)))
+                s0) t16)
 let (ws_pre_inner :
   Spec_Hash_Definitions.sha2_alg ->
     unit block_w -> Prims.nat -> unit k_w -> unit k_w)
@@ -3492,1293 +3680,9 @@ let (ws_pre_inner :
     fun block ->
       fun i ->
         fun ws ->
-          if i < Spec_Hash_Definitions.block_word_length
-          then FStar_Seq_Base.upd ws i (FStar_Seq_Base.index block i)
-          else
-            (let t16 = FStar_Seq_Base.index ws (i - (Prims.of_int (16))) in
-             let t15 = FStar_Seq_Base.index ws (i - (Prims.of_int (15))) in
-             let t7 = FStar_Seq_Base.index ws (i - (Prims.of_int (7))) in
-             let t2 = FStar_Seq_Base.index ws (i - (Prims.of_int (2))) in
-             let s1 =
-               (fun uu___2 ->
-                  fun uu___1 ->
-                    (Obj.magic
-                       ((match a with
-                         | Spec_Hash_Definitions.SHA2_224 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
-                         | Spec_Hash_Definitions.SHA2_256 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
-                         | Spec_Hash_Definitions.SHA2_384 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)
-                         | Spec_Hash_Definitions.SHA2_512 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)) ))
-                      uu___2 uu___1)
-                 ((fun uu___2 ->
-                     fun uu___1 ->
-                       (Obj.magic
-                          ((match a with
-                            | Spec_Hash_Definitions.SHA2_224 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt32.logor
-                                         (FStar_UInt32.shift_right a1 b)
-                                         (FStar_UInt32.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (32))) b)))
-                            | Spec_Hash_Definitions.SHA2_256 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt32.logor
-                                         (FStar_UInt32.shift_right a1 b)
-                                         (FStar_UInt32.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (32))) b)))
-                            | Spec_Hash_Definitions.SHA2_384 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt64.logor
-                                         (FStar_UInt64.shift_right a1 b)
-                                         (FStar_UInt64.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (64))) b)))
-                            | Spec_Hash_Definitions.SHA2_512 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt64.logor
-                                         (FStar_UInt64.shift_right a1 b)
-                                         (FStar_UInt64.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (64))) b)))) ))
-                         uu___2 uu___1) t2
-                    (match match a with
-                           | Spec_Hash_Definitions.SHA2_224 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (13)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (22)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (11)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (25)));
-                                 e0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (17)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (10)))
-                               }
-                           | Spec_Hash_Definitions.SHA2_256 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (13)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (22)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (11)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (25)));
-                                 e0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (17)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (10)))
-                               }
-                           | Spec_Hash_Definitions.SHA2_384 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (28)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (34)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (39)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (14)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (41)));
-                                 e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (61)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)))
-                               }
-                           | Spec_Hash_Definitions.SHA2_512 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (28)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (34)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (39)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (14)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (41)));
-                                 e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (61)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)))
-                               }
-                     with
-                     | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
-                         Obj.magic e3))
-                 ((fun uu___2 ->
-                     fun uu___1 ->
-                       (Obj.magic
-                          ((match a with
-                            | Spec_Hash_Definitions.SHA2_224 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt32.logxor a1 b)
-                            | Spec_Hash_Definitions.SHA2_256 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt32.logxor a1 b)
-                            | Spec_Hash_Definitions.SHA2_384 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt64.logxor a1 b)
-                            | Spec_Hash_Definitions.SHA2_512 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt64.logxor a1 b)) ))
-                         uu___2 uu___1)
-                    ((fun uu___2 ->
-                        fun uu___1 ->
-                          (Obj.magic
-                             ((match a with
-                               | Spec_Hash_Definitions.SHA2_224 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.logor
-                                            (FStar_UInt32.shift_right a1 b)
-                                            (FStar_UInt32.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (32))) b)))
-                               | Spec_Hash_Definitions.SHA2_256 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.logor
-                                            (FStar_UInt32.shift_right a1 b)
-                                            (FStar_UInt32.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (32))) b)))
-                               | Spec_Hash_Definitions.SHA2_384 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.logor
-                                            (FStar_UInt64.shift_right a1 b)
-                                            (FStar_UInt64.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (64))) b)))
-                               | Spec_Hash_Definitions.SHA2_512 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.logor
-                                            (FStar_UInt64.shift_right a1 b)
-                                            (FStar_UInt64.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (64))) b))))
-                                )) uu___2 uu___1) t2
-                       (match match a with
-                              | Spec_Hash_Definitions.SHA2_224 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_256 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_384 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_512 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                        with
-                        | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_}
-                            -> Obj.magic e4))
-                    ((fun uu___2 ->
-                        fun uu___1 ->
-                          (Obj.magic
-                             ((match a with
-                               | Spec_Hash_Definitions.SHA2_224 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.shift_right a1 b)
-                               | Spec_Hash_Definitions.SHA2_256 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.shift_right a1 b)
-                               | Spec_Hash_Definitions.SHA2_384 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.shift_right a1 b)
-                               | Spec_Hash_Definitions.SHA2_512 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.shift_right a1 b)) ))
-                            uu___2 uu___1) t2
-                       (match match a with
-                              | Spec_Hash_Definitions.SHA2_224 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_256 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_384 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_512 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                        with
-                        | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_}
-                            -> Obj.magic e5))) in
-             let s0 =
-               (fun uu___2 ->
-                  fun uu___1 ->
-                    (Obj.magic
-                       ((match a with
-                         | Spec_Hash_Definitions.SHA2_224 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
-                         | Spec_Hash_Definitions.SHA2_256 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt32.logxor a1 b)
-                         | Spec_Hash_Definitions.SHA2_384 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)
-                         | Spec_Hash_Definitions.SHA2_512 ->
-                             Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt64.logxor a1 b)) ))
-                      uu___2 uu___1)
-                 ((fun uu___2 ->
-                     fun uu___1 ->
-                       (Obj.magic
-                          ((match a with
-                            | Spec_Hash_Definitions.SHA2_224 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt32.logor
-                                         (FStar_UInt32.shift_right a1 b)
-                                         (FStar_UInt32.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (32))) b)))
-                            | Spec_Hash_Definitions.SHA2_256 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt32.logor
-                                         (FStar_UInt32.shift_right a1 b)
-                                         (FStar_UInt32.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (32))) b)))
-                            | Spec_Hash_Definitions.SHA2_384 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt64.logor
-                                         (FStar_UInt64.shift_right a1 b)
-                                         (FStar_UInt64.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (64))) b)))
-                            | Spec_Hash_Definitions.SHA2_512 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b ->
-                                       FStar_UInt64.logor
-                                         (FStar_UInt64.shift_right a1 b)
-                                         (FStar_UInt64.shift_left a1
-                                            (FStar_UInt32.sub
-                                               (FStar_UInt32.uint_to_t
-                                                  (Prims.of_int (64))) b)))) ))
-                         uu___2 uu___1) t15
-                    (match match a with
-                           | Spec_Hash_Definitions.SHA2_224 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (13)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (22)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (11)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (25)));
-                                 e0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (17)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (10)))
-                               }
-                           | Spec_Hash_Definitions.SHA2_256 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (2)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (13)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (22)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (11)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (25)));
-                                 e0 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (3)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (17)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (10)))
-                               }
-                           | Spec_Hash_Definitions.SHA2_384 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (28)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (34)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (39)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (14)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (41)));
-                                 e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (61)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)))
-                               }
-                           | Spec_Hash_Definitions.SHA2_512 ->
-                               {
-                                 c0 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (28)));
-                                 c1 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (34)));
-                                 c2 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (39)));
-                                 c3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (14)));
-                                 c4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (18)));
-                                 c5 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (41)));
-                                 e0 = (FStar_UInt32.uint_to_t Prims.int_one);
-                                 e1 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (8)));
-                                 e2 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (7)));
-                                 e3 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (19)));
-                                 e4 =
-                                   (FStar_UInt32.uint_to_t
-                                      (Prims.of_int (61)));
-                                 e5 =
-                                   (FStar_UInt32.uint_to_t (Prims.of_int (6)))
-                               }
-                     with
-                     | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_} ->
-                         Obj.magic e0))
-                 ((fun uu___2 ->
-                     fun uu___1 ->
-                       (Obj.magic
-                          ((match a with
-                            | Spec_Hash_Definitions.SHA2_224 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt32.logxor a1 b)
-                            | Spec_Hash_Definitions.SHA2_256 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt32.logxor a1 b)
-                            | Spec_Hash_Definitions.SHA2_384 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt64.logxor a1 b)
-                            | Spec_Hash_Definitions.SHA2_512 ->
-                                Obj.repr
-                                  (fun a1 ->
-                                     fun b -> FStar_UInt64.logxor a1 b)) ))
-                         uu___2 uu___1)
-                    ((fun uu___2 ->
-                        fun uu___1 ->
-                          (Obj.magic
-                             ((match a with
-                               | Spec_Hash_Definitions.SHA2_224 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.logor
-                                            (FStar_UInt32.shift_right a1 b)
-                                            (FStar_UInt32.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (32))) b)))
-                               | Spec_Hash_Definitions.SHA2_256 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.logor
-                                            (FStar_UInt32.shift_right a1 b)
-                                            (FStar_UInt32.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (32))) b)))
-                               | Spec_Hash_Definitions.SHA2_384 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.logor
-                                            (FStar_UInt64.shift_right a1 b)
-                                            (FStar_UInt64.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (64))) b)))
-                               | Spec_Hash_Definitions.SHA2_512 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.logor
-                                            (FStar_UInt64.shift_right a1 b)
-                                            (FStar_UInt64.shift_left a1
-                                               (FStar_UInt32.sub
-                                                  (FStar_UInt32.uint_to_t
-                                                     (Prims.of_int (64))) b))))
-                                )) uu___2 uu___1) t15
-                       (match match a with
-                              | Spec_Hash_Definitions.SHA2_224 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_256 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_384 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_512 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                        with
-                        | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_}
-                            -> Obj.magic e1))
-                    ((fun uu___2 ->
-                        fun uu___1 ->
-                          (Obj.magic
-                             ((match a with
-                               | Spec_Hash_Definitions.SHA2_224 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.shift_right a1 b)
-                               | Spec_Hash_Definitions.SHA2_256 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt32.shift_right a1 b)
-                               | Spec_Hash_Definitions.SHA2_384 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.shift_right a1 b)
-                               | Spec_Hash_Definitions.SHA2_512 ->
-                                   Obj.repr
-                                     (fun a1 ->
-                                        fun b ->
-                                          FStar_UInt64.shift_right a1 b)) ))
-                            uu___2 uu___1) t15
-                       (match match a with
-                              | Spec_Hash_Definitions.SHA2_224 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_256 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (2)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (13)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (22)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (11)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (25)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (3)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (17)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (10)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_384 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                              | Spec_Hash_Definitions.SHA2_512 ->
-                                  {
-                                    c0 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (28)));
-                                    c1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (34)));
-                                    c2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (39)));
-                                    c3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (14)));
-                                    c4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (18)));
-                                    c5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (41)));
-                                    e0 =
-                                      (FStar_UInt32.uint_to_t Prims.int_one);
-                                    e1 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (8)));
-                                    e2 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (7)));
-                                    e3 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (19)));
-                                    e4 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (61)));
-                                    e5 =
-                                      (FStar_UInt32.uint_to_t
-                                         (Prims.of_int (6)))
-                                  }
-                        with
-                        | { c0; c1; c2; c3; c4; c5; e0; e1; e2; e3; e4; e5;_}
-                            -> Obj.magic e2))) in
-             FStar_Seq_Base.upd ws i
-               ((fun uu___2 ->
-                   fun uu___1 ->
-                     (Obj.magic
-                        ((match a with
-                          | Spec_Hash_Definitions.SHA2_224 ->
-                              Obj.repr
-                                (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b)
-                          | Spec_Hash_Definitions.SHA2_256 ->
-                              Obj.repr
-                                (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b)
-                          | Spec_Hash_Definitions.SHA2_384 ->
-                              Obj.repr
-                                (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b)
-                          | Spec_Hash_Definitions.SHA2_512 ->
-                              Obj.repr
-                                (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b))
-                           )) uu___2 uu___1)
-                  ((fun uu___2 ->
-                      fun uu___1 ->
-                        (Obj.magic
-                           ((match a with
-                             | Spec_Hash_Definitions.SHA2_224 ->
-                                 Obj.repr
-                                   (fun a1 ->
-                                      fun b -> FStar_UInt32.add_mod a1 b)
-                             | Spec_Hash_Definitions.SHA2_256 ->
-                                 Obj.repr
-                                   (fun a1 ->
-                                      fun b -> FStar_UInt32.add_mod a1 b)
-                             | Spec_Hash_Definitions.SHA2_384 ->
-                                 Obj.repr
-                                   (fun a1 ->
-                                      fun b -> FStar_UInt64.add_mod a1 b)
-                             | Spec_Hash_Definitions.SHA2_512 ->
-                                 Obj.repr
-                                   (fun a1 ->
-                                      fun b -> FStar_UInt64.add_mod a1 b)) ))
-                          uu___2 uu___1)
-                     (match a with
-                      | Spec_Hash_Definitions.SHA2_224 ->
-                          Obj.repr
-                            (FStar_UInt32.add_mod (Obj.magic s1)
-                               (Obj.magic t7))
-                      | Spec_Hash_Definitions.SHA2_256 ->
-                          Obj.repr
-                            (FStar_UInt32.add_mod (Obj.magic s1)
-                               (Obj.magic t7))
-                      | Spec_Hash_Definitions.SHA2_384 ->
-                          Obj.repr
-                            (FStar_UInt64.add_mod (Obj.magic s1)
-                               (Obj.magic t7))
-                      | Spec_Hash_Definitions.SHA2_512 ->
-                          Obj.repr
-                            (FStar_UInt64.add_mod (Obj.magic s1)
-                               (Obj.magic t7))) s0) t16))
+          if i < (Spec_Hash_Definitions.block_word_length a)
+          then ws0_pre_inner a block i ws
+          else wsi_pre_inner a i ws
 let (ws_pre_ : Spec_Hash_Definitions.sha2_alg -> unit block_w -> unit k_w) =
   fun a ->
     fun block ->
@@ -4808,7 +3712,8 @@ let (ws_pre : Spec_Hash_Definitions.sha2_alg -> unit block_w -> unit k_w) =
   ws_pre_
 let (shuffle_pre :
   Spec_Hash_Definitions.sha2_alg ->
-    Obj.t FStar_Seq_Base.seq -> unit block_w -> Obj.t FStar_Seq_Base.seq)
+    (Obj.t, unit) Lib_Sequence.lseq ->
+      unit block_w -> (Obj.t, unit) Lib_Sequence.lseq)
   =
   fun a ->
     fun hash ->
@@ -4827,53 +3732,45 @@ let (shuffle_pre :
                  (FStar_Seq_Base.index ws i) h) hash
 let (shuffle :
   Spec_Hash_Definitions.sha2_alg ->
-    Obj.t FStar_Seq_Base.seq -> unit block_w -> Obj.t FStar_Seq_Base.seq)
+    (Obj.t, unit) Lib_Sequence.lseq ->
+      unit block_w -> (Obj.t, unit) Lib_Sequence.lseq)
   = shuffle_pre
 let (init :
   Spec_Hash_Definitions.sha2_alg -> unit Spec_Hash_Definitions.init_t) =
-  fun a -> ((h0 a), (Obj.repr ()))
+  fun a -> h0 a
 let (update_pre :
   Spec_Hash_Definitions.sha2_alg ->
-    unit Spec_Hash_Definitions.words_state ->
-      Spec_Hash_Definitions.bytes -> unit Spec_Hash_Definitions.words_state)
+    (Obj.t, unit) Lib_Sequence.lseq ->
+      Spec_Hash_Definitions.bytes -> (Obj.t, unit) Lib_Sequence.lseq)
   =
   fun a ->
     fun hash ->
       fun block ->
-        let uu___ = hash in
-        match uu___ with
-        | (hash1, uu___1) ->
-            let block_w1 =
-              Spec_Hash_Definitions.words_of_bytes a
-                Spec_Hash_Definitions.block_word_length block in
-            let hash_1 = shuffle a hash1 block_w1 in
-            ((Spec_Loops.seq_map2
-                (fun uu___3 ->
-                   fun uu___2 ->
-                     (match a with
-                      | Spec_Hash_Definitions.SHA2_224 ->
-                          Obj.magic
-                            (Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b))
-                      | Spec_Hash_Definitions.SHA2_256 ->
-                          Obj.magic
-                            (Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b))
-                      | Spec_Hash_Definitions.SHA2_384 ->
-                          Obj.magic
-                            (Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b))
-                      | Spec_Hash_Definitions.SHA2_512 ->
-                          Obj.magic
-                            (Obj.repr
-                               (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b)))
-                       uu___3 uu___2) hash1 hash_1), (Obj.repr ()))
+        let block_w1 =
+          Spec_Hash_Definitions.words_of_bytes a
+            (Spec_Hash_Definitions.block_word_length a) block in
+        let hash_1 = shuffle a hash block_w1 in
+        Spec_Loops.seq_map2
+          (fun uu___1 ->
+             fun uu___ ->
+               (match a with
+                | Spec_Hash_Definitions.SHA2_224 ->
+                    Obj.magic
+                      (Obj.repr
+                         (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b))
+                | Spec_Hash_Definitions.SHA2_256 ->
+                    Obj.magic
+                      (Obj.repr
+                         (fun a1 -> fun b -> FStar_UInt32.add_mod a1 b))
+                | Spec_Hash_Definitions.SHA2_384 ->
+                    Obj.magic
+                      (Obj.repr
+                         (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b))
+                | Spec_Hash_Definitions.SHA2_512 ->
+                    Obj.magic
+                      (Obj.repr
+                         (fun a1 -> fun b -> FStar_UInt64.add_mod a1 b)))
+                 uu___1 uu___) hash hash_1
 let (update :
   Spec_Hash_Definitions.sha2_alg -> unit Spec_Hash_Definitions.update_t) =
   update_pre
-let (pad :
-  Spec_Hash_Definitions.sha2_alg -> unit Spec_Hash_Definitions.pad_t) =
-  Spec_Hash_PadFinish.pad
-let (finish :
-  Spec_Hash_Definitions.sha2_alg -> unit Spec_Hash_Definitions.finish_t) =
-  Spec_Hash_PadFinish.finish

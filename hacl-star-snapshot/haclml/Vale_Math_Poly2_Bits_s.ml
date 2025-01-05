@@ -80,6 +80,3 @@ let (to_quad32 : Vale_Math_Poly2_s.poly -> Vale_Def_Types_s.quad32) =
   fun a -> to_quad32_def a
 let (of_quad32 : Vale_Def_Types_s.quad32 -> Vale_Math_Poly2_s.poly) =
   fun q -> of_quad32_def q
-
-
-

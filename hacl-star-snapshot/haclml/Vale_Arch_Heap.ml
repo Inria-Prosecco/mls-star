@@ -44,5 +44,3 @@ let (heap_upd :
           Vale_Arch_HeapImpl.vf_heap = h';
           Vale_Arch_HeapImpl.vf_heaplets = hs'
         }
-
-

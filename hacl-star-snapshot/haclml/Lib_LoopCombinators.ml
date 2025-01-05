@@ -54,10 +54,6 @@ let rec (repeat_right_all_ml :
               (let uu___1 =
                  repeat_right_all_ml lo (hi - Prims.int_one) () f acc in
                f (hi - Prims.int_one) uu___1)
-
-
-
-
 let (repeat_gen :
   Prims.nat -> unit -> (Prims.nat -> Obj.t -> Obj.t) -> Obj.t -> Obj.t) =
   fun n ->
@@ -67,9 +63,6 @@ let (repeat_gen_all_ml :
   fun n ->
     fun a ->
       fun f -> fun acc0 -> repeat_right_all_ml Prims.int_zero n () f acc0
-
-
-
 type ('a, 'i) fixed_a = 'a
 let fixed_i : 'uuuuu . 'uuuuu -> Prims.nat -> 'uuuuu = fun f -> fun i -> f
 let repeati : 'a . Prims.nat -> (Prims.nat -> 'a -> 'a) -> 'a -> 'a =
@@ -94,13 +87,8 @@ let repeati_all_ml : 'a . Prims.nat -> (Prims.nat -> 'a -> 'a) -> 'a -> 'a =
                  (repeat_gen_all_ml n ()
                     (fun uu___1 -> fun uu___ -> (Obj.magic f) uu___1 uu___)
                     (Obj.magic acc0))) uu___2 uu___1 uu___
-
-
-
 let repeat : 'a . Prims.nat -> ('a -> 'a) -> 'a -> 'a =
   fun n -> fun f -> fun acc0 -> repeati n (fixed_i f) acc0
-
-
 let repeat_range :
   'a . Prims.nat -> Prims.nat -> (Prims.nat -> 'a -> 'a) -> 'a -> 'a =
   fun uu___3 ->
@@ -155,7 +143,7 @@ let repeati_inductive :
   fun n ->
     fun pred ->
       fun f -> fun x0 -> repeat_range_inductive Prims.int_zero n () f x0
-
+type ('a, 'n, 'pred, 'i) a' = 'a
 type ('n, 'a, 'f, 'pred) preserves_predicate = unit
 let (repeat_gen_inductive :
   Prims.nat ->

@@ -41,12 +41,9 @@ let rec (g_power :
         if n = Prims.int_one
         then a
         else Vale_AES_GF128.op_Star_Tilde a (g_power a (n - Prims.int_one))
-
-
 let (gf128_power :
   Vale_Math_Poly2_s.poly -> Prims.nat -> Vale_Math_Poly2_s.poly) =
   fun h -> fun n -> shift_gf128_key_1 (g_power h n)
-
 type ('hkeys, 'huBE) hkeys_reqs_priv = unit
 let rec (ghash_poly_unroll :
   Vale_Math_Poly2_s.poly ->
@@ -69,7 +66,6 @@ let rec (ghash_poly_unroll :
                 Vale_Math_Poly2_s.add
                   (ghash_poly_unroll h prev data k (m - Prims.int_one)
                      (n + Prims.int_one)) (Vale_AES_GF128.op_Star_Tilde d p)
-
 let rec (ghash_unroll :
   Vale_Math_Poly2_s.poly ->
     Vale_Math_Poly2_s.poly ->
@@ -114,15 +110,6 @@ let rec (ghash_unroll_back :
                 Vale_Math_Poly2_s.add
                   (ghash_unroll_back h prev data k n (m - Prims.int_one))
                   (Vale_Math_Poly2_s.mul v p)
-
-
-
-
-
-
-
-
-
 let rec (ghash_incremental_def :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 ->
@@ -145,13 +132,6 @@ let (ghash_incremental :
     Vale_Def_Types_s.quad32 ->
       Vale_Def_Types_s.quad32 FStar_Seq_Base.seq -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make ghash_incremental_def
-
-
-
-
-
-
-
 let (ghash_incremental0 :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 ->
@@ -163,9 +143,3 @@ let (ghash_incremental0 :
         if (FStar_Seq_Base.length x) > Prims.int_zero
         then ghash_incremental h y_prev x
         else y_prev
-
-
-
-
-
-

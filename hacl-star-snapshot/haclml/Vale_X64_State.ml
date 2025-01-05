@@ -54,10 +54,6 @@ let (eval_flag :
   Vale_X64_Machine_s.flag ->
     vale_state -> Prims.bool FStar_Pervasives_Native.option)
   = fun f -> fun s -> Vale_X64_Flags.sel f s.vs_flags
-
-
-
-
 let (eval_reg_64 :
   Vale_X64_Machine_s.reg_64 -> vale_state -> Vale_Def_Words_s.nat64) =
   fun uu___1 ->
@@ -96,21 +92,18 @@ let (eval_maddr : Vale_X64_Machine_s.maddr -> vale_state -> Prims.int) =
                    (Vale_X64_Machine_s.__proj__Reg__item__rf index)
                    (Vale_X64_Regs.sel index s.vs_regs))))
             + offset
-
-
 let (update_reg :
   Vale_X64_Machine_s.reg -> Obj.t -> vale_state -> vale_state) =
   fun r ->
     fun v ->
       fun s ->
-        let uu___ = s in
         {
-          vs_ok = (uu___.vs_ok);
+          vs_ok = (s.vs_ok);
           vs_regs = (Vale_X64_Regs.upd r v s.vs_regs);
-          vs_flags = (uu___.vs_flags);
-          vs_heap = (uu___.vs_heap);
-          vs_stack = (uu___.vs_stack);
-          vs_stackTaint = (uu___.vs_stackTaint)
+          vs_flags = (s.vs_flags);
+          vs_heap = (s.vs_heap);
+          vs_stack = (s.vs_stack);
+          vs_stackTaint = (s.vs_stackTaint)
         }
 let (update_reg_64 :
   Vale_X64_Machine_s.reg_64 ->
@@ -128,14 +121,13 @@ let (update_flag :
   fun f ->
     fun v ->
       fun s ->
-        let uu___ = s in
         {
-          vs_ok = (uu___.vs_ok);
-          vs_regs = (uu___.vs_regs);
+          vs_ok = (s.vs_ok);
+          vs_regs = (s.vs_regs);
           vs_flags = (Vale_X64_Flags.upd f v s.vs_flags);
-          vs_heap = (uu___.vs_heap);
-          vs_stack = (uu___.vs_stack);
-          vs_stackTaint = (uu___.vs_stackTaint)
+          vs_heap = (s.vs_heap);
+          vs_stack = (s.vs_stack);
+          vs_stackTaint = (s.vs_stackTaint)
         }
 let (update_reg_xmm :
   Vale_X64_Machine_s.reg_xmm ->
@@ -146,28 +138,26 @@ let (update_reg_xmm :
       fun s ->
         update_reg (Vale_X64_Machine_s.Reg (Prims.int_one, r)) (Obj.magic v)
           s
-
 type ('m, 's) valid_maddr = unit
 type ('m, 's) valid_maddr128 = unit
 type ('o, 's) valid_src_operand = Obj.t
 type ('o, 's) valid_src_operand128 = Obj.t
 let (state_eta : vale_state -> vale_state) =
   fun s ->
-    let uu___ = s in
     {
-      vs_ok = (uu___.vs_ok);
+      vs_ok = (s.vs_ok);
       vs_regs = (Vale_X64_Regs.eta s.vs_regs);
-      vs_flags = (uu___.vs_flags);
+      vs_flags = (s.vs_flags);
       vs_heap =
-        (let uu___1 = s.vs_heap in
+        (let uu___ = s.vs_heap in
          {
            Vale_Arch_HeapImpl.vf_layout =
-             (uu___1.Vale_Arch_HeapImpl.vf_layout);
-           Vale_Arch_HeapImpl.vf_heap = (uu___1.Vale_Arch_HeapImpl.vf_heap);
+             (uu___.Vale_Arch_HeapImpl.vf_layout);
+           Vale_Arch_HeapImpl.vf_heap = (uu___.Vale_Arch_HeapImpl.vf_heap);
            Vale_Arch_HeapImpl.vf_heaplets =
              (Vale_Lib_Map16.eta (s.vs_heap).Vale_Arch_HeapImpl.vf_heaplets)
          });
-      vs_stack = (uu___.vs_stack);
-      vs_stackTaint = (uu___.vs_stackTaint)
+      vs_stack = (s.vs_stack);
+      vs_stackTaint = (s.vs_stackTaint)
     }
 type ('s0, 's1) state_eq = unit

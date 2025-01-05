@@ -33,12 +33,9 @@ let (inc32lite :
         }
 let (empty_seq_quad32 : Vale_Def_Types_s.quad32 FStar_Seq_Base.seq) =
   FStar_Seq_Base.empty ()
-
 type ('x, 'y, 'lo, 'hi) partial_seq_agreement = unit
-
-
 let (aes_encrypt_BE :
-  Vale_AES_AES_s.algorithm ->
+  Vale_AES_AES_common_s.algorithm ->
     Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
       Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
   =
@@ -51,46 +48,8 @@ type ('r0, 'r1, 'r2, 'r3, 'r4, 'r5, 's, 'alg, 'key, 'ctruBE,
   'i) gctr_registers_def = unit
 type ('uuuuu, 'uuuuu1, 'uuuuu2, 'uuuuu3, 'uuuuu4, 'uuuuu5, 'uuuuu6, 'uuuuu7,
   'uuuuu8, 'uuuuu9, 'uuuuu10) gctr_registers = Obj.t
-
 type ('alg, 'bound, 'plain, 'cipher, 'key, 'icb) gctr_partial_def = unit
 type ('uuuuu, 'uuuuu1, 'uuuuu2, 'uuuuu3, 'uuuuu4, 'uuuuu5) gctr_partial =
   Obj.t
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 let (pow2_24 : Prims.int) = (Prims.parse_int "0x1000000")
 type nat24 = unit Vale_Def_Words_s.natN
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

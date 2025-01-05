@@ -159,7 +159,7 @@ let (eta : t -> t) =
                 (Vale_X64_Machine_s.Reg (Prims.int_one, (Prims.of_int (15))))
                 m)))) in
     let m1 = ((m0_31, m4_71), (m8_111, m12_151)) in (m0, m1)
-let (to_fun : t -> regs_fun) = fun m -> fun r -> sel r m
+let (to_fun : t -> regs_fun) = fun m -> fun x -> sel x m
 let (of_fun : (Vale_X64_Machine_s.reg -> Obj.t) -> t) =
   fun m ->
     let m0_3 =
@@ -238,8 +238,4 @@ let (of_fun : (Vale_X64_Machine_s.reg -> Obj.t) -> t) =
           (Obj.magic
              (m (Vale_X64_Machine_s.Reg (Prims.int_one, (Prims.of_int (15)))))))) in
     let m1 = ((m0_31, m4_71), (m8_111, m12_151)) in (m0, m1)
-
-
 type ('m1, 'm2) equal = unit
-
-

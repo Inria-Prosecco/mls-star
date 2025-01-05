@@ -1,4 +1,3 @@
-let (++) = (+)
 open Prims
 type alg =
   | AES128_GCM 
@@ -25,7 +24,6 @@ let (uu___is_AES128_CCM8 : alg -> Prims.bool) =
 let (uu___is_AES256_CCM8 : alg -> Prims.bool) =
   fun projectee ->
     match projectee with | AES256_CCM8 -> true | uu___ -> false
-
 let (is_supported_alg : alg -> Prims.bool) =
   fun a ->
     match a with
@@ -86,7 +84,11 @@ let (cipher_length : supported_alg -> unit plain -> Prims.int) =
   fun a -> fun p -> (FStar_Seq_Base.length p) + (tag_length a)
 type ('a, 'p) encrypted = unit cipher
 type ('a, 'c) decrypted = unit plain
-
+let (vale_alg_of_alg : alg -> Vale_AES_AES_common_s.algorithm) =
+  fun a ->
+    match a with
+    | AES128_GCM -> Vale_AES_AES_common_s.AES_128
+    | AES256_GCM -> Vale_AES_AES_common_s.AES_256
 let (encrypt :
   supported_alg ->
     unit kv -> unit iv -> unit ad -> unit plain -> (unit, unit) encrypted)
@@ -98,19 +100,39 @@ let (encrypt :
           fun plain1 ->
             match a with
             | CHACHA20_POLY1305 ->
-                (* Spec_Chacha20Poly1305.aead_encrypt kv1 iv1 plain1 ad1 *)
-                let key = kv1 in
-                let iv = iv1 in
-                let pt = plain1 in
-                let ad = ad1 in
-                Primitives.chacha20_poly1305_encrypt ~key ~iv ~pt ~ad
+                Spec_Chacha20Poly1305.aead_encrypt kv1 iv1 plain1 ad1
             | AES128_GCM ->
-                let key = kv1 in
-                let iv = iv1 in
-                let pt = plain1 in
-                let ad = ad1 in
-                Primitives.aes128gcm_encrypt ~key ~iv ~ad ~pt
-            | AES256_GCM -> Spec_AES_GCM.aes256gcm_encrypt kv1 iv1 plain1 ad1
+                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
+                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
+                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
+                let plain_nat =
+                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 plain1 in
+                let uu___ =
+                  Vale_AES_GCM_s.gcm_encrypt_LE (vale_alg_of_alg a) kv_nat
+                    iv_nat plain_nat ad_nat in
+                (match uu___ with
+                 | (cipher_nat, tag_nat) ->
+                     let cipher1 =
+                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 cipher_nat in
+                     let tag =
+                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 tag_nat in
+                     FStar_Seq_Base.append cipher1 tag)
+            | AES256_GCM ->
+                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
+                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
+                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
+                let plain_nat =
+                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 plain1 in
+                let uu___ =
+                  Vale_AES_GCM_s.gcm_encrypt_LE (vale_alg_of_alg a) kv_nat
+                    iv_nat plain_nat ad_nat in
+                (match uu___ with
+                 | (cipher_nat, tag_nat) ->
+                     let cipher1 =
+                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 cipher_nat in
+                     let tag =
+                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 tag_nat in
+                     FStar_Seq_Base.append cipher1 tag)
 let (decrypt :
   supported_alg ->
     unit kv ->
@@ -133,18 +155,38 @@ let (decrypt :
                 ((FStar_Seq_Base.length cipher1) - (tag_length a)) in
             match a with
             | CHACHA20_POLY1305 ->
-                let key = kv1 in
-                let iv = iv1 in
-                let ct = cipher2 in
-                let ad = ad1 in
-                let tag = tag in
-                Primitives.chacha20_poly1305_decrypt ~key ~iv ~ad ~ct ~tag
+                Spec_Chacha20Poly1305.aead_decrypt kv1 iv1 cipher2 tag ad1
             | AES128_GCM ->
-                let key = kv1 in
-                let iv = iv1 in
-                let ct = cipher2 in
-                let ad = ad1 in
-                let tag = tag in
-                Primitives.aes128gcm_decrypt ~key ~iv ~ad ~ct ~tag
+                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
+                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
+                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
+                let cipher_nat =
+                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 cipher2 in
+                let tag_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 tag in
+                let uu___ =
+                  Vale_AES_GCM_s.gcm_decrypt_LE (vale_alg_of_alg a) kv_nat
+                    iv_nat cipher_nat ad_nat tag_nat in
+                (match uu___ with
+                 | (plain_nat, success) ->
+                     let plain1 =
+                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 plain_nat in
+                     if success
+                     then FStar_Pervasives_Native.Some plain1
+                     else FStar_Pervasives_Native.None)
             | AES256_GCM ->
-                Spec_AES_GCM.aes256gcm_decrypt kv1 iv1 ad1 cipher2 tag
+                let kv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 kv1 in
+                let iv_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 iv1 in
+                let ad_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 ad1 in
+                let cipher_nat =
+                  Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 cipher2 in
+                let tag_nat = Vale_Def_Words_Seq_s.seq_uint8_to_seq_nat8 tag in
+                let uu___ =
+                  Vale_AES_GCM_s.gcm_decrypt_LE (vale_alg_of_alg a) kv_nat
+                    iv_nat cipher_nat ad_nat tag_nat in
+                (match uu___ with
+                 | (plain_nat, success) ->
+                     let plain1 =
+                       Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8 plain_nat in
+                     if success
+                     then FStar_Pervasives_Native.Some plain1
+                     else FStar_Pervasives_Native.None)

@@ -44,9 +44,8 @@ let (compute_iv_BE_def :
 let (compute_iv_BE :
   Vale_Def_Types_s.quad32 -> supported_iv_LE -> Vale_Def_Types_s.quad32) =
   Vale_Def_Opaque_s.opaque_make compute_iv_BE_def
-
 let (gcm_encrypt_LE_def :
-  Vale_AES_AES_s.algorithm ->
+  Vale_AES_AES_common_s.algorithm ->
     Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
       supported_iv_LE ->
         Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
@@ -101,7 +100,7 @@ let (gcm_encrypt_LE_def :
                 (Vale_Def_Types_s.le_quad32_to_bytes s_LE) alg key_LE in
             (c, t)
 let (gcm_encrypt_LE :
-  Vale_AES_AES_s.algorithm ->
+  Vale_AES_AES_common_s.algorithm ->
     Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
       supported_iv_LE ->
         Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
@@ -109,9 +108,8 @@ let (gcm_encrypt_LE :
             (Vale_Def_Words_s.nat8 FStar_Seq_Base.seq * Vale_Def_Words_s.nat8
               FStar_Seq_Base.seq))
   = Vale_Def_Opaque_s.opaque_make gcm_encrypt_LE_def
-
 let (gcm_decrypt_LE_def :
-  Vale_AES_AES_s.algorithm ->
+  Vale_AES_AES_common_s.algorithm ->
     Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
       supported_iv_LE ->
         Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
@@ -169,7 +167,7 @@ let (gcm_decrypt_LE_def :
                   (Vale_Def_Types_s.le_quad32_to_bytes s_LE) alg key_LE in
               (p, (t = tag))
 let (gcm_decrypt_LE :
-  Vale_AES_AES_s.algorithm ->
+  Vale_AES_AES_common_s.algorithm ->
     Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->
       supported_iv_LE ->
         Vale_Def_Words_s.nat8 FStar_Seq_Base.seq ->

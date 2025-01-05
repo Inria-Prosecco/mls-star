@@ -45,7 +45,6 @@ let (uu___is_IOpIm : instr_operand -> Prims.bool) =
 let (__proj__IOpIm__item___0 : instr_operand -> instr_operand_implicit) =
   fun projectee -> match projectee with | IOpIm _0 -> _0
 type instr_out = (instr_operand_inout * instr_operand)
-
 let normal : 'a . 'a -> 'a = fun x -> x
 type ('a, 'b) arrow = 'a -> 'b
 let coerce : 'b 'a . 'a -> 'b = fun uu___ -> (fun x -> Obj.magic x) uu___

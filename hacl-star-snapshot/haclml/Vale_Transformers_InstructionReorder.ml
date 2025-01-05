@@ -141,14 +141,11 @@ let (ins_exchange_allowed :
       | Vale_Def_PossiblyMonad.Err rr ->
           Vale_Def_PossiblyMonad.Err
             (Prims.strcat rr
-               (Prims.op_Hat " for instructions "
-                  (Prims.op_Hat
+               (Prims.strcat " for instructions "
+                  (Prims.strcat
                      (Vale_X64_Print_s.print_ins i1 Vale_X64_Print_s.gcc)
-                     (Prims.op_Hat " and "
+                     (Prims.strcat " and "
                         (Vale_X64_Print_s.print_ins i2 Vale_X64_Print_s.gcc)))))
-
-
-
 type ('s1, 's2) equiv_states = unit
 type ('s1, 's2) equiv_states_ext = unit
 type ('s1, 's2) equiv_states_or_both_not_ok = unit
@@ -173,54 +170,43 @@ let (proof_run :
       let uu___ = f s in
       match uu___ with
       | ((), s1) ->
-          let uu___1 = s1 in
           {
             Vale_X64_Machine_Semantics_s.ms_ok =
               (s1.Vale_X64_Machine_Semantics_s.ms_ok &&
                  s.Vale_X64_Machine_Semantics_s.ms_ok);
             Vale_X64_Machine_Semantics_s.ms_regs =
-              (uu___1.Vale_X64_Machine_Semantics_s.ms_regs);
+              (s1.Vale_X64_Machine_Semantics_s.ms_regs);
             Vale_X64_Machine_Semantics_s.ms_flags =
-              (uu___1.Vale_X64_Machine_Semantics_s.ms_flags);
+              (s1.Vale_X64_Machine_Semantics_s.ms_flags);
             Vale_X64_Machine_Semantics_s.ms_heap =
-              (uu___1.Vale_X64_Machine_Semantics_s.ms_heap);
+              (s1.Vale_X64_Machine_Semantics_s.ms_heap);
             Vale_X64_Machine_Semantics_s.ms_stack =
-              (uu___1.Vale_X64_Machine_Semantics_s.ms_stack);
+              (s1.Vale_X64_Machine_Semantics_s.ms_stack);
             Vale_X64_Machine_Semantics_s.ms_stackTaint =
-              (uu___1.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+              (s1.Vale_X64_Machine_Semantics_s.ms_stackTaint);
             Vale_X64_Machine_Semantics_s.ms_trace =
-              (uu___1.Vale_X64_Machine_Semantics_s.ms_trace)
+              (s1.Vale_X64_Machine_Semantics_s.ms_trace)
           }
-
-
-
-
-
-
-
-
 let (filt_state :
   Vale_X64_Machine_Semantics_s.machine_state ->
     Vale_X64_Machine_Semantics_s.machine_state)
   =
   fun s ->
-    let uu___ = s in
     {
       Vale_X64_Machine_Semantics_s.ms_ok =
-        (uu___.Vale_X64_Machine_Semantics_s.ms_ok);
+        (s.Vale_X64_Machine_Semantics_s.ms_ok);
       Vale_X64_Machine_Semantics_s.ms_regs =
-        (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
+        (s.Vale_X64_Machine_Semantics_s.ms_regs);
       Vale_X64_Machine_Semantics_s.ms_flags =
-        (uu___.Vale_X64_Machine_Semantics_s.ms_flags);
+        (s.Vale_X64_Machine_Semantics_s.ms_flags);
       Vale_X64_Machine_Semantics_s.ms_heap =
-        (uu___.Vale_X64_Machine_Semantics_s.ms_heap);
+        (s.Vale_X64_Machine_Semantics_s.ms_heap);
       Vale_X64_Machine_Semantics_s.ms_stack =
-        (uu___.Vale_X64_Machine_Semantics_s.ms_stack);
+        (s.Vale_X64_Machine_Semantics_s.ms_stack);
       Vale_X64_Machine_Semantics_s.ms_stackTaint =
-        (uu___.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+        (s.Vale_X64_Machine_Semantics_s.ms_stackTaint);
       Vale_X64_Machine_Semantics_s.ms_trace = []
     }
-
 let (run2 :
   unit Vale_X64_Machine_Semantics_s.st ->
     unit Vale_X64_Machine_Semantics_s.st ->
@@ -242,55 +228,46 @@ let (run2 :
                      (match uu___3 with
                       | (y, s2) ->
                           ((),
-                            (let uu___4 = s2 in
-                             {
-                               Vale_X64_Machine_Semantics_s.ms_ok =
-                                 ((s1.Vale_X64_Machine_Semantics_s.ms_ok &&
-                                     s11.Vale_X64_Machine_Semantics_s.ms_ok)
-                                    && s2.Vale_X64_Machine_Semantics_s.ms_ok);
-                               Vale_X64_Machine_Semantics_s.ms_regs =
-                                 (uu___4.Vale_X64_Machine_Semantics_s.ms_regs);
-                               Vale_X64_Machine_Semantics_s.ms_flags =
-                                 (uu___4.Vale_X64_Machine_Semantics_s.ms_flags);
-                               Vale_X64_Machine_Semantics_s.ms_heap =
-                                 (uu___4.Vale_X64_Machine_Semantics_s.ms_heap);
-                               Vale_X64_Machine_Semantics_s.ms_stack =
-                                 (uu___4.Vale_X64_Machine_Semantics_s.ms_stack);
-                               Vale_X64_Machine_Semantics_s.ms_stackTaint =
-                                 (uu___4.Vale_X64_Machine_Semantics_s.ms_stackTaint);
-                               Vale_X64_Machine_Semantics_s.ms_trace =
-                                 (uu___4.Vale_X64_Machine_Semantics_s.ms_trace)
-                             }))) in
+                            {
+                              Vale_X64_Machine_Semantics_s.ms_ok =
+                                ((s1.Vale_X64_Machine_Semantics_s.ms_ok &&
+                                    s11.Vale_X64_Machine_Semantics_s.ms_ok)
+                                   && s2.Vale_X64_Machine_Semantics_s.ms_ok);
+                              Vale_X64_Machine_Semantics_s.ms_regs =
+                                (s2.Vale_X64_Machine_Semantics_s.ms_regs);
+                              Vale_X64_Machine_Semantics_s.ms_flags =
+                                (s2.Vale_X64_Machine_Semantics_s.ms_flags);
+                              Vale_X64_Machine_Semantics_s.ms_heap =
+                                (s2.Vale_X64_Machine_Semantics_s.ms_heap);
+                              Vale_X64_Machine_Semantics_s.ms_stack =
+                                (s2.Vale_X64_Machine_Semantics_s.ms_stack);
+                              Vale_X64_Machine_Semantics_s.ms_stackTaint =
+                                (s2.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+                              Vale_X64_Machine_Semantics_s.ms_trace =
+                                (s2.Vale_X64_Machine_Semantics_s.ms_trace)
+                            })) in
                (match uu___1 with
                 | (y, s2) ->
                     ((),
-                      (let uu___2 = s2 in
-                       {
-                         Vale_X64_Machine_Semantics_s.ms_ok =
-                           ((s.Vale_X64_Machine_Semantics_s.ms_ok &&
-                               s1.Vale_X64_Machine_Semantics_s.ms_ok)
-                              && s2.Vale_X64_Machine_Semantics_s.ms_ok);
-                         Vale_X64_Machine_Semantics_s.ms_regs =
-                           (uu___2.Vale_X64_Machine_Semantics_s.ms_regs);
-                         Vale_X64_Machine_Semantics_s.ms_flags =
-                           (uu___2.Vale_X64_Machine_Semantics_s.ms_flags);
-                         Vale_X64_Machine_Semantics_s.ms_heap =
-                           (uu___2.Vale_X64_Machine_Semantics_s.ms_heap);
-                         Vale_X64_Machine_Semantics_s.ms_stack =
-                           (uu___2.Vale_X64_Machine_Semantics_s.ms_stack);
-                         Vale_X64_Machine_Semantics_s.ms_stackTaint =
-                           (uu___2.Vale_X64_Machine_Semantics_s.ms_stackTaint);
-                         Vale_X64_Machine_Semantics_s.ms_trace =
-                           (uu___2.Vale_X64_Machine_Semantics_s.ms_trace)
-                       }))))
+                      {
+                        Vale_X64_Machine_Semantics_s.ms_ok =
+                          ((s.Vale_X64_Machine_Semantics_s.ms_ok &&
+                              s1.Vale_X64_Machine_Semantics_s.ms_ok)
+                             && s2.Vale_X64_Machine_Semantics_s.ms_ok);
+                        Vale_X64_Machine_Semantics_s.ms_regs =
+                          (s2.Vale_X64_Machine_Semantics_s.ms_regs);
+                        Vale_X64_Machine_Semantics_s.ms_flags =
+                          (s2.Vale_X64_Machine_Semantics_s.ms_flags);
+                        Vale_X64_Machine_Semantics_s.ms_heap =
+                          (s2.Vale_X64_Machine_Semantics_s.ms_heap);
+                        Vale_X64_Machine_Semantics_s.ms_stack =
+                          (s2.Vale_X64_Machine_Semantics_s.ms_stack);
+                        Vale_X64_Machine_Semantics_s.ms_stackTaint =
+                          (s2.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+                        Vale_X64_Machine_Semantics_s.ms_trace =
+                          (s2.Vale_X64_Machine_Semantics_s.ms_trace)
+                      })))
 type ('s, 'f1, 'f2) commutes = unit
-
-
-
-
-
-
-
 let rec (value_of_const_loc :
   Vale_Transformers_BoundedInstructionEffects.locations_with_values ->
     Vale_Transformers_Locations.location_eq ->
@@ -304,19 +281,6 @@ let rec (value_of_const_loc :
           if (FStar_Pervasives.dfst x) = l
           then FStar_Pervasives.dsnd x
           else value_of_const_loc xs l
-
-
-
-
-
-
-
-
-
-
-
-
-
 let (wrap_ss :
   (Vale_X64_Machine_Semantics_s.machine_state ->
      Vale_X64_Machine_Semantics_s.machine_state)
@@ -331,25 +295,24 @@ let (wrap_ss :
           (match uu___1 with
            | (y, s2) ->
                ((),
-                 (let uu___2 = s2 in
-                  {
-                    Vale_X64_Machine_Semantics_s.ms_ok =
-                      ((s0.Vale_X64_Machine_Semantics_s.ms_ok &&
-                          s1.Vale_X64_Machine_Semantics_s.ms_ok)
-                         && s2.Vale_X64_Machine_Semantics_s.ms_ok);
-                    Vale_X64_Machine_Semantics_s.ms_regs =
-                      (uu___2.Vale_X64_Machine_Semantics_s.ms_regs);
-                    Vale_X64_Machine_Semantics_s.ms_flags =
-                      (uu___2.Vale_X64_Machine_Semantics_s.ms_flags);
-                    Vale_X64_Machine_Semantics_s.ms_heap =
-                      (uu___2.Vale_X64_Machine_Semantics_s.ms_heap);
-                    Vale_X64_Machine_Semantics_s.ms_stack =
-                      (uu___2.Vale_X64_Machine_Semantics_s.ms_stack);
-                    Vale_X64_Machine_Semantics_s.ms_stackTaint =
-                      (uu___2.Vale_X64_Machine_Semantics_s.ms_stackTaint);
-                    Vale_X64_Machine_Semantics_s.ms_trace =
-                      (uu___2.Vale_X64_Machine_Semantics_s.ms_trace)
-                  })))
+                 {
+                   Vale_X64_Machine_Semantics_s.ms_ok =
+                     ((s0.Vale_X64_Machine_Semantics_s.ms_ok &&
+                         s1.Vale_X64_Machine_Semantics_s.ms_ok)
+                        && s2.Vale_X64_Machine_Semantics_s.ms_ok);
+                   Vale_X64_Machine_Semantics_s.ms_regs =
+                     (s2.Vale_X64_Machine_Semantics_s.ms_regs);
+                   Vale_X64_Machine_Semantics_s.ms_flags =
+                     (s2.Vale_X64_Machine_Semantics_s.ms_flags);
+                   Vale_X64_Machine_Semantics_s.ms_heap =
+                     (s2.Vale_X64_Machine_Semantics_s.ms_heap);
+                   Vale_X64_Machine_Semantics_s.ms_stack =
+                     (s2.Vale_X64_Machine_Semantics_s.ms_stack);
+                   Vale_X64_Machine_Semantics_s.ms_stackTaint =
+                     (s2.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+                   Vale_X64_Machine_Semantics_s.ms_trace =
+                     (s2.Vale_X64_Machine_Semantics_s.ms_trace)
+                 }))
 let (wrap_sos :
   (Vale_X64_Machine_Semantics_s.machine_state ->
      Vale_X64_Machine_Semantics_s.machine_state
@@ -361,24 +324,22 @@ let (wrap_sos :
       match f s with
       | FStar_Pervasives_Native.None ->
           ((),
-            (let uu___ = s in
-             {
-               Vale_X64_Machine_Semantics_s.ms_ok = false;
-               Vale_X64_Machine_Semantics_s.ms_regs =
-                 (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
-               Vale_X64_Machine_Semantics_s.ms_flags =
-                 (uu___.Vale_X64_Machine_Semantics_s.ms_flags);
-               Vale_X64_Machine_Semantics_s.ms_heap =
-                 (uu___.Vale_X64_Machine_Semantics_s.ms_heap);
-               Vale_X64_Machine_Semantics_s.ms_stack =
-                 (uu___.Vale_X64_Machine_Semantics_s.ms_stack);
-               Vale_X64_Machine_Semantics_s.ms_stackTaint =
-                 (uu___.Vale_X64_Machine_Semantics_s.ms_stackTaint);
-               Vale_X64_Machine_Semantics_s.ms_trace =
-                 (uu___.Vale_X64_Machine_Semantics_s.ms_trace)
-             }))
+            {
+              Vale_X64_Machine_Semantics_s.ms_ok = false;
+              Vale_X64_Machine_Semantics_s.ms_regs =
+                (s.Vale_X64_Machine_Semantics_s.ms_regs);
+              Vale_X64_Machine_Semantics_s.ms_flags =
+                (s.Vale_X64_Machine_Semantics_s.ms_flags);
+              Vale_X64_Machine_Semantics_s.ms_heap =
+                (s.Vale_X64_Machine_Semantics_s.ms_heap);
+              Vale_X64_Machine_Semantics_s.ms_stack =
+                (s.Vale_X64_Machine_Semantics_s.ms_stack);
+              Vale_X64_Machine_Semantics_s.ms_stackTaint =
+                (s.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+              Vale_X64_Machine_Semantics_s.ms_trace =
+                (s.Vale_X64_Machine_Semantics_s.ms_trace)
+            })
       | FStar_Pervasives_Native.Some s' -> ((), s')
-
 let rec (safely_bounded_code_p :
   Vale_X64_Machine_Semantics_s.code -> Prims.bool) =
   fun c ->
@@ -397,11 +358,6 @@ and (safely_bounded_codes_p :
 type safely_bounded_ins = Vale_X64_Machine_Semantics_s.ins
 type safely_bounded_code = Vale_X64_Machine_Semantics_s.code
 type safely_bounded_codes = Vale_X64_Machine_Semantics_s.codes
-
-
-
-
-
 let rec (rw_set_of_code :
   safely_bounded_code -> Vale_Transformers_BoundedInstructionEffects.rw_set)
   =
@@ -443,16 +399,6 @@ and (rw_set_of_codes :
     | x::xs ->
         Vale_Transformers_BoundedInstructionEffects.rw_set_in_series
           (rw_set_of_code x) (rw_set_of_codes xs)
-
-
-
-
-
-
-
-
-
-
 let (code_exchange_allowed :
   safely_bounded_code ->
     safely_bounded_code -> unit Vale_Def_PossiblyMonad.possibly)
@@ -464,16 +410,15 @@ let (code_exchange_allowed :
       | Vale_Def_PossiblyMonad.Err rr ->
           Vale_Def_PossiblyMonad.Err
             (Prims.strcat rr
-               (Prims.op_Hat " for instructions "
-                  (Prims.op_Hat
+               (Prims.strcat " for instructions "
+                  (Prims.strcat
                      (FStar_Pervasives_Native.fst
                         (Vale_X64_Print_s.print_code c1 Prims.int_zero
                            Vale_X64_Print_s.gcc))
-                     (Prims.op_Hat " and "
+                     (Prims.strcat " and "
                         (FStar_Pervasives_Native.fst
                            (Vale_X64_Print_s.print_code c2 Prims.int_zero
                               Vale_X64_Print_s.gcc))))))
-
 let rec (bubble_to_top :
   Vale_X64_Machine_Semantics_s.codes ->
     Prims.nat ->
@@ -521,7 +466,6 @@ let rec (num_blocks_in_codes :
     | (Vale_X64_Machine_s.Block l)::t ->
         (Prims.int_one + (num_blocks_in_codes l)) + (num_blocks_in_codes t)
     | uu___::t -> num_blocks_in_codes t
-
 type transformation_hint =
   | MoveUpFrom of Prims.nat 
   | DiveInAt of Prims.nat * transformation_hint 
@@ -605,8 +549,8 @@ let split3 :
     fun i ->
       let uu___ = FStar_List_Tot_Base.splitAt i l in
       match uu___ with
-      | (a1, as1) ->
-          let uu___1 = as1 in (match uu___1 with | b::c -> (a1, b, c))
+      | (a1, as0) ->
+          let uu___1 = as0 in (match uu___1 with | b::c -> (a1, b, c))
 let rec (is_empty_code : Vale_X64_Machine_Semantics_s.code -> Prims.bool) =
   fun c ->
     match c with
@@ -875,8 +819,6 @@ let rec (find_deep_code_transform :
                         Vale_Def_PossiblyMonad.Err s
                     | Vale_Def_PossiblyMonad.Ok x' ->
                         Vale_Def_PossiblyMonad.Ok (increment_hint x')))
-
-
 let rec (find_transformation_hints :
   Vale_X64_Machine_Semantics_s.codes ->
     Vale_X64_Machine_Semantics_s.codes ->
@@ -1265,11 +1207,6 @@ let rec (find_transformation_hints :
                                                (Prims.strcat
                                                   "Find deep code failure. Reason: "
                                                   reason))))))
-
-
-
-
-
 let rec (purge_empty_code :
   Vale_X64_Machine_Semantics_s.code -> Vale_X64_Machine_Semantics_s.code) =
   fun c ->

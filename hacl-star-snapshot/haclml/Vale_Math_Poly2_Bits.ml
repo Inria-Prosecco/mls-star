@@ -1,5 +1,4 @@
 open Prims
-
 let rec (of_nat : Prims.nat -> Vale_Math_Poly2_s.poly) =
   fun x ->
     if x = Prims.int_zero
@@ -18,9 +17,6 @@ let (of_uint_ :
       if n = Prims.int_zero
       then Vale_Math_Poly2_s.zero
       else Vale_Math_Poly2_Bits_s.of_uint n u
-
-
-
 let rec (poly_nat_eq_rec :
   Prims.nat -> Vale_Math_Poly2_s.poly -> Prims.nat -> Prims.nat -> Prims.bool)
   =
@@ -38,16 +34,8 @@ let rec (poly_nat_eq_rec :
               &&
               (poly_nat_eq_rec len p (c / (Prims.of_int (2)))
                  (n - Prims.int_one))
-
-
 let (of_nat32 : Vale_Def_Words_s.nat32 -> Vale_Math_Poly2_s.poly) =
   fun n -> Vale_Math_Poly2_Bits_s.of_uint (Prims.of_int (32)) n
-
-
-
-
-
-
 let (poly128_of_poly32s :
   Vale_Math_Poly2_s.poly ->
     Vale_Math_Poly2_s.poly ->
@@ -76,12 +64,3 @@ let (poly128_of_nat32s :
         fun a3 ->
           poly128_of_poly32s (of_nat32 a0) (of_nat32 a1) (of_nat32 a2)
             (of_nat32 a3)
-
-
-
-
-
-
-
-
-

@@ -51,7 +51,10 @@ let (poly1305_do :
               if (Lib_Sequence.length aad) <> Prims.int_zero
               then poly1305_padded r aad acc
               else acc in
-            let acc2 = poly1305_padded r m acc1 in
+            let acc2 =
+              if (Lib_Sequence.length m) <> Prims.int_zero
+              then poly1305_padded r m acc1
+              else acc1 in
             let aad_len8 =
               Obj.magic
                 (Lib_ByteSequence.nat_to_intseq_le_ Lib_IntTypes.U8
@@ -122,7 +125,7 @@ let (aead_decrypt :
                      Spec_Poly1305.size_block Spec_Poly1305.size_block
                      (Obj.magic computed_mac) (Obj.magic mac)
                      Spec_Poly1305.size_block) in
-              res = (FStar_UInt8.uint_to_t (Prims.of_int (255)))
+              res = 255
             then
               let plain =
                 Spec_Chacha20.chacha20_encrypt_bytes k n Prims.int_one cipher in

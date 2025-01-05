@@ -1,5 +1,4 @@
 open Prims
-
 type mod_t =
   | Mod_None 
   | Mod_ok 
@@ -121,7 +120,6 @@ let (update_state_mods_norm :
         match mods with
         | [] -> sK
         | m::mods1 -> update_state_mod m sM (update_state_mods mods1 sM sK)
-
 let (va_mod_dst_opr64 : Vale_X64_Machine_s.operand64 -> mod_t) =
   fun o ->
     match o with
@@ -147,39 +145,4 @@ type 's0 t_require = unit Vale_X64_Decls.state_inv
 type 's0 va_t_require = unit t_require
 type ('a, 'c, 'mods, 's0, 'k, 'uuuuu) va_t_ensure = Obj.t
 type ('a, 'c, 'mods, 'wp) t_proof = unit
-type ('a, 'dummyV0) quickCode =
-  | QProc of (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp)
-  Vale_X64_Machine_s.precode * mod_t Prims.list * unit * unit 
-let uu___is_QProc :
-  'a .
-    (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
-      ('a, unit) quickCode -> Prims.bool
-  = fun uu___ -> fun projectee -> true
-let __proj__QProc__item__c :
-  'a .
-    (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
-      ('a, unit) quickCode ->
-        (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode
-  =
-  fun uu___ ->
-    fun projectee -> match projectee with | QProc (c, mods, wp, proof) -> c
-let __proj__QProc__item__mods :
-  'a .
-    (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
-      ('a, unit) quickCode -> mod_t Prims.list
-  =
-  fun uu___ ->
-    fun projectee ->
-      match projectee with | QProc (c, mods, wp, proof) -> mods
-
-type ('a, 'uuuuu) va_quickCode = ('a, unit) quickCode
-let va_QProc :
-  'uuuuu .
-    unit ->
-      (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
-        mod_t Prims.list -> unit -> unit -> ('uuuuu, unit) quickCode
-  =
-  fun uu___ ->
-    fun uu___1 ->
-      fun uu___2 ->
-        fun uu___3 -> fun uu___4 -> QProc (uu___1, uu___2, uu___3, uu___4)
+type ('a, 'uuuuu) va_quickCode = unit

@@ -21,7 +21,7 @@ let (prime : algorithm -> Prims.pos) =
   fun a ->
     match a with
     | DH_Curve25519 -> Spec_Curve25519.prime
-    | DH_P256 -> Spec_P256.prime
+    | DH_P256 -> Spec_P256_PointOps.prime
 type 'a scalar = (FStar_UInt8.t, unit) Lib_Sequence.lseq
 type 'a serialized_point = (FStar_UInt8.t, unit) Lib_Sequence.lseq
 let (clamp : algorithm -> unit scalar -> unit scalar) =
@@ -36,56 +36,35 @@ let (dh :
   fun a ->
     fun s ->
       fun p ->
-        let uu___ =
-          match a with
-          | DH_Curve25519 ->
-              let output = Spec_Curve25519.scalarmult s p in
-              ((Prims.op_Negation
-                  (let res =
-                     Obj.magic
-                       (Lib_ByteSequence.seq_eq_mask Lib_IntTypes.U8
-                          (match a with
-                           | DH_Curve25519 -> (Prims.of_int (32))
-                           | DH_P256 -> (Prims.of_int (64)))
-                          (match a with
-                           | DH_Curve25519 -> (Prims.of_int (32))
-                           | DH_P256 -> (Prims.of_int (64)))
-                          (Obj.magic
-                             (Lib_Sequence.create
-                                (match a with
-                                 | DH_Curve25519 -> (Prims.of_int (32))
-                                 | DH_P256 -> (Prims.of_int (64)))
-                                (FStar_UInt8.uint_to_t Prims.int_zero)))
-                          (Obj.magic output)
-                          (match a with
-                           | DH_Curve25519 -> (Prims.of_int (32))
-                           | DH_P256 -> (Prims.of_int (64)))) in
-                   res = (FStar_UInt8.uint_to_t (Prims.of_int (255))))),
-                output)
-          | DH_P256 ->
-              let uu___1 =
-                Spec_DH.ecp256_dh_r
-                  (Lib_Sequence.sub
-                     (match a with
-                      | DH_Curve25519 -> (Prims.of_int (32))
-                      | DH_P256 -> (Prims.of_int (64))) p Prims.int_zero
-                     (Prims.of_int (32)))
-                  (Lib_Sequence.sub
-                     (match a with
-                      | DH_Curve25519 -> (Prims.of_int (32))
-                      | DH_P256 -> (Prims.of_int (64))) p (Prims.of_int (32))
-                     (Prims.of_int (32))) s in
-              (match uu___1 with
-               | (xN, yN, res) ->
-                   (res,
-                     (Lib_Sequence.op_At_Bar (Prims.of_int (32))
-                        (Prims.of_int (32)) xN yN))) in
-        match uu___ with
-        | (result, output) ->
-            let uu___1 = uu___ in
-            if result
+        match a with
+        | DH_Curve25519 ->
+            let output = Spec_Curve25519.scalarmult s p in
+            let is_valid =
+              Prims.op_Negation
+                (let res =
+                   Obj.magic
+                     (Lib_ByteSequence.seq_eq_mask Lib_IntTypes.U8
+                        (match a with
+                         | DH_Curve25519 -> (Prims.of_int (32))
+                         | DH_P256 -> (Prims.of_int (64)))
+                        (match a with
+                         | DH_Curve25519 -> (Prims.of_int (32))
+                         | DH_P256 -> (Prims.of_int (64)))
+                        (Obj.magic
+                           (Lib_Sequence.create
+                              (match a with
+                               | DH_Curve25519 -> (Prims.of_int (32))
+                               | DH_P256 -> (Prims.of_int (64)))
+                              (FStar_UInt8.uint_to_t Prims.int_zero)))
+                        (Obj.magic output)
+                        (match a with
+                         | DH_Curve25519 -> (Prims.of_int (32))
+                         | DH_P256 -> (Prims.of_int (64)))) in
+                 res = 255) in
+            if is_valid
             then FStar_Pervasives_Native.Some output
             else FStar_Pervasives_Native.None
+        | DH_P256 -> Spec_P256.ecdh p s
 let (secret_to_public :
   algorithm ->
     unit scalar -> unit serialized_point FStar_Pervasives_Native.option)
@@ -96,13 +75,4 @@ let (secret_to_public :
       | DH_Curve25519 ->
           FStar_Pervasives_Native.Some
             (Spec_Curve25519.secret_to_public kpriv)
-      | DH_P256 ->
-          let uu___ = Spec_DH.ecp256_dh_i kpriv in
-          (match uu___ with
-           | (xN, yN, res) ->
-               if res
-               then
-                 FStar_Pervasives_Native.Some
-                   (Lib_Sequence.op_At_Bar (Prims.of_int (32))
-                      (Prims.of_int (32)) xN yN)
-               else FStar_Pervasives_Native.None)
+      | DH_P256 -> Spec_P256.secret_to_public kpriv

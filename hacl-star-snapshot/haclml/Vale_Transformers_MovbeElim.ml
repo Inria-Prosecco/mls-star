@@ -44,4 +44,3 @@ let (movbe_elim_ph : Vale_Transformers_PeepHole.pre_peephole) =
          | uu___1 -> FStar_Pervasives_Native.None);
     Vale_Transformers_PeepHole.input_hint = Prims.int_one
   }
-

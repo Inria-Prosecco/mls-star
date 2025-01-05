@@ -1,7 +1,6 @@
 open Prims
 type ('src, 't) buf_t = Obj.t LowStar_Buffer.buffer
 type ('src, 't) ibuf_t = Obj.t LowStar_ImmutableBuffer.ibuffer
-
 let (default_v_of_typ : Vale_Arch_HeapTypes_s.base_typ -> Obj.t) =
   fun t ->
     match t with
@@ -21,8 +20,6 @@ let (default_v_of_typ : Vale_Arch_HeapTypes_s.base_typ -> Obj.t) =
             Vale_Def_Words_s.hi2 = Prims.int_zero;
             Vale_Def_Words_s.hi3 = Prims.int_zero
           }
-
-
 let coerce : 'a 'b . 'a -> 'b = fun uu___ -> (fun x -> Obj.magic x) uu___
 type buffer_qualifiers =
   {
@@ -143,21 +140,6 @@ type ('h, 'x) live_arg = Obj.t
 type ('h, 'bs) all_live = Obj.t
 type ('h0, 'args) mem_roots_p = unit
 type 'args mem_roots = FStar_Monotonic_HyperStack.mem
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 let (arg_of_lb :
   Vale_Arch_HeapTypes_s.base_typ ->
     Vale_Arch_HeapTypes_s.base_typ -> (unit, unit) buf_t -> arg)
@@ -173,5 +155,3 @@ let (arg_of_sb : Vale_Arch_HeapTypes_s.base_typ -> (unit, unit) buf_t -> arg)
       Prims.Mkdtuple2
         ((TD_Buffer (Vale_Arch_HeapTypes_s.TUInt64, t, stack_bq)),
           (Obj.magic x))
-
-

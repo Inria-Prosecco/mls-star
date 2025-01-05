@@ -17,7 +17,7 @@ let (to_fun :
   t ->
     (Vale_X64_Machine_s.flag, Prims.bool FStar_Pervasives_Native.option)
       FStar_FunctionalExtensionality.restricted_t)
-  = fun m -> sel_curry m
+  = fun m -> fun x -> sel_curry m x
 let (of_fun :
   (Vale_X64_Machine_s.flag -> Prims.bool FStar_Pervasives_Native.option) -> t)
   =
@@ -40,7 +40,4 @@ let (of_fun :
     let m'15 = FStar_Map.upd m'14 (Prims.of_int (14)) (m (Prims.of_int (14))) in
     let m'16 = FStar_Map.upd m'15 (Prims.of_int (15)) (m (Prims.of_int (15))) in
     m'16
-
-
 type ('m1, 'm2) equal = unit
-

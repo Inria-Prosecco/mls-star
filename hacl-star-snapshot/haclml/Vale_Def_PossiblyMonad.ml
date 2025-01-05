@@ -11,7 +11,7 @@ let uu___is_Err : 'a . 'a possibly -> Prims.bool =
 let __proj__Err__item__reason : 'a . 'a possibly -> Prims.string =
   fun projectee -> match projectee with | Err reason -> reason
 let return : 'a . 'a -> 'a possibly = fun x -> Ok x
-let bind : 'a 'b . 'a possibly -> ('a -> 'b possibly) -> 'b possibly =
+let op_let_Plus : 'a 'b . 'a possibly -> ('a -> 'b possibly) -> 'b possibly =
   fun x -> fun f -> match x with | Err s -> Err s | Ok x' -> f x'
 let fail_with : 'a . Prims.string -> 'a possibly = fun s -> Err s
 let unimplemented : 'a . Prims.string -> 'a possibly =
@@ -53,4 +53,3 @@ let rec for_all :
       match l with
       | [] -> Ok ()
       | x::xs -> op_Amp_Amp_Dot (f x) (for_all f xs)
-

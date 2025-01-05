@@ -86,10 +86,6 @@ let (reorder :
             Vale_X64_Decls.success = (Vale_Def_PossiblyMonad.Err reason);
             Vale_X64_Decls.result = orig
           }
-
-
-
-
 let (check_if_same_printed_code :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
@@ -101,21 +97,18 @@ let (check_if_same_printed_code :
         Vale_X64_Decls.success = (prints_to_same_code orig hint);
         Vale_X64_Decls.result = orig
       }
-
 let (movbe_elim :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
     Vale_X64_Decls.va_transformation_result)
   =
   Vale_Transformers_PeepHole.peephole_transform
     Vale_Transformers_MovbeElim.movbe_elim_ph
-
 let (mov_mov_elim :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
     Vale_X64_Decls.va_transformation_result)
   =
   Vale_Transformers_PeepHole.peephole_transform
     Vale_Transformers_MovMovElim.mov_mov_elim_ph
-
 let (prefetch_elim :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
     Vale_X64_Decls.va_transformation_result)
