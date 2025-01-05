@@ -1,5 +1,5 @@
 MLS_HOME      ?= .
-FSTAR_HOME    ?= $(dir $(shell which fstar.exe))/..
+FSTAR_EXE     ?= fstar.exe
 COMPARSE_HOME ?= $(MLS_HOME)/../comparse
 DY_HOME       ?= $(MLS_HOME)/../dolev-yao-star
 
@@ -18,7 +18,6 @@ FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
 ADMIT ?=
 MAYBE_ADMIT = $(if $(ADMIT),--admit_smt_queries true)
 
-FSTAR_EXE ?= $(FSTAR_HOME)/bin/fstar.exe
 FSTAR = $(FSTAR_EXE) $(MAYBE_ADMIT)
 
 FSTAR_EXTRACT = --extract '-* +MLS +Comparse -Comparse.Tactic $(if $(USE_DY), +DY)'
@@ -119,10 +118,10 @@ test_vectors/data/%.json: test_vectors/git_commit | test_vectors/data
 .PHONY: build check release
 
 check: copy_lib copy_tests $(ALL_TEST_VECTORS_JSON)
-	OCAMLRUNPARAM=b OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune runtest --force --no-buffer --display=quiet --profile=release
+	OCAMLRUNPARAM=b $(FSTAR_EXE) --ocamlenv dune runtest --force --no-buffer --display=quiet --profile=release
 
 js: copy_lib copy_tests
-	OCAMLPATH=$(FSTAR_HOME)/lib:$(OCAMLPATH) dune build --profile=release
+	$(FSTAR_EXE) --ocamlenv dune build --profile=release
 	cd js && ./import.sh
 	cd js && ./package.sh
 
