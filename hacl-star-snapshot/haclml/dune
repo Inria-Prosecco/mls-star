@@ -3,7 +3,7 @@
  (public_name mls.haclml)
  (wrapped false)
  (modes byte native)
- (libraries fstar.lib)
+ (libraries fstar.pluginlib)
  (virtual_modules primitives)
  (default_implementation primitives_native)
  (modules (:standard \ Meta_Interface Lib_Buffer Lib_ByteBuffer Lib_Loops)))
