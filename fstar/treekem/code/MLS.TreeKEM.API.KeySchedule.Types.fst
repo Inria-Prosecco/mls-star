@@ -8,10 +8,10 @@ type epoch_keys (bytes:Type0) = {
   sender_data_secret: bytes;
   exporter_secret: bytes;
   external_secret: bytes;
-  confirmation_key: bytes;
   membership_key: bytes;
   resumption_psk: bytes;
   epoch_authenticator: bytes;
+  confirmation_tag: bytes;
 }
 
 type treekem_keyschedule_state (bytes:Type0) = {

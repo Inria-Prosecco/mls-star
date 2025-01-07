@@ -132,3 +132,10 @@ let mls_exporter #bytes #cb exporter_secret label context len =
   let? derived_secret: bytes = derive_secret exporter_secret label in
   let? hashed_context = hash_hash context in
   expand_with_label #bytes derived_secret "exported" hashed_context len
+
+val compute_confirmation_tag:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  bytes -> bytes ->
+  result (lbytes bytes (hmac_length #bytes))
+let compute_confirmation_tag #bytes #cb confirmation_key confirmed_transcript_hash =
+  hmac_hmac confirmation_key confirmed_transcript_hash

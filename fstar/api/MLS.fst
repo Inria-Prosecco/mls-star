@@ -254,8 +254,8 @@ let process_commit state wire_format message message_auth =
   let state = { state with confirmed_transcript_hash; interim_transcript_hash } in
   // 4. Check confirmation tag
   let? () = (
-    let confirmation_key = (MLS.TreeKEM.API.get_epoch_keys state.treekem_state).confirmation_key in
-    let? confirmation_tag_ok = MLS.TreeDEM.API.verify_confirmation_tag state.treedem_state full_message confirmation_key confirmed_transcript_hash in
+    let confirmation_tag = (MLS.TreeKEM.API.get_epoch_keys state.treekem_state).confirmation_tag in
+    let? confirmation_tag_ok = MLS.TreeDEM.API.verify_confirmation_tag state.treedem_state full_message confirmation_tag in
     if not confirmation_tag_ok then
       error "process_commit: invalid confirmation tag"
     else return ()
@@ -372,17 +372,17 @@ let create e cred private_sign_key group_id =
     //TODO AS check
     return (MLS.TreeSync.API.finalize_create create_pend ())
   ) in
+  let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
+  let epoch = 0 in
+  let confirmed_transcript_hash = Seq.empty in
+  let? group_context = compute_group_context group_id epoch tree_hash confirmed_transcript_hash in
   let treekem = treesync_to_treekem treesync_state.tree in
   // 10. In principle, the above process could be streamlined by having the
   // creator directly create a tree and choose a random value for first epoch's
   // epoch secret.
   let? epoch_secret, e = chop_entropy e 32 in
-  let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.create leaf_decryption_key key_package.tbs.leaf_node.data.content epoch_secret in
+  let? (treekem_state, encryption_secret) = MLS.TreeKEM.API.create leaf_decryption_key key_package.tbs.leaf_node.data.content epoch_secret group_context in
 
-  let? tree_hash = MLS.TreeSync.API.compute_tree_hash treesync_state in
-  let epoch = 0 in
-  let confirmed_transcript_hash = Seq.empty in
-  let? group_context = compute_group_context group_id epoch tree_hash confirmed_transcript_hash in
   let leaf_index = 0 in
   let? treedem_state = MLS.TreeDEM.API.init {
     tree_height = 0;
@@ -574,7 +574,7 @@ let generate_commit state e proposals =
   let new_group_context = { provisional_group_context with confirmed_transcript_hash } in
   let? commit_result = MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context [] in
   let state = { state with pending_updatepath = (update_path, (commit_result.new_state, commit_result.encryption_secret))::state.pending_updatepath } in
-  let? auth_commit = MLS.TreeDEM.API.finish_authenticate_commit half_auth_commit (MLS.TreeKEM.API.get_epoch_keys commit_result.new_state).confirmation_key confirmed_transcript_hash in
+  let? auth_commit = MLS.TreeDEM.API.finish_authenticate_commit half_auth_commit (MLS.TreeKEM.API.get_epoch_keys commit_result.new_state).confirmation_tag in
   let? reuse_guard, e = chop_entropy e 4 in
   assume(Seq.length reuse_guard == length #bytes reuse_guard);
   let? (commit_ct, new_treedem_state) = MLS.TreeDEM.API.protect_private state.treedem_state auth_commit reuse_guard in
@@ -704,8 +704,7 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
   let? group_context = compute_group_context group_id epoch tree_hash confirmed_transcript_hash in
 
   let? () = (
-    let? computed_confirmation_tag = MLS.TreeDEM.Message.Framing.compute_message_confirmation_tag (MLS.TreeKEM.API.get_epoch_keys treekem_state).confirmation_key confirmed_transcript_hash in
-    if not ((group_info.tbs.confirmation_tag <: bytes) = (computed_confirmation_tag <: bytes)) then
+    if not ((group_info.tbs.confirmation_tag <: bytes) = (MLS.TreeKEM.API.get_epoch_keys treekem_state).confirmation_tag) then
       error "process_welcome_message: bad confirmation_tag"
     else return ()
   ) in

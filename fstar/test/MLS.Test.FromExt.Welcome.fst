@@ -58,7 +58,7 @@ let test_welcome_one t =
     let joiner_secret = group_secrets.joiner_secret in
     let epoch_secret = extract_result (secret_joiner_to_epoch joiner_secret [] group_context) in
     let confirmation_key = extract_result (secret_epoch_to_confirmation #bytes epoch_secret) in
-    let confirmation_tag = extract_result (compute_message_confirmation_tag #bytes confirmation_key group_info.tbs.group_context.confirmed_transcript_hash) in
+    let confirmation_tag = extract_result (compute_confirmation_tag #bytes confirmation_key group_info.tbs.group_context.confirmed_transcript_hash) in
     check_equal "confirmation_tag" (bytes_to_hex_string) (group_info.tbs.confirmation_tag) (confirmation_tag);
     true
   end

@@ -9,13 +9,6 @@ open MLS.Result
 
 (*** Authentication ***)
 
-val compute_message_confirmation_tag:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> bytes ->
-  result (lbytes bytes (hmac_length #bytes))
-let compute_message_confirmation_tag #bytes #cb confirmation_key confirmed_transcript_hash =
-  hmac_hmac confirmation_key confirmed_transcript_hash
-
 val knows_group_context:
   #bytes:Type0 -> {|bytes_like bytes|} ->
   sender_nt bytes ->
@@ -81,14 +74,6 @@ val check_authenticated_content_signature:
   bool
 let check_authenticated_content_signature #bytes #cb msg vk group_context =
   check_message_signature vk msg.auth.signature msg.wire_format msg.content group_context
-
-val check_authenticated_content_confirmation_tag:
-  #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  msg:authenticated_content_nt bytes{msg.content.content.content_type == CT_commit} -> bytes -> bytes ->
-  result bool
-let check_authenticated_content_confirmation_tag #bytes #bl msg confirmation_key confirmed_transcript_hash =
-  let? expected_confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
-  return ((expected_confirmation_tag <: bytes) = (msg.auth.confirmation_tag <: bytes))
 
 (*** From/to public message ***)
 

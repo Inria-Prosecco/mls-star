@@ -101,19 +101,20 @@ let start_authenticate_commit #bytes #cb st wf msg nonce =
 val finish_authenticate_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   msg:half_authenticated_commit bytes ->
-  bytes -> bytes ->
+  bytes ->
   result (res:authenticated_content_nt bytes{res.wire_format == msg.wire_format /\ res.content == msg.content})
-let finish_authenticate_commit #bytes #cb msg confirmation_key confirmed_transcript_hash  =
-  let? confirmation_tag = compute_message_confirmation_tag confirmation_key confirmed_transcript_hash in
-  let? confirmation_tag = mk_mls_bytes (confirmation_tag <: bytes) "finish_authenticate_commit" "confirmation_tag" in
-  return ({
-    wire_format = msg.wire_format;
-    content = msg.content;
-    auth = {
-      signature = msg.signature;
-      confirmation_tag;
-    }
-  } <: res:authenticated_content_nt bytes{res.wire_format == msg.wire_format /\ res.content == msg.content})
+let finish_authenticate_commit #bytes #cb msg confirmation_tag  =
+  if not (length confirmation_tag < pow2 30) then error "finish_authenticate_commit: confirmation_tag too long"
+  else (
+    return ({
+      wire_format = msg.wire_format;
+      content = msg.content;
+      auth = {
+        signature = msg.signature;
+        confirmation_tag;
+      }
+    } <: res:authenticated_content_nt bytes{res.wire_format == msg.wire_format /\ res.content == msg.content})
+  )
 
 /// Functions to verify the authentication.
 
@@ -142,12 +143,13 @@ val verify_confirmation_tag:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   treedem_state bytes ->
   authenticated_content_nt bytes ->
-  bytes -> bytes ->
+  bytes ->
   result bool
-let verify_confirmation_tag #bytes #cb st msg confirmation_key confirmed_transcript_hash =
+let verify_confirmation_tag #bytes #cb st msg confirmation_tag =
+  bytes_hasEq #bytes;
   match msg.content.content.content_type with
   | CT_commit ->
-    check_authenticated_content_confirmation_tag msg confirmation_key confirmed_transcript_hash
+    return (msg.auth.confirmation_tag = confirmation_tag)
   | _ -> internal_failure "verify_confirmation_tag: not a commit"
 
 (*** Protection ***)

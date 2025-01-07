@@ -25,11 +25,11 @@ module KS = MLS.TreeKEM.API.KeySchedule
 val create:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   hpke_private_key bytes -> bytes ->
-  bytes ->
+  bytes -> group_context_nt bytes ->
   result (treekem_state bytes 0 & bytes)
-let create #bytes #cb dec_key enc_key epoch_secret =
+let create #bytes #cb dec_key enc_key epoch_secret group_context =
   let tree_state = T.create dec_key enc_key in
-  let? (keyschedule_state, encryption_secret) = KS.create_from_epoch_secret epoch_secret in
+  let? (keyschedule_state, encryption_secret) = KS.create_from_epoch_secret epoch_secret group_context in
   return ({
     tree_state;
     keyschedule_state;
