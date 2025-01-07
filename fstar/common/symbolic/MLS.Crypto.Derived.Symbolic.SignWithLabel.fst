@@ -15,17 +15,18 @@ open MLS.Result
 
 noeq
 type signwithlabel_crypto_pred {|crypto_usages|} = {
-  pred: trace -> sk_usg:usage{SigKey? sk_usg} -> msg:bytes -> prop;
+  pred: trace -> sk_usg:usage{SigKey? sk_usg} -> vk:bytes -> msg:bytes -> prop;
   pred_later:
     tr1:trace -> tr2:trace ->
-    sk_usg:usage{SigKey? sk_usg} -> msg:bytes ->
+    sk_usg:usage{SigKey? sk_usg} -> vk:bytes -> msg:bytes ->
     Lemma
     (requires
-      pred tr1 sk_usg msg /\
+      pred tr1 sk_usg vk msg /\
+      bytes_well_formed tr1 vk /\
       bytes_well_formed tr1 msg /\
       tr1 <$ tr2
     )
-    (ensures pred tr2 sk_usg msg)
+    (ensures pred tr2 sk_usg vk msg)
   ;
 }
 
@@ -40,38 +41,38 @@ let split_signwithlabel_crypto_pred_params {|crypto_usages|}: split_function_par
     FStar.Classical.move_requires_2 get_mls_label_inj tag_set_1 tag_set_2
   );
 
-  tagged_data_t = (trace & (sk_usg:usage{SigKey? sk_usg}) & bytes);
-  raw_data_t = (trace & (sk_usg:usage{SigKey? sk_usg}) & bytes);
+  tagged_data_t = (trace & (sk_usg:usage{SigKey? sk_usg}) & bytes & bytes);
+  raw_data_t = (trace & (sk_usg:usage{SigKey? sk_usg}) & bytes & bytes);
   output_t = prop;
 
-  decode_tagged_data = (fun (tr, vk, data) -> (
+  decode_tagged_data = (fun (tr, sk_usage, vk, data) -> (
     match parse (sign_content_nt bytes) data with
-    | Some ({label; content}) -> Some (label, (tr, vk, content))
+    | Some ({label; content}) -> Some (label, (tr, sk_usage, vk, content))
     | None -> None
   ));
 
   local_fun_t = mk_dependent_type signwithlabel_crypto_pred;
-  global_fun_t = trace -> sk_usg:usage{SigKey? sk_usg} -> bytes -> prop;
+  global_fun_t = trace -> sk_usg:usage{SigKey? sk_usg} -> bytes -> bytes -> prop;
 
-  default_global_fun = (fun tr vk content -> False);
+  default_global_fun = (fun tr sk_usage vk content -> False);
 
 
-  apply_local_fun = (fun pred (tr, vk, content) -> pred.pred tr vk content);
-  apply_global_fun = (fun pred (tr, vk, msg) -> pred tr vk msg);
-  mk_global_fun = (fun pred tr vk msg -> pred (tr, vk, msg));
+  apply_local_fun = (fun pred (tr, sk_usage, vk, content) -> pred.pred tr sk_usage vk content);
+  apply_global_fun = (fun pred (tr, sk_usage, vk, msg) -> pred tr sk_usage vk msg);
+  mk_global_fun = (fun pred tr sk_usage vk msg -> pred (tr, sk_usage, vk, msg));
   apply_mk_global_fun = (fun _ _ -> ());
 }
 
 #push-options "--ifuel 1"
 val has_signwithlabel_pred: {|crypto_usages|} -> sign_crypto_predicate -> (valid_label & signwithlabel_crypto_pred) -> prop
 let has_signwithlabel_pred #cusgs sign_pred (lab, local_pred) =
-  forall tr vk msg.
-    {:pattern sign_pred.pred tr vk msg}
+  forall tr sk_usage vk msg.
+    {:pattern sign_pred.pred tr sk_usage vk msg}
     match parse (sign_content_nt bytes) msg with
     | Some {label; content} -> (
       label == get_mls_label lab ==> (
-        sign_pred.pred tr vk msg ==
-        local_pred.pred tr vk content
+        sign_pred.pred tr sk_usage vk msg ==
+        local_pred.pred tr sk_usage vk content
       )
     )
     | _ -> True
@@ -85,47 +86,48 @@ val intro_has_signwithlabel_pred:
   (ensures has_signwithlabel_pred sign_pred (tag, local_pred))
 let intro_has_signwithlabel_pred #cusgs sign_pred tag local_pred =
   introduce
-    forall tr vk msg.
+    forall tr sk_usage vk msg.
       match parse (sign_content_nt bytes) msg with
       | Some {label; content} -> (
         label == get_mls_label tag ==> (
-          sign_pred.pred tr vk msg ==
-          local_pred.pred tr vk content
+          sign_pred.pred tr sk_usage vk msg ==
+          local_pred.pred tr sk_usage vk content
         )
       )
       | _ -> True
   with (
-    has_local_fun_elim split_signwithlabel_crypto_pred_params sign_pred.pred tag local_pred (tr, vk, msg)
+    has_local_fun_elim split_signwithlabel_crypto_pred_params sign_pred.pred tag local_pred (tr, sk_usage, vk, msg)
   )
 
 val mk_global_mls_sign_pred:
   {|crypto_usages|} ->
   list (valid_label & signwithlabel_crypto_pred) ->
-  trace -> sk_usg:usage{SigKey? sk_usg} -> bytes ->
+  trace -> sk_usg:usage{SigKey? sk_usg} -> bytes -> bytes ->
   prop
-let mk_global_mls_sign_pred tagged_local_preds vk msg =
-  mk_global_fun split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) vk msg
+let mk_global_mls_sign_pred tagged_local_preds sk_usage vk msg =
+  mk_global_fun split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) sk_usage vk msg
 
 #push-options "--ifuel 2"
 val mk_global_mls_sign_pred_later:
   {|crypto_usages|} ->
   tagged_local_preds:list (valid_label & signwithlabel_crypto_pred) ->
   tr1:trace -> tr2:trace ->
-  sk_usg:usage{SigKey? sk_usg} -> msg:bytes ->
+  sk_usg:usage{SigKey? sk_usg} -> vk:bytes -> msg:bytes ->
   Lemma
   (requires
-    mk_global_mls_sign_pred tagged_local_preds tr1 sk_usg msg /\
+    mk_global_mls_sign_pred tagged_local_preds tr1 sk_usg vk msg /\
+    bytes_well_formed tr1 vk /\
     bytes_well_formed tr1 msg /\
     tr1 <$ tr2
   )
-  (ensures mk_global_mls_sign_pred tagged_local_preds tr2 sk_usg msg)
-let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 sk_usg msg =
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr1, sk_usg, msg);
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr2, sk_usg, msg);
+  (ensures mk_global_mls_sign_pred tagged_local_preds tr2 sk_usg vk msg)
+let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 sk_usg vk msg =
+  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr1, sk_usg, vk, msg);
+  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr2, sk_usg, vk, msg);
   FStar.Classical.move_requires (parse_wf_lemma (sign_content_nt bytes) (bytes_well_formed tr1)) msg;
-  introduce forall tag_set lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, sk_usg, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun #tag_set lpred (tr2, sk_usg, content) with (
+  introduce forall tag_set lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, sk_usg, vk, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun #tag_set lpred (tr2, sk_usg, vk, content) with (
     introduce _ ==> _ with _. (
-      lpred.pred_later tr1 tr2 sk_usg content
+      lpred.pred_later tr1 tr2 sk_usg vk content
     )
   )
 #pop-options
@@ -180,7 +182,7 @@ val bytes_invariant_sign_with_label:
     sk `has_usage tr` mk_mls_sigkey_usage prin /\
     nonce `has_usage tr` SigNonce /\
     (get_label tr sk) `can_flow tr` (get_label tr nonce) /\ (
-      spred.pred tr (mk_mls_sigkey_usage prin) msg
+      spred.pred tr (mk_mls_sigkey_usage prin) (vk sk) msg
       \/
       get_label tr sk `can_flow tr` public
     ) /\
@@ -213,7 +215,7 @@ val bytes_invariant_verify_with_label:
   )
   (ensures
     (
-      spred.pred tr (mk_mls_sigkey_usage prin) content
+      spred.pred tr (mk_mls_sigkey_usage prin) vk content
     ) \/ (
       (get_signkey_label tr vk) `can_flow tr` public
     )

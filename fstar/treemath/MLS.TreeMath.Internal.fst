@@ -294,6 +294,7 @@ let get_bit_lemma x k =
   lemma_lemma q k;
   FStar.Math.Lemmas.small_mod (((q%2)*(pow2 k)) + (x%(pow2 k))) (pow2 (k+1))
 
+#push-options "--z3rlimit 500"
 val is_left_node_left: x:nat{level x <> 0} -> Lemma (is_left_node (left x) == true)
 let is_left_node_left x =
   //Z3 really has troube proving this inside the proof, hence this separate lemma
@@ -312,7 +313,9 @@ let is_left_node_left x =
   is_left_node_lemma x xl q k;
   FStar.Math.Lemmas.small_div (x % (pow2 (k-1))) (pow2 k);
   FStar.Math.Lemmas.cancel_mul_mod q 2
+#pop-options
 
+#push-options "--z3rlimit 500"
 val is_right_node_right: x:nat{level x <> 0} -> Lemma (is_left_node (right x) == false)
 let is_right_node_right x =
   //Z3 really has troube proving this inside the proof, hence this separate lemma
@@ -334,6 +337,7 @@ let is_right_node_right x =
   assert (xr/(pow2 k) == 1 + 2*q);
   FStar.Math.Lemmas.lemma_mod_plus_distr_r 1 (2*q) 2;
   FStar.Math.Lemmas.cancel_mul_mod q 2
+#pop-options
 
 (*** Proofs: parent of left/right node ***)
 

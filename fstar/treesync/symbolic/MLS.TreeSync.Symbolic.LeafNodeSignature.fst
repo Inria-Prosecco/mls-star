@@ -114,7 +114,7 @@ val leaf_node_sign_pred:
   {|crypto_usages|} -> treekem_types bytes ->
   signwithlabel_crypto_pred
 let leaf_node_sign_pred #cu tkt = {
-  pred = (fun tr sk_usg ln_tbs_bytes ->
+  pred = (fun tr sk_usg vk ln_tbs_bytes ->
     match (parse (leaf_node_tbs_nt bytes tkt) ln_tbs_bytes) with
     | None -> False
     | Some ln_tbs -> (
@@ -137,7 +137,7 @@ let leaf_node_sign_pred #cu tkt = {
         )
     )
   );
-  pred_later = (fun tr1 tr2 vk ln_tbs_bytes ->
+  pred_later = (fun tr1 tr2 sk_usg vk ln_tbs_bytes ->
     parse_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_well_formed tr1) ln_tbs_bytes;
     introduce forall prin tr group_id (tl:tree_list bytes tkt). tree_list_has_event prin tr group_id tl <==> (forall x. List.Tot.memP x tl ==> tree_has_event prin tr group_id x)
     with (
@@ -329,7 +329,7 @@ let parent_hash_implies_event #ci #tkt #l #i tr group_id t ast =
   serialize_wf_lemma (leaf_node_tbs_nt bytes tkt) (bytes_invariant tr) ln_tbs;
   bytes_invariant_verify_with_label (leaf_node_sign_pred  tkt) tr authentifier ln.data.signature_key "LeafNodeTBS" ln_tbs_bytes ln.signature;
 
-  introduce ((leaf_node_sign_pred tkt).pred tr (mk_mls_sigkey_usage authentifier) ln_tbs_bytes) ==> tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
+  introduce ((leaf_node_sign_pred tkt).pred tr (mk_mls_sigkey_usage authentifier) ln.data.signature_key ln_tbs_bytes) ==> tree_has_event authentifier tr group_id (|l, i, (canonicalize t authentifier_li)|)
   with _. (
     (
       parse_serialize_inv_lemma #bytes (leaf_node_tbs_nt bytes tkt) ln_tbs;
