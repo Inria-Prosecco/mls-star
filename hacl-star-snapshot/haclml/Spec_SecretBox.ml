@@ -88,7 +88,7 @@ let (secretbox_open_detached :
                   Obj.magic
                     (Lib_ByteSequence.seq_eq_mask Lib_IntTypes.U8 size_tag
                        size_tag (Obj.magic tg) (Obj.magic tg') size_tag) in
-                res = 255
+                res = (FStar_UInt8.uint_to_t (Prims.of_int (255)))
               then
                 let clen0 = get_len0 (Lib_Sequence.length c) in
                 let c0 = FStar_Seq_Base.slice c Prims.int_zero clen0 in

@@ -1,16 +1,7 @@
 open Prims
-let (is_supported_alg : Spec_Hash_Definitions.hash_alg -> Prims.bool) =
-  fun uu___ ->
-    match uu___ with
-    | Spec_Hash_Definitions.SHA1 -> true
-    | Spec_Hash_Definitions.SHA2_256 -> true
-    | Spec_Hash_Definitions.SHA2_384 -> true
-    | Spec_Hash_Definitions.SHA2_512 -> true
-    | uu___1 -> false
-type supported_alg = Spec_Hash_Definitions.hash_alg
 type vec =
   {
-  a: supported_alg ;
+  a: Spec_Hash_Definitions.hash_alg ;
   entropy_input: Prims.string ;
   nonce: Prims.string ;
   personalization_string: Prims.string ;
@@ -19,7 +10,7 @@ type vec =
   additional_input_1: Prims.string ;
   additional_input_2: Prims.string ;
   returned_bits: Prims.string }
-let (__proj__Mkvec__item__a : vec -> supported_alg) =
+let (__proj__Mkvec__item__a : vec -> Spec_Hash_Definitions.hash_alg) =
   fun projectee ->
     match projectee with
     | { a; entropy_input; nonce; personalization_string;

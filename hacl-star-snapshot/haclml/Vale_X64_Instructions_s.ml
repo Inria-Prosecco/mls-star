@@ -1475,8 +1475,8 @@ let (eval_AESNI_enc :
         FStar_Pervasives_Native.Some
           (Vale_Def_Types_s.quad32_xor
              (Vale_AES_AES_s.mix_columns_LE
-                (Vale_AES_AES_common_s.sub_bytes
-                   (Vale_AES_AES_s.shift_rows_LE src1))) src2)
+                (Vale_AES_AES_s.sub_bytes (Vale_AES_AES_s.shift_rows_LE src1)))
+             src2)
       else FStar_Pervasives_Native.None
 let (ins_AESNI_enc :
   (unit, unit, unit, unit) Vale_X64_Instruction_s.instr_dep) =
@@ -1523,8 +1523,8 @@ let (eval_AESNI_enc_last :
       then
         FStar_Pervasives_Native.Some
           (Vale_Def_Types_s.quad32_xor
-             (Vale_AES_AES_common_s.sub_bytes
-                (Vale_AES_AES_s.shift_rows_LE src1)) src2)
+             (Vale_AES_AES_s.sub_bytes (Vale_AES_AES_s.shift_rows_LE src1))
+             src2)
       else FStar_Pervasives_Native.None
 let (ins_AESNI_enc_last :
   (unit, unit, unit, unit) Vale_X64_Instruction_s.instr_dep) =
@@ -1572,7 +1572,7 @@ let (eval_AESNI_dec :
         FStar_Pervasives_Native.Some
           (Vale_Def_Types_s.quad32_xor
              (Vale_AES_AES_s.inv_mix_columns_LE
-                (Vale_AES_AES_common_s.inv_sub_bytes
+                (Vale_AES_AES_s.inv_sub_bytes
                    (Vale_AES_AES_s.inv_shift_rows_LE dst))) src)
       else FStar_Pervasives_Native.None
 let (ins_AESNI_dec :
@@ -1599,7 +1599,7 @@ let (eval_AESNI_dec_last :
       then
         FStar_Pervasives_Native.Some
           (Vale_Def_Types_s.quad32_xor
-             (Vale_AES_AES_common_s.inv_sub_bytes
+             (Vale_AES_AES_s.inv_sub_bytes
                 (Vale_AES_AES_s.inv_shift_rows_LE dst)) src)
       else FStar_Pervasives_Native.None
 let (ins_AESNI_dec_last :
@@ -1648,19 +1648,17 @@ let (eval_AESNI_keygen_assist :
         FStar_Pervasives_Native.Some
           {
             Vale_Def_Words_s.lo0 =
-              (Vale_AES_AES_common_s.sub_word src.Vale_Def_Words_s.lo1);
+              (Vale_AES_AES_s.sub_word src.Vale_Def_Words_s.lo1);
             Vale_Def_Words_s.lo1 =
               (Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000")
                  (Vale_AES_AES_s.rot_word_LE
-                    (Vale_AES_AES_common_s.sub_word src.Vale_Def_Words_s.lo1))
-                 imm);
+                    (Vale_AES_AES_s.sub_word src.Vale_Def_Words_s.lo1)) imm);
             Vale_Def_Words_s.hi2 =
-              (Vale_AES_AES_common_s.sub_word src.Vale_Def_Words_s.hi3);
+              (Vale_AES_AES_s.sub_word src.Vale_Def_Words_s.hi3);
             Vale_Def_Words_s.hi3 =
               (Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000")
                  (Vale_AES_AES_s.rot_word_LE
-                    (Vale_AES_AES_common_s.sub_word src.Vale_Def_Words_s.hi3))
-                 imm)
+                    (Vale_AES_AES_s.sub_word src.Vale_Def_Words_s.hi3)) imm)
           }
       else FStar_Pervasives_Native.None
 let (ins_AESNI_keygen_assist :

@@ -12,7 +12,7 @@ let (xor_bytes :
       fun b2 ->
         Lib_Sequence.map2 len (fun x -> fun y -> FStar_UInt8.logxor x y) b1
           b2
-let (hash_is_supported : Spec_Hash_Definitions.hash_alg -> Prims.bool) =
+let (hash_is_supported : Spec_Hash_Definitions.algorithm -> Prims.bool) =
   fun a ->
     match a with
     | Spec_Hash_Definitions.SHA2_256 -> true
@@ -20,7 +20,7 @@ let (hash_is_supported : Spec_Hash_Definitions.hash_alg -> Prims.bool) =
     | Spec_Hash_Definitions.SHA2_512 -> true
     | uu___ -> false
 let (mgf_hash_f :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     Prims.nat ->
       Prims.nat ->
         (FStar_UInt8.t, unit) Lib_Sequence.lseq ->
@@ -38,11 +38,11 @@ let (mgf_hash_f :
           let mgfseed_counter1 =
             Lib_Sequence.update_sub (len + (Prims.of_int (4)))
               mgfseed_counter len (Prims.of_int (4)) counter in
-          let block = Spec_Agile_Hash.hash' a mgfseed_counter1 (Obj.repr ()) in
+          let block = Spec_Agile_Hash.hash a mgfseed_counter1 in
           (mgfseed_counter1, block)
 type ('len, 'n, 'i) mgf_hash_a = (FStar_UInt8.t, unit) Lib_Sequence.lseq
 let (mgf_hash :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     Prims.nat ->
       (FStar_UInt8.t, unit) Lib_Sequence.lseq ->
         Prims.pos -> (FStar_UInt8.t, unit) Lib_Sequence.lseq)
@@ -129,7 +129,7 @@ let (db_zero :
           r
         else db
 let (pss_encode :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     Prims.nat ->
       (FStar_UInt8.t, unit) Lib_Sequence.lseq ->
         Prims.nat ->
@@ -142,7 +142,7 @@ let (pss_encode :
         fun msgLen ->
           fun msg ->
             fun emBits ->
-              let mHash = Spec_Agile_Hash.hash' a msg (Obj.repr ()) in
+              let mHash = Spec_Agile_Hash.hash a msg in
               let hLen = Spec_Hash_Definitions.hash_length a in
               let m1Len = ((Prims.of_int (8)) + hLen) + sLen in
               let m1 =
@@ -154,7 +154,7 @@ let (pss_encode :
               let m12 =
                 Lib_Sequence.update_sub m1Len m11 ((Prims.of_int (8)) + hLen)
                   sLen salt in
-              let m1Hash = Spec_Agile_Hash.hash' a m12 (Obj.repr ()) in
+              let m1Hash = Spec_Agile_Hash.hash a m12 in
               let emLen = blocks emBits (Prims.of_int (8)) in
               let dbLen = (emLen - hLen) - Prims.int_one in
               let db =
@@ -180,7 +180,7 @@ let (pss_encode :
               Lib_Sequence.upd emLen em2 (emLen - Prims.int_one)
                 (FStar_UInt8.uint_to_t (Prims.of_int (0xbc)))
 let (pss_verify_ :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     Prims.nat ->
       Prims.nat ->
         FStar_UInt8.t Lib_Sequence.seq ->
@@ -219,10 +219,10 @@ let (pss_verify_ :
                      Obj.magic
                        (Lib_ByteSequence.seq_eq_mask Lib_IntTypes.U8 padLen
                           padLen (Obj.magic pad) (Obj.magic pad21) padLen) in
-                   res = 255)
+                   res = (FStar_UInt8.uint_to_t (Prims.of_int (255))))
               then false
               else
-                (let mHash = Spec_Agile_Hash.hash' a msg (Obj.repr ()) in
+                (let mHash = Spec_Agile_Hash.hash a msg in
                  let m1Len = ((Prims.of_int (8)) + hLen) + sLen in
                  let m1 =
                    Lib_Sequence.create m1Len
@@ -233,17 +233,17 @@ let (pss_verify_ :
                  let m12 =
                    Lib_Sequence.update_sub m1Len m11
                      ((Prims.of_int (8)) + hLen) sLen salt in
-                 let m1Hash0 = Spec_Agile_Hash.hash' a m12 (Obj.repr ()) in
+                 let m1Hash0 = Spec_Agile_Hash.hash a m12 in
                  let res =
                    Obj.magic
                      (Lib_ByteSequence.seq_eq_mask Lib_IntTypes.U8
-                        (Spec_Hash_Definitions.hash_length' a (Obj.repr ()))
-                        (Spec_Hash_Definitions.hash_length' a (Obj.repr ()))
+                        (Spec_Hash_Definitions.hash_length a)
+                        (Spec_Hash_Definitions.hash_length a)
                         (Obj.magic m1Hash0) (Obj.magic m1Hash)
-                        (Spec_Hash_Definitions.hash_length' a (Obj.repr ()))) in
-                 res = 255)
+                        (Spec_Hash_Definitions.hash_length a)) in
+                 res = (FStar_UInt8.uint_to_t (Prims.of_int (255))))
 let (pss_verify :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     Prims.nat ->
       Prims.nat ->
         FStar_UInt8.t Lib_Sequence.seq ->
@@ -278,11 +278,16 @@ let (pss_verify :
               else
                 if
                   Prims.op_Negation
-                    ((FStar_UInt8.eq em_last 0xbc) && (FStar_UInt8.eq em_0 0))
+                    ((FStar_UInt8.eq em_last
+                        (FStar_UInt8.uint_to_t (Prims.of_int (0xbc))))
+                       &&
+                       (FStar_UInt8.eq em_0
+                          (FStar_UInt8.uint_to_t Prims.int_zero)))
                 then false
                 else pss_verify_ a sLen msgLen msg emBits em
+
 let (rsapss_sign_ :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     modBits_t ->
       unit rsapss_skey ->
         Prims.nat ->
@@ -313,7 +318,7 @@ let (rsapss_sign_ :
                 let s1 = if eq_m then s else Prims.int_zero in
                 (eq_m, (i2osp k s1))
 let (rsapss_sign :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     modBits_t ->
       unit rsapss_skey ->
         Prims.nat ->
@@ -335,12 +340,56 @@ let (rsapss_sign :
                         (Prims.of_int (8)))
                        <= ((Prims.pow2 (Prims.of_int (32))) - Prims.int_one))
                       &&
-                      (Spec_Hash_Definitions.less_than_max_input_length
-                         ((sLen + (Spec_Hash_Definitions.hash_length a)) +
-                            (Prims.of_int (8))) a))
+                      (((sLen + (Spec_Hash_Definitions.hash_length a)) +
+                          (Prims.of_int (8)))
+                         <=
+                         (match a with
+                          | Spec_Hash_Definitions.MD5 ->
+                              (Prims.pow2 (Prims.of_int (61))) -
+                                Prims.int_one
+                          | Spec_Hash_Definitions.SHA1 ->
+                              (Prims.pow2 (Prims.of_int (61))) -
+                                Prims.int_one
+                          | Spec_Hash_Definitions.SHA2_224 ->
+                              (Prims.pow2 (Prims.of_int (61))) -
+                                Prims.int_one
+                          | Spec_Hash_Definitions.SHA2_256 ->
+                              (Prims.pow2 (Prims.of_int (61))) -
+                                Prims.int_one
+                          | Spec_Hash_Definitions.SHA2_384 ->
+                              (Prims.pow2 (Prims.of_int (125))) -
+                                Prims.int_one
+                          | Spec_Hash_Definitions.SHA2_512 ->
+                              (Prims.pow2 (Prims.of_int (125))) -
+                                Prims.int_one
+                          | Spec_Hash_Definitions.Blake2S ->
+                              (Prims.pow2 (Prims.of_int (64))) -
+                                Prims.int_one
+                          | Spec_Hash_Definitions.Blake2B ->
+                              (Prims.pow2 (Prims.of_int (128))) -
+                                Prims.int_one)))
                      &&
-                     (Spec_Hash_Definitions.less_than_max_input_length msgLen
-                        a))
+                     (msgLen <=
+                        (match a with
+                         | Spec_Hash_Definitions.MD5 ->
+                             (Prims.pow2 (Prims.of_int (61))) - Prims.int_one
+                         | Spec_Hash_Definitions.SHA1 ->
+                             (Prims.pow2 (Prims.of_int (61))) - Prims.int_one
+                         | Spec_Hash_Definitions.SHA2_224 ->
+                             (Prims.pow2 (Prims.of_int (61))) - Prims.int_one
+                         | Spec_Hash_Definitions.SHA2_256 ->
+                             (Prims.pow2 (Prims.of_int (61))) - Prims.int_one
+                         | Spec_Hash_Definitions.SHA2_384 ->
+                             (Prims.pow2 (Prims.of_int (125))) -
+                               Prims.int_one
+                         | Spec_Hash_Definitions.SHA2_512 ->
+                             (Prims.pow2 (Prims.of_int (125))) -
+                               Prims.int_one
+                         | Spec_Hash_Definitions.Blake2S ->
+                             (Prims.pow2 (Prims.of_int (64))) - Prims.int_one
+                         | Spec_Hash_Definitions.Blake2B ->
+                             (Prims.pow2 (Prims.of_int (128))) -
+                               Prims.int_one)))
                     &&
                     (((sLen + (Spec_Hash_Definitions.hash_length a)) +
                         (Prims.of_int (2)))
@@ -357,7 +406,7 @@ let (rsapss_sign :
                        else FStar_Pervasives_Native.None)
                 else FStar_Pervasives_Native.None
 let (rsapss_verify_ :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     modBits_t ->
       unit rsapss_pkey ->
         Prims.nat ->
@@ -387,7 +436,7 @@ let (rsapss_verify_ :
                    else false)
                 else false
 let (rsapss_verify :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     modBits_t ->
       unit rsapss_pkey ->
         Prims.nat ->
@@ -409,12 +458,61 @@ let (rsapss_verify :
                          <=
                          ((Prims.pow2 (Prims.of_int (32))) - Prims.int_one))
                         &&
-                        (Spec_Hash_Definitions.less_than_max_input_length
-                           ((sLen + (Spec_Hash_Definitions.hash_length a)) +
-                              (Prims.of_int (8))) a))
+                        (((sLen + (Spec_Hash_Definitions.hash_length a)) +
+                            (Prims.of_int (8)))
+                           <=
+                           (match a with
+                            | Spec_Hash_Definitions.MD5 ->
+                                (Prims.pow2 (Prims.of_int (61))) -
+                                  Prims.int_one
+                            | Spec_Hash_Definitions.SHA1 ->
+                                (Prims.pow2 (Prims.of_int (61))) -
+                                  Prims.int_one
+                            | Spec_Hash_Definitions.SHA2_224 ->
+                                (Prims.pow2 (Prims.of_int (61))) -
+                                  Prims.int_one
+                            | Spec_Hash_Definitions.SHA2_256 ->
+                                (Prims.pow2 (Prims.of_int (61))) -
+                                  Prims.int_one
+                            | Spec_Hash_Definitions.SHA2_384 ->
+                                (Prims.pow2 (Prims.of_int (125))) -
+                                  Prims.int_one
+                            | Spec_Hash_Definitions.SHA2_512 ->
+                                (Prims.pow2 (Prims.of_int (125))) -
+                                  Prims.int_one
+                            | Spec_Hash_Definitions.Blake2S ->
+                                (Prims.pow2 (Prims.of_int (64))) -
+                                  Prims.int_one
+                            | Spec_Hash_Definitions.Blake2B ->
+                                (Prims.pow2 (Prims.of_int (128))) -
+                                  Prims.int_one)))
                        &&
-                       (Spec_Hash_Definitions.less_than_max_input_length
-                          msgLen a))
+                       (msgLen <=
+                          (match a with
+                           | Spec_Hash_Definitions.MD5 ->
+                               (Prims.pow2 (Prims.of_int (61))) -
+                                 Prims.int_one
+                           | Spec_Hash_Definitions.SHA1 ->
+                               (Prims.pow2 (Prims.of_int (61))) -
+                                 Prims.int_one
+                           | Spec_Hash_Definitions.SHA2_224 ->
+                               (Prims.pow2 (Prims.of_int (61))) -
+                                 Prims.int_one
+                           | Spec_Hash_Definitions.SHA2_256 ->
+                               (Prims.pow2 (Prims.of_int (61))) -
+                                 Prims.int_one
+                           | Spec_Hash_Definitions.SHA2_384 ->
+                               (Prims.pow2 (Prims.of_int (125))) -
+                                 Prims.int_one
+                           | Spec_Hash_Definitions.SHA2_512 ->
+                               (Prims.pow2 (Prims.of_int (125))) -
+                                 Prims.int_one
+                           | Spec_Hash_Definitions.Blake2S ->
+                               (Prims.pow2 (Prims.of_int (64))) -
+                                 Prims.int_one
+                           | Spec_Hash_Definitions.Blake2B ->
+                               (Prims.pow2 (Prims.of_int (128))) -
+                                 Prims.int_one)))
                       && (k = (blocks modBits (Prims.of_int (8)))) in
                   if b
                   then rsapss_verify_ a modBits pkey sLen sgnt msgLen msg
@@ -468,7 +566,7 @@ let (rsapss_load_skey :
                        d))
               else FStar_Pervasives_Native.None
 let (rsapss_skey_sign :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     modBits_t ->
       Prims.pos ->
         Prims.pos ->
@@ -501,7 +599,7 @@ let (rsapss_skey_sign :
                         | FStar_Pervasives_Native.None ->
                             FStar_Pervasives_Native.None
 let (rsapss_pkey_verify :
-  Spec_Hash_Definitions.hash_alg ->
+  Spec_Hash_Definitions.algorithm ->
     modBits_t ->
       Prims.pos ->
         (FStar_UInt8.t, unit) Lib_Sequence.lseq ->

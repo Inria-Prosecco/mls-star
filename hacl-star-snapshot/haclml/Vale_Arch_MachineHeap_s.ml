@@ -25,6 +25,7 @@ let (get_heap_val32_def :
         }
 let (get_heap_val32 : Prims.int -> machine_heap -> Vale_Def_Words_s.nat32) =
   Vale_Def_Opaque_s.opaque_make get_heap_val32_def
+
 let (get_heap_val64_def :
   Prims.int -> machine_heap -> Vale_Def_Words_s.nat64) =
   fun ptr ->
@@ -57,6 +58,7 @@ let (get_heap_val64_def :
         }
 let (get_heap_val64 : Prims.int -> machine_heap -> Vale_Def_Words_s.nat64) =
   Vale_Def_Opaque_s.opaque_make get_heap_val64_def
+
 let (get_heap_val128_def :
   Prims.int -> machine_heap -> Vale_Def_Types_s.quad32) =
   fun ptr ->
@@ -72,6 +74,7 @@ let (get_heap_val128_def :
       }
 let (get_heap_val128 : Prims.int -> machine_heap -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make get_heap_val128_def
+
 let (update_heap32_def :
   Prims.int -> Vale_Def_Words_s.nat32 -> machine_heap -> machine_heap) =
   fun ptr ->
@@ -91,6 +94,7 @@ let (update_heap32_def :
 let (update_heap32 :
   Prims.int -> Vale_Def_Words_s.nat32 -> machine_heap -> machine_heap) =
   Vale_Def_Opaque_s.opaque_make update_heap32_def
+
 let (update_heap64_def :
   Prims.int -> Vale_Def_Words_s.nat64 -> machine_heap -> machine_heap) =
   fun ptr ->
@@ -128,6 +132,7 @@ let (update_heap64_def :
 let (update_heap64 :
   Prims.int -> Vale_Def_Words_s.nat64 -> machine_heap -> machine_heap) =
   Vale_Def_Opaque_s.opaque_make update_heap64_def
+
 let (update_heap128_def :
   Prims.int -> Vale_Def_Types_s.quad32 -> machine_heap -> machine_heap) =
   fun ptr ->
@@ -147,6 +152,7 @@ let (update_heap128_def :
 let (update_heap128 :
   Prims.int -> Vale_Def_Types_s.quad32 -> machine_heap -> machine_heap) =
   Vale_Def_Opaque_s.opaque_make update_heap128_def
+
 let (valid_addr : Prims.int -> machine_heap -> Prims.bool) =
   fun ptr -> fun mem -> FStar_Map.contains mem ptr
 let (valid_addr64 : Prims.int -> machine_heap -> Prims.bool) =

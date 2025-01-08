@@ -3,6 +3,8 @@ type vale_heap = Vale_Arch_HeapImpl.vale_heap
 type vale_full_heap = Vale_Arch_HeapImpl.vale_full_heap
 type heaplet_id = Vale_Arch_HeapImpl.heaplet_id
 type quad32 = Vale_Def_Types_s.quad32
+
+
 let (cf : Vale_X64_Flags.t -> Prims.bool) =
   fun flags ->
     match Vale_X64_Lemmas.cf flags with
@@ -50,6 +52,8 @@ let va_update :
 let va_hd : 'uuuuu . unit -> 'uuuuu Prims.list -> 'uuuuu =
   fun uu___ -> Prims.__proj__Cons__item__hd
 type ('ax, 's, 'x, 'xu) va_reveal_eq = unit
+
+
 let total_if : 'a . Prims.bool -> 'a -> 'a -> 'a =
   fun b -> fun x -> fun y -> if b then x else y
 let total_thunk_if : 'a . Prims.bool -> (unit -> 'a) -> (unit -> 'a) -> 'a =
@@ -61,6 +65,7 @@ type ins = Vale_X64_Machine_Semantics_s.ins
 type ocmp = Vale_X64_Machine_Semantics_s.ocmp
 type va_code = (ins, ocmp) Vale_X64_Machine_s.precode
 type va_codes = (ins, ocmp) Vale_X64_Machine_s.precode Prims.list
+
 type va_state = Vale_X64_State.vale_state
 type va_fuel = Prims.nat
 type va_operand_opr64 = Vale_X64_Machine_s.operand64
@@ -99,6 +104,7 @@ let (va_get_success : va_transformation_result -> va_pbool) =
 let (va_get_result :
   va_transformation_result -> (ins, ocmp) Vale_X64_Machine_s.precode) =
   fun r -> r.result
+
 let (va_mul_nat : Prims.nat -> Prims.nat -> Prims.nat) =
   fun x -> fun y -> x * y
 let (va_expand_state :
@@ -112,11 +118,21 @@ type ('t, 'h, 'b) buffer_readable =
   (unit, unit, unit) Vale_X64_Memory.buffer_readable
 type ('t, 'b) buffer_writeable =
   (unit, unit) Vale_X64_Memory.buffer_writeable
+
+
+
+
+
+
 type ('t, 'm, 'b, 'i) valid_src_addr = unit
 type ('t, 'm, 'b, 'i) valid_dst_addr = unit
+
+
 type ('s, 'h1, 'h2) modifies_mem =
   (unit, unit, unit) Vale_X64_Memory.modifies
+
 type 'ls locs_disjoint = Obj.t
+
 type ('addr, 'sumem, 'layout, 'b, 'index, 't) valid_buf_maddr64 = unit
 type ('addr, 'sumem, 'layout, 'b, 'index, 't) valid_buf_maddr128 = unit
 type ('addr, 't, 'sumem, 'layout) valid_mem_operand64 = unit
@@ -228,6 +244,8 @@ let (va_opr_code_Mem128 :
           | uu___ ->
               Vale_X64_Machine_s.OMem
                 ((Vale_X64_Machine_s.MConst (Prims.of_int (42))), t)
+
+
 let (taint_at :
   Vale_X64_Memory.memtaint -> Prims.int -> Vale_Arch_HeapTypes_s.taint) =
   fun memTaint -> fun addr -> FStar_Map.sel memTaint addr
@@ -279,26 +297,28 @@ let (va_upd_ok :
   Prims.bool -> Vale_X64_State.vale_state -> Vale_X64_State.vale_state) =
   fun ok ->
     fun s ->
+      let uu___ = s in
       {
         Vale_X64_State.vs_ok = ok;
-        Vale_X64_State.vs_regs = (s.Vale_X64_State.vs_regs);
-        Vale_X64_State.vs_flags = (s.Vale_X64_State.vs_flags);
-        Vale_X64_State.vs_heap = (s.Vale_X64_State.vs_heap);
-        Vale_X64_State.vs_stack = (s.Vale_X64_State.vs_stack);
-        Vale_X64_State.vs_stackTaint = (s.Vale_X64_State.vs_stackTaint)
+        Vale_X64_State.vs_regs = (uu___.Vale_X64_State.vs_regs);
+        Vale_X64_State.vs_flags = (uu___.Vale_X64_State.vs_flags);
+        Vale_X64_State.vs_heap = (uu___.Vale_X64_State.vs_heap);
+        Vale_X64_State.vs_stack = (uu___.Vale_X64_State.vs_stack);
+        Vale_X64_State.vs_stackTaint = (uu___.Vale_X64_State.vs_stackTaint)
       }
 let (va_upd_flags :
   Vale_X64_Flags.t -> Vale_X64_State.vale_state -> Vale_X64_State.vale_state)
   =
   fun flags ->
     fun s ->
+      let uu___ = s in
       {
-        Vale_X64_State.vs_ok = (s.Vale_X64_State.vs_ok);
-        Vale_X64_State.vs_regs = (s.Vale_X64_State.vs_regs);
+        Vale_X64_State.vs_ok = (uu___.Vale_X64_State.vs_ok);
+        Vale_X64_State.vs_regs = (uu___.Vale_X64_State.vs_regs);
         Vale_X64_State.vs_flags = flags;
-        Vale_X64_State.vs_heap = (s.Vale_X64_State.vs_heap);
-        Vale_X64_State.vs_stack = (s.Vale_X64_State.vs_stack);
-        Vale_X64_State.vs_stackTaint = (s.Vale_X64_State.vs_stackTaint)
+        Vale_X64_State.vs_heap = (uu___.Vale_X64_State.vs_heap);
+        Vale_X64_State.vs_stack = (uu___.Vale_X64_State.vs_stack);
+        Vale_X64_State.vs_stackTaint = (uu___.Vale_X64_State.vs_stackTaint)
       }
 let (upd_register :
   Vale_X64_Machine_s.reg ->
@@ -320,14 +340,15 @@ let (va_upd_mem :
   =
   fun mem ->
     fun s ->
+      let uu___ = s in
       {
-        Vale_X64_State.vs_ok = (s.Vale_X64_State.vs_ok);
-        Vale_X64_State.vs_regs = (s.Vale_X64_State.vs_regs);
-        Vale_X64_State.vs_flags = (s.Vale_X64_State.vs_flags);
+        Vale_X64_State.vs_ok = (uu___.Vale_X64_State.vs_ok);
+        Vale_X64_State.vs_regs = (uu___.Vale_X64_State.vs_regs);
+        Vale_X64_State.vs_flags = (uu___.Vale_X64_State.vs_flags);
         Vale_X64_State.vs_heap =
           (Vale_X64_Memory.set_vale_heap s.Vale_X64_State.vs_heap mem);
-        Vale_X64_State.vs_stack = (s.Vale_X64_State.vs_stack);
-        Vale_X64_State.vs_stackTaint = (s.Vale_X64_State.vs_stackTaint)
+        Vale_X64_State.vs_stack = (uu___.Vale_X64_State.vs_stack);
+        Vale_X64_State.vs_stackTaint = (uu___.Vale_X64_State.vs_stackTaint)
       }
 let (va_upd_mem_layout :
   Vale_Arch_HeapImpl.vale_heap_layout ->
@@ -335,20 +356,21 @@ let (va_upd_mem_layout :
   =
   fun layout ->
     fun s ->
+      let uu___ = s in
       {
-        Vale_X64_State.vs_ok = (s.Vale_X64_State.vs_ok);
-        Vale_X64_State.vs_regs = (s.Vale_X64_State.vs_regs);
-        Vale_X64_State.vs_flags = (s.Vale_X64_State.vs_flags);
+        Vale_X64_State.vs_ok = (uu___.Vale_X64_State.vs_ok);
+        Vale_X64_State.vs_regs = (uu___.Vale_X64_State.vs_regs);
+        Vale_X64_State.vs_flags = (uu___.Vale_X64_State.vs_flags);
         Vale_X64_State.vs_heap =
-          (let uu___ = s.Vale_X64_State.vs_heap in
+          (let uu___1 = s.Vale_X64_State.vs_heap in
            {
              Vale_Arch_HeapImpl.vf_layout = layout;
-             Vale_Arch_HeapImpl.vf_heap = (uu___.Vale_Arch_HeapImpl.vf_heap);
+             Vale_Arch_HeapImpl.vf_heap = (uu___1.Vale_Arch_HeapImpl.vf_heap);
              Vale_Arch_HeapImpl.vf_heaplets =
-               (uu___.Vale_Arch_HeapImpl.vf_heaplets)
+               (uu___1.Vale_Arch_HeapImpl.vf_heaplets)
            });
-        Vale_X64_State.vs_stack = (s.Vale_X64_State.vs_stack);
-        Vale_X64_State.vs_stackTaint = (s.Vale_X64_State.vs_stackTaint)
+        Vale_X64_State.vs_stack = (uu___.Vale_X64_State.vs_stack);
+        Vale_X64_State.vs_stackTaint = (uu___.Vale_X64_State.vs_stackTaint)
       }
 let (va_upd_mem_heaplet :
   Vale_Arch_HeapImpl.heaplet_id ->
@@ -358,24 +380,25 @@ let (va_upd_mem_heaplet :
   fun n ->
     fun h ->
       fun s ->
+        let uu___ = s in
         {
-          Vale_X64_State.vs_ok = (s.Vale_X64_State.vs_ok);
-          Vale_X64_State.vs_regs = (s.Vale_X64_State.vs_regs);
-          Vale_X64_State.vs_flags = (s.Vale_X64_State.vs_flags);
+          Vale_X64_State.vs_ok = (uu___.Vale_X64_State.vs_ok);
+          Vale_X64_State.vs_regs = (uu___.Vale_X64_State.vs_regs);
+          Vale_X64_State.vs_flags = (uu___.Vale_X64_State.vs_flags);
           Vale_X64_State.vs_heap =
-            (let uu___ = s.Vale_X64_State.vs_heap in
+            (let uu___1 = s.Vale_X64_State.vs_heap in
              {
                Vale_Arch_HeapImpl.vf_layout =
-                 (uu___.Vale_Arch_HeapImpl.vf_layout);
+                 (uu___1.Vale_Arch_HeapImpl.vf_layout);
                Vale_Arch_HeapImpl.vf_heap =
-                 (uu___.Vale_Arch_HeapImpl.vf_heap);
+                 (uu___1.Vale_Arch_HeapImpl.vf_heap);
                Vale_Arch_HeapImpl.vf_heaplets =
                  (Vale_Lib_Map16.upd
                     (s.Vale_X64_State.vs_heap).Vale_Arch_HeapImpl.vf_heaplets
                     n h)
              });
-          Vale_X64_State.vs_stack = (s.Vale_X64_State.vs_stack);
-          Vale_X64_State.vs_stackTaint = (s.Vale_X64_State.vs_stackTaint)
+          Vale_X64_State.vs_stack = (uu___.Vale_X64_State.vs_stack);
+          Vale_X64_State.vs_stackTaint = (uu___.Vale_X64_State.vs_stackTaint)
         }
 let (va_upd_stack :
   Vale_X64_Stack_i.vale_stack ->
@@ -383,13 +406,14 @@ let (va_upd_stack :
   =
   fun stack ->
     fun s ->
+      let uu___ = s in
       {
-        Vale_X64_State.vs_ok = (s.Vale_X64_State.vs_ok);
-        Vale_X64_State.vs_regs = (s.Vale_X64_State.vs_regs);
-        Vale_X64_State.vs_flags = (s.Vale_X64_State.vs_flags);
-        Vale_X64_State.vs_heap = (s.Vale_X64_State.vs_heap);
+        Vale_X64_State.vs_ok = (uu___.Vale_X64_State.vs_ok);
+        Vale_X64_State.vs_regs = (uu___.Vale_X64_State.vs_regs);
+        Vale_X64_State.vs_flags = (uu___.Vale_X64_State.vs_flags);
+        Vale_X64_State.vs_heap = (uu___.Vale_X64_State.vs_heap);
         Vale_X64_State.vs_stack = stack;
-        Vale_X64_State.vs_stackTaint = (s.Vale_X64_State.vs_stackTaint)
+        Vale_X64_State.vs_stackTaint = (uu___.Vale_X64_State.vs_stackTaint)
       }
 let (va_upd_stackTaint :
   Vale_X64_Memory.memtaint ->
@@ -397,14 +421,22 @@ let (va_upd_stackTaint :
   =
   fun stackTaint ->
     fun s ->
+      let uu___ = s in
       {
-        Vale_X64_State.vs_ok = (s.Vale_X64_State.vs_ok);
-        Vale_X64_State.vs_regs = (s.Vale_X64_State.vs_regs);
-        Vale_X64_State.vs_flags = (s.Vale_X64_State.vs_flags);
-        Vale_X64_State.vs_heap = (s.Vale_X64_State.vs_heap);
-        Vale_X64_State.vs_stack = (s.Vale_X64_State.vs_stack);
+        Vale_X64_State.vs_ok = (uu___.Vale_X64_State.vs_ok);
+        Vale_X64_State.vs_regs = (uu___.Vale_X64_State.vs_regs);
+        Vale_X64_State.vs_flags = (uu___.Vale_X64_State.vs_flags);
+        Vale_X64_State.vs_heap = (uu___.Vale_X64_State.vs_heap);
+        Vale_X64_State.vs_stack = (uu___.Vale_X64_State.vs_stack);
         Vale_X64_State.vs_stackTaint = stackTaint
       }
+
+
+
+
+
+
+
 let (va_eval_heaplet :
   Vale_X64_State.vale_state ->
     Vale_Arch_HeapImpl.heaplet_id -> Vale_Arch_HeapImpl.vale_heap)
@@ -616,6 +648,7 @@ let (va_upd_operand_heaplet :
     Vale_Arch_HeapImpl.vale_heap ->
       Vale_X64_State.vale_state -> Vale_X64_State.vale_state)
   = fun h -> fun v -> fun s -> va_upd_mem_heaplet h v s
+
 let (va_CNil : unit -> (ins, ocmp) Vale_X64_Machine_s.precode Prims.list) =
   fun uu___ -> []
 let (va_CCons :
@@ -720,10 +753,36 @@ type 's state_inv = unit Vale_X64_Memory.mem_inv
 type vale_state_with_inv = Vale_X64_State.vale_state
 type ('c0, 'c1, 's0) va_require_total = unit
 type ('c0, 's0, 's1, 'f1) va_ensure_total = unit
+
+
+
+
 let (havoc_flags : Vale_X64_Flags.t) = Vale_X64_Lemmas.havoc_flags
+
+
+
+
+
+
+
+
+
+
+
+
+
 let (va_compute_merge_total : va_fuel -> va_fuel -> va_fuel) =
   Vale_X64_Lemmas.compute_merge_total
+
+
+
+
+
 type ('b, 'c, 's0, 'sN, 'f0) va_whileInv_total = unit
+
+
+
+
 type printer = Vale_X64_Print_s.printer
 let (print_string : Prims.string -> unit) = FStar_IO.print_string
 let (print_header : printer -> unit) = Vale_X64_Print_s.print_header
@@ -735,6 +794,5 @@ let (print_proc :
 let (print_footer : printer -> unit) = Vale_X64_Print_s.print_footer
 let (masm : printer) = Vale_X64_Print_s.masm
 let (gcc : printer) = Vale_X64_Print_s.gcc
-let (gcc_linux : printer) = Vale_X64_Print_s.gcc_linux
 type memTaint_type = (Prims.int, Vale_Arch_HeapTypes_s.taint) FStar_Map.t
 type ('o1, 'o2) max_one_mem = Obj.t

@@ -166,11 +166,31 @@ let (quad32_shift_2_left_1 :
                         Vale_Def_Words_s.hi3 = rb2
                       }) in
                (qa', qb'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let (gf128_low_shift : Vale_Math_Poly2_s.poly) =
   Vale_Math_Poly2_s.shift Vale_AES_GF128_s.gf128_modulus_low_terms
     (Prims.of_int (-1))
 let (gf128_rev_shift : Vale_Math_Poly2_s.poly) =
   Vale_Math_Poly2_s.reverse gf128_low_shift (Prims.of_int (127))
+
+
+
 let (gf128_mul_rev :
   Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly)
   =
@@ -184,6 +204,10 @@ let (gf128_mul_rev :
 let (op_Star_Tilde :
   Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly)
   = gf128_mul_rev
+
+
+
+
 let (mod_rev :
   Prims.pos ->
     Vale_Math_Poly2_s.poly ->
@@ -196,6 +220,7 @@ let (mod_rev :
           (Vale_Math_Poly2_s.mod1
              (Vale_Math_Poly2_s.reverse a ((n + n) - Prims.int_one)) b)
           (n - Prims.int_one)
+
 let (shift_key_1 :
   Prims.pos ->
     Vale_Math_Poly2_s.poly ->
@@ -214,3 +239,6 @@ let (shift_key_1 :
           (if Vale_Math_Poly2_s.poly_index h1 n
            then offset
            else Vale_Math_Poly2_s.zero)
+
+
+

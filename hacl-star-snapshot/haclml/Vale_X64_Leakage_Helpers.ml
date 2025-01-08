@@ -13,7 +13,7 @@ let (reg_le : Vale_X64_Machine_s.reg -> Vale_X64_Machine_s.reg -> Prims.bool)
            | Vale_X64_Machine_s.Reg (f2, n2) ->
                (f1 < f2) || ((f1 = f2) && (n1 <= n2)))
 let (map_to_regs : regmap -> Vale_X64_Leakage_s.reg_taint) =
-  fun m -> fun x -> Vale_Lib_MapTree.sel m x
+  fun m -> Vale_Lib_MapTree.sel m
 type ('m, 'rs) is_map_of = unit
 let rec (regs_to_map_rec :
   Vale_X64_Leakage_s.reg_taint -> Prims.nat -> Prims.nat -> regmap) =

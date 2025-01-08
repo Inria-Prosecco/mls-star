@@ -1,24 +1,83 @@
 open Prims
 let (mix_columns_LE : Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32) =
-  fun q -> failwith "Not yet implemented: Vale.AES.AES_s.mix_columns_LE"
+  fun q -> failwith "Not yet implemented:mix_columns_LE"
 let (inv_mix_columns_LE : Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
-  =
-  fun q -> failwith "Not yet implemented: Vale.AES.AES_s.inv_mix_columns_LE"
+  = fun q -> failwith "Not yet implemented:inv_mix_columns_LE"
+let (sub_bytes : Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32) =
+  fun q -> failwith "Not yet implemented:sub_bytes"
+let (inv_sub_bytes : Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32) =
+  fun q -> failwith "Not yet implemented:inv_sub_bytes"
 let (shift_rows_LE : Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32) =
-  fun q -> failwith "Not yet implemented: Vale.AES.AES_s.shift_rows_LE"
+  fun q -> failwith "Not yet implemented:shift_rows_LE"
 let (inv_shift_rows_LE : Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
-  = fun q -> failwith "Not yet implemented: Vale.AES.AES_s.inv_shift_rows_LE"
+  = fun q -> failwith "Not yet implemented:inv_shift_rows_LE"
 let (rot_word_LE : Vale_Def_Words_s.nat32 -> Vale_Def_Words_s.nat32) =
-  fun w -> failwith "Not yet implemented: Vale.AES.AES_s.rot_word_LE"
+  fun w -> failwith "Not yet implemented:rot_word_LE"
+let (sub_word : Vale_Def_Words_s.nat32 -> Vale_Def_Words_s.nat32) =
+  fun w -> failwith "Not yet implemented:sub_word"
+type algorithm =
+  | AES_128 
+  | AES_192 
+  | AES_256 
+let (uu___is_AES_128 : algorithm -> Prims.bool) =
+  fun projectee -> match projectee with | AES_128 -> true | uu___ -> false
+let (uu___is_AES_192 : algorithm -> Prims.bool) =
+  fun projectee -> match projectee with | AES_192 -> true | uu___ -> false
+let (uu___is_AES_256 : algorithm -> Prims.bool) =
+  fun projectee -> match projectee with | AES_256 -> true | uu___ -> false
+let (aes_rcon : Prims.int -> Vale_Def_Words_s.nat32) =
+  fun i ->
+    if i = Prims.int_zero
+    then Prims.int_one
+    else
+      if i = Prims.int_one
+      then (Prims.of_int (0x02))
+      else
+        if i = (Prims.of_int (2))
+        then (Prims.of_int (0x04))
+        else
+          if i = (Prims.of_int (3))
+          then (Prims.of_int (0x08))
+          else
+            if i = (Prims.of_int (4))
+            then (Prims.of_int (0x10))
+            else
+              if i = (Prims.of_int (5))
+              then (Prims.of_int (0x20))
+              else
+                if i = (Prims.of_int (6))
+                then (Prims.of_int (0x40))
+                else
+                  if i = (Prims.of_int (7))
+                  then (Prims.of_int (0x80))
+                  else
+                    if i = (Prims.of_int (8))
+                    then (Prims.of_int (0x1b))
+                    else (Prims.of_int (0x36))
+let (nb : Prims.int) = (Prims.of_int (4))
+let (nk : algorithm -> Prims.int) =
+  fun alg ->
+    match alg with
+    | AES_128 -> (Prims.of_int (4))
+    | AES_192 -> (Prims.of_int (6))
+    | AES_256 -> (Prims.of_int (8))
+let (nr : algorithm -> Prims.int) =
+  fun alg ->
+    match alg with
+    | AES_128 -> (Prims.of_int (10))
+    | AES_192 -> (Prims.of_int (12))
+    | AES_256 -> (Prims.of_int (14))
 type ('alg, 's) is_aes_key_LE = unit
 type 'alg aes_key_LE = Vale_Def_Words_s.nat32 FStar_Seq_Base.seq
+type ('alg, 's) is_aes_key = unit
+type 'alg aes_key = Vale_Def_Words_s.nat8 FStar_Seq_Base.seq
 let (eval_round :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
   =
   fun state ->
     fun round_key ->
-      let s = Vale_AES_AES_common_s.sub_bytes state in
+      let s = sub_bytes state in
       let s1 = shift_rows_LE s in
       let s2 = mix_columns_LE s1 in
       let s3 = Vale_Def_Types_s.quad32_xor s2 round_key in s3
@@ -40,8 +99,9 @@ let (eval_rounds :
     Vale_Def_Types_s.quad32 FStar_Seq_Base.seq ->
       Prims.nat -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make eval_rounds_def
+
 let (eval_cipher_def :
-  Vale_AES_AES_common_s.algorithm ->
+  algorithm ->
     Vale_Def_Types_s.quad32 ->
       Vale_Def_Types_s.quad32 FStar_Seq_Base.seq -> Vale_Def_Types_s.quad32)
   =
@@ -54,27 +114,27 @@ let (eval_cipher_def :
         let state1 =
           eval_rounds_def state round_keys
             ((match alg with
-              | Vale_AES_AES_common_s.AES_128 -> (Prims.of_int (10))
-              | Vale_AES_AES_common_s.AES_192 -> (Prims.of_int (12))
-              | Vale_AES_AES_common_s.AES_256 -> (Prims.of_int (14))) -
-               Prims.int_one) in
-        let state2 = Vale_AES_AES_common_s.sub_bytes state1 in
+              | AES_128 -> (Prims.of_int (10))
+              | AES_192 -> (Prims.of_int (12))
+              | AES_256 -> (Prims.of_int (14))) - Prims.int_one) in
+        let state2 = sub_bytes state1 in
         let state3 = shift_rows_LE state2 in
         let state4 =
           Vale_Def_Types_s.quad32_xor state3
             (FStar_Seq_Base.index round_keys
                (match alg with
-                | Vale_AES_AES_common_s.AES_128 -> (Prims.of_int (10))
-                | Vale_AES_AES_common_s.AES_192 -> (Prims.of_int (12))
-                | Vale_AES_AES_common_s.AES_256 -> (Prims.of_int (14)))) in
+                | AES_128 -> (Prims.of_int (10))
+                | AES_192 -> (Prims.of_int (12))
+                | AES_256 -> (Prims.of_int (14)))) in
         state4
 let (eval_cipher :
-  Vale_AES_AES_common_s.algorithm ->
+  algorithm ->
     Vale_Def_Types_s.quad32 ->
       Vale_Def_Types_s.quad32 FStar_Seq_Base.seq -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make eval_cipher_def
+
 let rec (expand_key_def :
-  Vale_AES_AES_common_s.algorithm ->
+  algorithm ->
     unit aes_key_LE -> Prims.nat -> Vale_Def_Words_s.nat32 FStar_Seq_Base.seq)
   =
   fun alg ->
@@ -89,9 +149,9 @@ let rec (expand_key_def :
              (Prims.int_zero <= i) &&
                (i <
                   (match alg with
-                   | Vale_AES_AES_common_s.AES_128 -> (Prims.of_int (4))
-                   | Vale_AES_AES_common_s.AES_192 -> (Prims.of_int (6))
-                   | Vale_AES_AES_common_s.AES_256 -> (Prims.of_int (8))))
+                   | AES_128 -> (Prims.of_int (4))
+                   | AES_192 -> (Prims.of_int (6))
+                   | AES_256 -> (Prims.of_int (8))))
            then
              FStar_Seq_Base.append w
                (FStar_Seq_Base.create Prims.int_one
@@ -101,45 +161,36 @@ let rec (expand_key_def :
                 if
                   (i mod
                      (match alg with
-                      | Vale_AES_AES_common_s.AES_128 -> (Prims.of_int (4))
-                      | Vale_AES_AES_common_s.AES_192 -> (Prims.of_int (6))
-                      | Vale_AES_AES_common_s.AES_256 -> (Prims.of_int (8))))
+                      | AES_128 -> (Prims.of_int (4))
+                      | AES_192 -> (Prims.of_int (6))
+                      | AES_256 -> (Prims.of_int (8))))
                     = Prims.int_zero
                 then
                   Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000")
-                    (Vale_AES_AES_common_s.sub_word
+                    (sub_word
                        (rot_word_LE
                           (FStar_Seq_Base.index w (i - Prims.int_one))))
-                    (Vale_AES_AES_common_s.aes_rcon
+                    (aes_rcon
                        ((i /
                            (match alg with
-                            | Vale_AES_AES_common_s.AES_128 ->
-                                (Prims.of_int (4))
-                            | Vale_AES_AES_common_s.AES_192 ->
-                                (Prims.of_int (6))
-                            | Vale_AES_AES_common_s.AES_256 ->
-                                (Prims.of_int (8))))
+                            | AES_128 -> (Prims.of_int (4))
+                            | AES_192 -> (Prims.of_int (6))
+                            | AES_256 -> (Prims.of_int (8))))
                           - Prims.int_one))
                 else
                   if
                     ((match alg with
-                      | Vale_AES_AES_common_s.AES_128 -> (Prims.of_int (4))
-                      | Vale_AES_AES_common_s.AES_192 -> (Prims.of_int (6))
-                      | Vale_AES_AES_common_s.AES_256 -> (Prims.of_int (8)))
-                       > (Prims.of_int (6)))
+                      | AES_128 -> (Prims.of_int (4))
+                      | AES_192 -> (Prims.of_int (6))
+                      | AES_256 -> (Prims.of_int (8))) > (Prims.of_int (6)))
                       &&
                       ((i mod
                           (match alg with
-                           | Vale_AES_AES_common_s.AES_128 ->
-                               (Prims.of_int (4))
-                           | Vale_AES_AES_common_s.AES_192 ->
-                               (Prims.of_int (6))
-                           | Vale_AES_AES_common_s.AES_256 ->
-                               (Prims.of_int (8))))
+                           | AES_128 -> (Prims.of_int (4))
+                           | AES_192 -> (Prims.of_int (6))
+                           | AES_256 -> (Prims.of_int (8))))
                          = (Prims.of_int (4)))
-                  then
-                    Vale_AES_AES_common_s.sub_word
-                      (FStar_Seq_Base.index w (i - Prims.int_one))
+                  then sub_word (FStar_Seq_Base.index w (i - Prims.int_one))
                   else FStar_Seq_Base.index w (i - Prims.int_one) in
               FStar_Seq_Base.append w
                 (FStar_Seq_Base.create Prims.int_one
@@ -147,16 +198,14 @@ let rec (expand_key_def :
                       (FStar_Seq_Base.index w
                          (i -
                             (match alg with
-                             | Vale_AES_AES_common_s.AES_128 ->
-                                 (Prims.of_int (4))
-                             | Vale_AES_AES_common_s.AES_192 ->
-                                 (Prims.of_int (6))
-                             | Vale_AES_AES_common_s.AES_256 ->
-                                 (Prims.of_int (8))))) temp))))
+                             | AES_128 -> (Prims.of_int (4))
+                             | AES_192 -> (Prims.of_int (6))
+                             | AES_256 -> (Prims.of_int (8))))) temp))))
 let (expand_key :
-  Vale_AES_AES_common_s.algorithm ->
+  algorithm ->
     unit aes_key_LE -> Prims.nat -> Vale_Def_Words_s.nat32 FStar_Seq_Base.seq)
   = Vale_Def_Opaque_s.opaque_make expand_key_def
+
 let rec (key_schedule_to_round_keys :
   Prims.nat ->
     Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
@@ -187,7 +236,7 @@ let rec (key_schedule_to_round_keys :
          FStar_Seq_Base.append round_keys
            (FStar_Seq_Base.create Prims.int_one rk))
 let (key_to_round_keys_LE :
-  Vale_AES_AES_common_s.algorithm ->
+  algorithm ->
     Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
       Vale_Def_Types_s.quad32 FStar_Seq_Base.seq)
   =
@@ -195,19 +244,17 @@ let (key_to_round_keys_LE :
     fun key ->
       key_schedule_to_round_keys
         ((match alg with
-          | Vale_AES_AES_common_s.AES_128 -> (Prims.of_int (10))
-          | Vale_AES_AES_common_s.AES_192 -> (Prims.of_int (12))
-          | Vale_AES_AES_common_s.AES_256 -> (Prims.of_int (14))) +
-           Prims.int_one)
+          | AES_128 -> (Prims.of_int (10))
+          | AES_192 -> (Prims.of_int (12))
+          | AES_256 -> (Prims.of_int (14))) + Prims.int_one)
         (expand_key alg key
-           (Vale_AES_AES_common_s.nb *
+           (nb *
               ((match alg with
-                | Vale_AES_AES_common_s.AES_128 -> (Prims.of_int (10))
-                | Vale_AES_AES_common_s.AES_192 -> (Prims.of_int (12))
-                | Vale_AES_AES_common_s.AES_256 -> (Prims.of_int (14))) +
-                 Prims.int_one)))
+                | AES_128 -> (Prims.of_int (10))
+                | AES_192 -> (Prims.of_int (12))
+                | AES_256 -> (Prims.of_int (14))) + Prims.int_one)))
 let (aes_encrypt_LE_def :
-  Vale_AES_AES_common_s.algorithm ->
+  algorithm ->
     Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
       Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
   =
@@ -216,23 +263,21 @@ let (aes_encrypt_LE_def :
       fun input_LE ->
         eval_cipher_def alg input_LE (key_to_round_keys_LE alg key)
 let (aes_encrypt_LE :
-  Vale_AES_AES_common_s.algorithm ->
+  algorithm ->
     Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
       Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make aes_encrypt_LE_def
+
 let (key_to_round_keys :
-  Vale_AES_AES_common_s.algorithm ->
-    unit Vale_AES_AES_common_s.aes_key ->
-      Vale_Def_Words_s.nat8 FStar_Seq_Base.seq)
-  =
+  algorithm -> unit aes_key -> Vale_Def_Words_s.nat8 FStar_Seq_Base.seq) =
   fun alg ->
     fun key ->
       let key_LE = Vale_Def_Words_Seq_s.seq_nat8_to_seq_nat32_LE key in
       Vale_Def_Types_s.le_seq_quad32_to_bytes
         (key_to_round_keys_LE alg key_LE)
 let (aes_encrypt :
-  Vale_AES_AES_common_s.algorithm ->
-    unit Vale_AES_AES_common_s.aes_key ->
+  algorithm ->
+    unit aes_key ->
       Vale_Def_Words_s.nat8 Vale_Def_Words_Seq_s.seq16 ->
         Vale_Def_Words_s.nat8 Vale_Def_Words_Seq_s.seq16)
   =

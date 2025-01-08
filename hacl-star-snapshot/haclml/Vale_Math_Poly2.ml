@@ -15,6 +15,7 @@ let (size : Vale_Math_Poly2_s.poly -> Prims.int) =
   fun a -> (Vale_Math_Poly2_s.degree a) + Prims.int_one
 let (max : Prims.int -> Prims.int -> Prims.int) = FStar_Math_Lib.max
 type all_defs = unit
+
 let (poly_and :
   Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly)
   =
@@ -52,3 +53,33 @@ let rec (power :
       if n = Prims.int_zero
       then Vale_Math_Poly2_s.one
       else Vale_Math_Poly2_s.mul a (power a (n - Prims.int_one))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

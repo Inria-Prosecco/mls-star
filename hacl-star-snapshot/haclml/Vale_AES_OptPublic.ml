@@ -1,3 +1,7 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
 open Prims
 let (shift_gf128_key_1 : Vale_Math_Poly2_s.poly -> Vale_Math_Poly2_s.poly) =
   fun h ->
@@ -40,4 +44,5 @@ let (get_hkeys_reqs :
       };
       Vale_Math_Poly2_Bits_s.to_quad32 (gf128_power h (Prims.of_int (5)));
       Vale_Math_Poly2_Bits_s.to_quad32 (gf128_power h (Prims.of_int (6)))] in
-    let s = FStar_Seq_Base.seq_of_list l in s
+    let s = FStar_Seq_Properties.seq_of_list l in s
+

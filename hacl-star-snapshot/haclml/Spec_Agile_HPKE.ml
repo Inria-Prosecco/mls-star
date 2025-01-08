@@ -1,17 +1,4 @@
 open Prims
-type mode =
-  | Base 
-  | PSK 
-  | Auth 
-  | AuthPSK 
-let (uu___is_Base : mode -> Prims.bool) =
-  fun projectee -> match projectee with | Base -> true | uu___ -> false
-let (uu___is_PSK : mode -> Prims.bool) =
-  fun projectee -> match projectee with | PSK -> true | uu___ -> false
-let (uu___is_Auth : mode -> Prims.bool) =
-  fun projectee -> match projectee with | Auth -> true | uu___ -> false
-let (uu___is_AuthPSK : mode -> Prims.bool) =
-  fun projectee -> match projectee with | AuthPSK -> true | uu___ -> false
 let (is_valid_kem :
   (Spec_Agile_DH.algorithm * Spec_Hash_Definitions.hash_alg) -> Prims.bool) =
   fun uu___ ->
@@ -43,10 +30,10 @@ let (is_valid_hash : Spec_Hash_Definitions.hash_alg -> Prims.bool) =
     | Spec_Hash_Definitions.SHA2_384 -> true
     | Spec_Hash_Definitions.SHA2_512 -> true
     | uu___1 -> false
-type hash_algorithm = Spec_Hash_Definitions.hash_alg
+type hash_algorithm = Spec_Hash_Definitions.algorithm
 let (is_valid_ciphersuite :
   (Spec_Agile_DH.algorithm * hash_algorithm * aead *
-    Spec_Hash_Definitions.hash_alg) -> Prims.bool)
+    Spec_Hash_Definitions.algorithm) -> Prims.bool)
   =
   fun cs ->
     let uu___ = cs in
@@ -56,8 +43,8 @@ let (is_valid_ciphersuite :
           (is_valid_hash hash)
 type ciphersuite =
   (Spec_Agile_DH.algorithm * hash_algorithm * aead *
-    Spec_Hash_Definitions.hash_alg)
-let (kem_dh_of_cs : ciphersuite -> Spec_Agile_DH.algorithm) =
+    Spec_Hash_Definitions.algorithm)
+let (curve_of_cs : ciphersuite -> Spec_Agile_DH.algorithm) =
   fun cs ->
     let uu___ = cs in match uu___ with | (c, uu___1, uu___2, uu___3) -> c
 let (kem_hash_of_cs : ciphersuite -> hash_algorithm) =
@@ -69,20 +56,19 @@ let (aead_of_cs : ciphersuite -> aead) =
 let (hash_of_cs : ciphersuite -> hash_algorithm) =
   fun cs ->
     let uu___ = cs in match uu___ with | (uu___1, uu___2, uu___3, h) -> h
-let (is_valid_not_export_only_ciphersuite : ciphersuite -> Prims.bool) =
-  fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-    with
-    | ExportOnly -> false
-    | Seal uu___ -> true
-type ciphersuite_not_export_only = ciphersuite
-let (aead_alg_of : ciphersuite_not_export_only -> Spec_Agile_AEAD.alg) =
-  fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-    with
-    | Seal alg -> alg
+type mode =
+  | Base 
+  | PSK 
+  | Auth 
+  | AuthPSK 
+let (uu___is_Base : mode -> Prims.bool) =
+  fun projectee -> match projectee with | Base -> true | uu___ -> false
+let (uu___is_PSK : mode -> Prims.bool) =
+  fun projectee -> match projectee with | PSK -> true | uu___ -> false
+let (uu___is_Auth : mode -> Prims.bool) =
+  fun projectee -> match projectee with | Auth -> true | uu___ -> false
+let (uu___is_AuthPSK : mode -> Prims.bool) =
+  fun projectee -> match projectee with | AuthPSK -> true | uu___ -> false
 let (size_label_version : Prims.nat) = (Prims.of_int (7))
 let (label_version_list : FStar_UInt8.t Prims.list) =
   [FStar_UInt8.uint_to_t (Prims.of_int (0x48));
@@ -240,82 +226,51 @@ let (label_sk_list : FStar_UInt8.t Prims.list) =
   FStar_UInt8.uint_to_t (Prims.of_int (0x6b))]
 let (label_sk : (FStar_UInt8.t, unit) Lib_Sequence.lseq) =
   Lib_Sequence.of_list label_sk_list
+let (is_valid_not_export_only_ciphersuite : ciphersuite -> Prims.bool) =
+  fun cs ->
+    match aead_of_cs cs with | ExportOnly -> false | Seal uu___ -> true
+type ciphersuite_not_export_only = ciphersuite
+let (aead_alg_of : ciphersuite_not_export_only -> Spec_Agile_AEAD.alg) =
+  fun cs -> match aead_of_cs cs with | Seal alg -> alg
 let (size_aead_nonce : ciphersuite -> Prims.nat) =
   fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-    with
+    match aead_of_cs cs with
     | ExportOnly -> Prims.int_zero
     | Seal uu___ -> (Prims.of_int (12))
 let (size_aead_key : ciphersuite -> Prims.nat) =
   fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-    with
+    match aead_of_cs cs with
     | ExportOnly -> Prims.int_zero
-    | Seal uu___ ->
-        Spec_Agile_AEAD.key_length
-          (match let uu___1 = cs in
-                 match uu___1 with | (uu___2, uu___3, a, uu___4) -> a
-           with
-           | Seal alg -> alg)
+    | Seal uu___ -> Spec_Agile_AEAD.key_length (aead_alg_of cs)
 let (size_aead_tag : ciphersuite -> Prims.nat) =
   fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-    with
+    match aead_of_cs cs with
     | ExportOnly -> Prims.int_zero
-    | Seal uu___ ->
-        Spec_Agile_AEAD.tag_length
-          (match let uu___1 = cs in
-                 match uu___1 with | (uu___2, uu___3, a, uu___4) -> a
-           with
-           | Seal alg -> alg)
+    | Seal uu___ -> Spec_Agile_AEAD.tag_length (aead_alg_of cs)
 let (size_dh_key : ciphersuite -> Prims.nat) =
   fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-    with
+    match curve_of_cs cs with
     | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
     | Spec_Agile_DH.DH_P256 -> (Prims.of_int (32))
 let (size_dh_public : ciphersuite -> Prims.nat) =
   fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-    with
+    match curve_of_cs cs with
     | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
     | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65))
-let (size_dh_serialized : ciphersuite -> Prims.nat) =
-  fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-    with
-    | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
-    | Spec_Agile_DH.DH_P256 -> (Prims.of_int (64))
 let (size_kem_kdf : ciphersuite -> Prims.nat) =
-  fun cs ->
-    Spec_Hash_Definitions.hash_length
-      (let uu___ = cs in match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
+  fun cs -> Spec_Hash_Definitions.size_hash (kem_hash_of_cs cs)
 let (size_kem_key : ciphersuite -> Prims.nat) =
-  fun cs ->
-    Spec_Hash_Definitions.hash_length
-      (let uu___ = cs in match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
+  fun cs -> Spec_Hash_Definitions.size_hash (kem_hash_of_cs cs)
 let (size_kdf : ciphersuite -> Prims.nat) =
-  fun cs ->
-    Spec_Hash_Definitions.hash_length
-      (let uu___ = cs in match uu___ with | (uu___1, uu___2, uu___3, h) -> h)
+  fun cs -> Spec_Hash_Definitions.size_hash (hash_of_cs cs)
 let (max_seq : ciphersuite -> Prims.nat) =
   fun cs ->
-    match let uu___ = cs in
-          match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-    with
+    match aead_of_cs cs with
     | ExportOnly -> Prims.int_zero
     | Seal uu___ ->
         (Prims.pow2
            ((Prims.of_int (8)) *
-              (match let uu___1 = cs in
-                     match uu___1 with | (uu___2, uu___3, a, uu___4) -> a
-               with
+              (match aead_of_cs cs with
                | ExportOnly -> Prims.int_zero
                | Seal uu___1 -> (Prims.of_int (12)))))
           - Prims.int_one
@@ -325,181 +280,16 @@ let (size_mode_identifier : Prims.nat) = Prims.int_one
 let (size_ks_ctx : ciphersuite -> Prims.nat) =
   fun cs ->
     Prims.int_one +
-      ((Prims.of_int (2)) *
-         (Spec_Hash_Definitions.hash_length
-            (let uu___ = cs in
-             match uu___ with | (uu___1, uu___2, uu___3, h) -> h)))
+      ((Prims.of_int (2)) * (Spec_Hash_Definitions.size_hash (hash_of_cs cs)))
 let (labeled_extract_ikm_length_pred :
   hash_algorithm -> Prims.nat -> Prims.bool) =
   fun a ->
     fun ikm_length ->
       Spec_Agile_HKDF.extract_ikm_length_pred a
         ((Prims.of_int (7)) + ikm_length)
-let (labeled_expand_info_length_pred :
-  hash_algorithm -> Prims.nat -> Prims.bool) =
-  fun a ->
-    fun info_length ->
-      Spec_Agile_HKDF.expand_info_length_pred a
-        ((Prims.of_int (9)) + info_length)
-let (labeled_extract_max_length_ikm :
-  hash_algorithm ->
-    Prims.nat -> Prims.nat -> Prims.int FStar_Pervasives_Native.option)
-  =
-  fun a ->
-    fun size_suite_id ->
-      fun size_local_label ->
-        match a with
-        | Spec_Hash_Definitions.SHA3_256 -> FStar_Pervasives_Native.None
-        | uu___ ->
-            FStar_Pervasives_Native.Some
-              (((((FStar_Pervasives_Native.__proj__Some__item__v
-                     (match a with
-                      | Spec_Hash_Definitions.MD5 ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (61))) - Prims.int_one)
-                      | Spec_Hash_Definitions.SHA1 ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (61))) - Prims.int_one)
-                      | Spec_Hash_Definitions.SHA2_224 ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (61))) - Prims.int_one)
-                      | Spec_Hash_Definitions.SHA2_256 ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (61))) - Prims.int_one)
-                      | Spec_Hash_Definitions.SHA2_384 ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (125))) -
-                               Prims.int_one)
-                      | Spec_Hash_Definitions.SHA2_512 ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (125))) -
-                               Prims.int_one)
-                      | Spec_Hash_Definitions.Blake2S ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (64))) - Prims.int_one)
-                      | Spec_Hash_Definitions.Blake2B ->
-                          FStar_Pervasives_Native.Some
-                            ((Prims.pow2 (Prims.of_int (128))) -
-                               Prims.int_one)
-                      | Spec_Hash_Definitions.SHA3_224 ->
-                          FStar_Pervasives_Native.None
-                      | Spec_Hash_Definitions.SHA3_256 ->
-                          FStar_Pervasives_Native.None
-                      | Spec_Hash_Definitions.SHA3_384 ->
-                          FStar_Pervasives_Native.None
-                      | Spec_Hash_Definitions.SHA3_512 ->
-                          FStar_Pervasives_Native.None
-                      | Spec_Hash_Definitions.Shake128 ->
-                          FStar_Pervasives_Native.None
-                      | Spec_Hash_Definitions.Shake256 ->
-                          FStar_Pervasives_Native.None))
-                    - (Prims.of_int (7)))
-                   - size_suite_id)
-                  - size_local_label)
-                 - (Spec_Hash_Definitions.block_length a))
-let (labeled_expand_max_length_info :
-  hash_algorithm ->
-    Prims.nat -> Prims.nat -> Prims.int FStar_Pervasives_Native.option)
-  =
-  fun a ->
-    fun size_suite_id ->
-      fun size_local_label ->
-        match a with
-        | Spec_Hash_Definitions.SHA3_256 -> FStar_Pervasives_Native.None
-        | uu___ ->
-            FStar_Pervasives_Native.Some
-              ((((((((FStar_Pervasives_Native.__proj__Some__item__v
-                        (match a with
-                         | Spec_Hash_Definitions.MD5 ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (61))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.SHA1 ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (61))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.SHA2_224 ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (61))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.SHA2_256 ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (61))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.SHA2_384 ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (125))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.SHA2_512 ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (125))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.Blake2S ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (64))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.Blake2B ->
-                             FStar_Pervasives_Native.Some
-                               ((Prims.pow2 (Prims.of_int (128))) -
-                                  Prims.int_one)
-                         | Spec_Hash_Definitions.SHA3_224 ->
-                             FStar_Pervasives_Native.None
-                         | Spec_Hash_Definitions.SHA3_256 ->
-                             FStar_Pervasives_Native.None
-                         | Spec_Hash_Definitions.SHA3_384 ->
-                             FStar_Pervasives_Native.None
-                         | Spec_Hash_Definitions.SHA3_512 ->
-                             FStar_Pervasives_Native.None
-                         | Spec_Hash_Definitions.Shake128 ->
-                             FStar_Pervasives_Native.None
-                         | Spec_Hash_Definitions.Shake256 ->
-                             FStar_Pervasives_Native.None))
-                       - (Spec_Hash_Definitions.hash_length a))
-                      - (Prims.of_int (2)))
-                     - (Prims.of_int (7)))
-                    - size_suite_id)
-                   - size_local_label)
-                  - Prims.int_one)
-                 - (Spec_Hash_Definitions.block_length a))
-let (max_length_psk :
-  hash_algorithm -> Prims.int FStar_Pervasives_Native.option) =
-  fun a ->
-    labeled_extract_max_length_ikm a (Prims.of_int (10)) (Prims.of_int (6))
-let (max_length_psk_id :
-  hash_algorithm -> Prims.int FStar_Pervasives_Native.option) =
-  fun a ->
-    labeled_extract_max_length_ikm a (Prims.of_int (10)) (Prims.of_int (11))
-let (max_length_info :
-  hash_algorithm -> Prims.int FStar_Pervasives_Native.option) =
-  fun a ->
-    labeled_extract_max_length_ikm a (Prims.of_int (10)) (Prims.of_int (9))
-let (max_length_exp_ctx :
-  hash_algorithm -> Prims.int FStar_Pervasives_Native.option) =
-  fun a ->
-    labeled_expand_max_length_info a (Prims.of_int (10)) (Prims.of_int (3))
-let (max_length_dkp_ikm :
-  hash_algorithm -> Prims.int FStar_Pervasives_Native.option) =
-  fun a ->
-    labeled_extract_max_length_ikm a (Prims.of_int (5)) (Prims.of_int (7))
-let (maybe_lte :
-  Prims.int -> Prims.int FStar_Pervasives_Native.option -> Prims.bool) =
-  fun n1 ->
-    fun n2 ->
-      match n2 with
-      | FStar_Pervasives_Native.None -> true
-      | FStar_Pervasives_Native.Some n21 -> n1 <= n21
-type 'cs key_dh_public_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
-type 'cs key_dh_secret_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
-type 'cs key_kem_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
-type 'cs key_aead_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
-type 'cs nonce_aead_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
-type 'cs seq_aead_s = Prims.nat
-type 'cs exporter_secret_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
-type 'cs psk_s = FStar_UInt8.t Lib_Sequence.seq
-type 'cs psk_id_s = FStar_UInt8.t Lib_Sequence.seq
-type 'cs info_s = FStar_UInt8.t Lib_Sequence.seq
-type 'cs exp_ctx_s = FStar_UInt8.t Lib_Sequence.seq
-type 'cs dkp_ikm_s = FStar_UInt8.t Lib_Sequence.seq
+
+
+
 let (id_kem : ciphersuite -> (FStar_UInt8.t, unit) Lib_Sequence.lseq) =
   fun cs ->
     let uu___ = cs in
@@ -614,6 +404,12 @@ let (labeled_extract :
             let labeled_ikm2 = FStar_Seq_Base.append labeled_ikm1 label in
             let labeled_ikm3 = FStar_Seq_Base.append labeled_ikm2 ikm in
             Spec_Agile_HKDF.extract a salt labeled_ikm3
+let (labeled_expand_info_length_pred :
+  hash_algorithm -> Prims.nat -> Prims.bool) =
+  fun a ->
+    fun info_length ->
+      Spec_Agile_HKDF.expand_info_length_pred a
+        ((Prims.of_int (9)) + info_length)
 let (labeled_expand :
   hash_algorithm ->
     FStar_UInt8.t Lib_Sequence.seq ->
@@ -639,19 +435,78 @@ let (labeled_expand :
               let labeled_info4 = FStar_Seq_Base.append labeled_info3 label in
               let labeled_info5 = FStar_Seq_Base.append labeled_info4 info in
               Spec_Agile_HKDF.expand a prk labeled_info5 l
+
+
+let (hash_max_input_length : hash_algorithm -> Prims.int) =
+  fun a ->
+    match a with
+    | Spec_Hash_Definitions.MD5 -> (Prims.parse_int "2305843009213693951")
+    | Spec_Hash_Definitions.SHA1 -> (Prims.parse_int "2305843009213693951")
+    | Spec_Hash_Definitions.SHA2_224 ->
+        (Prims.parse_int "2305843009213693951")
+    | Spec_Hash_Definitions.SHA2_256 ->
+        (Prims.parse_int "2305843009213693951")
+    | Spec_Hash_Definitions.SHA2_384 ->
+        (Prims.parse_int "42535295865117307932921825928971026431")
+    | Spec_Hash_Definitions.SHA2_512 ->
+        (Prims.parse_int "42535295865117307932921825928971026431")
+let (labeled_extract_max_length_ikm :
+  hash_algorithm -> Prims.nat -> Prims.nat -> Prims.int) =
+  fun a ->
+    fun size_suite_id ->
+      fun size_local_label ->
+        ((((hash_max_input_length a) - (Prims.of_int (7))) - size_suite_id) -
+           size_local_label)
+          - (Spec_Hash_Definitions.block_length a)
+let (labeled_expand_max_length_info :
+  hash_algorithm -> Prims.nat -> Prims.nat -> Prims.int) =
+  fun a ->
+    fun size_suite_id ->
+      fun size_local_label ->
+        (((((((hash_max_input_length a) -
+                (Spec_Hash_Definitions.hash_length a))
+               - (Prims.of_int (2)))
+              - (Prims.of_int (7)))
+             - size_suite_id)
+            - size_local_label)
+           - Prims.int_one)
+          - (Spec_Hash_Definitions.block_length a)
+let (max_length_psk : hash_algorithm -> Prims.int) =
+  fun a ->
+    labeled_extract_max_length_ikm a (Prims.of_int (10)) (Prims.of_int (6))
+let (max_length_psk_id : hash_algorithm -> Prims.int) =
+  fun a ->
+    labeled_extract_max_length_ikm a (Prims.of_int (10)) (Prims.of_int (11))
+let (max_length_info : hash_algorithm -> Prims.int) =
+  fun a ->
+    labeled_extract_max_length_ikm a (Prims.of_int (10)) (Prims.of_int (9))
+let (max_length_exp_ctx : hash_algorithm -> Prims.int) =
+  fun a ->
+    labeled_expand_max_length_info a (Prims.of_int (10)) (Prims.of_int (3))
+let (max_length_dkp_ikm : hash_algorithm -> Prims.int) =
+  fun a ->
+    labeled_extract_max_length_ikm a (Prims.of_int (5)) (Prims.of_int (7))
+type 'cs key_dh_public_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
+type 'cs key_dh_secret_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
+type 'cs key_kem_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
+type 'cs key_aead_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
+type 'cs nonce_aead_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
+type 'cs seq_aead_s = Prims.nat
+type 'cs exporter_secret_s = (FStar_UInt8.t, unit) Lib_Sequence.lseq
+type 'cs psk_s = FStar_UInt8.t Lib_Sequence.seq
+type 'cs psk_id_s = FStar_UInt8.t Lib_Sequence.seq
+type 'cs info_s = FStar_UInt8.t Lib_Sequence.seq
+type 'cs exp_ctx_s = FStar_UInt8.t Lib_Sequence.seq
+type 'cs dkp_ikm_s = FStar_UInt8.t Lib_Sequence.seq
 let (extract_and_expand_dh_pred : ciphersuite -> Prims.nat -> Prims.bool) =
   fun cs ->
     fun dh_length ->
-      labeled_extract_ikm_length_pred
-        (let uu___ = cs in
-         match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
+      labeled_extract_ikm_length_pred (kem_hash_of_cs cs)
         ((Prims.of_int (12)) + dh_length)
 let (extract_and_expand_ctx_pred : ciphersuite -> Prims.nat -> Prims.bool) =
   fun cs ->
     fun ctx_length ->
-      labeled_expand_info_length_pred
-        (let uu___ = cs in
-         match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
+      labeled_expand_info_length_pred (kem_hash_of_cs cs)
         ((Prims.of_int (18)) + ctx_length)
 let (extract_and_expand :
   ciphersuite ->
@@ -662,31 +517,21 @@ let (extract_and_expand :
     fun dh ->
       fun kem_context ->
         let eae_prk =
-          labeled_extract
-            (let uu___ = cs in
-             match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
-            (suite_id_kem cs) Lib_ByteSequence.lbytes_empty label_eae_prk dh in
-        labeled_expand
-          (let uu___ = cs in
-           match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
-          (suite_id_kem cs) eae_prk label_shared_secret kem_context
-          (Spec_Hash_Definitions.hash_length
-             (let uu___ = cs in
-              match uu___ with | (uu___1, h, uu___2, uu___3) -> h))
+          labeled_extract (kem_hash_of_cs cs) (suite_id_kem cs)
+            Lib_ByteSequence.lbytes_empty label_eae_prk dh in
+        labeled_expand (kem_hash_of_cs cs) (suite_id_kem cs) eae_prk
+          label_shared_secret kem_context
+          (Spec_Hash_Definitions.size_hash (kem_hash_of_cs cs))
 let (deserialize_public_key :
   ciphersuite -> unit key_dh_public_s -> unit Spec_Agile_DH.serialized_point)
   =
   fun cs ->
     fun pk ->
-      match let uu___ = cs in
-            match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-      with
+      match curve_of_cs cs with
       | Spec_Agile_DH.DH_Curve25519 -> pk
       | Spec_Agile_DH.DH_P256 ->
           Lib_Sequence.sub
-            (match let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-             with
+            (match curve_of_cs cs with
              | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
              | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65))) pk Prims.int_one
             (Prims.of_int (64))
@@ -695,15 +540,11 @@ let (serialize_public_key :
   =
   fun cs ->
     fun pk ->
-      match let uu___ = cs in
-            match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-      with
+      match curve_of_cs cs with
       | Spec_Agile_DH.DH_Curve25519 -> pk
       | Spec_Agile_DH.DH_P256 ->
           Lib_Sequence.op_At_Bar Prims.int_one
-            (match let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-             with
+            (match curve_of_cs cs with
              | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
              | Spec_Agile_DH.DH_P256 -> (Prims.of_int (64)))
             (Lib_Sequence.create Prims.int_one
@@ -725,34 +566,26 @@ let rec (dkp_nist_p :
                (Lib_IntTypes.v Lib_IntTypes.U8 Lib_IntTypes.SEC
                   (Obj.magic counter))) in
         let bytes =
-          labeled_expand
-            (let uu___ = cs in
-             match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
-            (suite_id_kem cs) dkp_prk label_candidate counterbyte
-            (match let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-             with
+          labeled_expand (kem_hash_of_cs cs) (suite_id_kem cs) dkp_prk
+            label_candidate counterbyte
+            (match curve_of_cs cs with
              | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
              | Spec_Agile_DH.DH_P256 -> (Prims.of_int (32))) in
         let bytes1 =
           Lib_Sequence.map2
-            (match let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-             with
+            (match curve_of_cs cs with
              | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
              | Spec_Agile_DH.DH_P256 -> (Prims.of_int (32)))
             (fun a -> fun b -> FStar_UInt8.logand a b) bytes
             (FStar_Seq_Base.create
-               (match let uu___ = cs in
-                      match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-                with
+               (match curve_of_cs cs with
                 | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
                 | Spec_Agile_DH.DH_P256 -> (Prims.of_int (32)))
                (FStar_UInt8.uint_to_t (Prims.of_int (255)))) in
         let sk =
           Lib_ByteSequence.nat_from_intseq_be_ Lib_IntTypes.U8
             Lib_IntTypes.SEC (Obj.magic bytes1) in
-        if (sk = Prims.int_zero) || (sk >= Spec_P256_PointOps.prime)
+        if (sk = Prims.int_zero) || (sk >= Spec_P256.prime)
         then
           (if
              (Lib_IntTypes.v Lib_IntTypes.U8 Lib_IntTypes.SEC
@@ -763,11 +596,7 @@ let rec (dkp_nist_p :
              dkp_nist_p cs dkp_prk
                (FStar_UInt8.add counter (FStar_UInt8.uint_to_t Prims.int_one)))
         else
-          (match Spec_Agile_DH.secret_to_public
-                   (let uu___1 = cs in
-                    match uu___1 with | (c, uu___2, uu___3, uu___4) -> c)
-                   bytes1
-           with
+          (match Spec_Agile_DH.secret_to_public (curve_of_cs cs) bytes1 with
            | FStar_Pervasives_Native.Some pk ->
                FStar_Pervasives_Native.Some
                  (bytes1, (serialize_public_key cs pk))
@@ -789,42 +618,30 @@ let (derive_key_pair :
   =
   fun cs ->
     fun ikm ->
-      match let uu___ = cs in
-            match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-      with
+      match curve_of_cs cs with
       | Spec_Agile_DH.DH_Curve25519 ->
           let dkp_prk =
-            labeled_extract
-              (let uu___ = cs in
-               match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
-              (suite_id_kem cs) Lib_ByteSequence.lbytes_empty label_dkp_prk
-              ikm in
+            labeled_extract (kem_hash_of_cs cs) (suite_id_kem cs)
+              Lib_ByteSequence.lbytes_empty label_dkp_prk ikm in
           let sk =
-            labeled_expand
-              (let uu___ = cs in
-               match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
-              (suite_id_kem cs) dkp_prk label_sk
-              Lib_ByteSequence.lbytes_empty
-              (match let uu___ = cs in
-                     match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-               with
+            labeled_expand (kem_hash_of_cs cs) (suite_id_kem cs) dkp_prk
+              label_sk Lib_ByteSequence.lbytes_empty
+              (match curve_of_cs cs with
                | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
                | Spec_Agile_DH.DH_P256 -> (Prims.of_int (32))) in
-          (match Spec_Agile_DH.secret_to_public
-                   (let uu___ = cs in
-                    match uu___ with | (c, uu___1, uu___2, uu___3) -> c) sk
-           with
+          (match Spec_Agile_DH.secret_to_public (curve_of_cs cs) sk with
            | FStar_Pervasives_Native.Some pk ->
                FStar_Pervasives_Native.Some
                  (sk, (serialize_public_key cs pk)))
       | Spec_Agile_DH.DH_P256 ->
           let dkp_prk =
-            labeled_extract
-              (let uu___ = cs in
-               match uu___ with | (uu___1, h, uu___2, uu___3) -> h)
-              (suite_id_kem cs) Lib_ByteSequence.lbytes_empty label_dkp_prk
-              ikm in
+            labeled_extract (kem_hash_of_cs cs) (suite_id_kem cs)
+              Lib_ByteSequence.lbytes_empty label_dkp_prk ikm in
           dkp_nist_p cs dkp_prk (FStar_UInt8.uint_to_t Prims.int_zero)
+type 'cs encryption_context =
+  (unit key_aead_s * unit nonce_aead_s * unit seq_aead_s * unit
+    exporter_secret_s)
+type 'cs exp_len = Prims.nat
 let (prepare_dh :
   ciphersuite ->
     unit Spec_Agile_DH.serialized_point ->
@@ -832,15 +649,11 @@ let (prepare_dh :
   =
   fun cs ->
     fun dh ->
-      match let uu___ = cs in
-            match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-      with
+      match curve_of_cs cs with
       | Spec_Agile_DH.DH_Curve25519 -> serialize_public_key cs dh
       | Spec_Agile_DH.DH_P256 ->
           Lib_Sequence.sub
-            (match let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c
-             with
+            (match curve_of_cs cs with
              | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
              | Spec_Agile_DH.DH_P256 -> (Prims.of_int (64))) dh
             Prims.int_zero (Prims.of_int (32))
@@ -854,33 +667,20 @@ let (encap :
   fun cs ->
     fun skE ->
       fun pkR ->
-        match Spec_Agile_DH.secret_to_public
-                (let uu___ = cs in
-                 match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skE
-        with
+        match Spec_Agile_DH.secret_to_public (curve_of_cs cs) skE with
         | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
         | FStar_Pervasives_Native.Some pkE ->
             let enc = serialize_public_key cs pkE in
-            (match Spec_Agile_DH.dh
-                     (let uu___ = cs in
-                      match uu___ with | (c, uu___1, uu___2, uu___3) -> c)
-                     skE pkR
-             with
+            (match Spec_Agile_DH.dh (curve_of_cs cs) skE pkR with
              | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
              | FStar_Pervasives_Native.Some dh ->
                  let pkRm = serialize_public_key cs pkR in
                  let kem_context =
                    Lib_Sequence.concat
-                     (match let uu___ = cs in
-                            match uu___ with
-                            | (c, uu___1, uu___2, uu___3) -> c
-                      with
+                     (match curve_of_cs cs with
                       | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
                       | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65)))
-                     (match let uu___ = cs in
-                            match uu___ with
-                            | (c, uu___1, uu___2, uu___3) -> c
-                      with
+                     (match curve_of_cs cs with
                       | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
                       | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65))) enc
                      pkRm in
@@ -896,32 +696,19 @@ let (decap :
     fun enc ->
       fun skR ->
         let pkE = deserialize_public_key cs enc in
-        match Spec_Agile_DH.dh
-                (let uu___ = cs in
-                 match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skR pkE
-        with
+        match Spec_Agile_DH.dh (curve_of_cs cs) skR pkE with
         | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
         | FStar_Pervasives_Native.Some dh ->
-            (match Spec_Agile_DH.secret_to_public
-                     (let uu___ = cs in
-                      match uu___ with | (c, uu___1, uu___2, uu___3) -> c)
-                     skR
-             with
+            (match Spec_Agile_DH.secret_to_public (curve_of_cs cs) skR with
              | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
              | FStar_Pervasives_Native.Some pkR ->
                  let pkRm = serialize_public_key cs pkR in
                  let kem_context =
                    Lib_Sequence.concat
-                     (match let uu___ = cs in
-                            match uu___ with
-                            | (c, uu___1, uu___2, uu___3) -> c
-                      with
+                     (match curve_of_cs cs with
                       | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
                       | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65)))
-                     (match let uu___ = cs in
-                            match uu___ with
-                            | (c, uu___1, uu___2, uu___3) -> c
-                      with
+                     (match curve_of_cs cs with
                       | Spec_Agile_DH.DH_Curve25519 -> (Prims.of_int (32))
                       | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65))) enc
                      pkRm in
@@ -940,24 +727,13 @@ let (auth_encap :
     fun skE ->
       fun pkR ->
         fun skS ->
-          match Spec_Agile_DH.secret_to_public
-                  (let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skE
-          with
+          match Spec_Agile_DH.secret_to_public (curve_of_cs cs) skE with
           | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
           | FStar_Pervasives_Native.Some pkE ->
-              (match Spec_Agile_DH.dh
-                       (let uu___ = cs in
-                        match uu___ with | (c, uu___1, uu___2, uu___3) -> c)
-                       skE pkR
-               with
+              (match Spec_Agile_DH.dh (curve_of_cs cs) skE pkR with
                | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
                | FStar_Pervasives_Native.Some es ->
-                   (match Spec_Agile_DH.dh
-                            (let uu___ = cs in
-                             match uu___ with
-                             | (c, uu___1, uu___2, uu___3) -> c) skS pkR
-                    with
+                   (match Spec_Agile_DH.dh (curve_of_cs cs) skS pkR with
                     | FStar_Pervasives_Native.None ->
                         FStar_Pervasives_Native.None
                     | FStar_Pervasives_Native.Some ss ->
@@ -968,9 +744,7 @@ let (auth_encap :
                             (Prims.of_int (32)) esm ssm in
                         let enc = serialize_public_key cs pkE in
                         (match Spec_Agile_DH.secret_to_public
-                                 (let uu___ = cs in
-                                  match uu___ with
-                                  | (c, uu___1, uu___2, uu___3) -> c) skS
+                                 (curve_of_cs cs) skS
                          with
                          | FStar_Pervasives_Native.None ->
                              FStar_Pervasives_Native.None
@@ -979,44 +753,29 @@ let (auth_encap :
                              let pkRm = serialize_public_key cs pkR in
                              let kem_context =
                                Lib_Sequence.concat
-                                 (match let uu___ = cs in
-                                        match uu___ with
-                                        | (c, uu___1, uu___2, uu___3) -> c
-                                  with
+                                 (match curve_of_cs cs with
                                   | Spec_Agile_DH.DH_Curve25519 ->
                                       (Prims.of_int (32))
                                   | Spec_Agile_DH.DH_P256 ->
                                       (Prims.of_int (65)))
-                                 ((match let uu___ = cs in
-                                         match uu___ with
-                                         | (c, uu___1, uu___2, uu___3) -> c
-                                   with
+                                 ((match curve_of_cs cs with
                                    | Spec_Agile_DH.DH_Curve25519 ->
                                        (Prims.of_int (32))
                                    | Spec_Agile_DH.DH_P256 ->
                                        (Prims.of_int (65)))
                                     +
-                                    (match let uu___ = cs in
-                                           match uu___ with
-                                           | (c, uu___1, uu___2, uu___3) -> c
-                                     with
+                                    (match curve_of_cs cs with
                                      | Spec_Agile_DH.DH_Curve25519 ->
                                          (Prims.of_int (32))
                                      | Spec_Agile_DH.DH_P256 ->
                                          (Prims.of_int (65)))) enc
                                  (Lib_Sequence.concat
-                                    (match let uu___ = cs in
-                                           match uu___ with
-                                           | (c, uu___1, uu___2, uu___3) -> c
-                                     with
+                                    (match curve_of_cs cs with
                                      | Spec_Agile_DH.DH_Curve25519 ->
                                          (Prims.of_int (32))
                                      | Spec_Agile_DH.DH_P256 ->
                                          (Prims.of_int (65)))
-                                    (match let uu___ = cs in
-                                           match uu___ with
-                                           | (c, uu___1, uu___2, uu___3) -> c
-                                     with
+                                    (match curve_of_cs cs with
                                      | Spec_Agile_DH.DH_Curve25519 ->
                                          (Prims.of_int (32))
                                      | Spec_Agile_DH.DH_P256 ->
@@ -1037,18 +796,10 @@ let (auth_decap :
       fun skR ->
         fun pkS ->
           let pkE = deserialize_public_key cs enc in
-          match Spec_Agile_DH.dh
-                  (let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skR
-                  pkE
-          with
+          match Spec_Agile_DH.dh (curve_of_cs cs) skR pkE with
           | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
           | FStar_Pervasives_Native.Some es ->
-              (match Spec_Agile_DH.dh
-                       (let uu___ = cs in
-                        match uu___ with | (c, uu___1, uu___2, uu___3) -> c)
-                       skR pkS
-               with
+              (match Spec_Agile_DH.dh (curve_of_cs cs) skR pkS with
                | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
                | FStar_Pervasives_Native.Some ss ->
                    let esm = prepare_dh cs es in
@@ -1056,10 +807,7 @@ let (auth_decap :
                    let dh =
                      Lib_Sequence.concat (Prims.of_int (32))
                        (Prims.of_int (32)) esm ssm in
-                   (match Spec_Agile_DH.secret_to_public
-                            (let uu___ = cs in
-                             match uu___ with
-                             | (c, uu___1, uu___2, uu___3) -> c) skR
+                   (match Spec_Agile_DH.secret_to_public (curve_of_cs cs) skR
                     with
                     | FStar_Pervasives_Native.None ->
                         FStar_Pervasives_Native.None
@@ -1068,42 +816,27 @@ let (auth_decap :
                         let pkSm = serialize_public_key cs pkS in
                         let kem_context =
                           Lib_Sequence.concat
-                            (match let uu___ = cs in
-                                   match uu___ with
-                                   | (c, uu___1, uu___2, uu___3) -> c
-                             with
+                            (match curve_of_cs cs with
                              | Spec_Agile_DH.DH_Curve25519 ->
                                  (Prims.of_int (32))
                              | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65)))
-                            ((match let uu___ = cs in
-                                    match uu___ with
-                                    | (c, uu___1, uu___2, uu___3) -> c
-                              with
+                            ((match curve_of_cs cs with
                               | Spec_Agile_DH.DH_Curve25519 ->
                                   (Prims.of_int (32))
                               | Spec_Agile_DH.DH_P256 -> (Prims.of_int (65)))
                                +
-                               (match let uu___ = cs in
-                                      match uu___ with
-                                      | (c, uu___1, uu___2, uu___3) -> c
-                                with
+                               (match curve_of_cs cs with
                                 | Spec_Agile_DH.DH_Curve25519 ->
                                     (Prims.of_int (32))
                                 | Spec_Agile_DH.DH_P256 ->
                                     (Prims.of_int (65)))) enc
                             (Lib_Sequence.concat
-                               (match let uu___ = cs in
-                                      match uu___ with
-                                      | (c, uu___1, uu___2, uu___3) -> c
-                                with
+                               (match curve_of_cs cs with
                                 | Spec_Agile_DH.DH_Curve25519 ->
                                     (Prims.of_int (32))
                                 | Spec_Agile_DH.DH_P256 ->
                                     (Prims.of_int (65)))
-                               (match let uu___ = cs in
-                                      match uu___ with
-                                      | (c, uu___1, uu___2, uu___3) -> c
-                                with
+                               (match curve_of_cs cs with
                                 | Spec_Agile_DH.DH_Curve25519 ->
                                     (Prims.of_int (32))
                                 | Spec_Agile_DH.DH_P256 ->
@@ -1129,6 +862,26 @@ let (build_context :
           let context = id_of_mode m in
           let context1 = FStar_Seq_Base.append context psk_id_hash in
           let context2 = FStar_Seq_Base.append context1 info_hash in context2
+let (lbytes_equal :
+  Prims.nat ->
+    Prims.nat ->
+      FStar_UInt8.t Lib_Sequence.seq ->
+        (FStar_UInt8.t, unit) Lib_Sequence.lseq -> Prims.bool)
+  =
+  fun l1 ->
+    fun l2 ->
+      fun b1 ->
+        fun b2 ->
+          if
+            Prims.op_Negation
+              ((FStar_Seq_Base.length b1) = (FStar_Seq_Base.length b2))
+          then false
+          else
+            (let res =
+               Obj.magic
+                 (Lib_ByteSequence.seq_eq_mask Lib_IntTypes.U8 l2 l2
+                    (Obj.magic b1) (Obj.magic b2) l2) in
+             res = (FStar_UInt8.uint_to_t (Prims.of_int (255))))
 let (verify_psk_inputs :
   ciphersuite ->
     mode ->
@@ -1144,101 +897,6 @@ let (verify_psk_inputs :
         | (Auth, FStar_Pervasives_Native.None) -> true
         | (AuthPSK, FStar_Pervasives_Native.Some uu___) -> true
         | (uu___, uu___1) -> false
-type 'cs encryption_context =
-  (unit key_aead_s * unit nonce_aead_s * unit seq_aead_s * unit
-    exporter_secret_s)
-type 'cs exp_len = Prims.nat
-let (key_schedule_core :
-  ciphersuite ->
-    mode ->
-      unit key_kem_s ->
-        unit info_s ->
-          (unit psk_s * unit psk_id_s) FStar_Pervasives_Native.option ->
-            ((FStar_UInt8.t, unit) Lib_Sequence.lseq * unit exporter_secret_s
-              * (FStar_UInt8.t, unit) Lib_Sequence.lseq))
-  =
-  fun cs ->
-    fun m ->
-      fun shared_secret ->
-        fun info ->
-          fun opsk ->
-            let uu___ =
-              match opsk with
-              | FStar_Pervasives_Native.None -> (default_psk, default_psk_id)
-              | FStar_Pervasives_Native.Some (psk, psk_id) -> (psk, psk_id) in
-            match uu___ with
-            | (psk, psk_id) ->
-                let psk_id_hash =
-                  labeled_extract
-                    (let uu___1 = cs in
-                     match uu___1 with | (uu___2, uu___3, uu___4, h) -> h)
-                    (suite_id_hpke cs) Lib_ByteSequence.lbytes_empty
-                    label_psk_id_hash psk_id in
-                let info_hash =
-                  labeled_extract
-                    (let uu___1 = cs in
-                     match uu___1 with | (uu___2, uu___3, uu___4, h) -> h)
-                    (suite_id_hpke cs) Lib_ByteSequence.lbytes_empty
-                    label_info_hash info in
-                let context = build_context cs m psk_id_hash info_hash in
-                let secret =
-                  labeled_extract
-                    (let uu___1 = cs in
-                     match uu___1 with | (uu___2, uu___3, uu___4, h) -> h)
-                    (suite_id_hpke cs) shared_secret label_secret psk in
-                let exporter_secret =
-                  labeled_expand
-                    (let uu___1 = cs in
-                     match uu___1 with | (uu___2, uu___3, uu___4, h) -> h)
-                    (suite_id_hpke cs) secret label_exp context
-                    (Spec_Hash_Definitions.hash_length
-                       (let uu___1 = cs in
-                        match uu___1 with | (uu___2, uu___3, uu___4, h) -> h)) in
-                (context, exporter_secret, secret)
-let (key_schedule_end :
-  ciphersuite ->
-    mode ->
-      (FStar_UInt8.t, unit) Lib_Sequence.lseq ->
-        unit exporter_secret_s ->
-          (FStar_UInt8.t, unit) Lib_Sequence.lseq -> unit encryption_context)
-  =
-  fun cs ->
-    fun m ->
-      fun context ->
-        fun exporter_secret ->
-          fun secret ->
-            if is_valid_not_export_only_ciphersuite cs
-            then
-              let key =
-                labeled_expand
-                  (let uu___ = cs in
-                   match uu___ with | (uu___1, uu___2, uu___3, h) -> h)
-                  (suite_id_hpke cs) secret label_key context
-                  (match let uu___ = cs in
-                         match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-                   with
-                   | ExportOnly -> Prims.int_zero
-                   | Seal uu___ ->
-                       Spec_Agile_AEAD.key_length
-                         (match let uu___1 = cs in
-                                match uu___1 with
-                                | (uu___2, uu___3, a, uu___4) -> a
-                          with
-                          | Seal alg -> alg)) in
-              let base_nonce =
-                labeled_expand
-                  (let uu___ = cs in
-                   match uu___ with | (uu___1, uu___2, uu___3, h) -> h)
-                  (suite_id_hpke cs) secret label_base_nonce context
-                  (match let uu___ = cs in
-                         match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-                   with
-                   | ExportOnly -> Prims.int_zero
-                   | Seal uu___ -> (Prims.of_int (12))) in
-              (key, base_nonce, Prims.int_zero, exporter_secret)
-            else
-              (Lib_ByteSequence.lbytes_empty, Lib_ByteSequence.lbytes_empty,
-                Prims.int_zero, exporter_secret)
 let (key_schedule :
   ciphersuite ->
     mode ->
@@ -1252,10 +910,46 @@ let (key_schedule :
       fun shared_secret ->
         fun info ->
           fun opsk ->
-            let uu___ = key_schedule_core cs m shared_secret info opsk in
+            let uu___ =
+              match opsk with
+              | FStar_Pervasives_Native.None -> (default_psk, default_psk_id)
+              | FStar_Pervasives_Native.Some (psk, psk_id) -> (psk, psk_id) in
             match uu___ with
-            | (context, exporter_secret, secret) ->
-                key_schedule_end cs m context exporter_secret secret
+            | (psk, psk_id) ->
+                let psk_id_hash =
+                  labeled_extract (hash_of_cs cs) (suite_id_hpke cs)
+                    Lib_ByteSequence.lbytes_empty label_psk_id_hash psk_id in
+                let info_hash =
+                  labeled_extract (hash_of_cs cs) (suite_id_hpke cs)
+                    Lib_ByteSequence.lbytes_empty label_info_hash info in
+                let context = build_context cs m psk_id_hash info_hash in
+                let secret =
+                  labeled_extract (hash_of_cs cs) (suite_id_hpke cs)
+                    shared_secret label_secret psk in
+                let exporter_secret =
+                  labeled_expand (hash_of_cs cs) (suite_id_hpke cs) secret
+                    label_exp context
+                    (Spec_Hash_Definitions.size_hash (hash_of_cs cs)) in
+                if is_valid_not_export_only_ciphersuite cs
+                then
+                  let key =
+                    labeled_expand (hash_of_cs cs) (suite_id_hpke cs) secret
+                      label_key context
+                      (match aead_of_cs cs with
+                       | ExportOnly -> Prims.int_zero
+                       | Seal uu___1 ->
+                           Spec_Agile_AEAD.key_length (aead_alg_of cs)) in
+                  let base_nonce =
+                    labeled_expand (hash_of_cs cs) (suite_id_hpke cs) secret
+                      label_base_nonce context
+                      (match aead_of_cs cs with
+                       | ExportOnly -> Prims.int_zero
+                       | Seal uu___1 -> (Prims.of_int (12))) in
+                  (key, base_nonce, Prims.int_zero, exporter_secret)
+                else
+                  (Lib_ByteSequence.lbytes_empty,
+                    Lib_ByteSequence.lbytes_empty, Prims.int_zero,
+                    exporter_secret)
 let (key_of_ctx : ciphersuite -> unit encryption_context -> unit key_aead_s)
   =
   fun cs ->
@@ -1305,10 +999,8 @@ let (context_export :
       fun exp_ctx ->
         fun l ->
           let exp_sec = exp_sec_of_ctx cs ctx in
-          labeled_expand
-            (let uu___ = cs in
-             match uu___ with | (uu___1, uu___2, uu___3, h) -> h)
-            (suite_id_hpke cs) exp_sec label_sec exp_ctx l
+          labeled_expand (hash_of_cs cs) (suite_id_hpke cs) exp_sec label_sec
+            exp_ctx l
 let (context_compute_nonce :
   ciphersuite_not_export_only ->
     unit encryption_context -> unit seq_aead_s -> unit nonce_aead_s)
@@ -1321,9 +1013,7 @@ let (context_compute_nonce :
           Obj.magic
             (Lib_ByteSequence.nat_to_intseq_be_ Lib_IntTypes.U8
                Lib_IntTypes.SEC
-               (match let uu___ = cs in
-                      match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-                with
+               (match aead_of_cs cs with
                 | ExportOnly -> Prims.int_zero
                 | Seal uu___ -> (Prims.of_int (12))) seq) in
         Spec_Loops.seq_map2 (fun a -> fun b -> FStar_UInt8.logxor a b)
@@ -1355,12 +1045,7 @@ let (context_seal :
           let key = key_of_ctx cs ctx in
           let seq = seq_of_ctx cs ctx in
           let nonce = context_compute_nonce cs ctx seq in
-          let ct =
-            Spec_Agile_AEAD.encrypt
-              (match let uu___ = cs in
-                     match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-               with
-               | Seal alg -> alg) key nonce aad pt in
+          let ct = Spec_Agile_AEAD.encrypt (aead_alg_of cs) key nonce aad pt in
           match context_increment_seq cs ctx with
           | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
           | FStar_Pervasives_Native.Some new_ctx ->
@@ -1380,11 +1065,7 @@ let (context_open :
           let key = key_of_ctx cs ctx in
           let seq = seq_of_ctx cs ctx in
           let nonce = context_compute_nonce cs ctx seq in
-          match Spec_Agile_AEAD.decrypt
-                  (match let uu___ = cs in
-                         match uu___ with | (uu___1, uu___2, a, uu___3) -> a
-                   with
-                   | Seal alg -> alg) key nonce aad ct
+          match Spec_Agile_AEAD.decrypt (aead_alg_of cs) key nonce aad ct
           with
           | FStar_Pervasives_Native.None -> FStar_Pervasives_Native.None
           | FStar_Pervasives_Native.Some pt ->
@@ -1421,10 +1102,7 @@ let (setupBaseR :
     fun enc ->
       fun skR ->
         fun info ->
-          let pkR =
-            Spec_Agile_DH.secret_to_public
-              (let uu___ = cs in
-               match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skR in
+          let pkR = Spec_Agile_DH.secret_to_public (curve_of_cs cs) skR in
           let shared_secret = decap cs enc skR in
           match (pkR, shared_secret) with
           | (FStar_Pervasives_Native.Some pkR1, FStar_Pervasives_Native.Some
@@ -1561,10 +1239,7 @@ let (setupPSKR :
         fun info ->
           fun psk ->
             fun psk_id ->
-              let pkR =
-                Spec_Agile_DH.secret_to_public
-                  (let uu___ = cs in
-                   match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skR in
+              let pkR = Spec_Agile_DH.secret_to_public (curve_of_cs cs) skR in
               let shared_secret = decap cs enc skR in
               match (pkR, shared_secret) with
               | (FStar_Pervasives_Native.Some pkR1,
@@ -1717,10 +1392,7 @@ let (setupAuthR :
       fun skR ->
         fun info ->
           fun pkS ->
-            let pkR =
-              Spec_Agile_DH.secret_to_public
-                (let uu___ = cs in
-                 match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skR in
+            let pkR = Spec_Agile_DH.secret_to_public (curve_of_cs cs) skR in
             let shared_secret = auth_decap cs enc skR pkS in
             match (pkR, shared_secret) with
             | (FStar_Pervasives_Native.Some pkR1,
@@ -1874,10 +1546,7 @@ let (setupAuthPSKR :
           fun psk ->
             fun psk_id ->
               fun pkS ->
-                let pkR =
-                  Spec_Agile_DH.secret_to_public
-                    (let uu___ = cs in
-                     match uu___ with | (c, uu___1, uu___2, uu___3) -> c) skR in
+                let pkR = Spec_Agile_DH.secret_to_public (curve_of_cs cs) skR in
                 let shared_secret = auth_decap cs enc skR pkS in
                 match (pkR, shared_secret) with
                 | (FStar_Pervasives_Native.Some pkR1,

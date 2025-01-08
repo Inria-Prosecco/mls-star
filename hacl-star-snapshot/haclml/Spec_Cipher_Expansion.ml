@@ -20,11 +20,11 @@ let (cipher_alg_of_impl : impl -> Spec_Agile_Cipher.cipher_alg) =
     | Vale_AES256 -> Spec_Agile_Cipher.AES256
 type vale_cipher_alg = Spec_Agile_Cipher.cipher_alg
 let (vale_alg_of_cipher_alg :
-  Spec_Agile_Cipher.cipher_alg -> Vale_AES_AES_common_s.algorithm) =
+  Spec_Agile_Cipher.cipher_alg -> Vale_AES_AES_s.algorithm) =
   fun a ->
     match a with
-    | Spec_Agile_Cipher.AES128 -> Vale_AES_AES_common_s.AES_128
-    | Spec_Agile_Cipher.AES256 -> Vale_AES_AES_common_s.AES_256
+    | Spec_Agile_Cipher.AES128 -> Vale_AES_AES_s.AES_128
+    | Spec_Agile_Cipher.AES256 -> Vale_AES_AES_s.AES_256
 let (vale_xkey_length : vale_cipher_alg -> Prims.nat) =
   fun uu___ ->
     match uu___ with
@@ -54,6 +54,8 @@ let (vale_aes_expansion :
         Vale_Def_Words_Seq_s.seq_nat8_to_seq_uint8
           (Vale_Def_Types_s.le_seq_quad32_to_bytes hkeys_quad) in
       FStar_Seq_Base.append ek hkeys
+
+
 let (xkey_length : Spec_Agile_Cipher.cipher_alg -> Prims.nat) =
   fun uu___ ->
     match uu___ with

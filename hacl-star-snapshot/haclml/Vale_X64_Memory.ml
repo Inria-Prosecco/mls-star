@@ -11,10 +11,12 @@ let (set_vale_heap :
   =
   fun vfh ->
     fun vh ->
+      let uu___ = vfh in
       {
-        Vale_Arch_HeapImpl.vf_layout = (vfh.Vale_Arch_HeapImpl.vf_layout);
+        Vale_Arch_HeapImpl.vf_layout = (uu___.Vale_Arch_HeapImpl.vf_layout);
         Vale_Arch_HeapImpl.vf_heap = vh;
-        Vale_Arch_HeapImpl.vf_heaplets = (vfh.Vale_Arch_HeapImpl.vf_heaplets)
+        Vale_Arch_HeapImpl.vf_heaplets =
+          (uu___.Vale_Arch_HeapImpl.vf_heaplets)
       }
 type ('h1, 'h2) vale_full_heap_equal = unit
 type b8 = Vale_Interop_Types.b8
@@ -78,6 +80,7 @@ let (v_to_typ : Vale_Arch_HeapTypes_s.base_typ -> Obj.t -> Obj.t) =
       | Vale_Arch_HeapTypes_s.TUInt64 ->
           Obj.repr (FStar_UInt64.v (Obj.magic v))
       | Vale_Arch_HeapTypes_s.TUInt128 -> Obj.repr v
+
 let (uint8_view : (FStar_UInt8.t, FStar_UInt8.t) LowStar_BufferView_Up.view)
   = Vale_Interop_Views.up_view8
 let (uint16_view :
@@ -105,12 +108,18 @@ let (uint_view :
        | Vale_Arch_HeapTypes_s.TUInt64 -> Obj.magic (Obj.repr uint64_view)
        | Vale_Arch_HeapTypes_s.TUInt128 -> Obj.magic (Obj.repr uint128_view))
       uu___
+
 type ('t, 'h, 'b) buffer_readable = Obj.t
 type ('t, 'b) buffer_writeable = unit
-type loc = unit
 
-type ('s1, 's2) loc_disjoint = unit
-type ('s1, 's2) loc_includes = unit
+type loc = LowStar_Monotonic_Buffer.loc
+let (loc_none : loc) = ()
+
+
+type ('s1, 's2) loc_disjoint =
+  (unit, unit) LowStar_Monotonic_Buffer.loc_disjoint
+type ('s1, 's2) loc_includes =
+  (unit, unit) LowStar_Monotonic_Buffer.loc_includes
 type ('s, 'h, 'hu) modifies = unit
 type ('t, 'h, 'b, 'i) valid_buffer_read = unit
 type ('t, 'h, 'b, 'i) valid_buffer_write = unit
@@ -128,8 +137,35 @@ type buffer16 = unit Vale_Arch_HeapImpl.buffer
 type buffer32 = unit Vale_Arch_HeapImpl.buffer
 type buffer64 = unit Vale_Arch_HeapImpl.buffer
 type buffer128 = unit Vale_Arch_HeapImpl.buffer
+
 type 'ls locs_disjoint = Obj.t
+
+
+
+
+
+
 type ('s, 'h1, 'h2) modifies_goal_directed = unit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let (default_of_typ : Vale_Arch_HeapTypes_s.base_typ -> Obj.t) =
   fun t ->
     match t with
@@ -145,18 +181,70 @@ let (default_of_typ : Vale_Arch_HeapTypes_s.base_typ -> Obj.t) =
             Vale_Def_Words_s.hi2 = Prims.int_zero;
             Vale_Def_Words_s.hi3 = Prims.int_zero
           }
+
+
+
 let (scale_t : Vale_Arch_HeapTypes_s.base_typ -> Prims.int -> Prims.int) =
   fun t -> fun index -> scale_by (Vale_Interop_Types.view_n t) index
+
 type ('t, 'n, 'base, 'addr, 'i) valid_offset = unit
+
+
+
 type ('a, 'p1, 'p2) sub_list = unit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 type memtaint = Vale_Arch_HeapTypes_s.memTaint_t
 type ('b, 'h, 'mt, 'tn) valid_taint_b8 = unit
 type ('t, 'b, 'h, 'mt, 'tn) valid_taint_buf = unit
 type ('b, 'h, 'mt, 'tn) valid_taint_buf64 = unit
 type ('b, 'h, 'mt, 'tn) valid_taint_buf128 = unit
+
+
+
+
+
+
+
+
 type ('bi1, 'bi2) buffer_info_disjoint = unit
 type ('h, 'bs) init_heaplets_req = unit
+
 type ('mem, 'memTaint, 'ps, 'ts) valid_taint_bufs = unit
+
+
 type ('t, 'b, 'layout, 'hid, 'write) valid_layout_data_buffer = unit
 type ('t, 'b, 'layout, 'huid, 'write) valid_layout_buffer_id = Obj.t
 type ('t, 'b, 'layout, 'h, 'write) valid_layout_buffer = unit
@@ -172,7 +260,8 @@ let (layout_heaplets_initialized :
 let (layout_old_heap :
   Vale_Arch_HeapImpl.vale_heap_layout_inner -> Vale_Arch_HeapImpl.vale_heap)
   = fun layout -> layout.Vale_Arch_HeapImpl.vl_old_heap
-
+let (layout_modifies_loc : Vale_Arch_HeapImpl.vale_heap_layout_inner -> loc)
+  = fun layout -> layout.Vale_Arch_HeapImpl.vl_mod_loc
 let (layout_buffers :
   Vale_Arch_HeapImpl.vale_heap_layout_inner ->
     Vale_Arch_HeapImpl.buffer_info FStar_Seq_Base.seq)

@@ -1,3 +1,7 @@
+module FStar_Seq_Properties = struct
+  include FStar_Seq_Base
+  include FStar_Seq_Properties
+end
 open Prims
 let (is_supported_alg : Spec_Hash_Definitions.hash_alg -> Prims.bool) =
   fun uu___ ->
@@ -40,6 +44,7 @@ let (__proj__State__item__reseed_counter :
   fun a ->
     fun projectee ->
       match projectee with | State (k, v, reseed_counter) -> reseed_counter
+
 let (update :
   supported_alg ->
     Spec_Hash_Definitions.bytes ->
@@ -52,7 +57,8 @@ let (update :
       fun k ->
         fun v ->
           let zero_data =
-            FStar_Seq_Base.cons (FStar_UInt8.uint_to_t Prims.int_zero) data in
+            FStar_Seq_Properties.cons (FStar_UInt8.uint_to_t Prims.int_zero)
+              data in
           let k1 =
             Spec_Agile_HMAC.hmac a k (FStar_Seq_Base.op_At_Bar v zero_data) in
           let v1 = Spec_Agile_HMAC.hmac a k1 v in
@@ -60,7 +66,8 @@ let (update :
           then (k1, v1)
           else
             (let one_data =
-               FStar_Seq_Base.cons (FStar_UInt8.uint_to_t Prims.int_one) data in
+               FStar_Seq_Properties.cons
+                 (FStar_UInt8.uint_to_t Prims.int_one) data in
              let k2 =
                Spec_Agile_HMAC.hmac a k1
                  (FStar_Seq_Base.op_At_Bar v1 one_data) in

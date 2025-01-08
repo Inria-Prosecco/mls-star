@@ -28,9 +28,26 @@ let (va_codegen_success_SHA256_rnds2 :
   Vale_X64_Machine_s.reg_xmm ->
     Vale_X64_Machine_s.reg_xmm -> Vale_X64_Decls.va_pbool)
   = fun dst -> fun src -> Vale_X64_Decls.va_ttrue ()
+
 type ('dst, 'src, 't, 'block, 'hashuorig, 'vaus0, 'vauk) va_wp_SHA256_rnds2 =
   unit
 
+let (va_quick_SHA256_rnds2 :
+  Vale_X64_Machine_s.reg_xmm ->
+    Vale_X64_Machine_s.reg_xmm ->
+      Vale_SHA_SHA_helpers.counter ->
+        Vale_SHA_SHA_helpers.block_w ->
+          Vale_SHA_SHA_helpers.hash256 ->
+            (unit, unit) Vale_X64_QuickCode.quickCode)
+  =
+  fun dst ->
+    fun src ->
+      fun t ->
+        fun block ->
+          fun hash_orig ->
+            Vale_X64_QuickCode.QProc
+              ((va_code_SHA256_rnds2 dst src),
+                [Vale_X64_QuickCode.va_mod_xmm dst], (), ())
 let (va_code_SHA256_msg1 :
   Vale_X64_Machine_s.reg_xmm ->
     Vale_X64_Machine_s.reg_xmm ->
@@ -57,8 +74,23 @@ let (va_codegen_success_SHA256_msg1 :
   Vale_X64_Machine_s.reg_xmm ->
     Vale_X64_Machine_s.reg_xmm -> Vale_X64_Decls.va_pbool)
   = fun dst -> fun src -> Vale_X64_Decls.va_ttrue ()
+
 type ('dst, 'src, 't, 'block, 'vaus0, 'vauk) va_wp_SHA256_msg1 = unit
 
+let (va_quick_SHA256_msg1 :
+  Vale_X64_Machine_s.reg_xmm ->
+    Vale_X64_Machine_s.reg_xmm ->
+      Vale_SHA_SHA_helpers.counter ->
+        Vale_SHA_SHA_helpers.block_w ->
+          (unit, unit) Vale_X64_QuickCode.quickCode)
+  =
+  fun dst ->
+    fun src ->
+      fun t ->
+        fun block ->
+          Vale_X64_QuickCode.QProc
+            ((va_code_SHA256_msg1 dst src),
+              [Vale_X64_QuickCode.va_mod_xmm dst], (), ())
 let (va_code_SHA256_msg2 :
   Vale_X64_Machine_s.reg_xmm ->
     Vale_X64_Machine_s.reg_xmm ->
@@ -85,4 +117,20 @@ let (va_codegen_success_SHA256_msg2 :
   Vale_X64_Machine_s.reg_xmm ->
     Vale_X64_Machine_s.reg_xmm -> Vale_X64_Decls.va_pbool)
   = fun dst -> fun src -> Vale_X64_Decls.va_ttrue ()
+
 type ('dst, 'src, 't, 'block, 'vaus0, 'vauk) va_wp_SHA256_msg2 = unit
+
+let (va_quick_SHA256_msg2 :
+  Vale_X64_Machine_s.reg_xmm ->
+    Vale_X64_Machine_s.reg_xmm ->
+      Vale_SHA_SHA_helpers.counter ->
+        Vale_SHA_SHA_helpers.block_w ->
+          (unit, unit) Vale_X64_QuickCode.quickCode)
+  =
+  fun dst ->
+    fun src ->
+      fun t ->
+        fun block ->
+          Vale_X64_QuickCode.QProc
+            ((va_code_SHA256_msg2 dst src),
+              [Vale_X64_QuickCode.va_mod_xmm dst], (), ())

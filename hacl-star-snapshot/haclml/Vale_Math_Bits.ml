@@ -41,8 +41,21 @@ let (b_mod :
   Prims.pos ->
     unit FStar_BV.bv_t -> unit FStar_UInt.uint_t -> unit FStar_BV.bv_t)
   = fun n -> fun a -> fun b -> FStar_BV.bvmod n a b
+
 let (uext : Prims.pos -> Prims.pos -> unit FStar_UInt.uint_t -> Prims.int) =
   fun n -> fun m -> fun a -> a
+
+
+
+
+
+
+
+
+
+
+
+
 let (add_hide :
   Prims.pos ->
     unit FStar_UInt.uint_t ->
@@ -59,8 +72,13 @@ let (mul_hide :
       unit FStar_UInt.uint_t -> unit FStar_UInt.uint_t)
   = fun n -> fun a -> fun b -> FStar_UInt.mul_mod n a b
 type lemmas_i2b_all = unit
+
+
+
 type ('n, 'a) is_bv8 = unit
 type ('n, 'a) is_bv16 = unit
 type ('n, 'a) is_bv32 = unit
 type ('n, 'a) is_bv64 = unit
 type ('n, 'a, 'b) bveq = unit
+
+

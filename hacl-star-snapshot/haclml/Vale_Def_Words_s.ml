@@ -84,5 +84,10 @@ type nat16 = unit natN
 type nat32 = unit natN
 type nat64 = unit natN
 type nat128 = unit natN
+
+
+
+
+
 let (int_to_natN : Prims.pos -> Prims.int -> unit natN) =
   fun n -> fun i -> i mod n

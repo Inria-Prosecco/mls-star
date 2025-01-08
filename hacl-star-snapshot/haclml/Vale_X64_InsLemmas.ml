@@ -8,6 +8,8 @@ let (has_taint128 :
       | Vale_X64_Machine_s.OMem (uu___, t') -> t = t'
       | Vale_X64_Machine_s.OStack (uu___, t') -> t = t'
       | uu___ -> true
+
+
 type 'args make_instr_t_args = Obj.t
 type ('outs, 'args) make_instr_t = Obj.t
 let rec (make_instr_args :

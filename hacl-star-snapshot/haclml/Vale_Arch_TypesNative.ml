@@ -7,4 +7,43 @@ let (pow2_norm : Prims.nat -> Prims.pos) =
     match n with
     | uu___ when uu___ = Prims.int_zero -> Prims.int_one
     | uu___ -> (Prims.of_int (2)) * (Prims.pow2 (n - Prims.int_one))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let (not : Prims.bool -> Prims.bool) = fun b -> if b then false else true
+
+
+
+

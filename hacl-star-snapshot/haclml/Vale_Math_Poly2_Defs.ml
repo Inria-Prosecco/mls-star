@@ -18,3 +18,36 @@ let (op_Percent_Dot :
   Vale_Math_Poly2_Defs_s.poly ->
     Vale_Math_Poly2_Defs_s.poly -> Vale_Math_Poly2_Defs_s.poly)
   = Vale_Math_Poly2_Defs_s.mod1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

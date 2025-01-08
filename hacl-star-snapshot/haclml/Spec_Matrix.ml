@@ -1,4 +1,6 @@
 open Prims
+
+
 type elem = FStar_UInt16.t
 type ('n1, 'n2) matrix = (FStar_UInt16.t, unit) Lib_Sequence.lseq
 let (create :
@@ -49,6 +51,7 @@ let (op_Array_Assignment :
     fun n2 ->
       fun m ->
         fun uu___ -> fun x -> match uu___ with | (i, j) -> mset n1 n2 m i j x
+
 let (map :
   Prims.nat ->
     Prims.nat ->
@@ -136,6 +139,9 @@ let (sub :
       fun a ->
         fun b ->
           map2 n1 n2 (fun a1 -> fun b1 -> FStar_UInt16.sub_mod a1 b1) a b
+
+
+
 let (mul_inner :
   Prims.nat ->
     Prims.nat ->

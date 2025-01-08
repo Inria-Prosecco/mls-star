@@ -15,6 +15,7 @@ let (__proj__Mkpre_peephole__item__ph :
   = fun projectee -> match projectee with | { ph; input_hint;_} -> ph
 let (__proj__Mkpre_peephole__item__input_hint : pre_peephole -> Prims.pos) =
   fun projectee -> match projectee with | { ph; input_hint;_} -> input_hint
+
 type ('p, 'is, 's) peephole_correct = Obj.t
 type peephole = pre_peephole
 let rec (num_ins_in_code : Vale_X64_Machine_Semantics_s.code -> Prims.nat) =
@@ -30,6 +31,7 @@ and (num_ins_in_codes : Vale_X64_Machine_Semantics_s.codes -> Prims.nat) =
     match c with
     | [] -> Prims.int_zero
     | h::t -> (num_ins_in_code h) + (num_ins_in_codes t)
+
 let rec (pull_instructions_from_codes :
   Vale_X64_Machine_Semantics_s.codes ->
     Prims.pos ->
@@ -111,6 +113,10 @@ let rec (apply_peephole_to_code :
       | Vale_X64_Machine_s.While (c1, b) ->
           let b' = apply_peephole_to_code p b in
           Vale_X64_Machine_s.While (c1, b')
+
+
+
+
 let (peephole_transform :
   peephole ->
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode ->
@@ -131,4 +137,6 @@ let (peephole_transform :
           Vale_X64_Decls.success = (Vale_X64_Decls.va_ttrue ());
           Vale_X64_Decls.result = (apply_peephole_to_code p orig)
         }
+
 let coerce_to_normal : 'a . 'a -> 'a = fun x -> x
+

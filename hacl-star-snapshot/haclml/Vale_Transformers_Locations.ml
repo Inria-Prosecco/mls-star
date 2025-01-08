@@ -57,6 +57,7 @@ let (disjoint_location :
                     " not disjoint from itself"))
       | (ALocReg uu___, uu___1) -> Vale_Def_PossiblyMonad.Ok ()
       | (uu___, ALocReg uu___1) -> Vale_Def_PossiblyMonad.Ok ()
+
 let (disjoint_location_from_locations :
   location -> location Prims.list -> unit Vale_Def_PossiblyMonad.possibly) =
   fun a ->
@@ -70,6 +71,8 @@ let (disjoint_locations :
     fun l2 ->
       Vale_Def_PossiblyMonad.for_all
         (fun x -> disjoint_location_from_locations x l2) l1
+
+
 type 'a location_val_t = Obj.t
 type 'a location_val_eqt = Obj.t
 type location_eq = location
@@ -114,84 +117,89 @@ let (update_location :
         match a with
         | ALocMem ->
             let v1 = Obj.magic v in
+            let uu___ = s in
             {
               Vale_X64_Machine_Semantics_s.ms_ok =
-                (s.Vale_X64_Machine_Semantics_s.ms_ok);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_ok);
               Vale_X64_Machine_Semantics_s.ms_regs =
-                (s.Vale_X64_Machine_Semantics_s.ms_regs);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
               Vale_X64_Machine_Semantics_s.ms_flags =
-                (s.Vale_X64_Machine_Semantics_s.ms_flags);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_flags);
               Vale_X64_Machine_Semantics_s.ms_heap = v1;
               Vale_X64_Machine_Semantics_s.ms_stack =
-                (s.Vale_X64_Machine_Semantics_s.ms_stack);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_stack);
               Vale_X64_Machine_Semantics_s.ms_stackTaint =
-                (s.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_stackTaint);
               Vale_X64_Machine_Semantics_s.ms_trace =
-                (s.Vale_X64_Machine_Semantics_s.ms_trace)
+                (uu___.Vale_X64_Machine_Semantics_s.ms_trace)
             }
         | ALocStack ->
             let v1 = FStar_Universe.downgrade_val (Obj.magic v) in
+            let uu___ = s in
             {
               Vale_X64_Machine_Semantics_s.ms_ok =
-                (s.Vale_X64_Machine_Semantics_s.ms_ok);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_ok);
               Vale_X64_Machine_Semantics_s.ms_regs =
-                (s.Vale_X64_Machine_Semantics_s.ms_regs);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
               Vale_X64_Machine_Semantics_s.ms_flags =
-                (s.Vale_X64_Machine_Semantics_s.ms_flags);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_flags);
               Vale_X64_Machine_Semantics_s.ms_heap =
-                (s.Vale_X64_Machine_Semantics_s.ms_heap);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_heap);
               Vale_X64_Machine_Semantics_s.ms_stack =
                 (FStar_Pervasives_Native.fst v1);
               Vale_X64_Machine_Semantics_s.ms_stackTaint =
                 (FStar_Pervasives_Native.snd v1);
               Vale_X64_Machine_Semantics_s.ms_trace =
-                (s.Vale_X64_Machine_Semantics_s.ms_trace)
+                (uu___.Vale_X64_Machine_Semantics_s.ms_trace)
             }
         | ALocReg r ->
             let v1 = FStar_Universe.downgrade_val (Obj.magic v) in
             Vale_X64_Machine_Semantics_s.update_reg' r v1 s
         | ALocCf ->
             let v1 = FStar_Universe.downgrade_val (Obj.magic v) in
+            let uu___ = s in
             {
               Vale_X64_Machine_Semantics_s.ms_ok =
-                (s.Vale_X64_Machine_Semantics_s.ms_ok);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_ok);
               Vale_X64_Machine_Semantics_s.ms_regs =
-                (s.Vale_X64_Machine_Semantics_s.ms_regs);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
               Vale_X64_Machine_Semantics_s.ms_flags =
-                ((fun x ->
-                    if x = Prims.int_zero
+                ((fun f ->
+                    if f = Prims.int_zero
                     then v1
-                    else s.Vale_X64_Machine_Semantics_s.ms_flags x));
+                    else s.Vale_X64_Machine_Semantics_s.ms_flags f));
               Vale_X64_Machine_Semantics_s.ms_heap =
-                (s.Vale_X64_Machine_Semantics_s.ms_heap);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_heap);
               Vale_X64_Machine_Semantics_s.ms_stack =
-                (s.Vale_X64_Machine_Semantics_s.ms_stack);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_stack);
               Vale_X64_Machine_Semantics_s.ms_stackTaint =
-                (s.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_stackTaint);
               Vale_X64_Machine_Semantics_s.ms_trace =
-                (s.Vale_X64_Machine_Semantics_s.ms_trace)
+                (uu___.Vale_X64_Machine_Semantics_s.ms_trace)
             }
         | ALocOf ->
             let v1 = FStar_Universe.downgrade_val (Obj.magic v) in
+            let uu___ = s in
             {
               Vale_X64_Machine_Semantics_s.ms_ok =
-                (s.Vale_X64_Machine_Semantics_s.ms_ok);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_ok);
               Vale_X64_Machine_Semantics_s.ms_regs =
-                (s.Vale_X64_Machine_Semantics_s.ms_regs);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
               Vale_X64_Machine_Semantics_s.ms_flags =
-                ((fun x ->
-                    if x = (Prims.of_int (11))
+                ((fun f ->
+                    if f = (Prims.of_int (11))
                     then v1
-                    else s.Vale_X64_Machine_Semantics_s.ms_flags x));
+                    else s.Vale_X64_Machine_Semantics_s.ms_flags f));
               Vale_X64_Machine_Semantics_s.ms_heap =
-                (s.Vale_X64_Machine_Semantics_s.ms_heap);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_heap);
               Vale_X64_Machine_Semantics_s.ms_stack =
-                (s.Vale_X64_Machine_Semantics_s.ms_stack);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_stack);
               Vale_X64_Machine_Semantics_s.ms_stackTaint =
-                (s.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+                (uu___.Vale_X64_Machine_Semantics_s.ms_stackTaint);
               Vale_X64_Machine_Semantics_s.ms_trace =
-                (s.Vale_X64_Machine_Semantics_s.ms_trace)
+                (uu___.Vale_X64_Machine_Semantics_s.ms_trace)
             }
+
 let (filter_state :
   Vale_X64_Machine_Semantics_s.machine_state ->
     Vale_X64_Machine_Semantics_s.flags_t ->
@@ -203,25 +211,27 @@ let (filter_state :
     fun flags ->
       fun ok ->
         fun trace ->
+          let uu___ = s in
           {
             Vale_X64_Machine_Semantics_s.ms_ok = ok;
             Vale_X64_Machine_Semantics_s.ms_regs =
-              (s.Vale_X64_Machine_Semantics_s.ms_regs);
+              (uu___.Vale_X64_Machine_Semantics_s.ms_regs);
             Vale_X64_Machine_Semantics_s.ms_flags =
-              (fun x ->
-                 if x = Prims.int_zero
+              (fun f ->
+                 if f = Prims.int_zero
                  then s.Vale_X64_Machine_Semantics_s.ms_flags Prims.int_zero
                  else
-                   if x = (Prims.of_int (11))
+                   if f = (Prims.of_int (11))
                    then
                      s.Vale_X64_Machine_Semantics_s.ms_flags
                        (Prims.of_int (11))
-                   else flags x);
+                   else flags f);
             Vale_X64_Machine_Semantics_s.ms_heap =
-              (s.Vale_X64_Machine_Semantics_s.ms_heap);
+              (uu___.Vale_X64_Machine_Semantics_s.ms_heap);
             Vale_X64_Machine_Semantics_s.ms_stack =
-              (s.Vale_X64_Machine_Semantics_s.ms_stack);
+              (uu___.Vale_X64_Machine_Semantics_s.ms_stack);
             Vale_X64_Machine_Semantics_s.ms_stackTaint =
-              (s.Vale_X64_Machine_Semantics_s.ms_stackTaint);
+              (uu___.Vale_X64_Machine_Semantics_s.ms_stackTaint);
             Vale_X64_Machine_Semantics_s.ms_trace = trace
           }
+

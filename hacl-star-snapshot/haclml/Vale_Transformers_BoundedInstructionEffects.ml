@@ -329,7 +329,34 @@ type ('locv, 'f, 's) constant_on_execution = Obj.t
 type ('rw, 'f) bounded_effects = unit
 let (safely_bounded : Vale_X64_Machine_Semantics_s.ins -> Prims.bool) =
   fun i -> Vale_X64_Bytes_Code_s.uu___is_Instr i
+
+
+
+
+
+
+
+
+
+
 type ('l, 's1, 's2) unchanged_at' = unit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let machine_eval_code_Ins :
   'uuuuu .
     Vale_X64_Machine_Semantics_s.ins ->
@@ -341,14 +368,22 @@ let machine_eval_code_Ins :
         ((),
           (FStar_Pervasives_Native.__proj__Some__item__v
              (Vale_X64_Machine_Semantics_s.machine_eval_code_ins_def i s)))
+
+
+
+
+
+
+
 let (add_r_to_rw_set :
   Vale_Transformers_Locations.location Prims.list -> rw_set -> rw_set) =
   fun r ->
     fun rw ->
+      let uu___ = rw in
       {
         loc_reads = (FStar_List_Tot_Base.append r rw.loc_reads);
-        loc_writes = (rw.loc_writes);
-        loc_constant_writes = (rw.loc_constant_writes)
+        loc_writes = (uu___.loc_writes);
+        loc_constant_writes = (uu___.loc_constant_writes)
       }
 let rec intersect : 't . 't Prims.list -> 't Prims.list -> 't Prims.list =
   fun l1 ->
@@ -397,3 +432,22 @@ let (rw_set_in_series : rw_set -> rw_set -> rw_set) =
         loc_constant_writes =
           (intersect rw1.loc_constant_writes rw2.loc_constant_writes)
       }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

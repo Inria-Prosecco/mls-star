@@ -23,7 +23,10 @@ let to_list : 'a . 'a seq -> 'a Prims.list =
   fun s -> FStar_Seq_Base.seq_to_list s
 let of_list : 'a . 'a Prims.list -> ('a, unit) lseq =
   fun l -> FStar_Seq_Base.seq_of_list l
+
 type ('a, 'len, 's1, 's2) equal = unit
+
+
 let createL : 'a . 'a Prims.list -> ('a, unit) lseq = fun l -> of_list l
 let upd :
   'a . Prims.nat -> ('a, unit) lseq -> Prims.nat -> 'a -> ('a, unit) lseq =
@@ -64,6 +67,9 @@ let update_sub :
                    (FStar_Seq_Base.slice s Prims.int_zero start) x)
                 (FStar_Seq_Base.slice s (start + n) (length s)) in
             o
+
+
+
 let update_slice :
   'a .
     Prims.nat ->
@@ -236,6 +242,7 @@ let repeat_blocks :
               Lib_LoopCombinators.repeati nb (repeat_blocks_f bs inp f nb)
                 init in
             let last = seq_sub inp (nb * bs) rem in l rem last acc
+
 let repeat_blocks_multi :
   'a 'b . Prims.pos -> 'a seq -> (('a, unit) lseq -> 'b -> 'b) -> 'b -> 'b =
   fun bs ->
@@ -245,6 +252,7 @@ let repeat_blocks_multi :
           let len = length inp in
           let nb = len / bs in
           Lib_LoopCombinators.repeati nb (repeat_blocks_f bs inp f nb) init
+
 type ('t, 'blocklen, 'max, 'a, 'i) generate_blocks_a = ('a * 't seq)
 let generate_blocks_inner :
   't .
@@ -332,6 +340,11 @@ let generate_blocks_simple :
                                uu___1 uu___)
                         (Obj.magic (FStar_Seq_Base.empty ())))) uu___3 uu___2
             uu___1 uu___
+
+
+
+
+
 type ('a, 'bs, 'max, 'i) map_blocks_a = 'a seq
 let map_blocks_f :
   'a .
@@ -378,6 +391,9 @@ let map_blocks_multi :
                                    uu___1 uu___)
                             (Obj.magic (FStar_Seq_Base.empty ())))) uu___4
               uu___3 uu___2 uu___1 uu___
+
+
+
 type ('len, 'blocksize) block = Prims.nat
 type ('len, 'blocksize) last = Prims.nat
 let map_blocks :
@@ -402,6 +418,7 @@ let map_blocks :
           if rem > Prims.int_zero
           then FStar_Seq_Base.append bs (g nb rem last1)
           else bs
+
 let get_block :
   'a .
     Prims.nat ->
@@ -436,171 +453,6 @@ let get_last :
             let rem = len mod blocksize in
             let b = FStar_Seq_Base.slice inp (len - rem) len in
             g (len / blocksize) rem b
-let create2 : 'a . 'a -> 'a -> ('a, unit) lseq =
-  fun x0 -> fun x1 -> let l = [x0; x1] in of_list l
-let create4 : 'a . 'a -> 'a -> 'a -> 'a -> ('a, unit) lseq =
-  fun x0 ->
-    fun x1 -> fun x2 -> fun x3 -> let l = [x0; x1; x2; x3] in of_list l
-let create8 :
-  'a . 'a -> 'a -> 'a -> 'a -> 'a -> 'a -> 'a -> 'a -> ('a, unit) lseq =
-  fun x0 ->
-    fun x1 ->
-      fun x2 ->
-        fun x3 ->
-          fun x4 ->
-            fun x5 ->
-              fun x6 ->
-                fun x7 ->
-                  let l = [x0; x1; x2; x3; x4; x5; x6; x7] in of_list l
-let create16 :
-  'a .
-    'a ->
-      'a ->
-        'a ->
-          'a ->
-            'a ->
-              'a ->
-                'a ->
-                  'a ->
-                    'a ->
-                      'a ->
-                        'a -> 'a -> 'a -> 'a -> 'a -> 'a -> ('a, unit) lseq
-  =
-  fun x0 ->
-    fun x1 ->
-      fun x2 ->
-        fun x3 ->
-          fun x4 ->
-            fun x5 ->
-              fun x6 ->
-                fun x7 ->
-                  fun x8 ->
-                    fun x9 ->
-                      fun x10 ->
-                        fun x11 ->
-                          fun x12 ->
-                            fun x13 ->
-                              fun x14 ->
-                                fun x15 ->
-                                  let l =
-                                    [x0;
-                                    x1;
-                                    x2;
-                                    x3;
-                                    x4;
-                                    x5;
-                                    x6;
-                                    x7;
-                                    x8;
-                                    x9;
-                                    x10;
-                                    x11;
-                                    x12;
-                                    x13;
-                                    x14;
-                                    x15] in
-                                  of_list l
-let create32 :
-  'a .
-    'a ->
-      'a ->
-        'a ->
-          'a ->
-            'a ->
-              'a ->
-                'a ->
-                  'a ->
-                    'a ->
-                      'a ->
-                        'a ->
-                          'a ->
-                            'a ->
-                              'a ->
-                                'a ->
-                                  'a ->
-                                    'a ->
-                                      'a ->
-                                        'a ->
-                                          'a ->
-                                            'a ->
-                                              'a ->
-                                                'a ->
-                                                  'a ->
-                                                    'a ->
-                                                      'a ->
-                                                        'a ->
-                                                          'a ->
-                                                            'a ->
-                                                              'a ->
-                                                                'a ->
-                                                                  'a ->
-                                                                    ('a,
-                                                                    unit)
-                                                                    lseq
-  =
-  fun x0 ->
-    fun x1 ->
-      fun x2 ->
-        fun x3 ->
-          fun x4 ->
-            fun x5 ->
-              fun x6 ->
-                fun x7 ->
-                  fun x8 ->
-                    fun x9 ->
-                      fun x10 ->
-                        fun x11 ->
-                          fun x12 ->
-                            fun x13 ->
-                              fun x14 ->
-                                fun x15 ->
-                                  fun x16 ->
-                                    fun x17 ->
-                                      fun x18 ->
-                                        fun x19 ->
-                                          fun x20 ->
-                                            fun x21 ->
-                                              fun x22 ->
-                                                fun x23 ->
-                                                  fun x24 ->
-                                                    fun x25 ->
-                                                      fun x26 ->
-                                                        fun x27 ->
-                                                          fun x28 ->
-                                                            fun x29 ->
-                                                              fun x30 ->
-                                                                fun x31 ->
-                                                                  let l =
-                                                                    [x0;
-                                                                    x1;
-                                                                    x2;
-                                                                    x3;
-                                                                    x4;
-                                                                    x5;
-                                                                    x6;
-                                                                    x7;
-                                                                    x8;
-                                                                    x9;
-                                                                    x10;
-                                                                    x11;
-                                                                    x12;
-                                                                    x13;
-                                                                    x14;
-                                                                    x15;
-                                                                    x16;
-                                                                    x17;
-                                                                    x18;
-                                                                    x19;
-                                                                    x20;
-                                                                    x21;
-                                                                    x22;
-                                                                    x23;
-                                                                    x24;
-                                                                    x25;
-                                                                    x26;
-                                                                    x27;
-                                                                    x28;
-                                                                    x29;
-                                                                    x30;
-                                                                    x31] in
-                                                                  of_list l
+
+
+

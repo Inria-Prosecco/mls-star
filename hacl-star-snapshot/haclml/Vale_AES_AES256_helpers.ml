@@ -58,9 +58,9 @@ let (round_key_256_rcon :
                      if (round mod (Prims.of_int (2))) = Prims.int_zero
                      then
                        Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000")
-                         (Vale_AES_AES_common_s.sub_word
+                         (Vale_AES_AES_s.sub_word
                             (Vale_AES_AES_s.rot_word_LE v7)) rcon
-                     else Vale_AES_AES_common_s.sub_word v7 in
+                     else Vale_AES_AES_s.sub_word v7 in
                    let w0 =
                      Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000") v0
                        c1 in
@@ -87,7 +87,7 @@ let (round_key_256 :
     fun prev1 ->
       fun round ->
         round_key_256_rcon prev0 prev1
-          (Vale_AES_AES_common_s.aes_rcon
+          (Vale_AES_AES_s.aes_rcon
              ((round / (Prims.of_int (2))) - Prims.int_one)) round
 let rec (expand_key_256_def :
   Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
@@ -125,6 +125,12 @@ let (expand_key_256 :
   Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
     Prims.nat -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make expand_key_256_def
+
+
+
+
+
+
 let (simd_round_key_256 :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 ->
@@ -139,9 +145,8 @@ let (simd_round_key_256 :
             then
               Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000")
                 (Vale_AES_AES_s.rot_word_LE
-                   (Vale_AES_AES_common_s.sub_word prev1.Vale_Def_Words_s.hi3))
-                rcon
-            else Vale_AES_AES_common_s.sub_word prev1.Vale_Def_Words_s.hi3 in
+                   (Vale_AES_AES_s.sub_word prev1.Vale_Def_Words_s.hi3)) rcon
+            else Vale_AES_AES_s.sub_word prev1.Vale_Def_Words_s.hi3 in
           let q = prev0 in
           let q1 = Vale_Def_Types_s.quad32_xor q (quad32_shl32 q) in
           let q2 = Vale_Def_Types_s.quad32_xor q1 (quad32_shl32 q1) in
@@ -153,3 +158,4 @@ let (simd_round_key_256 :
               Vale_Def_Words_s.hi2 = r;
               Vale_Def_Words_s.hi3 = r
             }
+

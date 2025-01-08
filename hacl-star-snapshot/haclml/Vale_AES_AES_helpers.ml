@@ -40,8 +40,8 @@ let (round_key_128_rcon :
           let w0 =
             Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000") v0
               (Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000")
-                 (Vale_AES_AES_common_s.sub_word
-                    (Vale_AES_AES_s.rot_word_LE v3)) rcon) in
+                 (Vale_AES_AES_s.sub_word (Vale_AES_AES_s.rot_word_LE v3))
+                 rcon) in
           let w1 =
             Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000") v1 w0 in
           let w2 =
@@ -59,7 +59,7 @@ let (round_key_128 :
   fun prev ->
     fun round ->
       round_key_128_rcon prev
-        (Vale_AES_AES_common_s.aes_rcon (round - Prims.int_one))
+        (Vale_AES_AES_s.aes_rcon (round - Prims.int_one))
 let rec (expand_key_128_def :
   Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
     Prims.nat -> Vale_Def_Types_s.quad32)
@@ -82,6 +82,11 @@ let (expand_key_128 :
   Vale_Def_Words_s.nat32 FStar_Seq_Base.seq ->
     Prims.nat -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make expand_key_128_def
+
+
+
+
+
 let (simd_round_key_128 :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Words_s.nat32 -> Vale_Def_Types_s.quad32)
@@ -91,7 +96,7 @@ let (simd_round_key_128 :
       let r =
         Vale_Def_Types_s.ixor (Prims.parse_int "0x100000000")
           (Vale_AES_AES_s.rot_word_LE
-             (Vale_AES_AES_common_s.sub_word prev.Vale_Def_Words_s.hi3)) rcon in
+             (Vale_AES_AES_s.sub_word prev.Vale_Def_Words_s.hi3)) rcon in
       let q = prev in
       let q1 = Vale_Def_Types_s.quad32_xor q (quad32_shl32 q) in
       let q2 = Vale_Def_Types_s.quad32_xor q1 (quad32_shl32 q1) in
@@ -103,3 +108,10 @@ let (simd_round_key_128 :
           Vale_Def_Words_s.hi2 = r;
           Vale_Def_Words_s.hi3 = r
         }
+
+
+
+
+
+
+

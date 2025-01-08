@@ -24,21 +24,23 @@ let (fsqr_dom : (unit, Vale_Interop_Base.td) Vale_Interop_X64.arity_ok) =
 let (fsqr_regs_modified : Vale_X64_Machine_s.reg_64 -> Prims.bool) =
   fun r ->
     if
-      ((((((((((((r = Prims.int_zero) || (r = Prims.int_one)) ||
-                  (r = (Prims.of_int (2))))
-                 || (r = (Prims.of_int (3))))
-                || (r = (Prims.of_int (5))))
-               || (r = (Prims.of_int (4))))
-              || (r = (Prims.of_int (8))))
-             || (r = (Prims.of_int (9))))
-            || (r = (Prims.of_int (10))))
-           || (r = (Prims.of_int (11))))
+      (((((((((((((r = Prims.int_zero) || (r = Prims.int_one)) ||
+                   (r = (Prims.of_int (2))))
+                  || (r = (Prims.of_int (3))))
+                 || (r = (Prims.of_int (5))))
+                || (r = (Prims.of_int (4))))
+               || (r = (Prims.of_int (8))))
+              || (r = (Prims.of_int (9))))
+             || (r = (Prims.of_int (10))))
+            || (r = (Prims.of_int (11))))
+           || (r = (Prims.of_int (12))))
           || (r = (Prims.of_int (13))))
          || (r = (Prims.of_int (14))))
         || (r = (Prims.of_int (15)))
     then true
     else false
 let fsqr_xmms_modified : 'uuuuu . 'uuuuu -> Prims.bool = fun uu___ -> false
+
 
 let (code_Fsqr :
   (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode) =
@@ -110,6 +112,7 @@ let (fsqr_code_inline : unit -> Prims.int) =
       FStar_Pervasives_Native.None (FStar_List_Tot_Base.length fsqr_dom)
       fsqr_dom fsqr_names (Obj.magic code_Fsqr) of_arg fsqr_regs_modified
       fsqr_comments
+
 
 
 

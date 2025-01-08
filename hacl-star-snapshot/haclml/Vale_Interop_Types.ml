@@ -55,5 +55,6 @@ let (disjoint_addr :
       fun addr2 ->
         fun length2 ->
           ((addr1 + length1) < addr2) || ((addr2 + length2) < addr1)
+
 type 'm addr_map_pred = unit
 type addr_map = b8 -> Vale_Def_Words_s.nat64

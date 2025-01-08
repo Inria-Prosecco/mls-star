@@ -5,8 +5,8 @@ type bytes = FStar_UInt8.t Lib_Sequence.seq
 type 'len lbytes = (FStar_UInt8.t, unit) Lib_Sequence.lseq
 type pub_bytes = FStar_UInt8.t Lib_Sequence.seq
 type 'len pub_lbytes = (FStar_UInt8.t, unit) Lib_Sequence.lseq
-type bytes_t = FStar_UInt8.t Lib_Sequence.seq
-type pub_bytes_t = FStar_UInt8.t Lib_Sequence.seq
+
+
 let (seq_eq_mask_inner :
   Lib_IntTypes.inttype ->
     Prims.nat ->
@@ -57,7 +57,7 @@ let (lbytes_eq :
           Obj.magic
             (seq_eq_mask Lib_IntTypes.U8 len len (Obj.magic b1)
                (Obj.magic b2) len) in
-        res = 255
+        res = (FStar_UInt8.uint_to_t (Prims.of_int (255)))
 let (mask_select : Lib_IntTypes.inttype -> Obj.t -> Obj.t -> Obj.t -> Obj.t)
   =
   fun t ->
@@ -67,6 +67,7 @@ let (mask_select : Lib_IntTypes.inttype -> Obj.t -> Obj.t -> Obj.t -> Obj.t)
           Lib_IntTypes.logxor t Lib_IntTypes.SEC b
             (Lib_IntTypes.logand t Lib_IntTypes.SEC mask
                (Lib_IntTypes.logxor t Lib_IntTypes.SEC a b))
+
 let (seq_mask_select :
   Lib_IntTypes.inttype ->
     Prims.nat ->
@@ -89,8 +90,6 @@ let (seq_mask_select :
                 b in
             res
 let (bytes_empty : FStar_UInt8.t Lib_Sequence.seq) = FStar_Seq_Base.empty ()
-let (pub_bytes_empty : FStar_UInt8.t Lib_Sequence.seq) =
-  FStar_Seq_Base.empty ()
 let (lbytes_empty : (FStar_UInt8.t, unit) Lib_Sequence.lseq) =
   Lib_Sequence.create Prims.int_zero (FStar_UInt8.uint_to_t Prims.int_zero)
 let rec (nat_from_intseq_be_ :
@@ -196,6 +195,12 @@ let (nat_to_intseq_le :
     Lib_IntTypes.secrecy_level ->
       Prims.nat -> Prims.nat -> Obj.t Lib_Sequence.seq)
   = nat_to_intseq_le_
+
+
+
+
+
+
 let (nat_to_bytes_be :
   Lib_IntTypes.secrecy_level ->
     Prims.nat -> Prims.nat -> Obj.t Lib_Sequence.seq)
@@ -213,6 +218,7 @@ let (uint_to_bytes_le :
       fun n ->
         nat_to_intseq_le_ Lib_IntTypes.U8 l (Lib_IntTypes.numbytes t)
           (Lib_IntTypes.v t l n)
+
 let (uint_to_bytes_be :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level -> Obj.t -> (Obj.t, unit) Lib_Sequence.lseq)
@@ -222,6 +228,7 @@ let (uint_to_bytes_be :
       fun n ->
         nat_to_intseq_be_ Lib_IntTypes.U8 l (Lib_IntTypes.numbytes t)
           (Lib_IntTypes.v t l n)
+
 let (uint_from_bytes_le :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level -> (Obj.t, unit) Lib_Sequence.lseq -> Obj.t)
@@ -274,6 +281,7 @@ let (uints_to_bytes_le :
                    (Obj.magic (uints_to_bytes_le_inner t l len ul)) uu___2
                      uu___1) (Obj.repr ()) in
           match uu___ with | (uu___1, o) -> o
+
 let (uints_to_bytes_be_inner :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level ->
@@ -308,6 +316,7 @@ let (uints_to_bytes_be :
                    (Obj.magic (uints_to_bytes_be_inner t l len ul)) uu___2
                      uu___1) (Obj.repr ()) in
           match uu___ with | (uu___1, o) -> o
+
 let (uints_from_bytes_le :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level ->
@@ -326,6 +335,7 @@ let (uints_from_bytes_le :
                       (i * (Lib_IntTypes.numbytes t))
                       (Lib_IntTypes.numbytes t)) in
                Lib_IntTypes.mk_int t l n)
+
 let (uints_from_bytes_be :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level ->
@@ -344,6 +354,7 @@ let (uints_from_bytes_be :
                       (i * (Lib_IntTypes.numbytes t))
                       (Lib_IntTypes.numbytes t)) in
                Lib_IntTypes.mk_int t l n)
+
 let (uint_at_index_le :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level ->
@@ -374,3 +385,49 @@ let (uint_at_index_be :
                 (Lib_Sequence.sub (len * (Lib_IntTypes.numbytes t)) b
                    (i * (Lib_IntTypes.numbytes t)) (Lib_IntTypes.numbytes t)) in
             Lib_IntTypes.mk_int t l n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

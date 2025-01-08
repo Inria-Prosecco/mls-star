@@ -30,20 +30,23 @@ let (sha256_rnds2_spec_update :
                            (FStar_UInt32.logxor
                               (FStar_UInt32.logor
                                  (FStar_UInt32.shift_right e
-                                    (Stdint.Uint32.of_int (6)))
+                                    (FStar_UInt32.uint_to_t
+                                       (Prims.of_int (6))))
                                  (FStar_UInt32.shift_left e
                                     (FStar_UInt32.uint_to_t
                                        (Prims.of_int (26)))))
                               (FStar_UInt32.logxor
                                  (FStar_UInt32.logor
                                     (FStar_UInt32.shift_right e
-                                       (Stdint.Uint32.of_int (11)))
+                                       (FStar_UInt32.uint_to_t
+                                          (Prims.of_int (11))))
                                     (FStar_UInt32.shift_left e
                                        (FStar_UInt32.uint_to_t
                                           (Prims.of_int (21)))))
                                  (FStar_UInt32.logor
                                     (FStar_UInt32.shift_right e
-                                       (Stdint.Uint32.of_int (25)))
+                                       (FStar_UInt32.uint_to_t
+                                          (Prims.of_int (25))))
                                     (FStar_UInt32.shift_left e
                                        (FStar_UInt32.uint_to_t
                                           (Prims.of_int (7)))))))
@@ -58,20 +61,23 @@ let (sha256_rnds2_spec_update :
                                     (FStar_UInt32.logxor
                                        (FStar_UInt32.logor
                                           (FStar_UInt32.shift_right a
-                                             (Stdint.Uint32.of_int (2)))
+                                             (FStar_UInt32.uint_to_t
+                                                (Prims.of_int (2))))
                                           (FStar_UInt32.shift_left a
                                              (FStar_UInt32.uint_to_t
                                                 (Prims.of_int (30)))))
                                        (FStar_UInt32.logxor
                                           (FStar_UInt32.logor
                                              (FStar_UInt32.shift_right a
-                                                (Stdint.Uint32.of_int (13)))
+                                                (FStar_UInt32.uint_to_t
+                                                   (Prims.of_int (13))))
                                              (FStar_UInt32.shift_left a
                                                 (FStar_UInt32.uint_to_t
                                                    (Prims.of_int (19)))))
                                           (FStar_UInt32.logor
                                              (FStar_UInt32.shift_right a
-                                                (Stdint.Uint32.of_int (22)))
+                                                (FStar_UInt32.uint_to_t
+                                                   (Prims.of_int (22))))
                                              (FStar_UInt32.shift_left a
                                                 (FStar_UInt32.uint_to_t
                                                    (Prims.of_int (10))))))))))) in
@@ -86,20 +92,23 @@ let (sha256_rnds2_spec_update :
                            (FStar_UInt32.logxor
                               (FStar_UInt32.logor
                                  (FStar_UInt32.shift_right e
-                                    (Stdint.Uint32.of_int (6)))
+                                    (FStar_UInt32.uint_to_t
+                                       (Prims.of_int (6))))
                                  (FStar_UInt32.shift_left e
                                     (FStar_UInt32.uint_to_t
                                        (Prims.of_int (26)))))
                               (FStar_UInt32.logxor
                                  (FStar_UInt32.logor
                                     (FStar_UInt32.shift_right e
-                                       (Stdint.Uint32.of_int (11)))
+                                       (FStar_UInt32.uint_to_t
+                                          (Prims.of_int (11))))
                                     (FStar_UInt32.shift_left e
                                        (FStar_UInt32.uint_to_t
                                           (Prims.of_int (21)))))
                                  (FStar_UInt32.logor
                                     (FStar_UInt32.shift_right e
-                                       (Stdint.Uint32.of_int (25)))
+                                       (FStar_UInt32.uint_to_t
+                                          (Prims.of_int (25))))
                                     (FStar_UInt32.shift_left e
                                        (FStar_UInt32.uint_to_t
                                           (Prims.of_int (7)))))))
@@ -145,6 +154,7 @@ let (sha256_rnds2_spec :
     Vale_Def_Types_s.quad32 ->
       Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make sha256_rnds2_spec_def
+
 let (sha256_msg1_spec_def :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
@@ -162,66 +172,75 @@ let (sha256_msg1_spec_def :
              (FStar_UInt32.add_mod w0
                 (FStar_UInt32.logxor
                    (FStar_UInt32.logor
-                      (FStar_UInt32.shift_right w1 (Stdint.Uint32.of_int (7)))
+                      (FStar_UInt32.shift_right w1
+                         (FStar_UInt32.uint_to_t (Prims.of_int (7))))
                       (FStar_UInt32.shift_left w1
                          (FStar_UInt32.uint_to_t (Prims.of_int (25)))))
                    (FStar_UInt32.logxor
                       (FStar_UInt32.logor
                          (FStar_UInt32.shift_right w1
-                            (Stdint.Uint32.of_int (18)))
+                            (FStar_UInt32.uint_to_t (Prims.of_int (18))))
                          (FStar_UInt32.shift_left w1
                             (FStar_UInt32.uint_to_t (Prims.of_int (14)))))
-                      (FStar_UInt32.shift_right w1 (Stdint.Uint32.of_int (3)))))));
+                      (FStar_UInt32.shift_right w1
+                         (FStar_UInt32.uint_to_t (Prims.of_int (3))))))));
         Vale_Def_Words_s.lo1 =
           (FStar_UInt32.v
              (FStar_UInt32.add_mod w1
                 (FStar_UInt32.logxor
                    (FStar_UInt32.logor
-                      (FStar_UInt32.shift_right w2 (Stdint.Uint32.of_int (7)))
+                      (FStar_UInt32.shift_right w2
+                         (FStar_UInt32.uint_to_t (Prims.of_int (7))))
                       (FStar_UInt32.shift_left w2
                          (FStar_UInt32.uint_to_t (Prims.of_int (25)))))
                    (FStar_UInt32.logxor
                       (FStar_UInt32.logor
                          (FStar_UInt32.shift_right w2
-                            (Stdint.Uint32.of_int (18)))
+                            (FStar_UInt32.uint_to_t (Prims.of_int (18))))
                          (FStar_UInt32.shift_left w2
                             (FStar_UInt32.uint_to_t (Prims.of_int (14)))))
-                      (FStar_UInt32.shift_right w2 (Stdint.Uint32.of_int (3)))))));
+                      (FStar_UInt32.shift_right w2
+                         (FStar_UInt32.uint_to_t (Prims.of_int (3))))))));
         Vale_Def_Words_s.hi2 =
           (FStar_UInt32.v
              (FStar_UInt32.add_mod w2
                 (FStar_UInt32.logxor
                    (FStar_UInt32.logor
-                      (FStar_UInt32.shift_right w3 (Stdint.Uint32.of_int (7)))
+                      (FStar_UInt32.shift_right w3
+                         (FStar_UInt32.uint_to_t (Prims.of_int (7))))
                       (FStar_UInt32.shift_left w3
                          (FStar_UInt32.uint_to_t (Prims.of_int (25)))))
                    (FStar_UInt32.logxor
                       (FStar_UInt32.logor
                          (FStar_UInt32.shift_right w3
-                            (Stdint.Uint32.of_int (18)))
+                            (FStar_UInt32.uint_to_t (Prims.of_int (18))))
                          (FStar_UInt32.shift_left w3
                             (FStar_UInt32.uint_to_t (Prims.of_int (14)))))
-                      (FStar_UInt32.shift_right w3 (Stdint.Uint32.of_int (3)))))));
+                      (FStar_UInt32.shift_right w3
+                         (FStar_UInt32.uint_to_t (Prims.of_int (3))))))));
         Vale_Def_Words_s.hi3 =
           (FStar_UInt32.v
              (FStar_UInt32.add_mod w3
                 (FStar_UInt32.logxor
                    (FStar_UInt32.logor
-                      (FStar_UInt32.shift_right w4 (Stdint.Uint32.of_int (7)))
+                      (FStar_UInt32.shift_right w4
+                         (FStar_UInt32.uint_to_t (Prims.of_int (7))))
                       (FStar_UInt32.shift_left w4
                          (FStar_UInt32.uint_to_t (Prims.of_int (25)))))
                    (FStar_UInt32.logxor
                       (FStar_UInt32.logor
                          (FStar_UInt32.shift_right w4
-                            (Stdint.Uint32.of_int (18)))
+                            (FStar_UInt32.uint_to_t (Prims.of_int (18))))
                          (FStar_UInt32.shift_left w4
                             (FStar_UInt32.uint_to_t (Prims.of_int (14)))))
-                      (FStar_UInt32.shift_right w4 (Stdint.Uint32.of_int (3)))))))
+                      (FStar_UInt32.shift_right w4
+                         (FStar_UInt32.uint_to_t (Prims.of_int (3))))))))
       }
 let (sha256_msg1_spec :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
   = Vale_Def_Opaque_s.opaque_make sha256_msg1_spec_def
+
 let (sha256_msg2_spec_def :
   Vale_Def_Types_s.quad32 ->
     Vale_Def_Types_s.quad32 -> Vale_Def_Types_s.quad32)
@@ -235,57 +254,69 @@ let (sha256_msg2_spec_def :
           (FStar_UInt32.uint_to_t src1.Vale_Def_Words_s.lo0)
           (FStar_UInt32.logxor
              (FStar_UInt32.logor
-                (FStar_UInt32.shift_right w14 (Stdint.Uint32.of_int (17)))
+                (FStar_UInt32.shift_right w14
+                   (FStar_UInt32.uint_to_t (Prims.of_int (17))))
                 (FStar_UInt32.shift_left w14
                    (FStar_UInt32.uint_to_t (Prims.of_int (15)))))
              (FStar_UInt32.logxor
                 (FStar_UInt32.logor
-                   (FStar_UInt32.shift_right w14 (Stdint.Uint32.of_int (19)))
+                   (FStar_UInt32.shift_right w14
+                      (FStar_UInt32.uint_to_t (Prims.of_int (19))))
                    (FStar_UInt32.shift_left w14
                       (FStar_UInt32.uint_to_t (Prims.of_int (13)))))
-                (FStar_UInt32.shift_right w14 (Stdint.Uint32.of_int (10))))) in
+                (FStar_UInt32.shift_right w14
+                   (FStar_UInt32.uint_to_t (Prims.of_int (10)))))) in
       let w17 =
         FStar_UInt32.add_mod
           (FStar_UInt32.uint_to_t src1.Vale_Def_Words_s.lo1)
           (FStar_UInt32.logxor
              (FStar_UInt32.logor
-                (FStar_UInt32.shift_right w15 (Stdint.Uint32.of_int (17)))
+                (FStar_UInt32.shift_right w15
+                   (FStar_UInt32.uint_to_t (Prims.of_int (17))))
                 (FStar_UInt32.shift_left w15
                    (FStar_UInt32.uint_to_t (Prims.of_int (15)))))
              (FStar_UInt32.logxor
                 (FStar_UInt32.logor
-                   (FStar_UInt32.shift_right w15 (Stdint.Uint32.of_int (19)))
+                   (FStar_UInt32.shift_right w15
+                      (FStar_UInt32.uint_to_t (Prims.of_int (19))))
                    (FStar_UInt32.shift_left w15
                       (FStar_UInt32.uint_to_t (Prims.of_int (13)))))
-                (FStar_UInt32.shift_right w15 (Stdint.Uint32.of_int (10))))) in
+                (FStar_UInt32.shift_right w15
+                   (FStar_UInt32.uint_to_t (Prims.of_int (10)))))) in
       let w18 =
         FStar_UInt32.add_mod
           (FStar_UInt32.uint_to_t src1.Vale_Def_Words_s.hi2)
           (FStar_UInt32.logxor
              (FStar_UInt32.logor
-                (FStar_UInt32.shift_right w16 (Stdint.Uint32.of_int (17)))
+                (FStar_UInt32.shift_right w16
+                   (FStar_UInt32.uint_to_t (Prims.of_int (17))))
                 (FStar_UInt32.shift_left w16
                    (FStar_UInt32.uint_to_t (Prims.of_int (15)))))
              (FStar_UInt32.logxor
                 (FStar_UInt32.logor
-                   (FStar_UInt32.shift_right w16 (Stdint.Uint32.of_int (19)))
+                   (FStar_UInt32.shift_right w16
+                      (FStar_UInt32.uint_to_t (Prims.of_int (19))))
                    (FStar_UInt32.shift_left w16
                       (FStar_UInt32.uint_to_t (Prims.of_int (13)))))
-                (FStar_UInt32.shift_right w16 (Stdint.Uint32.of_int (10))))) in
+                (FStar_UInt32.shift_right w16
+                   (FStar_UInt32.uint_to_t (Prims.of_int (10)))))) in
       let w19 =
         FStar_UInt32.add_mod
           (FStar_UInt32.uint_to_t src1.Vale_Def_Words_s.hi3)
           (FStar_UInt32.logxor
              (FStar_UInt32.logor
-                (FStar_UInt32.shift_right w17 (Stdint.Uint32.of_int (17)))
+                (FStar_UInt32.shift_right w17
+                   (FStar_UInt32.uint_to_t (Prims.of_int (17))))
                 (FStar_UInt32.shift_left w17
                    (FStar_UInt32.uint_to_t (Prims.of_int (15)))))
              (FStar_UInt32.logxor
                 (FStar_UInt32.logor
-                   (FStar_UInt32.shift_right w17 (Stdint.Uint32.of_int (19)))
+                   (FStar_UInt32.shift_right w17
+                      (FStar_UInt32.uint_to_t (Prims.of_int (19))))
                    (FStar_UInt32.shift_left w17
                       (FStar_UInt32.uint_to_t (Prims.of_int (13)))))
-                (FStar_UInt32.shift_right w17 (Stdint.Uint32.of_int (10))))) in
+                (FStar_UInt32.shift_right w17
+                   (FStar_UInt32.uint_to_t (Prims.of_int (10)))))) in
       {
         Vale_Def_Words_s.lo0 = (FStar_UInt32.v w16);
         Vale_Def_Words_s.lo1 = (FStar_UInt32.v w17);

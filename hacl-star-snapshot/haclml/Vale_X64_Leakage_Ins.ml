@@ -28,6 +28,7 @@ let (machine_eval_code :
         Vale_X64_Machine_Semantics_s.machine_state
           FStar_Pervasives_Native.option)
   = Vale_X64_Machine_Semantics_s.machine_eval_code
+
 let rec (check_if_consumes_fixed_time_args :
   Vale_X64_Instruction_s.instr_operand Prims.list ->
     Obj.t -> Vale_X64_Leakage_Helpers.analysis_taints -> Prims.bool)
@@ -135,6 +136,8 @@ let rec (check_if_consumes_fixed_time_outs :
                 let b'' =
                   check_if_consumes_fixed_time_outs outs1 args oprs ts t_out in
                 b' && b''
+
+
 let (instr_set_taint_explicit :
   Vale_X64_Instruction_s.instr_operand_explicit ->
     Obj.t ->
@@ -198,6 +201,7 @@ let rec (instr_set_taints :
                  | Vale_X64_Instruction_s.IOpIm i1 ->
                      instr_set_taints outs1 args oprs
                        (instr_set_taint_implicit i1 ts t) t)
+
 let (update_heap32_val :
   Prims.int -> Vale_Def_Words_s.nat32 -> Prims.int -> Vale_Def_Words_s.nat8)
   =
@@ -221,6 +225,8 @@ let (valid_addr32 :
          (Vale_Arch_MachineHeap_s.valid_addr (ptr + (Prims.of_int (2))) mem))
         &&
         (Vale_Arch_MachineHeap_s.valid_addr (ptr + (Prims.of_int (3))) mem)
+
+
 let (update_heap64_val :
   Prims.int -> Vale_Def_Words_s.nat64 -> Prims.int -> Vale_Def_Words_s.nat8)
   =
@@ -244,6 +250,8 @@ let (update_heap64_val :
         | uu___ when uu___ = (Prims.of_int (6)) -> hi.Vale_Def_Words_s.hi2
         | uu___ when uu___ = (Prims.of_int (7)) -> hi.Vale_Def_Words_s.hi3
         | uu___ -> Prims.int_zero
+
+
 let (update_heap128_val :
   Prims.int -> Vale_Def_Types_s.quad32 -> Prims.int -> Vale_Def_Words_s.nat8)
   =
@@ -278,6 +286,13 @@ let (valid_addr128 :
           (valid_addr32 (ptr + (Prims.of_int (4))) mem))
          && (valid_addr32 (ptr + (Prims.of_int (8))) mem))
         && (valid_addr32 (ptr + (Prims.of_int (12))) mem)
+
+
+
+
+
+
+
 let (check_if_instr_consumes_fixed_time :
   Vale_X64_Machine_Semantics_s.ins ->
     Vale_X64_Leakage_Helpers.analysis_taints ->
@@ -516,3 +531,10 @@ let (check_if_ins_consumes_fixed_time :
           check_if_alloc_consumes_fixed_time ins ts
       | Vale_X64_Bytes_Code_s.Dealloc uu___ ->
           check_if_dealloc_consumes_fixed_time ins ts
+
+
+
+
+
+
+

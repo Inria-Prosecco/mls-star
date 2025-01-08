@@ -41,7 +41,13 @@ let (upd_reg :
               match __proj__Rel__item__of_reg n arg_reg r with
               | FStar_Pervasives_Native.Some j -> if i = j then v else regs r
               | uu___ -> regs r
+
+
+
+
 type taint_map = unit
+
+
 
 
 let (taint_of_arg :
@@ -78,6 +84,9 @@ let (taint_of_arg :
                 Vale_Interop_Base.strict_disjointness = uu___3;_})
              -> FStar_Pervasives_Native.Some tnt
          | uu___1 -> FStar_Pervasives_Native.None)
+
+
+
 type ('maxuarity, 'args, 'codom) state_builder_t = unit
 
 type ('c, 'args) prediction_pre_rel_t = unit

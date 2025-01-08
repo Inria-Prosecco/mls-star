@@ -10,6 +10,8 @@ type ('fu, 'c) update_cf = unit
 type ('fu, 'o) update_of = unit
 type ('fu, 'f) maintain_cf = unit
 type ('fu, 'f) maintain_of = unit
+
+
 let (va_code_Adcx_64 :
   Vale_X64_Machine_s.operand64 ->
     Vale_X64_Machine_s.operand64 ->
@@ -27,8 +29,19 @@ let (va_codegen_success_Adcx_64 :
       Vale_X64_Decls.va_pbool_and
         (Vale_X64_InsBasic.va_codegen_success_Adcx64Wrap dst src)
         (Vale_X64_Decls.va_ttrue ())
+
 type ('dst, 'src, 'vaus0, 'vauk) va_wp_Adcx_64 = unit
 
+let (va_quick_Adcx_64 :
+  Vale_X64_Machine_s.operand64 ->
+    Vale_X64_Machine_s.operand64 -> (unit, unit) Vale_X64_QuickCode.quickCode)
+  =
+  fun dst ->
+    fun src ->
+      Vale_X64_QuickCode.QProc
+        ((va_code_Adcx_64 dst src),
+          [Vale_X64_QuickCode.Mod_flags;
+          Vale_X64_QuickCode.va_mod_dst_opr64 dst], (), ())
 let (va_code_Adox_64 :
   Vale_X64_Machine_s.operand64 ->
     Vale_X64_Machine_s.operand64 ->
@@ -46,8 +59,19 @@ let (va_codegen_success_Adox_64 :
       Vale_X64_Decls.va_pbool_and
         (Vale_X64_InsBasic.va_codegen_success_Adox64Wrap dst src)
         (Vale_X64_Decls.va_ttrue ())
+
 type ('dst, 'src, 'vaus0, 'vauk) va_wp_Adox_64 = unit
 
+let (va_quick_Adox_64 :
+  Vale_X64_Machine_s.operand64 ->
+    Vale_X64_Machine_s.operand64 -> (unit, unit) Vale_X64_QuickCode.quickCode)
+  =
+  fun dst ->
+    fun src ->
+      Vale_X64_QuickCode.QProc
+        ((va_code_Adox_64 dst src),
+          [Vale_X64_QuickCode.Mod_flags;
+          Vale_X64_QuickCode.va_mod_dst_opr64 dst], (), ())
 let (va_code_Mulx_64 :
   Vale_X64_Machine_s.operand64 ->
     Vale_X64_Machine_s.operand64 ->

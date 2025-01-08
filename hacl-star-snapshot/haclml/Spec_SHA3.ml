@@ -1,7 +1,7 @@
 open Prims
 type state = (FStar_UInt64.t, unit) Lib_Sequence.lseq
 type index = Prims.nat
-let (get :
+let (readLane :
   (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
     Prims.nat -> Prims.nat -> FStar_UInt64.t)
   =
@@ -10,7 +10,7 @@ let (get :
       fun y ->
         Lib_Sequence.index (Prims.of_int (25)) s
           (x + ((Prims.of_int (5)) * y))
-let (set :
+let (writeLane :
   (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
     Prims.nat ->
       Prims.nat -> FStar_UInt64.t -> (FStar_UInt64.t, unit) Lib_Sequence.lseq)
@@ -37,11 +37,11 @@ let (state_theta_inner_C :
     fun i ->
       fun _C ->
         Lib_Sequence.upd (Prims.of_int (5)) _C i
-          (FStar_UInt64.logxor (get s i Prims.int_zero)
-             (FStar_UInt64.logxor (get s i Prims.int_one)
-                (FStar_UInt64.logxor (get s i (Prims.of_int (2)))
-                   (FStar_UInt64.logxor (get s i (Prims.of_int (3)))
-                      (get s i (Prims.of_int (4)))))))
+          (FStar_UInt64.logxor (readLane s i Prims.int_zero)
+             (FStar_UInt64.logxor (readLane s i Prims.int_one)
+                (FStar_UInt64.logxor (readLane s i (Prims.of_int (2)))
+                   (FStar_UInt64.logxor (readLane s i (Prims.of_int (3)))
+                      (readLane s i (Prims.of_int (4)))))))
 let (state_theta0 :
   (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
     (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
@@ -60,7 +60,8 @@ let (state_theta_inner_s_inner :
   =
   fun x ->
     fun _D ->
-      fun y -> fun s -> set s x y (FStar_UInt64.logxor (get s x y) _D)
+      fun y ->
+        fun s -> writeLane s x y (FStar_UInt64.logxor (readLane s x y) _D)
 let (state_theta_inner_s :
   (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
     Prims.nat ->
@@ -85,8 +86,8 @@ let (state_theta1 :
     (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
       (FStar_UInt64.t, unit) Lib_Sequence.lseq)
   =
-  fun _C ->
-    fun s ->
+  fun s ->
+    fun _C ->
       Lib_LoopCombinators.repeati (Prims.of_int (5)) (state_theta_inner_s _C)
         s
 let (state_theta :
@@ -97,7 +98,7 @@ let (state_theta :
     let _C =
       Lib_Sequence.create (Prims.of_int (5))
         (FStar_UInt64.uint_to_t Prims.int_zero) in
-    let _C1 = state_theta0 s _C in state_theta1 _C1 s
+    let _C1 = state_theta0 s _C in state_theta1 s _C1
 let (state_pi_rho_inner :
   Prims.nat ->
     (FStar_UInt64.t * (FStar_UInt64.t, unit) Lib_Sequence.lseq) ->
@@ -125,7 +126,7 @@ let (state_pi_rho :
     (FStar_UInt64.t, unit) Lib_Sequence.lseq)
   =
   fun s_theta ->
-    let current = get s_theta Prims.int_one Prims.int_zero in
+    let current = readLane s_theta Prims.int_one Prims.int_zero in
     let uu___ =
       Obj.magic
         (Lib_LoopCombinators.repeat_gen (Prims.of_int (24)) ()
@@ -133,7 +134,7 @@ let (state_pi_rho :
               fun uu___1 -> (Obj.magic state_pi_rho_inner) uu___2 uu___1)
            (Obj.magic (current, s_theta))) in
     match uu___ with | (uu___1, s_pi_rho) -> s_pi_rho
-let (state_chi_inner0 :
+let (state_chi_inner :
   (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
     Prims.nat ->
       Prims.nat ->
@@ -144,13 +145,13 @@ let (state_chi_inner0 :
     fun y ->
       fun x ->
         fun s ->
-          set s x y
-            (FStar_UInt64.logxor (get s_pi_rho x y)
+          writeLane s x y
+            (FStar_UInt64.logxor (readLane s_pi_rho x y)
                (FStar_UInt64.logand
                   (FStar_UInt64.lognot
-                     (get s_pi_rho
+                     (readLane s_pi_rho
                         ((x + Prims.int_one) mod (Prims.of_int (5))) y))
-                  (get s_pi_rho
+                  (readLane s_pi_rho
                      ((x + (Prims.of_int (2))) mod (Prims.of_int (5))) y)))
 let (state_chi_inner1 :
   (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
@@ -162,7 +163,7 @@ let (state_chi_inner1 :
     fun y ->
       fun s ->
         Lib_LoopCombinators.repeati (Prims.of_int (5))
-          (state_chi_inner0 s_pi_rho y) s
+          (state_chi_inner s_pi_rho y) s
 let (state_chi :
   (FStar_UInt64.t, unit) Lib_Sequence.lseq ->
     (FStar_UInt64.t, unit) Lib_Sequence.lseq)
@@ -176,8 +177,8 @@ let (state_iota :
   =
   fun s ->
     fun round ->
-      set s Prims.int_zero Prims.int_zero
-        (FStar_UInt64.logxor (get s Prims.int_zero Prims.int_zero)
+      writeLane s Prims.int_zero Prims.int_zero
+        (FStar_UInt64.logxor (readLane s Prims.int_zero Prims.int_zero)
            (Lib_Sequence.index (Prims.of_int (24))
               Spec_SHA3_Constants.keccak_rndc round))
 let (state_permute1 :
@@ -298,9 +299,10 @@ let (absorb_last :
             let s2 =
               if
                 (Prims.op_Negation
-                   ((FStar_UInt8.logand delimitedSuffix
-                       (FStar_UInt8.uint_to_t (Prims.of_int (0x80))))
-                      = (FStar_UInt8.uint_to_t Prims.int_zero)))
+                   (FStar_UInt8.eq
+                      (FStar_UInt8.logand delimitedSuffix
+                         (FStar_UInt8.uint_to_t (Prims.of_int (0x80))))
+                      (FStar_UInt8.uint_to_t Prims.int_zero)))
                   && (rem = (rateInBytes - Prims.int_one))
               then state_permute s1
               else s1 in
@@ -436,3 +438,51 @@ let (sha3_512 :
     fun input ->
       keccak (Prims.of_int (576)) (Prims.of_int (1024)) inputByteLen input
         (FStar_UInt8.uint_to_t (Prims.of_int (0x06))) (Prims.of_int (64))
+let (cshake128_frodo :
+  Prims.nat ->
+    FStar_UInt8.t Lib_Sequence.seq ->
+      FStar_UInt16.t -> Prims.nat -> (FStar_UInt8.t, unit) Lib_Sequence.lseq)
+  =
+  fun input_len ->
+    fun input ->
+      fun cstm ->
+        fun output_len ->
+          let s =
+            Lib_Sequence.create (Prims.of_int (25))
+              (FStar_UInt64.uint_to_t Prims.int_zero) in
+          let s1 =
+            Lib_Sequence.upd (Prims.of_int (25)) s Prims.int_zero
+              (FStar_UInt64.logor
+                 (FStar_UInt64.uint_to_t (Prims.parse_int "0x10010001a801"))
+                 (FStar_UInt64.shift_left
+                    (FStar_Int_Cast.uint16_to_uint64 cstm)
+                    (FStar_UInt32.uint_to_t (Prims.of_int (48))))) in
+          let s2 = state_permute s1 in
+          let s3 =
+            absorb s2 (Prims.of_int (168)) input_len input
+              (FStar_UInt8.uint_to_t (Prims.of_int (0x04))) in
+          squeeze s3 (Prims.of_int (168)) output_len
+let (cshake256_frodo :
+  Prims.nat ->
+    FStar_UInt8.t Lib_Sequence.seq ->
+      FStar_UInt16.t -> Prims.nat -> (FStar_UInt8.t, unit) Lib_Sequence.lseq)
+  =
+  fun input_len ->
+    fun input ->
+      fun cstm ->
+        fun output_len ->
+          let s =
+            Lib_Sequence.create (Prims.of_int (25))
+              (FStar_UInt64.uint_to_t Prims.int_zero) in
+          let s1 =
+            Lib_Sequence.upd (Prims.of_int (25)) s Prims.int_zero
+              (FStar_UInt64.logor
+                 (FStar_UInt64.uint_to_t (Prims.parse_int "0x100100018801"))
+                 (FStar_UInt64.shift_left
+                    (FStar_Int_Cast.uint16_to_uint64 cstm)
+                    (FStar_UInt32.uint_to_t (Prims.of_int (48))))) in
+          let s2 = state_permute s1 in
+          let s3 =
+            absorb s2 (Prims.of_int (136)) input_len input
+              (FStar_UInt8.uint_to_t (Prims.of_int (0x04))) in
+          squeeze s3 (Prims.of_int (136)) output_len

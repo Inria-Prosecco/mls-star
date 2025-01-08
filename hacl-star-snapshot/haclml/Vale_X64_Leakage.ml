@@ -73,6 +73,8 @@ let rec (eq_regs :
           (eq_regs_file regs1 regs2 (k - Prims.int_one)
              (Vale_X64_Machine_s.n_regs (k - Prims.int_one)))
             && (eq_regs regs1 regs2 (k - Prims.int_one))
+
+
 let (eq_registers :
   Vale_X64_Leakage_s.reg_taint -> Vale_X64_Leakage_s.reg_taint -> Prims.bool)
   =
@@ -100,6 +102,10 @@ let (eq_leakage_taints :
            (Vale_X64_Leakage_s.__proj__LeakageTaints__item__ofFlagsTaint ts2))
 type ('ts, 'tsu) taintstate_monotone_regs = unit
 type ('ts, 'tsu) taintstate_monotone = unit
+
+
+
+
 let (combine_leakage_taints :
   Vale_X64_Leakage_s.leakage_taints ->
     Vale_X64_Leakage_s.leakage_taints -> Vale_X64_Leakage_s.leakage_taints)
@@ -170,6 +176,7 @@ let rec (count_public_registers_file :
           (count_public_register regs
              (Vale_X64_Machine_s.Reg (rf, (k - Prims.int_one))))
             + (count_public_registers_file regs rf (k - Prims.int_one))
+
 let rec (count_public_registers :
   Vale_X64_Leakage_s.reg_taint -> Prims.nat -> Prims.nat) =
   fun regs ->
@@ -180,6 +187,7 @@ let rec (count_public_registers :
         (count_public_registers_file regs (k - Prims.int_one)
            (Vale_X64_Machine_s.n_regs (k - Prims.int_one)))
           + (count_public_registers regs (k - Prims.int_one))
+
 let (count_flagTaint : Vale_X64_Leakage_Helpers.analysis_taints -> Prims.nat)
   =
   fun ts ->
@@ -216,6 +224,7 @@ let (count_publics : Vale_X64_Leakage_Helpers.analysis_taints -> Prims.nat) =
         + (count_flagTaint ts))
        + (count_cfFlagTaint ts))
       + (count_ofFlagTaint ts)
+
 let rec (check_if_block_consumes_fixed_time :
   Vale_X64_Machine_Semantics_s.codes ->
     Vale_X64_Leakage_Helpers.analysis_taints ->
@@ -340,6 +349,11 @@ and (check_if_loop_consumes_fixed_time :
                           then (true, combined_ts)
                           else
                             check_if_loop_consumes_fixed_time c combined_ts))))
+
+
+
+
+
 let (check_if_code_is_leakage_free' :
   Vale_X64_Machine_Semantics_s.code ->
     Vale_X64_Leakage_Helpers.analysis_taints ->
@@ -462,7 +476,7 @@ let (mk_analysis_taints :
                           && (nbr_args >= (Prims.of_int (6)))
                       then Vale_Arch_HeapTypes_s.Public
                       else Vale_Arch_HeapTypes_s.Secret in
-      let rs x = regTaint x in
+      let rs = regTaint in
       let rts = Vale_X64_Leakage_Helpers.regs_to_map rs in
       let lts =
         Vale_X64_Leakage_s.LeakageTaints

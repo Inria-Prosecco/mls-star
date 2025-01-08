@@ -24,6 +24,10 @@ let get_last_s :
       fun inp ->
         let rem = len mod blocksize in
         let b = FStar_Seq_Base.slice inp (len - rem) len in b
+
+
+
+
 let repeat_gen_blocks_f :
   'input .
     Prims.pos ->
@@ -72,6 +76,7 @@ let repeat_gen_blocks_multi :
                 fun acc0 ->
                   Lib_LoopCombinators.repeat_right mi (mi + n) ()
                     (repeat_gen_blocks_f blocksize mi hi n inp () f) acc0
+
 let repeat_gen_blocks :
   'input 'c .
     Prims.pos ->
@@ -105,6 +110,27 @@ let repeat_gen_blocks :
                     repeat_gen_blocks_multi blocksize mi hi nb blocks () f
                       acc0 in
                   l (mi + nb) rem last acc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let repeat_gen_blocks_map_f :
   'a .
     Prims.pos ->
@@ -146,6 +172,7 @@ let repeat_gen_blocks_map_l :
                 if rem > Prims.int_zero
                 then FStar_Seq_Base.append acc (l i rem block_l)
                 else acc
+
 let map_blocks_multi_acc :
   'a .
     Prims.pos ->
@@ -221,6 +248,9 @@ let map_blocks_acc :
                            (Obj.magic
                               (repeat_gen_blocks_map_l blocksize hi l))
                              uu___3 uu___2 uu___1 uu___) (Obj.magic acc0)
+
+
+
 let f_shift :
   'a .
     Prims.pos ->
@@ -250,3 +280,8 @@ let l_shift :
                     ('a, unit) Lib_Sequence.lseq
   =
   fun blocksize -> fun mi -> fun hi -> fun n -> fun l -> fun i -> l (mi + i)
+
+
+
+
+

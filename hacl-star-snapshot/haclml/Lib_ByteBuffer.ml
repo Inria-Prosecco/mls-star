@@ -96,10 +96,11 @@ let (buf_eq_mask :
               fun res ->
                 let h0 = FStar_HyperStack_ST.get () in
                 Obj.magic (fun h -> fun i -> ());
-                C_Loops.for1 Stdint.Uint32.zero len ()
+                C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
                   (fun i ->
                      let z0 =
-                       LowStar_Monotonic_Buffer.index res Stdint.Uint32.zero in
+                       LowStar_Monotonic_Buffer.index res
+                         (FStar_UInt32.uint_to_t Prims.int_zero) in
                      (let uu___2 =
                         let uu___3 =
                           let uu___4 = LowStar_Monotonic_Buffer.index b1 i in
@@ -107,17 +108,19 @@ let (buf_eq_mask :
                           Lib_IntTypes.eq_mask t uu___4 uu___5 in
                         let uu___4 =
                           LowStar_Monotonic_Buffer.index res
-                            Stdint.Uint32.zero in
+                            (FStar_UInt32.uint_to_t Prims.int_zero) in
                         Lib_IntTypes.logand t Lib_IntTypes.SEC uu___3 uu___4 in
                       let h01 = FStar_HyperStack_ST.get () in
                       (let h = FStar_HyperStack_ST.get () in
-                       LowStar_Monotonic_Buffer.upd' res Stdint.Uint32.zero
-                         uu___2);
+                       LowStar_Monotonic_Buffer.upd' res
+                         (FStar_UInt32.uint_to_t Prims.int_zero) uu___2);
                       (let h1 = FStar_HyperStack_ST.get () in ()));
                      (let z =
-                        LowStar_Monotonic_Buffer.index res Stdint.Uint32.zero in
+                        LowStar_Monotonic_Buffer.index res
+                          (FStar_UInt32.uint_to_t Prims.int_zero) in
                       ()));
-                LowStar_Monotonic_Buffer.index res Stdint.Uint32.zero
+                LowStar_Monotonic_Buffer.index res
+                  (FStar_UInt32.uint_to_t Prims.int_zero)
 let (lbytes_eq :
   FStar_UInt32.t ->
     FStar_UInt8.t LowStar_Buffer.buffer ->
@@ -129,31 +132,38 @@ let (lbytes_eq :
         FStar_HyperStack_ST.push_frame ();
         (let res =
            LowStar_Monotonic_Buffer.malloca
-             (FStar_UInt8.uint_to_t (Prims.of_int (255))) Stdint.Uint32.one in
+             (FStar_UInt8.uint_to_t (Prims.of_int (255)))
+             (FStar_UInt32.uint_to_t Prims.int_one) in
          let z =
            let h0 = FStar_HyperStack_ST.get () in
            Obj.magic (fun h -> fun i -> ());
-           C_Loops.for1 Stdint.Uint32.zero len ()
+           C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
              (fun i ->
                 let z0 =
-                  LowStar_Monotonic_Buffer.index res Stdint.Uint32.zero in
+                  LowStar_Monotonic_Buffer.index res
+                    (FStar_UInt32.uint_to_t Prims.int_zero) in
                 (let uu___3 =
                    let uu___4 =
                      let uu___5 = LowStar_Monotonic_Buffer.index b1 i in
                      let uu___6 = LowStar_Monotonic_Buffer.index b2 i in
                      FStar_UInt8.eq_mask uu___5 uu___6 in
                    let uu___5 =
-                     LowStar_Monotonic_Buffer.index res Stdint.Uint32.zero in
+                     LowStar_Monotonic_Buffer.index res
+                       (FStar_UInt32.uint_to_t Prims.int_zero) in
                    FStar_UInt8.logand uu___4 uu___5 in
                  let h01 = FStar_HyperStack_ST.get () in
                  (let h = FStar_HyperStack_ST.get () in
-                  LowStar_Monotonic_Buffer.upd' res Stdint.Uint32.zero uu___3);
+                  LowStar_Monotonic_Buffer.upd' res
+                    (FStar_UInt32.uint_to_t Prims.int_zero) uu___3);
                  (let h1 = FStar_HyperStack_ST.get () in ()));
                 (let z1 =
-                   LowStar_Monotonic_Buffer.index res Stdint.Uint32.zero in
+                   LowStar_Monotonic_Buffer.index res
+                     (FStar_UInt32.uint_to_t Prims.int_zero) in
                  ()));
-           LowStar_Monotonic_Buffer.index res Stdint.Uint32.zero in
-         FStar_HyperStack_ST.pop_frame (); z = 255)
+           LowStar_Monotonic_Buffer.index res
+             (FStar_UInt32.uint_to_t Prims.int_zero) in
+         FStar_HyperStack_ST.pop_frame ();
+         z = (FStar_UInt8.uint_to_t (Prims.of_int (255))))
 let (buf_mask_select :
   Lib_IntTypes.inttype ->
     FStar_UInt32.t ->
@@ -169,10 +179,12 @@ let (buf_mask_select :
             fun res ->
               let h0 = FStar_HyperStack_ST.get () in
               let h01 = FStar_HyperStack_ST.get () in
+              Obj.magic (fun h -> fun i -> ());
               C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
                 (fun i ->
                    let os =
-                     LowStar_Monotonic_Buffer.msub res Stdint.Uint32.zero () in
+                     LowStar_Monotonic_Buffer.msub res
+                       (FStar_UInt32.uint_to_t Prims.int_zero) () in
                    let h = FStar_HyperStack_ST.get () in
                    let x =
                      let h1 = FStar_HyperStack_ST.get () in
@@ -187,6 +199,8 @@ let (buf_mask_select :
                      LowStar_Monotonic_Buffer.upd' os i x);
                     (let h1 = FStar_HyperStack_ST.get () in ()));
                    (let h' = FStar_HyperStack_ST.get () in ()))
+
+
 let (uint_from_bytes_le :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level -> Obj.t LowStar_Buffer.buffer -> Obj.t)
@@ -197,7 +211,8 @@ let (uint_from_bytes_le :
         let h0 = FStar_HyperStack_ST.get () in
         match t with
         | Lib_IntTypes.U8 ->
-            LowStar_Monotonic_Buffer.index i Stdint.Uint32.zero
+            LowStar_Monotonic_Buffer.index i
+              (FStar_UInt32.uint_to_t Prims.int_zero)
         | Lib_IntTypes.U16 ->
             let u = LowStar_Endianness.load16_le (Obj.magic i) in
             Lib_IntTypes.cast t l Lib_IntTypes.U16 l (Obj.magic u)
@@ -220,7 +235,8 @@ let (uint_from_bytes_be :
         let h0 = FStar_HyperStack_ST.get () in
         match t with
         | Lib_IntTypes.U8 ->
-            LowStar_Monotonic_Buffer.index i Stdint.Uint32.zero
+            LowStar_Monotonic_Buffer.index i
+              (FStar_UInt32.uint_to_t Prims.int_zero)
         | Lib_IntTypes.U16 ->
             let u = LowStar_Endianness.load16_be (Obj.magic i) in
             Lib_IntTypes.cast t l Lib_IntTypes.U16 l (Obj.magic u)
@@ -233,6 +249,8 @@ let (uint_from_bytes_be :
         | Lib_IntTypes.U128 ->
             let u = LowStar_Endianness.load128_be (Obj.magic i) in
             Lib_IntTypes.cast t l Lib_IntTypes.U128 l (Obj.magic u)
+
+
 let (uint_to_bytes_le :
   Lib_IntTypes.inttype ->
     Lib_IntTypes.secrecy_level ->
@@ -246,13 +264,15 @@ let (uint_to_bytes_le :
           | Lib_IntTypes.U1 ->
               ((let h0 = FStar_HyperStack_ST.get () in
                 (let h = FStar_HyperStack_ST.get () in
-                 LowStar_Monotonic_Buffer.upd' o Stdint.Uint32.zero i);
+                 LowStar_Monotonic_Buffer.upd' o
+                   (FStar_UInt32.uint_to_t Prims.int_zero) i);
                 (let h1 = FStar_HyperStack_ST.get () in ()));
                (let h1 = FStar_HyperStack_ST.get () in ()))
           | Lib_IntTypes.U8 ->
               ((let h0 = FStar_HyperStack_ST.get () in
                 (let h = FStar_HyperStack_ST.get () in
-                 LowStar_Monotonic_Buffer.upd' o Stdint.Uint32.zero i);
+                 LowStar_Monotonic_Buffer.upd' o
+                   (FStar_UInt32.uint_to_t Prims.int_zero) i);
                 (let h1 = FStar_HyperStack_ST.get () in ()));
                (let h1 = FStar_HyperStack_ST.get () in ()))
           | Lib_IntTypes.U16 ->
@@ -280,13 +300,15 @@ let (uint_to_bytes_be :
           | Lib_IntTypes.U1 ->
               ((let h0 = FStar_HyperStack_ST.get () in
                 (let h = FStar_HyperStack_ST.get () in
-                 LowStar_Monotonic_Buffer.upd' o Stdint.Uint32.zero i);
+                 LowStar_Monotonic_Buffer.upd' o
+                   (FStar_UInt32.uint_to_t Prims.int_zero) i);
                 (let h1 = FStar_HyperStack_ST.get () in ()));
                (let h1 = FStar_HyperStack_ST.get () in ()))
           | Lib_IntTypes.U8 ->
               ((let h0 = FStar_HyperStack_ST.get () in
                 (let h = FStar_HyperStack_ST.get () in
-                 LowStar_Monotonic_Buffer.upd' o Stdint.Uint32.zero i);
+                 LowStar_Monotonic_Buffer.upd' o
+                   (FStar_UInt32.uint_to_t Prims.int_zero) i);
                 (let h1 = FStar_HyperStack_ST.get () in ()));
                (let h1 = FStar_HyperStack_ST.get () in ()))
           | Lib_IntTypes.U16 ->
@@ -314,10 +336,12 @@ let (uints_from_bytes_le :
           fun i ->
             let h0 = FStar_HyperStack_ST.get () in
             (let h01 = FStar_HyperStack_ST.get () in
+             Obj.magic (fun h -> fun i1 -> ());
              C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
                (fun i1 ->
                   let os =
-                    LowStar_Monotonic_Buffer.msub o Stdint.Uint32.zero () in
+                    LowStar_Monotonic_Buffer.msub o
+                      (FStar_UInt32.uint_to_t Prims.int_zero) () in
                   let h = FStar_HyperStack_ST.get () in
                   let x =
                     let h1 = FStar_HyperStack_ST.get () in
@@ -331,7 +355,7 @@ let (uints_from_bytes_le :
                       match t with
                       | Lib_IntTypes.U8 ->
                           LowStar_Monotonic_Buffer.index bj
-                            Stdint.Uint32.zero
+                            (FStar_UInt32.uint_to_t Prims.int_zero)
                       | Lib_IntTypes.U16 ->
                           let u = LowStar_Endianness.load16_le (Obj.magic bj) in
                           Lib_IntTypes.cast t l Lib_IntTypes.U16 l
@@ -369,10 +393,12 @@ let (uints_from_bytes_be :
           fun i ->
             let h0 = FStar_HyperStack_ST.get () in
             (let h01 = FStar_HyperStack_ST.get () in
+             Obj.magic (fun h -> fun i1 -> ());
              C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
                (fun i1 ->
                   let os =
-                    LowStar_Monotonic_Buffer.msub o Stdint.Uint32.zero () in
+                    LowStar_Monotonic_Buffer.msub o
+                      (FStar_UInt32.uint_to_t Prims.int_zero) () in
                   let h = FStar_HyperStack_ST.get () in
                   let x =
                     let h1 = FStar_HyperStack_ST.get () in
@@ -386,7 +412,7 @@ let (uints_from_bytes_be :
                       match t with
                       | Lib_IntTypes.U8 ->
                           LowStar_Monotonic_Buffer.index bj
-                            Stdint.Uint32.zero
+                            (FStar_UInt32.uint_to_t Prims.int_zero)
                       | Lib_IntTypes.U16 ->
                           let u = LowStar_Endianness.load16_be (Obj.magic bj) in
                           Lib_IntTypes.cast t l Lib_IntTypes.U16 l
@@ -424,6 +450,7 @@ let (uints_to_bytes_le :
           fun i ->
             let h0 = FStar_HyperStack_ST.get () in
             let h01 = FStar_HyperStack_ST.get () in
+            Obj.magic (fun h -> fun i1 -> ());
             C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
               (fun i1 ->
                  let block =
@@ -443,14 +470,14 @@ let (uints_to_bytes_le :
                       ((let h02 = FStar_HyperStack_ST.get () in
                         (let h = FStar_HyperStack_ST.get () in
                          LowStar_Monotonic_Buffer.upd' uu___3
-                           Stdint.Uint32.zero uu___4);
+                           (FStar_UInt32.uint_to_t Prims.int_zero) uu___4);
                         (let h1 = FStar_HyperStack_ST.get () in ()));
                        (let h1 = FStar_HyperStack_ST.get () in ()))
                   | Lib_IntTypes.U8 ->
                       ((let h02 = FStar_HyperStack_ST.get () in
                         (let h = FStar_HyperStack_ST.get () in
                          LowStar_Monotonic_Buffer.upd' uu___3
-                           Stdint.Uint32.zero uu___4);
+                           (FStar_UInt32.uint_to_t Prims.int_zero) uu___4);
                         (let h1 = FStar_HyperStack_ST.get () in ()));
                        (let h1 = FStar_HyperStack_ST.get () in ()))
                   | Lib_IntTypes.U16 ->
@@ -484,6 +511,7 @@ let (uints_to_bytes_be :
           fun i ->
             let h0 = FStar_HyperStack_ST.get () in
             let h01 = FStar_HyperStack_ST.get () in
+            Obj.magic (fun h -> fun i1 -> ());
             C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
               (fun i1 ->
                  let block =
@@ -503,14 +531,14 @@ let (uints_to_bytes_be :
                       ((let h02 = FStar_HyperStack_ST.get () in
                         (let h = FStar_HyperStack_ST.get () in
                          LowStar_Monotonic_Buffer.upd' uu___3
-                           Stdint.Uint32.zero uu___4);
+                           (FStar_UInt32.uint_to_t Prims.int_zero) uu___4);
                         (let h1 = FStar_HyperStack_ST.get () in ()));
                        (let h1 = FStar_HyperStack_ST.get () in ()))
                   | Lib_IntTypes.U8 ->
                       ((let h02 = FStar_HyperStack_ST.get () in
                         (let h = FStar_HyperStack_ST.get () in
                          LowStar_Monotonic_Buffer.upd' uu___3
-                           Stdint.Uint32.zero uu___4);
+                           (FStar_UInt32.uint_to_t Prims.int_zero) uu___4);
                         (let h1 = FStar_HyperStack_ST.get () in ()));
                        (let h1 = FStar_HyperStack_ST.get () in ()))
                   | Lib_IntTypes.U16 ->
@@ -541,6 +569,7 @@ let (uint32s_to_bytes_le :
       fun i ->
         let h0 = FStar_HyperStack_ST.get () in
         let h01 = FStar_HyperStack_ST.get () in
+        Obj.magic (fun h -> fun i1 -> ());
         C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
           (fun i1 ->
              let block =
@@ -567,9 +596,12 @@ let (uint32s_from_bytes_le :
       fun i ->
         let h0 = FStar_HyperStack_ST.get () in
         (let h01 = FStar_HyperStack_ST.get () in
+         Obj.magic (fun h -> fun i1 -> ());
          C_Loops.for1 (FStar_UInt32.uint_to_t Prims.int_zero) len ()
            (fun i1 ->
-              let os = LowStar_Monotonic_Buffer.msub o Stdint.Uint32.zero () in
+              let os =
+                LowStar_Monotonic_Buffer.msub o
+                  (FStar_UInt32.uint_to_t Prims.int_zero) () in
               let h = FStar_HyperStack_ST.get () in
               let x =
                 let h1 = FStar_HyperStack_ST.get () in
@@ -605,7 +637,8 @@ let (uint_at_index_le :
             let h0 = FStar_HyperStack_ST.get () in
             match t with
             | Lib_IntTypes.U8 ->
-                LowStar_Monotonic_Buffer.index b Stdint.Uint32.zero
+                LowStar_Monotonic_Buffer.index b
+                  (FStar_UInt32.uint_to_t Prims.int_zero)
             | Lib_IntTypes.U16 ->
                 let u = LowStar_Endianness.load16_le (Obj.magic b) in
                 Lib_IntTypes.cast t l Lib_IntTypes.U16 l (Obj.magic u)
@@ -636,7 +669,8 @@ let (uint_at_index_be :
             let h0 = FStar_HyperStack_ST.get () in
             match t with
             | Lib_IntTypes.U8 ->
-                LowStar_Monotonic_Buffer.index b Stdint.Uint32.zero
+                LowStar_Monotonic_Buffer.index b
+                  (FStar_UInt32.uint_to_t Prims.int_zero)
             | Lib_IntTypes.U16 ->
                 let u = LowStar_Endianness.load16_be (Obj.magic b) in
                 Lib_IntTypes.cast t l Lib_IntTypes.U16 l (Obj.magic u)

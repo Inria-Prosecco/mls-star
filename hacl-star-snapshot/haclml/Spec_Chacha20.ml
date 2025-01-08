@@ -97,16 +97,20 @@ let (chacha20_core : counter -> state -> state) =
       let k = chacha20_add_counter s0 ctr in
       let k1 = rounds k in
       let k2 = sum_state k1 s0 in chacha20_add_counter k2 ctr
-let (c0 : FStar_UInt32.t) = (Stdint.Uint32.of_string "0x61707865")
-let (c1 : FStar_UInt32.t) = (Stdint.Uint32.of_string "0x3320646e")
-let (c2 : FStar_UInt32.t) = (Stdint.Uint32.of_string "0x79622d32")
-let (c3 : FStar_UInt32.t) = (Stdint.Uint32.of_string "0x6b206574")
+let (c0 : FStar_UInt32.t) =
+  FStar_UInt32.uint_to_t (Prims.parse_int "0x61707865")
+let (c1 : FStar_UInt32.t) =
+  FStar_UInt32.uint_to_t (Prims.parse_int "0x3320646e")
+let (c2 : FStar_UInt32.t) =
+  FStar_UInt32.uint_to_t (Prims.parse_int "0x79622d32")
+let (c3 : FStar_UInt32.t) =
+  FStar_UInt32.uint_to_t (Prims.parse_int "0x6b206574")
 let (chacha20_constants : (FStar_UInt32.t, unit) Lib_Sequence.lseq) =
   Lib_Sequence.of_list
-    [(Stdint.Uint32.of_string "0x61707865");
-    (Stdint.Uint32.of_string "0x3320646e");
-    (Stdint.Uint32.of_string "0x79622d32");
-    (Stdint.Uint32.of_string "0x6b206574")]
+    [FStar_UInt32.uint_to_t (Prims.parse_int "0x61707865");
+    FStar_UInt32.uint_to_t (Prims.parse_int "0x3320646e");
+    FStar_UInt32.uint_to_t (Prims.parse_int "0x79622d32");
+    FStar_UInt32.uint_to_t (Prims.parse_int "0x6b206574")]
 let (setup : key -> nonce -> counter -> state -> state) =
   fun k ->
     fun n ->

@@ -358,14 +358,15 @@ let (update_reg' :
   fun r ->
     fun v ->
       fun s ->
+        let uu___ = s in
         {
-          ms_ok = (s.ms_ok);
-          ms_regs = (fun x -> if x = r then v else s.ms_regs x);
-          ms_flags = (s.ms_flags);
-          ms_heap = (s.ms_heap);
-          ms_stack = (s.ms_stack);
-          ms_stackTaint = (s.ms_stackTaint);
-          ms_trace = (s.ms_trace)
+          ms_ok = (uu___.ms_ok);
+          ms_regs = (fun r' -> if r' = r then v else s.ms_regs r');
+          ms_flags = (uu___.ms_flags);
+          ms_heap = (uu___.ms_heap);
+          ms_stack = (uu___.ms_stack);
+          ms_stackTaint = (uu___.ms_stackTaint);
+          ms_trace = (uu___.ms_trace)
         }
 let (update_reg_64' :
   Vale_X64_Machine_s.reg_64 ->
@@ -417,6 +418,7 @@ let rec (update_n :
           else
             update_n (addr + Prims.int_one) (n - Prims.int_one)
               (FStar_Map.upd memTaint addr t) t
+
 let (update_mem_and_taint :
   Prims.int ->
     Vale_Def_Words_s.nat64 ->
@@ -430,21 +432,23 @@ let (update_mem_and_taint :
             Vale_Arch_MachineHeap_s.valid_addr64 ptr
               (Vale_Arch_Heap.heap_get s.ms_heap)
           then
+            let uu___ = s in
             {
-              ms_ok = (s.ms_ok);
-              ms_regs = (s.ms_regs);
-              ms_flags = (s.ms_flags);
+              ms_ok = (uu___.ms_ok);
+              ms_regs = (uu___.ms_regs);
+              ms_flags = (uu___.ms_flags);
               ms_heap =
                 (Vale_Arch_Heap.heap_upd s.ms_heap
                    (Vale_Arch_MachineHeap_s.update_heap64 ptr v
                       (Vale_Arch_Heap.heap_get s.ms_heap))
                    (update_n ptr (Prims.of_int (8))
                       (Vale_Arch_Heap.heap_taint s.ms_heap) t));
-              ms_stack = (s.ms_stack);
-              ms_stackTaint = (s.ms_stackTaint);
-              ms_trace = (s.ms_trace)
+              ms_stack = (uu___.ms_stack);
+              ms_stackTaint = (uu___.ms_stackTaint);
+              ms_trace = (uu___.ms_trace)
             }
           else s
+
 let (update_mem128_and_taint :
   Prims.int ->
     Vale_Def_Types_s.quad32 ->
@@ -458,19 +462,20 @@ let (update_mem128_and_taint :
             Vale_Arch_MachineHeap_s.valid_addr128 ptr
               (Vale_Arch_Heap.heap_get s.ms_heap)
           then
+            let uu___ = s in
             {
-              ms_ok = (s.ms_ok);
-              ms_regs = (s.ms_regs);
-              ms_flags = (s.ms_flags);
+              ms_ok = (uu___.ms_ok);
+              ms_regs = (uu___.ms_regs);
+              ms_flags = (uu___.ms_flags);
               ms_heap =
                 (Vale_Arch_Heap.heap_upd s.ms_heap
                    (Vale_Arch_MachineHeap_s.update_heap128 ptr v
                       (Vale_Arch_Heap.heap_get s.ms_heap))
                    (update_n ptr (Prims.of_int (16))
                       (Vale_Arch_Heap.heap_taint s.ms_heap) t));
-              ms_stack = (s.ms_stack);
-              ms_stackTaint = (s.ms_stackTaint);
-              ms_trace = (s.ms_trace)
+              ms_stack = (uu___.ms_stack);
+              ms_stackTaint = (uu___.ms_stackTaint);
+              ms_trace = (uu___.ms_trace)
             }
           else s
 let (update_stack64' :
@@ -505,21 +510,22 @@ let (update_stack_and_taint :
           let uu___ = s.ms_stack in
           match uu___ with
           | Machine_stack (init_rsp, mem) ->
+              let uu___1 = s in
               {
-                ms_ok = (s.ms_ok);
-                ms_regs = (s.ms_regs);
-                ms_flags = (s.ms_flags);
-                ms_heap = (s.ms_heap);
+                ms_ok = (uu___1.ms_ok);
+                ms_regs = (uu___1.ms_regs);
+                ms_flags = (uu___1.ms_flags);
+                ms_heap = (uu___1.ms_heap);
                 ms_stack =
-                  (let uu___1 = s.ms_stack in
-                   (match uu___1 with
+                  (let uu___2 = s.ms_stack in
+                   (match uu___2 with
                     | Machine_stack (init_rsp1, mem1) ->
                         let mem2 =
                           Vale_Arch_MachineHeap_s.update_heap64 ptr v mem1 in
                         Machine_stack (init_rsp1, mem2)));
                 ms_stackTaint =
                   (update_n ptr (Prims.of_int (8)) s.ms_stackTaint t);
-                ms_trace = (s.ms_trace)
+                ms_trace = (uu___1.ms_trace)
               }
 let (update_stack128_and_taint :
   Prims.int ->
@@ -533,21 +539,22 @@ let (update_stack128_and_taint :
           let uu___ = s.ms_stack in
           match uu___ with
           | Machine_stack (init_rsp, mem) ->
+              let uu___1 = s in
               {
-                ms_ok = (s.ms_ok);
-                ms_regs = (s.ms_regs);
-                ms_flags = (s.ms_flags);
-                ms_heap = (s.ms_heap);
+                ms_ok = (uu___1.ms_ok);
+                ms_regs = (uu___1.ms_regs);
+                ms_flags = (uu___1.ms_flags);
+                ms_heap = (uu___1.ms_heap);
                 ms_stack =
-                  (let uu___1 = s.ms_stack in
-                   (match uu___1 with
+                  (let uu___2 = s.ms_stack in
+                   (match uu___2 with
                     | Machine_stack (init_rsp1, mem1) ->
                         let mem2 =
                           Vale_Arch_MachineHeap_s.update_heap128 ptr v mem1 in
                         Machine_stack (init_rsp1, mem2)));
                 ms_stackTaint =
                   (update_n ptr (Prims.of_int (16)) s.ms_stackTaint t);
-                ms_trace = (s.ms_trace)
+                ms_trace = (uu___1.ms_trace)
               }
 let (valid_src_stack64 : Prims.int -> machine_stack -> Prims.bool) =
   fun ptr ->
@@ -713,14 +720,15 @@ let (update_operand64_preserve_flags'' :
         fun s ->
           match o with
           | Vale_X64_Machine_s.OConst uu___ ->
+              let uu___1 = s in
               {
                 ms_ok = false;
-                ms_regs = (s.ms_regs);
-                ms_flags = (s.ms_flags);
-                ms_heap = (s.ms_heap);
-                ms_stack = (s.ms_stack);
-                ms_stackTaint = (s.ms_stackTaint);
-                ms_trace = (s.ms_trace)
+                ms_regs = (uu___1.ms_regs);
+                ms_flags = (uu___1.ms_flags);
+                ms_heap = (uu___1.ms_heap);
+                ms_stack = (uu___1.ms_stack);
+                ms_stackTaint = (uu___1.ms_stackTaint);
+                ms_trace = (uu___1.ms_trace)
               }
           | Vale_X64_Machine_s.OReg r -> update_reg_64' r v s
           | Vale_X64_Machine_s.OMem (m, t) ->
@@ -742,14 +750,15 @@ let (update_operand128_preserve_flags'' :
         fun s ->
           match o with
           | Vale_X64_Machine_s.OConst uu___ ->
+              let uu___1 = s in
               {
                 ms_ok = false;
-                ms_regs = (s.ms_regs);
-                ms_flags = (s.ms_flags);
-                ms_heap = (s.ms_heap);
-                ms_stack = (s.ms_stack);
-                ms_stackTaint = (s.ms_stackTaint);
-                ms_trace = (s.ms_trace)
+                ms_regs = (uu___1.ms_regs);
+                ms_flags = (uu___1.ms_flags);
+                ms_heap = (uu___1.ms_heap);
+                ms_stack = (uu___1.ms_stack);
+                ms_stackTaint = (uu___1.ms_stackTaint);
+                ms_trace = (uu___1.ms_trace)
               }
           | Vale_X64_Machine_s.OReg i -> update_reg_xmm' i v s
           | Vale_X64_Machine_s.OMem (m, t) ->
@@ -763,7 +772,7 @@ let (update_operand128_preserve_flags' :
 let (flags_none :
   Vale_X64_Machine_s.flag -> Prims.bool FStar_Pervasives_Native.option) =
   fun f -> FStar_Pervasives_Native.None
-let (havoc_flags : flags_t) = fun x -> flags_none x
+let (havoc_flags : flags_t) = flags_none
 let (update_operand64' :
   Vale_X64_Machine_s.operand64 ->
     ins -> Vale_Def_Words_s.nat64 -> machine_state -> machine_state)
@@ -800,17 +809,17 @@ let (overflow : flags_t -> Prims.bool FStar_Pervasives_Native.option) =
 let (update_cf' : flags_t -> Prims.bool -> flags_t) =
   fun flags ->
     fun new_cf ->
-      fun x ->
-        if x = Prims.int_zero
+      fun f ->
+        if f = Prims.int_zero
         then FStar_Pervasives_Native.Some new_cf
-        else flags x
+        else flags f
 let (update_of' : flags_t -> Prims.bool -> flags_t) =
   fun flags ->
     fun new_of ->
-      fun x ->
-        if x = (Prims.of_int (11))
+      fun f ->
+        if f = (Prims.of_int (11))
         then FStar_Pervasives_Native.Some new_of
-        else flags x
+        else flags f
 let (free_stack' : Prims.int -> Prims.int -> machine_stack -> machine_stack)
   =
   fun start ->
@@ -826,7 +835,7 @@ let (free_stack' : Prims.int -> Prims.int -> machine_stack -> machine_stack)
             Machine_stack (init_rsp, new_mem)
 type 'a st = machine_state -> ('a * machine_state)
 let return : 'a . 'a -> 'a st = fun x -> fun s -> (x, s)
-let op_let_Star : 'a 'b . 'a st -> ('a -> 'b st) -> 'b st =
+let bind : 'a 'b . 'a st -> ('a -> 'b st) -> 'b st =
   fun m ->
     fun f ->
       fun s0 ->
@@ -837,29 +846,31 @@ let op_let_Star : 'a 'b . 'a st -> ('a -> 'b st) -> 'b st =
             (match uu___1 with
              | (y, s2) ->
                  (y,
-                   {
-                     ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                     ms_regs = (s2.ms_regs);
-                     ms_flags = (s2.ms_flags);
-                     ms_heap = (s2.ms_heap);
-                     ms_stack = (s2.ms_stack);
-                     ms_stackTaint = (s2.ms_stackTaint);
-                     ms_trace = (s2.ms_trace)
-                   }))
+                   (let uu___2 = s2 in
+                    {
+                      ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                      ms_regs = (uu___2.ms_regs);
+                      ms_flags = (uu___2.ms_flags);
+                      ms_heap = (uu___2.ms_heap);
+                      ms_stack = (uu___2.ms_stack);
+                      ms_stackTaint = (uu___2.ms_stackTaint);
+                      ms_trace = (uu___2.ms_trace)
+                    })))
 let (get : machine_state st) = fun s -> (s, s)
 let (set : machine_state -> unit st) = fun s -> fun uu___ -> ((), s)
 let (fail : unit st) =
   fun s ->
     ((),
-      {
-        ms_ok = false;
-        ms_regs = (s.ms_regs);
-        ms_flags = (s.ms_flags);
-        ms_heap = (s.ms_heap);
-        ms_stack = (s.ms_stack);
-        ms_stackTaint = (s.ms_stackTaint);
-        ms_trace = (s.ms_trace)
-      })
+      (let uu___ = s in
+       {
+         ms_ok = false;
+         ms_regs = (uu___.ms_regs);
+         ms_flags = (uu___.ms_flags);
+         ms_heap = (uu___.ms_heap);
+         ms_stack = (uu___.ms_stack);
+         ms_stackTaint = (uu___.ms_stackTaint);
+         ms_trace = (uu___.ms_trace)
+       }))
 let (check_imm : Prims.bool -> unit st) =
   fun valid ->
     if valid
@@ -867,15 +878,16 @@ let (check_imm : Prims.bool -> unit st) =
     else
       (fun s ->
          ((),
-           {
-             ms_ok = false;
-             ms_regs = (s.ms_regs);
-             ms_flags = (s.ms_flags);
-             ms_heap = (s.ms_heap);
-             ms_stack = (s.ms_stack);
-             ms_stackTaint = (s.ms_stackTaint);
-             ms_trace = (s.ms_trace)
-           }))
+           (let uu___1 = s in
+            {
+              ms_ok = false;
+              ms_regs = (uu___1.ms_regs);
+              ms_flags = (uu___1.ms_flags);
+              ms_heap = (uu___1.ms_heap);
+              ms_stack = (uu___1.ms_stack);
+              ms_stackTaint = (uu___1.ms_stackTaint);
+              ms_trace = (uu___1.ms_trace)
+            })))
 let (check : (machine_state -> Prims.bool) -> unit st) =
   fun valid ->
     fun s0 ->
@@ -899,15 +911,16 @@ let (check : (machine_state -> Prims.bool) -> unit st) =
           (match uu___1 with
            | (y, s2) ->
                ((),
-                 {
-                   ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                   ms_regs = (s2.ms_regs);
-                   ms_flags = (s2.ms_flags);
-                   ms_heap = (s2.ms_heap);
-                   ms_stack = (s2.ms_stack);
-                   ms_stackTaint = (s2.ms_stackTaint);
-                   ms_trace = (s2.ms_trace)
-                 }))
+                 (let uu___2 = s2 in
+                  {
+                    ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                    ms_regs = (uu___2.ms_regs);
+                    ms_flags = (uu___2.ms_flags);
+                    ms_heap = (uu___2.ms_heap);
+                    ms_stack = (uu___2.ms_stack);
+                    ms_stackTaint = (uu___2.ms_stackTaint);
+                    ms_trace = (uu___2.ms_trace)
+                  })))
 let try_option :
   'a . 'a FStar_Pervasives_Native.option -> ('a -> unit st) -> unit st =
   fun o ->
@@ -916,15 +929,16 @@ let try_option :
       | FStar_Pervasives_Native.None ->
           (fun s ->
              ((),
-               {
-                 ms_ok = false;
-                 ms_regs = (s.ms_regs);
-                 ms_flags = (s.ms_flags);
-                 ms_heap = (s.ms_heap);
-                 ms_stack = (s.ms_stack);
-                 ms_stackTaint = (s.ms_stackTaint);
-                 ms_trace = (s.ms_trace)
-               }))
+               (let uu___ = s in
+                {
+                  ms_ok = false;
+                  ms_regs = (uu___.ms_regs);
+                  ms_flags = (uu___.ms_flags);
+                  ms_heap = (uu___.ms_heap);
+                  ms_stack = (uu___.ms_stack);
+                  ms_stackTaint = (uu___.ms_stackTaint);
+                  ms_trace = (uu___.ms_trace)
+                })))
       | FStar_Pervasives_Native.Some x -> f x
 let apply_option :
   'a . 'a FStar_Pervasives_Native.option -> ('a -> unit st) -> unit st =
@@ -934,15 +948,16 @@ let apply_option :
       | FStar_Pervasives_Native.None ->
           (fun s ->
              ((),
-               {
-                 ms_ok = false;
-                 ms_regs = (s.ms_regs);
-                 ms_flags = (s.ms_flags);
-                 ms_heap = (s.ms_heap);
-                 ms_stack = (s.ms_stack);
-                 ms_stackTaint = (s.ms_stackTaint);
-                 ms_trace = (s.ms_trace)
-               }))
+               (let uu___ = s in
+                {
+                  ms_ok = false;
+                  ms_regs = (uu___.ms_regs);
+                  ms_flags = (uu___.ms_flags);
+                  ms_heap = (uu___.ms_heap);
+                  ms_stack = (uu___.ms_stack);
+                  ms_stackTaint = (uu___.ms_stackTaint);
+                  ms_trace = (uu___.ms_trace)
+                })))
       | FStar_Pervasives_Native.Some x -> f x
 let (run : unit st -> machine_state -> machine_state) =
   fun f -> fun s -> FStar_Pervasives_Native.snd (f s)
@@ -972,15 +987,16 @@ let (update_operand64_preserve_flags :
               (match uu___2 with
                | (y, s2) ->
                    ((),
-                     {
-                       ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                       ms_regs = (s2.ms_regs);
-                       ms_flags = (s2.ms_flags);
-                       ms_heap = (s2.ms_heap);
-                       ms_stack = (s2.ms_stack);
-                       ms_stackTaint = (s2.ms_stackTaint);
-                       ms_trace = (s2.ms_trace)
-                     })) in
+                     (let uu___3 = s2 in
+                      {
+                        ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                        ms_regs = (uu___3.ms_regs);
+                        ms_flags = (uu___3.ms_flags);
+                        ms_heap = (uu___3.ms_heap);
+                        ms_stack = (uu___3.ms_stack);
+                        ms_stackTaint = (uu___3.ms_stackTaint);
+                        ms_trace = (uu___3.ms_trace)
+                      }))) in
         match uu___ with
         | (x, s1) ->
             let uu___1 =
@@ -992,27 +1008,29 @@ let (update_operand64_preserve_flags :
                   (match uu___3 with
                    | (y, s2) ->
                        ((),
-                         {
-                           ms_ok = ((s1.ms_ok && s11.ms_ok) && s2.ms_ok);
-                           ms_regs = (s2.ms_regs);
-                           ms_flags = (s2.ms_flags);
-                           ms_heap = (s2.ms_heap);
-                           ms_stack = (s2.ms_stack);
-                           ms_stackTaint = (s2.ms_stackTaint);
-                           ms_trace = (s2.ms_trace)
-                         })) in
+                         (let uu___4 = s2 in
+                          {
+                            ms_ok = ((s1.ms_ok && s11.ms_ok) && s2.ms_ok);
+                            ms_regs = (uu___4.ms_regs);
+                            ms_flags = (uu___4.ms_flags);
+                            ms_heap = (uu___4.ms_heap);
+                            ms_stack = (uu___4.ms_stack);
+                            ms_stackTaint = (uu___4.ms_stackTaint);
+                            ms_trace = (uu___4.ms_trace)
+                          }))) in
             (match uu___1 with
              | (y, s2) ->
                  ((),
-                   {
-                     ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                     ms_regs = (s2.ms_regs);
-                     ms_flags = (s2.ms_flags);
-                     ms_heap = (s2.ms_heap);
-                     ms_stack = (s2.ms_stack);
-                     ms_stackTaint = (s2.ms_stackTaint);
-                     ms_trace = (s2.ms_trace)
-                   }))
+                   (let uu___2 = s2 in
+                    {
+                      ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                      ms_regs = (uu___2.ms_regs);
+                      ms_flags = (uu___2.ms_flags);
+                      ms_heap = (uu___2.ms_heap);
+                      ms_stack = (uu___2.ms_stack);
+                      ms_stackTaint = (uu___2.ms_stackTaint);
+                      ms_trace = (uu___2.ms_trace)
+                    })))
 let (update_rsp : Prims.int -> unit st) =
   fun i ->
     fun s0 ->
@@ -1040,15 +1058,16 @@ let (update_rsp : Prims.int -> unit st) =
             (match uu___2 with
              | (y, s2) ->
                  ((),
-                   {
-                     ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                     ms_regs = (s2.ms_regs);
-                     ms_flags = (s2.ms_flags);
-                     ms_heap = (s2.ms_heap);
-                     ms_stack = (s2.ms_stack);
-                     ms_stackTaint = (s2.ms_stackTaint);
-                     ms_trace = (s2.ms_trace)
-                   })) in
+                   (let uu___3 = s2 in
+                    {
+                      ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                      ms_regs = (uu___3.ms_regs);
+                      ms_flags = (uu___3.ms_flags);
+                      ms_heap = (uu___3.ms_heap);
+                      ms_stack = (uu___3.ms_stack);
+                      ms_stackTaint = (uu___3.ms_stackTaint);
+                      ms_trace = (uu___3.ms_trace)
+                    }))) in
       match uu___ with
       | (x, s1) ->
           let uu___1 =
@@ -1075,15 +1094,16 @@ let (update_rsp : Prims.int -> unit st) =
                   (match uu___4 with
                    | (y, s2) ->
                        ((),
-                         {
-                           ms_ok = ((s1.ms_ok && s11.ms_ok) && s2.ms_ok);
-                           ms_regs = (s2.ms_regs);
-                           ms_flags = (s2.ms_flags);
-                           ms_heap = (s2.ms_heap);
-                           ms_stack = (s2.ms_stack);
-                           ms_stackTaint = (s2.ms_stackTaint);
-                           ms_trace = (s2.ms_trace)
-                         })) in
+                         (let uu___5 = s2 in
+                          {
+                            ms_ok = ((s1.ms_ok && s11.ms_ok) && s2.ms_ok);
+                            ms_regs = (uu___5.ms_regs);
+                            ms_flags = (uu___5.ms_flags);
+                            ms_heap = (uu___5.ms_heap);
+                            ms_stack = (uu___5.ms_stack);
+                            ms_stackTaint = (uu___5.ms_stackTaint);
+                            ms_trace = (uu___5.ms_trace)
+                          }))) in
             match uu___2 with
             | (x1, s11) ->
                 let uu___3 =
@@ -1094,39 +1114,43 @@ let (update_rsp : Prims.int -> unit st) =
                       (match uu___5 with
                        | (y, s2) ->
                            ((),
-                             {
-                               ms_ok = ((s11.ms_ok && s12.ms_ok) && s2.ms_ok);
-                               ms_regs = (s2.ms_regs);
-                               ms_flags = (s2.ms_flags);
-                               ms_heap = (s2.ms_heap);
-                               ms_stack = (s2.ms_stack);
-                               ms_stackTaint = (s2.ms_stackTaint);
-                               ms_trace = (s2.ms_trace)
-                             })) in
+                             (let uu___6 = s2 in
+                              {
+                                ms_ok =
+                                  ((s11.ms_ok && s12.ms_ok) && s2.ms_ok);
+                                ms_regs = (uu___6.ms_regs);
+                                ms_flags = (uu___6.ms_flags);
+                                ms_heap = (uu___6.ms_heap);
+                                ms_stack = (uu___6.ms_stack);
+                                ms_stackTaint = (uu___6.ms_stackTaint);
+                                ms_trace = (uu___6.ms_trace)
+                              }))) in
                 (match uu___3 with
                  | (y, s2) ->
                      ((),
-                       {
-                         ms_ok = ((s1.ms_ok && s11.ms_ok) && s2.ms_ok);
-                         ms_regs = (s2.ms_regs);
-                         ms_flags = (s2.ms_flags);
-                         ms_heap = (s2.ms_heap);
-                         ms_stack = (s2.ms_stack);
-                         ms_stackTaint = (s2.ms_stackTaint);
-                         ms_trace = (s2.ms_trace)
-                       })) in
+                       (let uu___4 = s2 in
+                        {
+                          ms_ok = ((s1.ms_ok && s11.ms_ok) && s2.ms_ok);
+                          ms_regs = (uu___4.ms_regs);
+                          ms_flags = (uu___4.ms_flags);
+                          ms_heap = (uu___4.ms_heap);
+                          ms_stack = (uu___4.ms_stack);
+                          ms_stackTaint = (uu___4.ms_stackTaint);
+                          ms_trace = (uu___4.ms_trace)
+                        }))) in
           (match uu___1 with
            | (y, s2) ->
                ((),
-                 {
-                   ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                   ms_regs = (s2.ms_regs);
-                   ms_flags = (s2.ms_flags);
-                   ms_heap = (s2.ms_heap);
-                   ms_stack = (s2.ms_stack);
-                   ms_stackTaint = (s2.ms_stackTaint);
-                   ms_trace = (s2.ms_trace)
-                 }))
+                 (let uu___2 = s2 in
+                  {
+                    ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                    ms_regs = (uu___2.ms_regs);
+                    ms_flags = (uu___2.ms_flags);
+                    ms_heap = (uu___2.ms_heap);
+                    ms_stack = (uu___2.ms_stack);
+                    ms_stackTaint = (uu___2.ms_stackTaint);
+                    ms_trace = (uu___2.ms_trace)
+                  })))
 let (update_reg_64 :
   Vale_X64_Machine_s.reg_64 -> Vale_Def_Words_s.nat64 -> unit st) =
   fun r ->
@@ -1139,15 +1163,16 @@ let (update_reg_64 :
             (match uu___1 with
              | (y, s2) ->
                  ((),
-                   {
-                     ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                     ms_regs = (s2.ms_regs);
-                     ms_flags = (s2.ms_flags);
-                     ms_heap = (s2.ms_heap);
-                     ms_stack = (s2.ms_stack);
-                     ms_stackTaint = (s2.ms_stackTaint);
-                     ms_trace = (s2.ms_trace)
-                   }))
+                   (let uu___2 = s2 in
+                    {
+                      ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                      ms_regs = (uu___2.ms_regs);
+                      ms_flags = (uu___2.ms_flags);
+                      ms_heap = (uu___2.ms_heap);
+                      ms_stack = (uu___2.ms_stack);
+                      ms_stackTaint = (uu___2.ms_stackTaint);
+                      ms_trace = (uu___2.ms_trace)
+                    })))
 let (update_reg_xmm :
   Vale_X64_Machine_s.reg_xmm -> ins -> Vale_Def_Types_s.quad32 -> unit st) =
   fun x ->
@@ -1172,15 +1197,16 @@ let (update_reg_xmm :
               (match uu___1 with
                | (y, s2) ->
                    ((),
-                     {
-                       ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                       ms_regs = (s2.ms_regs);
-                       ms_flags = (s2.ms_flags);
-                       ms_heap = (s2.ms_heap);
-                       ms_stack = (s2.ms_stack);
-                       ms_stackTaint = (s2.ms_stackTaint);
-                       ms_trace = (s2.ms_trace)
-                     }))
+                     (let uu___2 = s2 in
+                      {
+                        ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                        ms_regs = (uu___2.ms_regs);
+                        ms_flags = (uu___2.ms_flags);
+                        ms_heap = (uu___2.ms_heap);
+                        ms_stack = (uu___2.ms_stack);
+                        ms_stackTaint = (uu___2.ms_stackTaint);
+                        ms_trace = (uu___2.ms_trace)
+                      })))
 let (update_xmm_preserve_flags :
   Vale_X64_Machine_s.reg_xmm -> Vale_Def_Types_s.quad32 -> unit st) =
   fun x ->
@@ -1193,15 +1219,16 @@ let (update_xmm_preserve_flags :
             (match uu___1 with
              | (y, s2) ->
                  ((),
-                   {
-                     ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                     ms_regs = (s2.ms_regs);
-                     ms_flags = (s2.ms_flags);
-                     ms_heap = (s2.ms_heap);
-                     ms_stack = (s2.ms_stack);
-                     ms_stackTaint = (s2.ms_stackTaint);
-                     ms_trace = (s2.ms_trace)
-                   }))
+                   (let uu___2 = s2 in
+                    {
+                      ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                      ms_regs = (uu___2.ms_regs);
+                      ms_flags = (uu___2.ms_flags);
+                      ms_heap = (uu___2.ms_heap);
+                      ms_stack = (uu___2.ms_stack);
+                      ms_stackTaint = (uu___2.ms_stackTaint);
+                      ms_trace = (uu___2.ms_trace)
+                    })))
 let (update_flags : flags_t -> unit st) =
   fun new_flags ->
     fun s0 ->
@@ -1210,27 +1237,29 @@ let (update_flags : flags_t -> unit st) =
       | (x, s1) ->
           let uu___1 =
             ((),
-              {
-                ms_ok = (x.ms_ok);
-                ms_regs = (x.ms_regs);
-                ms_flags = new_flags;
-                ms_heap = (x.ms_heap);
-                ms_stack = (x.ms_stack);
-                ms_stackTaint = (x.ms_stackTaint);
-                ms_trace = (x.ms_trace)
-              }) in
+              (let uu___2 = x in
+               {
+                 ms_ok = (uu___2.ms_ok);
+                 ms_regs = (uu___2.ms_regs);
+                 ms_flags = new_flags;
+                 ms_heap = (uu___2.ms_heap);
+                 ms_stack = (uu___2.ms_stack);
+                 ms_stackTaint = (uu___2.ms_stackTaint);
+                 ms_trace = (uu___2.ms_trace)
+               })) in
           (match uu___1 with
            | (y, s2) ->
                ((),
-                 {
-                   ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                   ms_regs = (s2.ms_regs);
-                   ms_flags = (s2.ms_flags);
-                   ms_heap = (s2.ms_heap);
-                   ms_stack = (s2.ms_stack);
-                   ms_stackTaint = (s2.ms_stackTaint);
-                   ms_trace = (s2.ms_trace)
-                 }))
+                 (let uu___2 = s2 in
+                  {
+                    ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                    ms_regs = (uu___2.ms_regs);
+                    ms_flags = (uu___2.ms_flags);
+                    ms_heap = (uu___2.ms_heap);
+                    ms_stack = (uu___2.ms_stack);
+                    ms_stackTaint = (uu___2.ms_stackTaint);
+                    ms_trace = (uu___2.ms_trace)
+                  })))
 let (update_cf : Prims.bool -> unit st) =
   fun new_cf ->
     fun s0 ->
@@ -1239,27 +1268,29 @@ let (update_cf : Prims.bool -> unit st) =
       | (x, s1) ->
           let uu___1 =
             ((),
-              {
-                ms_ok = (x.ms_ok);
-                ms_regs = (x.ms_regs);
-                ms_flags = (update_cf' x.ms_flags new_cf);
-                ms_heap = (x.ms_heap);
-                ms_stack = (x.ms_stack);
-                ms_stackTaint = (x.ms_stackTaint);
-                ms_trace = (x.ms_trace)
-              }) in
+              (let uu___2 = x in
+               {
+                 ms_ok = (uu___2.ms_ok);
+                 ms_regs = (uu___2.ms_regs);
+                 ms_flags = (update_cf' x.ms_flags new_cf);
+                 ms_heap = (uu___2.ms_heap);
+                 ms_stack = (uu___2.ms_stack);
+                 ms_stackTaint = (uu___2.ms_stackTaint);
+                 ms_trace = (uu___2.ms_trace)
+               })) in
           (match uu___1 with
            | (y, s2) ->
                ((),
-                 {
-                   ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                   ms_regs = (s2.ms_regs);
-                   ms_flags = (s2.ms_flags);
-                   ms_heap = (s2.ms_heap);
-                   ms_stack = (s2.ms_stack);
-                   ms_stackTaint = (s2.ms_stackTaint);
-                   ms_trace = (s2.ms_trace)
-                 }))
+                 (let uu___2 = s2 in
+                  {
+                    ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                    ms_regs = (uu___2.ms_regs);
+                    ms_flags = (uu___2.ms_flags);
+                    ms_heap = (uu___2.ms_heap);
+                    ms_stack = (uu___2.ms_stack);
+                    ms_stackTaint = (uu___2.ms_stackTaint);
+                    ms_trace = (uu___2.ms_trace)
+                  })))
 let (update_of : Prims.bool -> unit st) =
   fun new_of ->
     fun s0 ->
@@ -1268,27 +1299,29 @@ let (update_of : Prims.bool -> unit st) =
       | (x, s1) ->
           let uu___1 =
             ((),
-              {
-                ms_ok = (x.ms_ok);
-                ms_regs = (x.ms_regs);
-                ms_flags = (update_of' x.ms_flags new_of);
-                ms_heap = (x.ms_heap);
-                ms_stack = (x.ms_stack);
-                ms_stackTaint = (x.ms_stackTaint);
-                ms_trace = (x.ms_trace)
-              }) in
+              (let uu___2 = x in
+               {
+                 ms_ok = (uu___2.ms_ok);
+                 ms_regs = (uu___2.ms_regs);
+                 ms_flags = (update_of' x.ms_flags new_of);
+                 ms_heap = (uu___2.ms_heap);
+                 ms_stack = (uu___2.ms_stack);
+                 ms_stackTaint = (uu___2.ms_stackTaint);
+                 ms_trace = (uu___2.ms_trace)
+               })) in
           (match uu___1 with
            | (y, s2) ->
                ((),
-                 {
-                   ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                   ms_regs = (s2.ms_regs);
-                   ms_flags = (s2.ms_flags);
-                   ms_heap = (s2.ms_heap);
-                   ms_stack = (s2.ms_stack);
-                   ms_stackTaint = (s2.ms_stackTaint);
-                   ms_trace = (s2.ms_trace)
-                 }))
+                 (let uu___2 = s2 in
+                  {
+                    ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                    ms_regs = (uu___2.ms_regs);
+                    ms_flags = (uu___2.ms_flags);
+                    ms_heap = (uu___2.ms_heap);
+                    ms_stack = (uu___2.ms_stack);
+                    ms_stackTaint = (uu___2.ms_stackTaint);
+                    ms_trace = (uu___2.ms_trace)
+                  })))
 let (update_cf_of : Prims.bool -> Prims.bool -> unit st) =
   fun new_cf ->
     fun new_of ->
@@ -1298,28 +1331,30 @@ let (update_cf_of : Prims.bool -> Prims.bool -> unit st) =
         | (x, s1) ->
             let uu___1 =
               ((),
-                {
-                  ms_ok = (x.ms_ok);
-                  ms_regs = (x.ms_regs);
-                  ms_flags =
-                    (update_cf' (update_of' x.ms_flags new_of) new_cf);
-                  ms_heap = (x.ms_heap);
-                  ms_stack = (x.ms_stack);
-                  ms_stackTaint = (x.ms_stackTaint);
-                  ms_trace = (x.ms_trace)
-                }) in
+                (let uu___2 = x in
+                 {
+                   ms_ok = (uu___2.ms_ok);
+                   ms_regs = (uu___2.ms_regs);
+                   ms_flags =
+                     (update_cf' (update_of' x.ms_flags new_of) new_cf);
+                   ms_heap = (uu___2.ms_heap);
+                   ms_stack = (uu___2.ms_stack);
+                   ms_stackTaint = (uu___2.ms_stackTaint);
+                   ms_trace = (uu___2.ms_trace)
+                 })) in
             (match uu___1 with
              | (y, s2) ->
                  ((),
-                   {
-                     ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                     ms_regs = (s2.ms_regs);
-                     ms_flags = (s2.ms_flags);
-                     ms_heap = (s2.ms_heap);
-                     ms_stack = (s2.ms_stack);
-                     ms_stackTaint = (s2.ms_stackTaint);
-                     ms_trace = (s2.ms_trace)
-                   }))
+                   (let uu___2 = s2 in
+                    {
+                      ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                      ms_regs = (uu___2.ms_regs);
+                      ms_flags = (uu___2.ms_flags);
+                      ms_heap = (uu___2.ms_heap);
+                      ms_stack = (uu___2.ms_stack);
+                      ms_stackTaint = (uu___2.ms_stackTaint);
+                      ms_trace = (uu___2.ms_trace)
+                    })))
 let (free_stack : Prims.int -> Prims.int -> unit st) =
   fun start ->
     fun finish ->
@@ -1329,27 +1364,29 @@ let (free_stack : Prims.int -> Prims.int -> unit st) =
         | (x, s1) ->
             let uu___1 =
               ((),
-                {
-                  ms_ok = (x.ms_ok);
-                  ms_regs = (x.ms_regs);
-                  ms_flags = (x.ms_flags);
-                  ms_heap = (x.ms_heap);
-                  ms_stack = (free_stack' start finish x.ms_stack);
-                  ms_stackTaint = (x.ms_stackTaint);
-                  ms_trace = (x.ms_trace)
-                }) in
+                (let uu___2 = x in
+                 {
+                   ms_ok = (uu___2.ms_ok);
+                   ms_regs = (uu___2.ms_regs);
+                   ms_flags = (uu___2.ms_flags);
+                   ms_heap = (uu___2.ms_heap);
+                   ms_stack = (free_stack' start finish x.ms_stack);
+                   ms_stackTaint = (uu___2.ms_stackTaint);
+                   ms_trace = (uu___2.ms_trace)
+                 })) in
             (match uu___1 with
              | (y, s2) ->
                  ((),
-                   {
-                     ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                     ms_regs = (s2.ms_regs);
-                     ms_flags = (s2.ms_flags);
-                     ms_heap = (s2.ms_heap);
-                     ms_stack = (s2.ms_stack);
-                     ms_stackTaint = (s2.ms_stackTaint);
-                     ms_trace = (s2.ms_trace)
-                   }))
+                   (let uu___2 = s2 in
+                    {
+                      ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                      ms_regs = (uu___2.ms_regs);
+                      ms_flags = (uu___2.ms_flags);
+                      ms_heap = (uu___2.ms_heap);
+                      ms_stack = (uu___2.ms_stack);
+                      ms_stackTaint = (uu___2.ms_stackTaint);
+                      ms_trace = (uu___2.ms_trace)
+                    })))
 let bind_option :
   'a 'b .
     'a FStar_Pervasives_Native.option ->
@@ -1422,12 +1459,12 @@ let rec (obs_args :
             (match i with
              | Vale_X64_Instruction_s.IOpEx i1 ->
                  let oprs1 = Obj.magic oprs in
-                 FStar_List_Tot_Base.op_At
+                 FStar_List_Tot_Base.append
                    (obs_operand_explicit i1
                       (FStar_Pervasives_Native.fst oprs1) s)
                    (obs_args args1 (FStar_Pervasives_Native.snd oprs1) s)
              | Vale_X64_Instruction_s.IOpIm i1 ->
-                 FStar_List_Tot_Base.op_At (obs_operand_implicit i1 s)
+                 FStar_List_Tot_Base.append (obs_operand_implicit i1 s)
                    (obs_args args1 oprs s))
 let rec (obs_inouts :
   Vale_X64_Instruction_s.instr_out Prims.list ->
@@ -1452,7 +1489,7 @@ let rec (obs_inouts :
                     ((obs_operand_implicit i1 s), oprs) in
               (match uu___1 with
                | (v, oprs1) ->
-                   FStar_List_Tot_Base.op_At v
+                   FStar_List_Tot_Base.append v
                      (obs_inouts inouts1 args oprs1 s))
 let (ins_obs :
   ins -> machine_state -> Vale_X64_Machine_s.observation Prims.list) =
@@ -1611,15 +1648,16 @@ let (state_or_fail :
         if b
         then s'
         else
-          {
-            ms_ok = false;
-            ms_regs = (s.ms_regs);
-            ms_flags = (s.ms_flags);
-            ms_heap = (s.ms_heap);
-            ms_stack = (s.ms_stack);
-            ms_stackTaint = (s.ms_stackTaint);
-            ms_trace = (s.ms_trace)
-          }
+          (let uu___1 = s in
+           {
+             ms_ok = false;
+             ms_regs = (uu___1.ms_regs);
+             ms_flags = (uu___1.ms_flags);
+             ms_heap = (uu___1.ms_heap);
+             ms_stack = (uu___1.ms_stack);
+             ms_stackTaint = (uu___1.ms_stackTaint);
+             ms_trace = (uu___1.ms_trace)
+           })
 let (instr_write_output_explicit :
   Vale_X64_Instruction_s.instr_operand_explicit ->
     Obj.t -> Obj.t -> machine_state -> machine_state -> machine_state)
@@ -1654,24 +1692,26 @@ let (instr_write_output_implicit :
               state_or_fail s (valid_dst_operand128 o s_orig)
                 (update_operand128_preserve_flags'' o (Obj.magic v) s_orig s)
           | Vale_X64_Instruction_s.IOpFlagsCf ->
+              let uu___ = s in
               {
-                ms_ok = (s.ms_ok);
-                ms_regs = (s.ms_regs);
+                ms_ok = (uu___.ms_ok);
+                ms_regs = (uu___.ms_regs);
                 ms_flags = (update_cf' s.ms_flags (Obj.magic v));
-                ms_heap = (s.ms_heap);
-                ms_stack = (s.ms_stack);
-                ms_stackTaint = (s.ms_stackTaint);
-                ms_trace = (s.ms_trace)
+                ms_heap = (uu___.ms_heap);
+                ms_stack = (uu___.ms_stack);
+                ms_stackTaint = (uu___.ms_stackTaint);
+                ms_trace = (uu___.ms_trace)
               }
           | Vale_X64_Instruction_s.IOpFlagsOf ->
+              let uu___ = s in
               {
-                ms_ok = (s.ms_ok);
-                ms_regs = (s.ms_regs);
+                ms_ok = (uu___.ms_ok);
+                ms_regs = (uu___.ms_regs);
                 ms_flags = (update_of' s.ms_flags (Obj.magic v));
-                ms_heap = (s.ms_heap);
-                ms_stack = (s.ms_stack);
-                ms_stackTaint = (s.ms_stackTaint);
-                ms_trace = (s.ms_trace)
+                ms_heap = (uu___.ms_heap);
+                ms_stack = (uu___.ms_stack);
+                ms_stackTaint = (uu___.ms_stackTaint);
+                ms_trace = (uu___.ms_trace)
               }
 let rec (instr_write_outputs :
   Vale_X64_Instruction_s.instr_out Prims.list ->
@@ -1730,14 +1770,15 @@ let (eval_instr :
               let s1 =
                 match havoc_flags' with
                 | Vale_X64_Instruction_s.HavocFlags ->
+                    let uu___1 = s0 in
                     {
-                      ms_ok = (s0.ms_ok);
-                      ms_regs = (s0.ms_regs);
+                      ms_ok = (uu___1.ms_ok);
+                      ms_regs = (uu___1.ms_regs);
                       ms_flags = havoc_flags;
-                      ms_heap = (s0.ms_heap);
-                      ms_stack = (s0.ms_stack);
-                      ms_stackTaint = (s0.ms_stackTaint);
-                      ms_trace = (s0.ms_trace)
+                      ms_heap = (uu___1.ms_heap);
+                      ms_stack = (uu___1.ms_stack);
+                      ms_stackTaint = (uu___1.ms_stackTaint);
+                      ms_trace = (uu___1.ms_trace)
                     }
                 | Vale_X64_Instruction_s.PreserveFlags -> s0 in
               (match vs with
@@ -3305,16 +3346,17 @@ let (machine_eval_ins_st : ins -> unit st) =
                           (match uu___4 with
                            | (y, s2) ->
                                ((),
-                                 {
-                                   ms_ok =
-                                     ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
-                                   ms_regs = (s2.ms_regs);
-                                   ms_flags = (s2.ms_flags);
-                                   ms_heap = (s2.ms_heap);
-                                   ms_stack = (s2.ms_stack);
-                                   ms_stackTaint = (s2.ms_stackTaint);
-                                   ms_trace = (s2.ms_trace)
-                                 })) in
+                                 (let uu___5 = s2 in
+                                  {
+                                    ms_ok =
+                                      ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
+                                    ms_regs = (uu___5.ms_regs);
+                                    ms_flags = (uu___5.ms_flags);
+                                    ms_heap = (uu___5.ms_heap);
+                                    ms_stack = (uu___5.ms_stack);
+                                    ms_stackTaint = (uu___5.ms_stackTaint);
+                                    ms_trace = (uu___5.ms_trace)
+                                  }))) in
                     match uu___2 with
                     | (x1, s11) ->
                         let uu___3 =
@@ -3350,18 +3392,19 @@ let (machine_eval_ins_st : ins -> unit st) =
                                      (match uu___7 with
                                       | (y, s2) ->
                                           ((),
-                                            {
-                                              ms_ok =
-                                                ((s02.ms_ok && s12.ms_ok) &&
-                                                   s2.ms_ok);
-                                              ms_regs = (s2.ms_regs);
-                                              ms_flags = (s2.ms_flags);
-                                              ms_heap = (s2.ms_heap);
-                                              ms_stack = (s2.ms_stack);
-                                              ms_stackTaint =
-                                                (s2.ms_stackTaint);
-                                              ms_trace = (s2.ms_trace)
-                                            })) in
+                                            (let uu___8 = s2 in
+                                             {
+                                               ms_ok =
+                                                 ((s02.ms_ok && s12.ms_ok) &&
+                                                    s2.ms_ok);
+                                               ms_regs = (uu___8.ms_regs);
+                                               ms_flags = (uu___8.ms_flags);
+                                               ms_heap = (uu___8.ms_heap);
+                                               ms_stack = (uu___8.ms_stack);
+                                               ms_stackTaint =
+                                                 (uu___8.ms_stackTaint);
+                                               ms_trace = (uu___8.ms_trace)
+                                             }))) in
                                match uu___5 with
                                | (x2, s12) ->
                                    let uu___6 =
@@ -3375,33 +3418,38 @@ let (machine_eval_ins_st : ins -> unit st) =
                                          (match uu___8 with
                                           | (y, s2) ->
                                               ((),
-                                                {
-                                                  ms_ok =
-                                                    ((s12.ms_ok && s13.ms_ok)
-                                                       && s2.ms_ok);
-                                                  ms_regs = (s2.ms_regs);
-                                                  ms_flags = (s2.ms_flags);
-                                                  ms_heap = (s2.ms_heap);
-                                                  ms_stack = (s2.ms_stack);
-                                                  ms_stackTaint =
-                                                    (s2.ms_stackTaint);
-                                                  ms_trace = (s2.ms_trace)
-                                                })) in
+                                                (let uu___9 = s2 in
+                                                 {
+                                                   ms_ok =
+                                                     ((s12.ms_ok && s13.ms_ok)
+                                                        && s2.ms_ok);
+                                                   ms_regs = (uu___9.ms_regs);
+                                                   ms_flags =
+                                                     (uu___9.ms_flags);
+                                                   ms_heap = (uu___9.ms_heap);
+                                                   ms_stack =
+                                                     (uu___9.ms_stack);
+                                                   ms_stackTaint =
+                                                     (uu___9.ms_stackTaint);
+                                                   ms_trace =
+                                                     (uu___9.ms_trace)
+                                                 }))) in
                                    (match uu___6 with
                                     | (y, s2) ->
                                         ((),
-                                          {
-                                            ms_ok =
-                                              ((s02.ms_ok && s12.ms_ok) &&
-                                                 s2.ms_ok);
-                                            ms_regs = (s2.ms_regs);
-                                            ms_flags = (s2.ms_flags);
-                                            ms_heap = (s2.ms_heap);
-                                            ms_stack = (s2.ms_stack);
-                                            ms_stackTaint =
-                                              (s2.ms_stackTaint);
-                                            ms_trace = (s2.ms_trace)
-                                          })) in
+                                          (let uu___7 = s2 in
+                                           {
+                                             ms_ok =
+                                               ((s02.ms_ok && s12.ms_ok) &&
+                                                  s2.ms_ok);
+                                             ms_regs = (uu___7.ms_regs);
+                                             ms_flags = (uu___7.ms_flags);
+                                             ms_heap = (uu___7.ms_heap);
+                                             ms_stack = (uu___7.ms_stack);
+                                             ms_stackTaint =
+                                               (uu___7.ms_stackTaint);
+                                             ms_trace = (uu___7.ms_trace)
+                                           }))) in
                              match uu___4 with
                              | (x2, s12) ->
                                  let uu___5 =
@@ -3444,24 +3492,25 @@ let (machine_eval_ins_st : ins -> unit st) =
                                                (match uu___10 with
                                                 | (y, s2) ->
                                                     ((),
-                                                      {
-                                                        ms_ok =
-                                                          ((s13.ms_ok &&
-                                                              s14.ms_ok)
-                                                             && s2.ms_ok);
-                                                        ms_regs =
-                                                          (s2.ms_regs);
-                                                        ms_flags =
-                                                          (s2.ms_flags);
-                                                        ms_heap =
-                                                          (s2.ms_heap);
-                                                        ms_stack =
-                                                          (s2.ms_stack);
-                                                        ms_stackTaint =
-                                                          (s2.ms_stackTaint);
-                                                        ms_trace =
-                                                          (s2.ms_trace)
-                                                      })) in
+                                                      (let uu___11 = s2 in
+                                                       {
+                                                         ms_ok =
+                                                           ((s13.ms_ok &&
+                                                               s14.ms_ok)
+                                                              && s2.ms_ok);
+                                                         ms_regs =
+                                                           (uu___11.ms_regs);
+                                                         ms_flags =
+                                                           (uu___11.ms_flags);
+                                                         ms_heap =
+                                                           (uu___11.ms_heap);
+                                                         ms_stack =
+                                                           (uu___11.ms_stack);
+                                                         ms_stackTaint =
+                                                           (uu___11.ms_stackTaint);
+                                                         ms_trace =
+                                                           (uu___11.ms_trace)
+                                                       }))) in
                                          match uu___8 with
                                          | (x4, s14) ->
                                              let uu___9 =
@@ -3495,26 +3544,28 @@ let (machine_eval_ins_st : ins -> unit st) =
                                                      (match uu___12 with
                                                       | (y, s2) ->
                                                           ((),
-                                                            {
-                                                              ms_ok =
-                                                                ((s14.ms_ok
+                                                            (let uu___13 = s2 in
+                                                             {
+                                                               ms_ok =
+                                                                 ((s14.ms_ok
                                                                     &&
                                                                     s15.ms_ok)
-                                                                   &&
-                                                                   s2.ms_ok);
-                                                              ms_regs =
-                                                                (s2.ms_regs);
-                                                              ms_flags =
-                                                                (s2.ms_flags);
-                                                              ms_heap =
-                                                                (s2.ms_heap);
-                                                              ms_stack =
-                                                                (s2.ms_stack);
-                                                              ms_stackTaint =
-                                                                (s2.ms_stackTaint);
-                                                              ms_trace =
-                                                                (s2.ms_trace)
-                                                            })) in
+                                                                    &&
+                                                                    s2.ms_ok);
+                                                               ms_regs =
+                                                                 (uu___13.ms_regs);
+                                                               ms_flags =
+                                                                 (uu___13.ms_flags);
+                                                               ms_heap =
+                                                                 (uu___13.ms_heap);
+                                                               ms_stack =
+                                                                 (uu___13.ms_stack);
+                                                               ms_stackTaint
+                                                                 =
+                                                                 (uu___13.ms_stackTaint);
+                                                               ms_trace =
+                                                                 (uu___13.ms_trace)
+                                                             }))) in
                                                match uu___10 with
                                                | (x5, s15) ->
                                                    let uu___11 =
@@ -3528,116 +3579,120 @@ let (machine_eval_ins_st : ins -> unit st) =
                                                          (match uu___13 with
                                                           | (y, s2) ->
                                                               ((),
-                                                                {
-                                                                  ms_ok =
-                                                                    (
-                                                                    (s15.ms_ok
+                                                                (let uu___14
+                                                                   = s2 in
+                                                                 {
+                                                                   ms_ok =
+                                                                    ((s15.ms_ok
                                                                     &&
                                                                     s16.ms_ok)
                                                                     &&
                                                                     s2.ms_ok);
-                                                                  ms_regs =
-                                                                    (
-                                                                    s2.ms_regs);
-                                                                  ms_flags =
-                                                                    (
-                                                                    s2.ms_flags);
-                                                                  ms_heap =
-                                                                    (
-                                                                    s2.ms_heap);
-                                                                  ms_stack =
-                                                                    (
-                                                                    s2.ms_stack);
-                                                                  ms_stackTaint
+                                                                   ms_regs =
+                                                                    (uu___14.ms_regs);
+                                                                   ms_flags =
+                                                                    (uu___14.ms_flags);
+                                                                   ms_heap =
+                                                                    (uu___14.ms_heap);
+                                                                   ms_stack =
+                                                                    (uu___14.ms_stack);
+                                                                   ms_stackTaint
                                                                     =
-                                                                    (
-                                                                    s2.ms_stackTaint);
-                                                                  ms_trace =
-                                                                    (
-                                                                    s2.ms_trace)
-                                                                })) in
+                                                                    (uu___14.ms_stackTaint);
+                                                                   ms_trace =
+                                                                    (uu___14.ms_trace)
+                                                                 }))) in
                                                    (match uu___11 with
                                                     | (y, s2) ->
                                                         ((),
-                                                          {
-                                                            ms_ok =
-                                                              ((s14.ms_ok &&
-                                                                  s15.ms_ok)
-                                                                 && s2.ms_ok);
-                                                            ms_regs =
-                                                              (s2.ms_regs);
-                                                            ms_flags =
-                                                              (s2.ms_flags);
-                                                            ms_heap =
-                                                              (s2.ms_heap);
-                                                            ms_stack =
-                                                              (s2.ms_stack);
-                                                            ms_stackTaint =
-                                                              (s2.ms_stackTaint);
-                                                            ms_trace =
-                                                              (s2.ms_trace)
-                                                          })) in
+                                                          (let uu___12 = s2 in
+                                                           {
+                                                             ms_ok =
+                                                               ((s14.ms_ok &&
+                                                                   s15.ms_ok)
+                                                                  && 
+                                                                  s2.ms_ok);
+                                                             ms_regs =
+                                                               (uu___12.ms_regs);
+                                                             ms_flags =
+                                                               (uu___12.ms_flags);
+                                                             ms_heap =
+                                                               (uu___12.ms_heap);
+                                                             ms_stack =
+                                                               (uu___12.ms_stack);
+                                                             ms_stackTaint =
+                                                               (uu___12.ms_stackTaint);
+                                                             ms_trace =
+                                                               (uu___12.ms_trace)
+                                                           }))) in
                                              (match uu___9 with
                                               | (y, s2) ->
                                                   ((),
-                                                    {
-                                                      ms_ok =
-                                                        ((s13.ms_ok &&
-                                                            s14.ms_ok)
-                                                           && s2.ms_ok);
-                                                      ms_regs = (s2.ms_regs);
-                                                      ms_flags =
-                                                        (s2.ms_flags);
-                                                      ms_heap = (s2.ms_heap);
-                                                      ms_stack =
-                                                        (s2.ms_stack);
-                                                      ms_stackTaint =
-                                                        (s2.ms_stackTaint);
-                                                      ms_trace =
-                                                        (s2.ms_trace)
-                                                    })) in
+                                                    (let uu___10 = s2 in
+                                                     {
+                                                       ms_ok =
+                                                         ((s13.ms_ok &&
+                                                             s14.ms_ok)
+                                                            && s2.ms_ok);
+                                                       ms_regs =
+                                                         (uu___10.ms_regs);
+                                                       ms_flags =
+                                                         (uu___10.ms_flags);
+                                                       ms_heap =
+                                                         (uu___10.ms_heap);
+                                                       ms_stack =
+                                                         (uu___10.ms_stack);
+                                                       ms_stackTaint =
+                                                         (uu___10.ms_stackTaint);
+                                                       ms_trace =
+                                                         (uu___10.ms_trace)
+                                                     }))) in
                                        (match uu___7 with
                                         | (y, s2) ->
                                             ((),
-                                              {
-                                                ms_ok =
-                                                  ((s12.ms_ok && s13.ms_ok)
-                                                     && s2.ms_ok);
-                                                ms_regs = (s2.ms_regs);
-                                                ms_flags = (s2.ms_flags);
-                                                ms_heap = (s2.ms_heap);
-                                                ms_stack = (s2.ms_stack);
-                                                ms_stackTaint =
-                                                  (s2.ms_stackTaint);
-                                                ms_trace = (s2.ms_trace)
-                                              })) in
+                                              (let uu___8 = s2 in
+                                               {
+                                                 ms_ok =
+                                                   ((s12.ms_ok && s13.ms_ok)
+                                                      && s2.ms_ok);
+                                                 ms_regs = (uu___8.ms_regs);
+                                                 ms_flags = (uu___8.ms_flags);
+                                                 ms_heap = (uu___8.ms_heap);
+                                                 ms_stack = (uu___8.ms_stack);
+                                                 ms_stackTaint =
+                                                   (uu___8.ms_stackTaint);
+                                                 ms_trace = (uu___8.ms_trace)
+                                               }))) in
                                  (match uu___5 with
                                   | (y, s2) ->
                                       ((),
-                                        {
-                                          ms_ok =
-                                            ((s02.ms_ok && s12.ms_ok) &&
-                                               s2.ms_ok);
-                                          ms_regs = (s2.ms_regs);
-                                          ms_flags = (s2.ms_flags);
-                                          ms_heap = (s2.ms_heap);
-                                          ms_stack = (s2.ms_stack);
-                                          ms_stackTaint = (s2.ms_stackTaint);
-                                          ms_trace = (s2.ms_trace)
-                                        }))) s11 in
+                                        (let uu___6 = s2 in
+                                         {
+                                           ms_ok =
+                                             ((s02.ms_ok && s12.ms_ok) &&
+                                                s2.ms_ok);
+                                           ms_regs = (uu___6.ms_regs);
+                                           ms_flags = (uu___6.ms_flags);
+                                           ms_heap = (uu___6.ms_heap);
+                                           ms_stack = (uu___6.ms_stack);
+                                           ms_stackTaint =
+                                             (uu___6.ms_stackTaint);
+                                           ms_trace = (uu___6.ms_trace)
+                                         })))) s11 in
                         (match uu___3 with
                          | (y, s2) ->
                              ((),
-                               {
-                                 ms_ok =
-                                   ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
-                                 ms_regs = (s2.ms_regs);
-                                 ms_flags = (s2.ms_flags);
-                                 ms_heap = (s2.ms_heap);
-                                 ms_stack = (s2.ms_stack);
-                                 ms_stackTaint = (s2.ms_stackTaint);
-                                 ms_trace = (s2.ms_trace)
-                               })))) s1
+                               (let uu___4 = s2 in
+                                {
+                                  ms_ok =
+                                    ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
+                                  ms_regs = (uu___4.ms_regs);
+                                  ms_flags = (uu___4.ms_flags);
+                                  ms_heap = (uu___4.ms_heap);
+                                  ms_stack = (uu___4.ms_stack);
+                                  ms_stackTaint = (uu___4.ms_stackTaint);
+                                  ms_trace = (uu___4.ms_trace)
+                                }))))) s1
             | Vale_X64_Bytes_Code_s.Alloc n ->
                 (match match if
                                ((Obj.magic
@@ -4184,16 +4239,17 @@ let (machine_eval_ins_st : ins -> unit st) =
                             (match uu___5 with
                              | (y, s2) ->
                                  ((),
-                                   {
-                                     ms_ok =
-                                       ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
-                                     ms_regs = (s2.ms_regs);
-                                     ms_flags = (s2.ms_flags);
-                                     ms_heap = (s2.ms_heap);
-                                     ms_stack = (s2.ms_stack);
-                                     ms_stackTaint = (s2.ms_stackTaint);
-                                     ms_trace = (s2.ms_trace)
-                                   })) in
+                                   (let uu___6 = s2 in
+                                    {
+                                      ms_ok =
+                                        ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
+                                      ms_regs = (uu___6.ms_regs);
+                                      ms_flags = (uu___6.ms_flags);
+                                      ms_heap = (uu___6.ms_heap);
+                                      ms_stack = (uu___6.ms_stack);
+                                      ms_stackTaint = (uu___6.ms_stackTaint);
+                                      ms_trace = (uu___6.ms_trace)
+                                    }))) in
                       match uu___3 with
                       | (x1, s11) ->
                           let uu___4 =
@@ -4221,17 +4277,19 @@ let (machine_eval_ins_st : ins -> unit st) =
                                   (match uu___7 with
                                    | (y, s2) ->
                                        ((),
-                                         {
-                                           ms_ok =
-                                             ((s11.ms_ok && s12.ms_ok) &&
-                                                s2.ms_ok);
-                                           ms_regs = (s2.ms_regs);
-                                           ms_flags = (s2.ms_flags);
-                                           ms_heap = (s2.ms_heap);
-                                           ms_stack = (s2.ms_stack);
-                                           ms_stackTaint = (s2.ms_stackTaint);
-                                           ms_trace = (s2.ms_trace)
-                                         })) in
+                                         (let uu___8 = s2 in
+                                          {
+                                            ms_ok =
+                                              ((s11.ms_ok && s12.ms_ok) &&
+                                                 s2.ms_ok);
+                                            ms_regs = (uu___8.ms_regs);
+                                            ms_flags = (uu___8.ms_flags);
+                                            ms_heap = (uu___8.ms_heap);
+                                            ms_stack = (uu___8.ms_stack);
+                                            ms_stackTaint =
+                                              (uu___8.ms_stackTaint);
+                                            ms_trace = (uu___8.ms_trace)
+                                          }))) in
                             match uu___5 with
                             | (x2, s12) ->
                                 let uu___6 =
@@ -4243,73 +4301,79 @@ let (machine_eval_ins_st : ins -> unit st) =
                                       (match uu___8 with
                                        | (y, s2) ->
                                            ((),
-                                             {
-                                               ms_ok =
-                                                 ((s12.ms_ok && s13.ms_ok) &&
-                                                    s2.ms_ok);
-                                               ms_regs = (s2.ms_regs);
-                                               ms_flags = (s2.ms_flags);
-                                               ms_heap = (s2.ms_heap);
-                                               ms_stack = (s2.ms_stack);
-                                               ms_stackTaint =
-                                                 (s2.ms_stackTaint);
-                                               ms_trace = (s2.ms_trace)
-                                             })) in
+                                             (let uu___9 = s2 in
+                                              {
+                                                ms_ok =
+                                                  ((s12.ms_ok && s13.ms_ok)
+                                                     && s2.ms_ok);
+                                                ms_regs = (uu___9.ms_regs);
+                                                ms_flags = (uu___9.ms_flags);
+                                                ms_heap = (uu___9.ms_heap);
+                                                ms_stack = (uu___9.ms_stack);
+                                                ms_stackTaint =
+                                                  (uu___9.ms_stackTaint);
+                                                ms_trace = (uu___9.ms_trace)
+                                              }))) in
                                 (match uu___6 with
                                  | (y, s2) ->
                                      ((),
-                                       {
-                                         ms_ok =
-                                           ((s11.ms_ok && s12.ms_ok) &&
-                                              s2.ms_ok);
-                                         ms_regs = (s2.ms_regs);
-                                         ms_flags = (s2.ms_flags);
-                                         ms_heap = (s2.ms_heap);
-                                         ms_stack = (s2.ms_stack);
-                                         ms_stackTaint = (s2.ms_stackTaint);
-                                         ms_trace = (s2.ms_trace)
-                                       })) in
+                                       (let uu___7 = s2 in
+                                        {
+                                          ms_ok =
+                                            ((s11.ms_ok && s12.ms_ok) &&
+                                               s2.ms_ok);
+                                          ms_regs = (uu___7.ms_regs);
+                                          ms_flags = (uu___7.ms_flags);
+                                          ms_heap = (uu___7.ms_heap);
+                                          ms_stack = (uu___7.ms_stack);
+                                          ms_stackTaint =
+                                            (uu___7.ms_stackTaint);
+                                          ms_trace = (uu___7.ms_trace)
+                                        }))) in
                           (match uu___4 with
                            | (y, s2) ->
                                ((),
-                                 {
-                                   ms_ok =
-                                     ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
-                                   ms_regs = (s2.ms_regs);
-                                   ms_flags = (s2.ms_flags);
-                                   ms_heap = (s2.ms_heap);
-                                   ms_stack = (s2.ms_stack);
-                                   ms_stackTaint = (s2.ms_stackTaint);
-                                   ms_trace = (s2.ms_trace)
-                                 })) in
+                                 (let uu___5 = s2 in
+                                  {
+                                    ms_ok =
+                                      ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
+                                    ms_regs = (uu___5.ms_regs);
+                                    ms_flags = (uu___5.ms_flags);
+                                    ms_heap = (uu___5.ms_heap);
+                                    ms_stack = (uu___5.ms_stack);
+                                    ms_stackTaint = (uu___5.ms_stackTaint);
+                                    ms_trace = (uu___5.ms_trace)
+                                  }))) in
                     match uu___2 with
                     | (x1, s11) ->
                         let uu___3 = free_stack old_rsp new_rsp s11 in
                         (match uu___3 with
                          | (y, s2) ->
                              ((),
-                               {
-                                 ms_ok =
-                                   ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
-                                 ms_regs = (s2.ms_regs);
-                                 ms_flags = (s2.ms_flags);
-                                 ms_heap = (s2.ms_heap);
-                                 ms_stack = (s2.ms_stack);
-                                 ms_stackTaint = (s2.ms_stackTaint);
-                                 ms_trace = (s2.ms_trace)
-                               })))) s1 in
+                               (let uu___4 = s2 in
+                                {
+                                  ms_ok =
+                                    ((s01.ms_ok && s11.ms_ok) && s2.ms_ok);
+                                  ms_regs = (uu___4.ms_regs);
+                                  ms_flags = (uu___4.ms_flags);
+                                  ms_heap = (uu___4.ms_heap);
+                                  ms_stack = (uu___4.ms_stack);
+                                  ms_stackTaint = (uu___4.ms_stackTaint);
+                                  ms_trace = (uu___4.ms_trace)
+                                }))))) s1 in
           (match uu___1 with
            | (y, s2) ->
                ((),
-                 {
-                   ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
-                   ms_regs = (s2.ms_regs);
-                   ms_flags = (s2.ms_flags);
-                   ms_heap = (s2.ms_heap);
-                   ms_stack = (s2.ms_stack);
-                   ms_stackTaint = (s2.ms_stackTaint);
-                   ms_trace = (s2.ms_trace)
-                 }))
+                 (let uu___2 = s2 in
+                  {
+                    ms_ok = ((s0.ms_ok && s1.ms_ok) && s2.ms_ok);
+                    ms_regs = (uu___2.ms_regs);
+                    ms_flags = (uu___2.ms_flags);
+                    ms_heap = (uu___2.ms_heap);
+                    ms_stack = (uu___2.ms_stack);
+                    ms_stackTaint = (uu___2.ms_stackTaint);
+                    ms_trace = (uu___2.ms_trace)
+                  })))
 let (machine_eval_ins : ins -> machine_state -> machine_state) =
   fun i -> fun s -> FStar_Pervasives_Native.snd (machine_eval_ins_st i s)
 let (machine_eval_code_ins_def :
@@ -4320,15 +4384,16 @@ let (machine_eval_code_ins_def :
       FStar_Pervasives_Native.Some
         (let uu___ =
            machine_eval_ins i
-             {
-               ms_ok = (s.ms_ok);
-               ms_regs = (s.ms_regs);
-               ms_flags = (s.ms_flags);
-               ms_heap = (s.ms_heap);
-               ms_stack = (s.ms_stack);
-               ms_stackTaint = (s.ms_stackTaint);
-               ms_trace = []
-             } in
+             (let uu___1 = s in
+              {
+                ms_ok = (uu___1.ms_ok);
+                ms_regs = (uu___1.ms_regs);
+                ms_flags = (uu___1.ms_flags);
+                ms_heap = (uu___1.ms_heap);
+                ms_stack = (uu___1.ms_stack);
+                ms_stackTaint = (uu___1.ms_stackTaint);
+                ms_trace = []
+              }) in
          {
            ms_ok = (uu___.ms_ok);
            ms_regs = (uu___.ms_regs);
@@ -4336,7 +4401,7 @@ let (machine_eval_code_ins_def :
            ms_heap = (uu___.ms_heap);
            ms_stack = (uu___.ms_stack);
            ms_stackTaint = (uu___.ms_stackTaint);
-           ms_trace = (FStar_List_Tot_Base.op_At obs s.ms_trace)
+           ms_trace = (FStar_List_Tot_Base.append obs s.ms_trace)
          })
 let (machine_eval_code_ins :
   ins -> machine_state -> machine_state FStar_Pervasives_Native.option) =
@@ -4367,24 +4432,26 @@ let (machine_eval_ocmp :
                (match uu___1 with
                 | (y, s2) ->
                     ((),
-                      {
-                        ms_ok = ((s.ms_ok && s11.ms_ok) && s2.ms_ok);
-                        ms_regs = (s2.ms_regs);
-                        ms_flags = (s2.ms_flags);
-                        ms_heap = (s2.ms_heap);
-                        ms_stack = (s2.ms_stack);
-                        ms_stackTaint = (s2.ms_stackTaint);
-                        ms_trace = (s2.ms_trace)
-                      }))) in
+                      (let uu___2 = s2 in
+                       {
+                         ms_ok = ((s.ms_ok && s11.ms_ok) && s2.ms_ok);
+                         ms_regs = (uu___2.ms_regs);
+                         ms_flags = (uu___2.ms_flags);
+                         ms_heap = (uu___2.ms_heap);
+                         ms_stack = (uu___2.ms_stack);
+                         ms_stackTaint = (uu___2.ms_stackTaint);
+                         ms_trace = (uu___2.ms_trace)
+                       })))) in
       let b = eval_ocmp_opaque s1 c in
       let s2 =
+        let uu___ = s1 in
         {
-          ms_ok = (s1.ms_ok);
-          ms_regs = (s1.ms_regs);
+          ms_ok = (uu___.ms_ok);
+          ms_regs = (uu___.ms_regs);
           ms_flags = havoc_flags;
-          ms_heap = (s1.ms_heap);
-          ms_stack = (s1.ms_stack);
-          ms_stackTaint = (s1.ms_stackTaint);
+          ms_heap = (uu___.ms_heap);
+          ms_stack = (uu___.ms_stack);
+          ms_stackTaint = (uu___.ms_stackTaint);
           ms_trace = ((Vale_X64_Machine_s.BranchPredicate b) ::
             (s1.ms_trace))
         } in

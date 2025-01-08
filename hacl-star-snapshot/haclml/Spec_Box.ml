@@ -18,7 +18,7 @@ let (ecdh :
                      (Lib_Sequence.create (Prims.of_int (32))
                         (FStar_UInt8.uint_to_t Prims.int_zero)))
                   (Prims.of_int (32))) in
-           res = 255)
+           res = (FStar_UInt8.uint_to_t (Prims.of_int (255))))
       then FStar_Pervasives_Native.Some shared
       else FStar_Pervasives_Native.None
 let (box_beforenm :

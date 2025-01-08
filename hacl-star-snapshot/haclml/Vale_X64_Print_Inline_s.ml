@@ -214,7 +214,7 @@ let rec (get_modified_input_strings :
                                    ret_val reg_names1 counter1 arg_names in
                                (match uu___1 with
                                 | (outputs, reg_names2, counter2) ->
-                                    ((FStar_List_Tot_Base.op_At output
+                                    ((FStar_List_Tot_Base.append output
                                         outputs), reg_names2, counter2)))
 let (print_modified_inputs :
   Prims.nat ->
@@ -323,7 +323,7 @@ let rec (get_nonmodified_input_strings :
                                  reg_names1 counter1 arg_names in
                              (match uu___1 with
                               | (inputs, reg_names2, counter2) ->
-                                  ((FStar_List_Tot_Base.op_At input inputs),
+                                  ((FStar_List_Tot_Base.append input inputs),
                                     reg_names2, counter2)))
 let (print_nonmodified_inputs :
   Prims.nat ->
@@ -433,7 +433,7 @@ let (print_explicit_register_arg :
                   (Prims.strcat "  register "
                      (Prims.strcat ty
                         (Prims.strcat (names i)
-                           (Prims.strcat "_r __asm__(\""
+                           (Prims.strcat "_r asm(\""
                               (Prims.strcat
                                  (Vale_X64_Print_s.print_reg_name (of_arg i))
                                  (Prims.strcat "\") = "
@@ -479,7 +479,7 @@ let (print_register_ret :
           if reserved Prims.int_zero
           then
             Prims.strcat "  register uint64_t "
-              (Prims.strcat name " __asm__(\"rax\");\n")
+              (Prims.strcat name " asm(\"rax\");\n")
           else Prims.strcat "  uint64_t " (Prims.strcat name ";\n")
 let (print_cmp :
   Vale_X64_Machine_Semantics_s.ocmp ->
@@ -776,7 +776,7 @@ let (print_inline :
                                      ret_val)
                                     || has_explicit
                                 then "\n"
-                                else "") "  __asm__ volatile(\n" in
+                                else "") "  asm volatile(\n" in
                            let init_reg_names r =
                              Prims.strcat "%"
                                (Vale_X64_Print_s.print_reg_name r) in
@@ -828,6 +828,7 @@ let (print_inline :
                                            Prims.strcat "b"
                                              (inlined_reg_names r) in
                                      let printer =
+                                       let uu___6 = Vale_X64_Print_s.gcc in
                                        {
                                          Vale_X64_Print_s.print_reg_name =
                                            inlined_reg_names;
@@ -836,30 +837,30 @@ let (print_inline :
                                          Vale_X64_Print_s.print_small_reg_name
                                            = inlined_small_reg_names;
                                          Vale_X64_Print_s.reg_prefix =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.reg_prefix);
+                                           (uu___6.Vale_X64_Print_s.reg_prefix);
                                          Vale_X64_Print_s.mem_prefix =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.mem_prefix);
+                                           (uu___6.Vale_X64_Print_s.mem_prefix);
                                          Vale_X64_Print_s.maddr =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.maddr);
+                                           (uu___6.Vale_X64_Print_s.maddr);
                                          Vale_X64_Print_s.const =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.const);
+                                           (uu___6.Vale_X64_Print_s.const);
                                          Vale_X64_Print_s.ins_name =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.ins_name);
+                                           (uu___6.Vale_X64_Print_s.ins_name);
                                          Vale_X64_Print_s.op_order =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.op_order);
+                                           (uu___6.Vale_X64_Print_s.op_order);
                                          Vale_X64_Print_s.align =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.align);
+                                           (uu___6.Vale_X64_Print_s.align);
                                          Vale_X64_Print_s.header =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.header);
+                                           (uu___6.Vale_X64_Print_s.header);
                                          Vale_X64_Print_s.footer =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.footer);
+                                           (uu___6.Vale_X64_Print_s.footer);
                                          Vale_X64_Print_s.proc_name =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.proc_name);
+                                           (uu___6.Vale_X64_Print_s.proc_name);
                                          Vale_X64_Print_s.ret =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.ret);
+                                           (uu___6.Vale_X64_Print_s.ret);
                                          Vale_X64_Print_s.sha256rnds2_explicit_xmm0
                                            =
-                                           (Vale_X64_Print_s.gcc.Vale_X64_Print_s.sha256rnds2_explicit_xmm0)
+                                           (uu___6.Vale_X64_Print_s.sha256rnds2_explicit_xmm0)
                                        } in
                                      let uu___6 =
                                        print_code (remove_blank code) label

@@ -1,6 +1,6 @@
 open Prims
 let (va_code_Loop6x_partial_expected_code :
-  Vale_AES_AES_common_s.algorithm ->
+  Vale_AES_AES_s.algorithm ->
     (Vale_X64_Decls.ins, Vale_X64_Decls.ocmp) Vale_X64_Machine_s.precode)
   =
   fun alg ->
@@ -447,7 +447,7 @@ let (va_code_Loop6x_partial_expected_code :
       Vale_X64_InsVector.va_code_Load128_buffer Prims.int_zero Prims.int_one
         (Vale_X64_Machine_s.OReg (Prims.of_int (2))) (Prims.of_int (32))
         Vale_Arch_HeapTypes_s.Secret;
-      if alg = Vale_AES_AES_common_s.AES_256
+      if alg = Vale_AES_AES_s.AES_256
       then
         Vale_X64_Machine_s.Block
           [Vale_X64_InsAes.va_code_VAESNI_enc (Prims.of_int (9))
@@ -567,7 +567,7 @@ let (va_code_Loop6x_partial_expected_code :
                ((Vale_X64_Machine_s.Reg (Prims.int_zero, (Prims.of_int (5)))),
                  (Prims.of_int (80)))), Vale_Arch_HeapTypes_s.Secret))]
 let (va_codegen_success_Loop6x_partial_expected_code :
-  Vale_AES_AES_common_s.algorithm -> Vale_X64_Decls.va_pbool) =
+  Vale_AES_AES_s.algorithm -> Vale_X64_Decls.va_pbool) =
   fun alg ->
     Vale_X64_Decls.va_pbool_and
       (Vale_X64_InsBasic.va_codegen_success_Add64
@@ -1689,7 +1689,7 @@ let (va_codegen_success_Loop6x_partial_expected_code :
                                                                     (Vale_X64_Decls.va_pbool_and
                                                                     (if
                                                                     alg =
-                                                                    Vale_AES_AES_common_s.AES_256
+                                                                    Vale_AES_AES_s.AES_256
                                                                     then
                                                                     Vale_X64_Decls.va_pbool_and
                                                                     (Vale_X64_InsAes.va_codegen_success_VAESNI_enc
