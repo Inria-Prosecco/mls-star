@@ -52,9 +52,10 @@ cd FStar
 git checkout $(jq -r '.nodes."fstar-flake".locked.rev' path/to/mls-star/flake.lock)
 # install F* dependencies with opam, see F*'s INSTALL.md
 make -j
-export FSTAR_HOME=$(pwd)
+export FSTAR_EXE=$(pwd)/bin/fstar.exe
 # obtain Z3 4.8.5 here https://github.com/FStarLang/binaries/tree/master/z3-tested
 export PATH=$PATH:$(cd directory/where/z3/4.8.5/lives; pwd)
+# alternatively use the get_fstar_z3.sh script in the F* repo
 ```
 
 ### Installing Comparse and DY\*
@@ -65,7 +66,7 @@ Two choices are possible:
   and `fstar.exe` is in the `PATH`
 - or [Comparse](https://github.com/TWal/comparse) is cloned in `COMPARSE_HOME`,
   [DY\*](https://github.com/REPROSEC/dolev-yao-star-extrinsic) is cloned in `DY_HOME`,
-  and F\* in `FSTAR_HOME`,
+  and `FSTAR_EXE` is set to the location of `fstar.exe`,
   in that case using [direnv](https://direnv.net/) is a advisable.
 
 When using relative path, the following commands will setup the dependencies.
