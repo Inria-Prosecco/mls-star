@@ -200,6 +200,7 @@ type node_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) =
   | [@@@ with_tag NT_parent] N_parent: parent_node_nt bytes tkt -> node_nt bytes tkt
 
 %splice [ps_node_nt] (gen_parser (`node_nt))
+%splice [ps_node_nt_is_well_formed] (gen_is_well_formed_lemma (`node_nt))
 
 /// optional<Node> ratchet_tree<V>;
 

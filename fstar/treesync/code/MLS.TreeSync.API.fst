@@ -568,7 +568,6 @@ let finalize_commit_valid #bytes #cb #tkt #asp #group_id #st #li #p pend token =
 
 (*** Weaken ***)
 
-#push-options "--fuel 1 --ifuel 1"
 val weaken_asp:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes -> #token_t:Type0 -> #group_id:mls_bytes bytes ->
   asp_strong:as_parameters bytes -> asp_weak:as_parameters bytes -> st:treesync_state bytes tkt token_t group_id ->
@@ -579,8 +578,8 @@ val weaken_asp:
     treesync_state_valid asp_strong st
   )
   (ensures treesync_state_valid asp_weak st)
-let weaken_asp #bytes #cb #tkt #token_t #group_id asp_strong asp_weak st = ()
-#pop-options
+let weaken_asp #bytes #cb #tkt #token_t #group_id asp_strong asp_weak st =
+  all_credentials_ok_weaken asp_weak st.tree (st.tokens <: as_tokens bytes asp_strong.token_t _ _)
 
 (*** Authenticate external path ***)
 

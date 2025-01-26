@@ -92,5 +92,12 @@ val all_credentials_ok:
   #l:nat -> #i:tree_index l ->
   treesync bytes tkt l i -> as_tokens bytes asp.token_t l i ->
   prop
-let all_credentials_ok #bytes #bl #tkt #asp #l #i ts ast =
-  forall li. one_credential_ok ts ast li
+let rec all_credentials_ok #bytes #bl #tkt #asp #l #i ts ast =
+  match ts, ast with
+  | TLeaf None, TLeaf None -> True
+  | TLeaf (Some ln), TLeaf (Some as_token) ->
+    asp.credential_ok (leaf_node_to_as_input ln) as_token
+  | TLeaf _, TLeaf _ -> False
+  | TNode _ sleft sright, TNode _ astleft astright ->
+    all_credentials_ok sleft astleft /\
+    all_credentials_ok sright astright

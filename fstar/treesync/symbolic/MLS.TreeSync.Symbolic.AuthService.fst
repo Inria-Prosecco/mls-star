@@ -3,7 +3,9 @@ module MLS.TreeSync.Symbolic.AuthService
 open Comparse
 open DY.Core
 open DY.Lib
+open MLS.Tree
 open MLS.TreeSync.NetworkTypes
+open MLS.TreeSync.Types
 open MLS.TreeSync.Invariants.AuthService
 open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
 open MLS.TreeSync.Symbolic.State.SignatureKey
@@ -53,3 +55,19 @@ let dy_asp_later #cinvs tr1 tr2 (vk, cred) token =
   match credential_to_principal cred with
   | None -> ()
   | Some who -> ()
+
+val all_credentials_ok_later:
+  {|crypto_invariants|} ->
+  #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  tr1:trace -> tr2:trace ->
+  ts:treesync bytes tkt l i -> ast:as_tokens bytes dy_as_token l i ->
+  Lemma
+  (requires
+    all_credentials_ok ts (ast <: as_tokens bytes (dy_asp tr1).token_t l i) /\
+    tr1 <$ tr2
+  )
+  (ensures all_credentials_ok ts (ast <: as_tokens bytes (dy_asp tr2).token_t l i))
+  [SMTPat (all_credentials_ok ts (ast <: as_tokens bytes (dy_asp tr1).token_t l i)); SMTPat (tr1 <$ tr2)]
+let all_credentials_ok_later #cinvs #tkt #l #i tr1 tr2 ts ast =
+  MLS.TreeSync.Invariants.AuthService.Proofs.all_credentials_ok_weaken (dy_asp tr2) ts (ast <: as_tokens bytes (dy_asp tr1).token_t _ _)

@@ -44,26 +44,30 @@ let rec ps_dy_as_tokens_is_well_formed #l #i pre tokens =
     ps_dy_as_tokens_is_well_formed pre right
 #pop-options
 
+// define type for tokens to work around F* bug
+type tokens_type (levels:nat) = as_tokens bytes dy_as_token levels 0
+let ps_tokens_type (levels:nat): parser_serializer bytes (tokens_type levels) =
+  ps_as_tokens ps_dy_as_token levels 0
+
+[@@ with_bytes bytes]
 noeq
-type bare_treesync_state_ (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes) (as_token:Type0) (ps_token:parser_serializer bytes as_token) = {
+type bare_treesync_state (tkt:treekem_types bytes) = {
   group_id: mls_bytes bytes;
   [@@@ with_parser #bytes ps_nat]
   levels: nat;
   [@@@ with_parser #bytes (ps_treesync tkt levels 0)]
   tree: treesync bytes tkt levels 0;
-  [@@@ with_parser #bytes (ps_as_tokens ps_token levels 0)]
-  tokens: as_tokens bytes as_token levels 0;
+  // [@@@ with_parser #bytes (ps_as_tokens ps_dy_as_token levels 0)]
+  // tokens: as_tokens bytes dy_as_token levels 0;
+  tokens: tokens_type levels;
 }
 
-%splice [ps_bare_treesync_state_] (gen_parser (`bare_treesync_state_))
+%splice [ps_bare_treesync_state] (gen_parser (`bare_treesync_state))
 #push-options "--z3rlimit 20"
-%splice [ps_bare_treesync_state__is_well_formed] (gen_is_well_formed_lemma (`bare_treesync_state_))
+%splice [ps_bare_treesync_state_is_well_formed] (gen_is_well_formed_lemma (`bare_treesync_state))
 #pop-options
 
-type bare_treesync_state (tkt:treekem_types bytes) =
-  bare_treesync_state_ bytes tkt dy_as_token ps_dy_as_token
-
-instance parseable_serializeable_bare_treesync_state (tkt:treekem_types bytes): parseable_serializeable bytes (bare_treesync_state tkt) = mk_parseable_serializeable (ps_bare_treesync_state_ tkt dy_as_token ps_dy_as_token)
+instance parseable_serializeable_bare_treesync_state (tkt:treekem_types bytes): parseable_serializeable bytes (bare_treesync_state tkt) = mk_parseable_serializeable (ps_bare_treesync_state tkt)
 
 instance local_state_bare_treesync_state (tkt:treekem_types bytes): local_state (bare_treesync_state tkt) =
   mk_local_state_instance "MLS.TreeSync.PublicState"
@@ -84,8 +88,9 @@ let treesync_public_state_pred #ci tkt = {
   );
   pred_knowable = (fun tr prin state_id st ->
     let pre = is_knowable_by (principal_typed_state_content_label prin (local_state_bare_treesync_state tkt).tag state_id st) tr in
-    wf_weaken_lemma _ (is_publishable tr) pre st.tree;
-    ps_dy_as_tokens_is_well_formed pre st.tokens
+    ps_dy_as_tokens_is_well_formed pre st.tokens;
+    assert(is_well_formed _ pre st.tree);
+    assert(is_well_formed _ pre st)
   );
 }
 #pop-options
@@ -132,7 +137,7 @@ val new_public_treesync_state_proof:
   (requires
     is_publishable tr group_id /\
     is_well_formed _ (is_publishable tr) (st.tree <: treesync _ _ _ _) /\
-    treesync_state_valid (dy_asp tr) st /\
+    treesync_state_valid #bytes #crypto_bytes_bytes (dy_asp tr) st /\
     trace_invariant tr /\
     has_treesync_public_state_invariant tkt
   )
@@ -163,7 +168,7 @@ val set_public_treesync_state_proof:
   (requires
     is_publishable tr group_id /\
     is_well_formed _ (is_publishable tr) (st.tree <: treesync _ _ _ _) /\
-    treesync_state_valid (dy_asp tr) st /\
+    treesync_state_valid #bytes #crypto_bytes_bytes (dy_asp tr) st /\
     trace_invariant tr /\
     has_treesync_public_state_invariant tkt
   )
@@ -211,7 +216,7 @@ val get_public_treesync_state_proof:
       | Some (|group_id, st|) -> (
         is_publishable tr_out group_id /\
         is_well_formed _ (is_publishable tr_out) (st.tree <: treesync bytes tkt _ _) /\
-        treesync_state_valid (dy_asp tr) st
+        treesync_state_valid #bytes #crypto_bytes_bytes (dy_asp tr) st
       )
     )
   ))

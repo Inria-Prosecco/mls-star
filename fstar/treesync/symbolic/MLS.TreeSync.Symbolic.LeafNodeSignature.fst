@@ -465,9 +465,6 @@ let rec all_credentials_ok_subtree #bytes #cb #tkt #asp #lp #ld #ip #id d p ast_
   else (
     let (c,  _) = get_child_sibling p id in
     let (ast_c,  _) = get_child_sibling ast_p id in
-    introduce forall li. one_credential_ok c ast_c li with (
-      assert(one_credential_ok p ast_p li)
-    );
     all_credentials_ok_subtree d c ast_d ast_c
   )
 
@@ -489,12 +486,13 @@ val state_implies_event:
     bytes_invariant tr group_id /\
     is_subtree_of t st.tree /\
     is_subtree_of ast st.tokens /\
-    treesync_state_valid (dy_asp tr) st
+    treesync_state_valid #bytes #crypto_bytes_bytes (dy_asp tr) st
   )
   (ensures (
     // The following line is only there as precondition for the rest of the theorem
     unmerged_leaves_ok t /\ parent_hash_invariant t /\ all_credentials_ok t ast /\ (
       let authentifier_li = get_authentifier_index t in
+      elim_all_credentials_ok #_ #_ #_ #(dy_asp tr) t ast authentifier_li;
       let authentifier_leaf_node = Some?.v (leaf_at t authentifier_li) in
       let authentifier = Some?.v (credential_to_principal authentifier_leaf_node.data.credential) in
       let authentifier_signature_key = authentifier_leaf_node.data.signature_key in
@@ -513,6 +511,7 @@ let state_implies_event #ci #tkt #group_id #l #i tr st t ast =
   all_credentials_ok_subtree t st.tree ast st.tokens;
   is_well_formed_leaf_at (bytes_invariant tr) t (get_authentifier_index t);
   let authentifier_li = get_authentifier_index t in
+  elim_all_credentials_ok #_ #_ #_ #(dy_asp tr) t ast authentifier_li;
   parent_hash_implies_event tr group_id t (Some?.v (leaf_at ast authentifier_li))
 
 (*** Proof of path signature ***)

@@ -19,9 +19,28 @@ val intro_all_credentials_ok:
   #l:nat -> #i:tree_index l ->
   ts:treesync bytes tkt l i -> ast:as_tokens bytes asp.token_t l i -> (li:leaf_index l i -> squash (one_credential_ok ts ast li)) ->
   squash (all_credentials_ok ts ast)
-let intro_all_credentials_ok #bytes #bl #tkt #asp #l #i ts ast one_proof =
-  introduce forall li. one_credential_ok ts ast li
-  with one_proof li
+let rec intro_all_credentials_ok #bytes #bl #tkt #asp #l #i ts ast one_proof =
+  match ts, ast with
+  | TLeaf _, TLeaf _ ->
+    one_proof i
+  | TNode _ sleft sright, TNode _ astleft astright ->
+    intro_all_credentials_ok sleft astleft (fun li -> one_proof li);
+    intro_all_credentials_ok sright astright (fun li -> one_proof li)
+
+val elim_all_credentials_ok:
+  #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #asp:as_parameters bytes ->
+  #l:nat -> #i:tree_index l ->
+  ts:treesync bytes tkt l i -> ast:as_tokens bytes asp.token_t l i -> li:leaf_index l i ->
+  Lemma
+  (requires all_credentials_ok ts ast)
+  (ensures one_credential_ok ts ast li)
+let rec elim_all_credentials_ok #bytes #bl #tkt #asp #l #i ts ast li =
+  if l = 0 then ()
+  else (
+    let (child_ts, _) = get_child_sibling ts li in
+    let (child_ast, _) = get_child_sibling ast li in
+    elim_all_credentials_ok child_ts child_ast li
+  )
 
 (*** Invariant theorems ***)
 
@@ -46,6 +65,7 @@ val all_credentials_ok_tree_add:
   (ensures all_credentials_ok (Success?.v (tree_add ts li ln)) (as_add_update ast li token))
 let all_credentials_ok_tree_add #bytes #bl #tkt #asp #l #i ts ast li ln token =
   intro_all_credentials_ok (Success?.v (tree_add ts li ln)) (as_add_update ast li token) (fun li' ->
+    elim_all_credentials_ok ts ast li';
     leaf_at_tree_add ts li ln li';
     leaf_at_tree_change_path ast li (Some token) () li'
   )
@@ -62,6 +82,7 @@ val all_credentials_ok_tree_update:
   (ensures all_credentials_ok (tree_update ts li ln) (as_add_update ast li token))
 let all_credentials_ok_tree_update #bytes #bl #tkt #asp #l #i ts ast li ln token =
   intro_all_credentials_ok (tree_update ts li ln) (as_add_update ast li token) (fun li' ->
+    elim_all_credentials_ok ts ast li';
     leaf_at_tree_update ts li ln li';
     leaf_at_tree_change_path ast li (Some token) () li'
   )
@@ -75,6 +96,7 @@ val all_credentials_ok_tree_remove:
   (ensures all_credentials_ok (tree_remove ts li) (as_remove ast li))
 let all_credentials_ok_tree_remove #bytes #bl #tkt #asp #l #i ts ast li =
   intro_all_credentials_ok (tree_remove ts li) (as_remove ast li) (fun li' ->
+    elim_all_credentials_ok ts ast li';
     leaf_at_tree_remove ts li li';
     leaf_at_tree_change_path ast li None () li'
   )
@@ -92,6 +114,7 @@ val all_credentials_ok_apply_path:
   (ensures all_credentials_ok (Success?.v (apply_path ts p)) (as_add_update ast li token))
 let all_credentials_ok_apply_path #bytes #cb #tkt #asp #l #li ts ast p token =
   intro_all_credentials_ok (Success?.v (apply_path ts p)) (as_add_update ast li token) (fun li' ->
+    elim_all_credentials_ok ts ast li';
     leaf_at_apply_path ts p li';
     leaf_at_tree_change_path ast li (Some token) () li'
   )
@@ -109,11 +132,13 @@ val all_credentials_ok_left_right:
 let all_credentials_ok_left_right #bytes #bl #tkt #asp #l #i ts ast =
   let TNode _ ts_left ts_right, TNode _ ast_left ast_right = ts, ast in
   intro_all_credentials_ok ts_left ast_left (fun li ->
+    elim_all_credentials_ok ts ast li;
     assert(one_credential_ok ts ast li);
     assert(leaf_at ts_left li == leaf_at ts li);
     assert(leaf_at ast_left li == leaf_at ast li)
   );
   intro_all_credentials_ok ts_right ast_right (fun li ->
+    elim_all_credentials_ok ts ast li;
     assert(one_credential_ok ts ast li);
     assert(leaf_at ts_right li == leaf_at ts li);
     assert(leaf_at ast_right li == leaf_at ast li)
@@ -140,6 +165,7 @@ let all_credentials_ok_tree_extend #bytes #bl #tkt #asp #l ts ast =
   intro_all_credentials_ok (tree_extend ts) (as_extend ast) (fun li ->
     leaf_at_tree_extend ts li;
     if li < pow2 l then (
+      elim_all_credentials_ok ts ast li;
       let li: leaf_index l 0 = li in //helps with forall instantiation in `all_credentials_ok`
       assert(leaf_at (tree_extend ts) li == leaf_at ts li);
       assert(leaf_at (as_extend ast) li == leaf_at ast li)
@@ -162,8 +188,15 @@ val all_credentials_ok_weaken:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes -> #asp_strong:as_parameters bytes ->
   #l:nat -> #i:tree_index l ->
   asp_weak:as_parameters bytes -> ts:treesync bytes tkt l i -> ast:as_tokens bytes asp_strong.token_t l i ->
-  Pure (as_tokens bytes asp_weak.token_t l i)
-  (requires all_credentials_ok ts ast /\ as_parameters_weaker asp_strong asp_weak)
-  (ensures fun res -> all_credentials_ok ts res)
-let all_credentials_ok_weaken #bytes #bl #tkt #asp_strong #l #i asp_weak ts ast =
-  ast
+  Lemma
+  (requires
+    all_credentials_ok ts ast /\
+    as_parameters_weaker asp_strong asp_weak
+  )
+  (ensures all_credentials_ok ts (ast <: as_tokens bytes asp_weak.token_t l i))
+let rec all_credentials_ok_weaken #bytes #bl #tkt #asp_strong #l #i asp_weak ts ast =
+  match ts, ast with
+  | TLeaf _, TLeaf _ -> ()
+  | TNode _ sleft sright, TNode () astleft astright ->
+    all_credentials_ok_weaken asp_weak sleft astleft;
+    all_credentials_ok_weaken asp_weak sright astright

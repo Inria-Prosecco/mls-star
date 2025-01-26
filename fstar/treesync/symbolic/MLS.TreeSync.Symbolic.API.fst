@@ -37,15 +37,6 @@ let guard b =
   else
     return None
 
-#push-options "--ifuel 1"
-val extract_result: #a:Type -> x:MLS.Result.result a -> traceful (option a)
-let extract_result #a x =
-  match x with
-  | MLS.Result.Success y -> return (Some y)
-  | MLS.Result.InternalError s -> return None
-  | MLS.Result.ProtocolError s -> return None
-#pop-options
-
 val has_treesync_invariants: treekem_types bytes -> {|protocol_invariants|} -> prop
 let has_treesync_invariants tkt #invs =
   has_treesync_public_state_invariant tkt /\
@@ -189,7 +180,7 @@ let create_proof #invs #tkt p as_session gmgr_session group_id ln secret_session
     | None -> ()
     | Some token -> (
       is_well_formed_finalize_create (is_publishable tr) create_pend token;
-      finalize_create_valid #_ #_ #_ #(dy_asp tr) create_pend token
+      finalize_create_valid #bytes #crypto_bytes_bytes #_ #(dy_asp tr) create_pend token
     )
   )
 #pop-options
@@ -240,7 +231,7 @@ let welcome_proof #invs #tkt p as_session gmgr_session kpmgr_session my_key_pack
     | None -> ()
     | Some tokens -> (
       is_well_formed_finalize_welcome (is_publishable tr) welcome_pend tokens;
-      finalize_welcome_valid #_ #_ #_ #(dy_asp tr) welcome_pend tokens;
+      finalize_welcome_valid #bytes #crypto_bytes_bytes #_ #(dy_asp tr) welcome_pend tokens;
       // not sure why F* needs the following lines
       // similar to FStarLang/FStar#3093 ?
       let st = finalize_welcome welcome_pend tokens in
@@ -304,7 +295,7 @@ let add_proof #invs #tkt p as_session gmgr_session group_id ln tr =
           | None -> ()
           | Some (new_st, _) -> (
             is_well_formed_finalize_add (is_publishable tr) add_pend token;
-            finalize_add_valid #_ #_ #_ #(dy_asp tr) add_pend token
+            finalize_add_valid #bytes #crypto_bytes_bytes #_ #(dy_asp tr) add_pend token
           )
         )
       )
@@ -362,7 +353,7 @@ let update_proof #invs #tkt p as_session gmgr_session group_id ln li tr =
           | None -> ()
           | Some token -> (
             is_well_formed_finalize_update (is_publishable tr) update_pend token;
-            finalize_update_valid #_ #_ #_ #(dy_asp tr) update_pend token
+            finalize_update_valid #bytes #crypto_bytes_bytes #_ #(dy_asp tr) update_pend token
           )
         )
       )
@@ -414,7 +405,7 @@ let remove_proof #invs #tkt p as_session gmgr_session group_id li tr =
         | None -> ()
         | Some remove_pend -> (
           is_well_formed_finalize_remove (is_publishable tr) remove_pend;
-          finalize_remove_valid #_ #_ #_ #(dy_asp tr) remove_pend
+          finalize_remove_valid #bytes #crypto_bytes_bytes #_ #(dy_asp tr) remove_pend
         )
       )
     )
@@ -477,7 +468,7 @@ let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
             | None -> ()
             | Some new_st -> (
               is_well_formed_finalize_commit (is_publishable tr) commit_pend token;
-              finalize_commit_valid #_ #_ #_ #(dy_asp tr) commit_pend token;
+              finalize_commit_valid #bytes #crypto_bytes_bytes #_ #(dy_asp tr) commit_pend token;
               ()
             )
           )
@@ -650,7 +641,8 @@ val authenticate_leaf_node_data_from_key_package_proof:
       match opt_ln with
       | None -> True
       | Some ln ->
-        is_well_formed _ (is_publishable tr_out) ln
+        is_well_formed _ (is_publishable tr_out) ln /\
+        ln.data == ln_data
     )
   ))
 let authenticate_leaf_node_data_from_key_package_proof  #invs #tkt p si_private ln_data tr =
@@ -708,7 +700,8 @@ val authenticate_leaf_node_data_from_update_proof:
       match opt_ln with
       | None -> True
       | Some ln ->
-        is_well_formed _ (is_publishable tr_out) ln
+        is_well_formed _ (is_publishable tr_out) ln /\
+        ln.data == ln_data
     )
   ))
 let authenticate_leaf_node_data_from_update_proof #invs #tkt p si_private ln_data group_id leaf_index tr =

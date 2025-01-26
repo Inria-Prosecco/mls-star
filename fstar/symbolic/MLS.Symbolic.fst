@@ -107,3 +107,12 @@ instance parseable_serializeable_bytes_mls_principal: parseable_serializeable by
 val mk_mls_sigkey_usage: principal -> usage
 let mk_mls_sigkey_usage who =
   SigKey "MLS.LeafSignKey" (serialize _ { who })
+
+#push-options "--ifuel 1"
+val extract_result: #a:Type -> x:MLS.Result.result a -> traceful (option a)
+let extract_result #a x =
+  let open DY.Core in
+  match x with
+  | Success y -> return (Some y)
+  | _ -> return None
+#pop-options
