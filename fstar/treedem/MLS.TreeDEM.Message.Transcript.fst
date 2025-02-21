@@ -7,18 +7,13 @@ open MLS.Crypto
 
 val compute_confirmed_transcript_hash:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  wire_format_nt -> framed_content_nt bytes -> bytes -> bytes ->
+  confirmed_transcript_hash_input_nt bytes -> bytes ->
   result bytes
-let compute_confirmed_transcript_hash #bytes #cb wire_format msg signature interim_transcript_hash =
-  let? signature = mk_mls_bytes signature "compute_confirmed_transcript_hash" "signature" in
-  if not (msg.content.content_type = CT_commit) then
+let compute_confirmed_transcript_hash #bytes #cb tx_hash_input interim_transcript_hash =
+  if not (tx_hash_input.content.content.content_type = CT_commit) then
     internal_failure "compute_confirmed_transcript_hash: should only be used on a commit message"
   else (
-    let serialized_msg = serialize (confirmed_transcript_hash_input_nt bytes) ({
-      wire_format;
-      content = msg;
-      signature;
-    }) in
+    let serialized_msg = serialize (confirmed_transcript_hash_input_nt bytes) tx_hash_input in
     let hash_input = concat #bytes interim_transcript_hash serialized_msg in
     hash_hash hash_input
   )

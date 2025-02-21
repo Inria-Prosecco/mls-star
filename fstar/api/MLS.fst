@@ -200,7 +200,7 @@ let process_commit state wire_format message message_auth =
   in
   // Compute the new transcript hash
   let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash
-    wire_format message message_auth.signature state.interim_transcript_hash in
+    { wire_format;  content=message; signature = message_auth.signature } state.interim_transcript_hash in
   let? interim_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_interim_transcript_hash
     (message_auth.confirmation_tag <: bytes) confirmed_transcript_hash in
   let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "process_commit" "confirmed_transcript_hash" in
@@ -568,7 +568,7 @@ let generate_commit state e proposals =
   } in
   let? nonce = universal_sign_nonce in
   let? half_auth_commit = MLS.TreeDEM.API.start_authenticate_commit state.treedem_state WF_mls_private_message msg nonce in
-  let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash WF_mls_private_message msg half_auth_commit.signature state.interim_transcript_hash in
+  let? confirmed_transcript_hash = MLS.TreeDEM.Message.Transcript.compute_confirmed_transcript_hash half_auth_commit state.interim_transcript_hash in
   let? confirmed_transcript_hash = mk_mls_bytes confirmed_transcript_hash "generate_commit" "confirmed_transcipt_hash" in
   let new_group_context = { provisional_group_context with confirmed_transcript_hash } in
   let? commit_result = MLS.TreeKEM.API.finalize_create_commit pending_commit new_group_context [] in

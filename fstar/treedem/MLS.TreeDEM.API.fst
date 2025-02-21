@@ -77,30 +77,24 @@ let authenticate_non_commit #bytes #cb st wf msg nonce =
 /// first the signature,
 /// then the confirmation tag.
 
-type half_authenticated_commit (bytes:Type0) {|bytes_like bytes|} = {
-  wire_format: wire_format_nt;
-  content: content:framed_content_nt bytes{content.content.content_type == CT_commit};
-  signature: mls_bytes bytes;
-}
-
 val start_authenticate_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   treedem_state bytes ->
   wf:wire_format_nt ->
   msg:framed_content_nt bytes{msg.content.content_type == CT_commit} ->
   sign_nonce bytes ->
-  result (res:half_authenticated_commit bytes{res.wire_format == wf /\ res.content == msg})
+  result (res:confirmed_transcript_hash_input_nt bytes{res.wire_format == wf /\ res.content == msg})
 let start_authenticate_commit #bytes #cb st wf msg nonce =
   let? signature = compute_message_signature st.my_signature_key nonce wf msg (mk_static_option st.group_context) in
   return ({
     wire_format = wf;
     content = msg;
     signature;
-  } <: res:half_authenticated_commit bytes{res.wire_format == wf /\ res.content == msg})
+  } <: res:confirmed_transcript_hash_input_nt bytes{res.wire_format == wf /\ res.content == msg})
 
 val finish_authenticate_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  msg:half_authenticated_commit bytes ->
+  msg:confirmed_transcript_hash_input_nt bytes{msg.content.content.content_type == CT_commit} ->
   bytes ->
   result (res:authenticated_content_nt bytes{res.wire_format == msg.wire_format /\ res.content == msg.content})
 let finish_authenticate_commit #bytes #cb msg confirmation_tag  =
