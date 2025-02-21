@@ -102,7 +102,7 @@ let encrypt_one_group_secrets #bytes #cb kp encrypted_group_info gs rand =
 #push-options "--fuel 1 --ifuel 1"
 val encrypt_welcome_entropy_length:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  list (key_package_nt bytes tkt & option (mls_bytes bytes)) ->
+  list (key_package_nt bytes tkt & option bytes) ->
   list nat
 let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
   match leaf_packages with
@@ -110,26 +110,38 @@ let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
   | h::t -> (hpke_private_key_length #bytes)::encrypt_welcome_entropy_length t
 #pop-options
 
+val mk_group_secrets:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  bytes -> option bytes -> list (pre_shared_key_id_nt bytes) ->
+  result (group_secrets_nt bytes)
+let mk_group_secrets #bytes #bl joiner_secret path_secret psks =
+  let? joiner_secret = mk_mls_bytes joiner_secret "mk_group_secrets" "joiner_secret" in
+  let? path_secret =
+    match path_secret with
+    | None -> return None
+    | Some path_secret -> (
+      let? path_secret = mk_mls_bytes path_secret "mk_group_secrets" "path_secret" in
+      return (Some ({path_secret} <: path_secret_nt bytes))
+    )
+  in
+  let? psks = mk_mls_list psks "mk_group_secrets" "psks" in
+  return {
+    joiner_secret;
+    path_secret;
+    psks;
+  }
+
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 val encrypt_group_secrets:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> mls_bytes bytes -> key_packages:list (key_package_nt bytes tkt & option (mls_bytes bytes)) -> mls_list bytes ps_pre_shared_key_id_nt -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
+  bytes -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> list (pre_shared_key_id_nt bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
   result (list (encrypted_group_secrets_nt bytes))
 let rec encrypt_group_secrets #bytes #cb encrypted_group_info joiner_secret key_packages psks rand =
   match key_packages with
   | [] -> return []
   | (kp, path_secret)::tail -> (
     let (cur_rand, rand_next) = dest_randomness rand in
-    let path_secret =
-      match path_secret with
-      | None -> None
-      | Some path_secret -> Some ({path_secret} <: path_secret_nt bytes)
-    in
-    let group_secrets = {
-      joiner_secret = joiner_secret;
-      path_secret = path_secret;
-      psks = psks;
-    } in
+    let? group_secrets = mk_group_secrets joiner_secret path_secret psks in
     let? res_head = encrypt_one_group_secrets kp encrypted_group_info group_secrets cur_rand in
     let? res_tail = encrypt_group_secrets encrypted_group_info joiner_secret tail psks rand_next in
     return (res_head::res_tail)
@@ -151,7 +163,7 @@ let encrypt_group_info #bytes #cb joiner_secret group_info =
 #push-options "--fuel 1"
 val encrypt_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  group_info_nt bytes -> mls_bytes bytes -> key_packages:list (key_package_nt bytes tkt & option (mls_bytes bytes)) -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
+  group_info_nt bytes -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
   result (welcome_nt bytes)
 let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
   let? encrypted_group_info = encrypt_group_info joiner_secret group_info in

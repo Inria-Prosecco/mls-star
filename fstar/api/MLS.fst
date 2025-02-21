@@ -440,7 +440,6 @@ let generate_welcome_message st ratchet_tree new_group_context confirmation_tag 
     sign_welcome_group_info st.sign_private_key group_info_tbs nonce
   ) in
   let? key_packages_and_path_secrets = mapM (fun (kp, ps) ->
-    let? ps = mk_mls_bytes ps "" "" in
     return (kp, Some ps)
   ) new_key_packages in
   let? (rand, e) = unsafe_mk_randomness e in
