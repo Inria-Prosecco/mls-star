@@ -443,7 +443,7 @@ let generate_welcome_message st ratchet_tree new_group_context confirmation_tag 
     return (kp, Some ps)
   ) new_key_packages in
   let? (rand, e) = unsafe_mk_randomness e in
-  let? welcome_msg = encrypt_welcome group_info joiner_secret key_packages_and_path_secrets rand in
+  let? welcome_msg = encrypt_welcome group_info joiner_secret [] key_packages_and_path_secrets rand in
   return welcome_msg
 
 type generate_update_path_result (leaf_index:nat) = {
@@ -660,7 +660,8 @@ let process_welcome_message w (sign_pk, sign_sk) lookup =
     else
       return x
   in
-  let? (group_info, secrets, (_, leaf_decryption_key)) = decrypt_welcome welcome lookup extract_hpke_sk in
+  let? (secrets, (_, leaf_decryption_key)) = decrypt_group_secrets welcome lookup extract_hpke_sk in
+  let? group_info = decrypt_group_info secrets.joiner_secret [] welcome.encrypted_group_info in
   let group_id = group_info.tbs.group_context.group_id in
   let? ratchet_tree = (
     match group_info.tbs.extensions with

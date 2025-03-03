@@ -47,36 +47,35 @@ let rec find_my_encrypted_group_secret #bytes #cb kp_ref_to_kp_secrets l =
   )
 #pop-options
 
-val decrypt_group_secrets:
+val _decrypt_group_secrets:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   hpke_private_key bytes -> hpke_ciphertext_nt bytes -> bytes ->
   result (group_secrets_nt bytes)
-let decrypt_group_secrets #bytes #cb my_hpke_sk my_hpke_ciphertext ad =
+let _decrypt_group_secrets #bytes #cb my_hpke_sk my_hpke_ciphertext ad =
   let? kem_output = mk_hpke_kem_output my_hpke_ciphertext.kem_output "decrypt_welcome" "kem_output" in
   let? group_secrets_bytes = decrypt_with_label my_hpke_sk "Welcome" ad kem_output my_hpke_ciphertext.ciphertext in
   from_option "decrypt_group_secrets: malformed group secrets" (parse (group_secrets_nt bytes) group_secrets_bytes)
 
+val decrypt_group_secrets:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #a:Type ->
+  welcome_nt bytes -> (bytes -> option a) -> (a -> result (hpke_private_key bytes)) ->
+  result (group_secrets_nt bytes & (key_package_ref_nt bytes & a))
+let decrypt_group_secrets #bytes #cb w kp_ref_to_kp_secrets kp_secrets_to_hpke_sk =
+  let? (my_kp_ref, my_kp_secrets, my_hpke_ciphertext) = from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_ref_to_kp_secrets w.secrets) in
+  let? my_hpke_sk = kp_secrets_to_hpke_sk my_kp_secrets in
+  let? group_secrets = _decrypt_group_secrets my_hpke_sk my_hpke_ciphertext w.encrypted_group_info in
+  return (group_secrets, (my_kp_ref, my_kp_secrets))
+
 val decrypt_group_info:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> bytes ->
+  bytes -> list (pre_shared_key_id_nt bytes & bytes) -> bytes ->
   result (group_info_nt bytes)
-let decrypt_group_info #bytes #cb joiner_secret encrypted_group_info =
-  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret [] (*TODO psk*) in
+let decrypt_group_info #bytes #cb joiner_secret psks encrypted_group_info =
+  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret psks in
   let? welcome_key = welcome_secret_to_key #bytes welcome_secret in
   let? welcome_nonce = welcome_secret_to_nonce welcome_secret in
   let? group_info_bytes = aead_decrypt welcome_key welcome_nonce empty encrypted_group_info in
   from_option "decrypt_group_info: malformed group info" (parse (group_info_nt bytes) group_info_bytes)
-
-val decrypt_welcome:
-  #bytes:Type0 -> {|crypto_bytes bytes|} -> #a:Type ->
-  welcome_nt bytes -> (bytes -> option a) -> (a -> result (hpke_private_key bytes)) ->
-  result (group_info_nt bytes & group_secrets_nt bytes & (key_package_ref_nt bytes & a))
-let decrypt_welcome #bytes #cb w kp_ref_to_kp_secrets kp_secrets_to_hpke_sk =
-  let? (my_kp_ref, my_kp_secrets, my_hpke_ciphertext) = from_option "decrypt_welcome: can't find my encrypted secret" (find_my_encrypted_group_secret kp_ref_to_kp_secrets w.secrets) in
-  let? my_hpke_sk = kp_secrets_to_hpke_sk my_kp_secrets in
-  let? group_secrets = decrypt_group_secrets my_hpke_sk my_hpke_ciphertext w.encrypted_group_info in
-  let? group_info = decrypt_group_info (group_secrets.joiner_secret <: bytes) w.encrypted_group_info in
-  return (group_info, group_secrets, (my_kp_ref, my_kp_secrets))
 
 (*** Encrypting a welcome ***)
 
@@ -112,9 +111,9 @@ let rec encrypt_welcome_entropy_length #bytes #cb leaf_packages =
 
 val mk_group_secrets:
   #bytes:Type0 -> {|bytes_like bytes|} ->
-  bytes -> option bytes -> list (pre_shared_key_id_nt bytes) ->
+  bytes -> list (pre_shared_key_id_nt bytes) -> option bytes ->
   result (group_secrets_nt bytes)
-let mk_group_secrets #bytes #bl joiner_secret path_secret psks =
+let mk_group_secrets #bytes #bl joiner_secret psks path_secret =
   let? joiner_secret = mk_mls_bytes joiner_secret "mk_group_secrets" "joiner_secret" in
   let? path_secret =
     match path_secret with
@@ -134,26 +133,26 @@ let mk_group_secrets #bytes #bl joiner_secret path_secret psks =
 #push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 val encrypt_group_secrets:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> list (pre_shared_key_id_nt bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
+  bytes -> bytes -> list (pre_shared_key_id_nt bytes) -> key_packages:list (key_package_nt bytes tkt & option bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
   result (list (encrypted_group_secrets_nt bytes))
-let rec encrypt_group_secrets #bytes #cb encrypted_group_info joiner_secret key_packages psks rand =
+let rec encrypt_group_secrets #bytes #cb encrypted_group_info joiner_secret psks key_packages rand =
   match key_packages with
   | [] -> return []
   | (kp, path_secret)::tail -> (
     let (cur_rand, rand_next) = dest_randomness rand in
-    let? group_secrets = mk_group_secrets joiner_secret path_secret psks in
+    let? group_secrets = mk_group_secrets joiner_secret psks path_secret in
     let? res_head = encrypt_one_group_secrets kp encrypted_group_info group_secrets cur_rand in
-    let? res_tail = encrypt_group_secrets encrypted_group_info joiner_secret tail psks rand_next in
+    let? res_tail = encrypt_group_secrets encrypted_group_info joiner_secret psks tail rand_next in
     return (res_head::res_tail)
   )
 #pop-options
 
 val encrypt_group_info:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  bytes -> group_info_nt bytes ->
+  bytes -> list (pre_shared_key_id_nt bytes & bytes) -> group_info_nt bytes ->
   result (mls_bytes bytes)
-let encrypt_group_info #bytes #cb joiner_secret group_info =
-  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret [] (*TODO psk*) in
+let encrypt_group_info #bytes #cb joiner_secret psks group_info =
+  let? welcome_secret = secret_joiner_to_welcome #bytes joiner_secret psks in
   let? welcome_key = welcome_secret_to_key #bytes welcome_secret in
   let? welcome_nonce = welcome_secret_to_nonce welcome_secret in
   let group_info_bytes = serialize (group_info_nt bytes) group_info in
@@ -163,11 +162,11 @@ let encrypt_group_info #bytes #cb joiner_secret group_info =
 #push-options "--fuel 1"
 val encrypt_welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
-  group_info_nt bytes -> bytes -> key_packages:list (key_package_nt bytes tkt & option bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
+  group_info_nt bytes -> bytes -> list (pre_shared_key_id_nt bytes & bytes) -> key_packages:list (key_package_nt bytes tkt & option bytes) -> randomness bytes (encrypt_welcome_entropy_length key_packages) ->
   result (welcome_nt bytes)
-let encrypt_welcome #bytes #cb group_info joiner_secret key_packages rand =
-  let? encrypted_group_info = encrypt_group_info joiner_secret group_info in
-  let? group_secrets = encrypt_group_secrets encrypted_group_info joiner_secret key_packages [] (*TODO psks*) rand in
+let encrypt_welcome #bytes #cb group_info joiner_secret psks key_packages rand =
+  let? encrypted_group_info = encrypt_group_info joiner_secret psks group_info in
+  let? group_secrets = encrypt_group_secrets encrypted_group_info joiner_secret (List.Tot.map fst psks) key_packages rand in
   let? group_secrets = mk_mls_list group_secrets "encrypt_welcome" "group_secrets" in
   let cipher_suite = available_ciphersuite_to_network (ciphersuite #bytes) in
   return ({
