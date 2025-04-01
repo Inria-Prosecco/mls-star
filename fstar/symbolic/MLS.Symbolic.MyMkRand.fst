@@ -4,12 +4,18 @@ open DY.Core
 
 #set-options "--fuel 0 --ifuel 0"
 
+val const:
+  #a:Type -> #b:Type ->
+  b ->
+  a -> b
+let const #a #b x y = x
+
 [@@ "opaque_to_smt"]
-val my_mk_rand: usg:usage -> lab:(bytes -> label) -> len:nat{len <> 0} -> traceful bytes
+val my_mk_rand: usg:(bytes -> usage) -> lab:(bytes -> label) -> len:nat{len <> 0} -> traceful bytes
 let my_mk_rand usg lab len =
   let* time = get_time in
   let result = (Rand len time) in
-  add_entry (RandGen usg (lab result) len);*
+  add_entry (RandGen (usg result) (lab result) len);*
   return result
 
 /// Generating a random bytestrings always preserve the trace invariant.
@@ -17,7 +23,7 @@ let my_mk_rand usg lab len =
 #push-options "--z3rlimit 25 --fuel 1 --ifuel 1"
 val my_mk_rand_trace_invariant:
   {|protocol_invariants|} ->
-  usg:usage -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
+  usg:(bytes -> usage) -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
   Lemma
   (requires trace_invariant tr)
   (ensures (
@@ -28,7 +34,7 @@ val my_mk_rand_trace_invariant:
   [SMTPat (my_mk_rand usg lab len tr); SMTPat (trace_invariant tr)]
 let my_mk_rand_trace_invariant #invs usg lab len tr =
   let result = (Rand len (trace_length tr)) in
-  add_entry_invariant (RandGen usg (lab result) len) tr;
+  add_entry_invariant (RandGen (usg result) (lab result) len) tr;
   reveal_opaque (`%my_mk_rand) (my_mk_rand)
 #pop-options
 
@@ -37,7 +43,7 @@ let my_mk_rand_trace_invariant #invs usg lab len tr =
 #push-options "--fuel 1 --ifuel 1"
 val my_mk_rand_bytes_invariant:
   {|protocol_invariants|} ->
-  usg:usage -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
+  usg:(bytes -> usage) -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
   Lemma
   (ensures (
     let (b, tr_out) = my_mk_rand usg lab len tr in
@@ -57,7 +63,7 @@ let my_mk_rand_bytes_invariant #invs usg lab len tr =
 #push-options "--fuel 1 --ifuel 1"
 val my_mk_rand_get_label:
   {|protocol_invariants|} ->
-  usg:usage -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
+  usg:(bytes -> usage) -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
   Lemma
   (ensures (
     let (b, tr_out) = my_mk_rand usg lab len tr in
@@ -74,11 +80,11 @@ let my_mk_rand_get_label #invs usg lab len tr =
 #push-options "--fuel 1 --ifuel 1"
 val my_mk_rand_has_usage:
   {|protocol_invariants|} ->
-  usg:usage -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
+  usg:(bytes -> usage) -> lab:(bytes -> label) -> len:nat{len <> 0} -> tr:trace ->
   Lemma
   (ensures (
     let (b, tr_out) = my_mk_rand usg lab len tr in
-    b `has_usage tr_out` usg
+    b `has_usage tr_out` (usg b)
   ))
   [SMTPat (my_mk_rand usg lab len tr); SMTPat (trace_invariant tr)]
 let my_mk_rand_has_usage #invs usg lab len tr =

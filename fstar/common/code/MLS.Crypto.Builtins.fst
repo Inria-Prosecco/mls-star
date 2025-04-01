@@ -127,6 +127,8 @@ let mk_concrete_crypto_bytes acs =
   hash_max_input_length =  Hash.max_input_length (cs.kdf_hash) + 1;
   hash_hash_pre = (fun buf -> ());
   hash_output_length_bound = (fun buf -> ());
+  hash_output_length = Hash.hash_length cs.kdf_hash;
+  hash_output_length_lemma = (fun buf -> ());
 
   kdf_length = Hash.hash_length cs.kdf_hash;
   kdf_extract = (fun key data ->
@@ -265,3 +267,4 @@ let mk_randomness #bytes #bl #head_size #tail_size (head_rand, tail_rand) =
   (head_rand, tail_rand)
 let dest_randomness #bytes #bl #head_size #tail_size (head_rand, tail_rand) =
   (head_rand, tail_rand)
+let dest_mk_randomness #bytes #bl #head_size #tail_size x = ()

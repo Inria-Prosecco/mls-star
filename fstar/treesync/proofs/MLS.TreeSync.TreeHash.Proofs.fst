@@ -82,3 +82,13 @@ let rec tree_hash_inj #bytes #sb #tkt #l1 #i1 #l2 #i2 t1 t2 =
     )
   )
 #pop-options
+
+/// Utility predicate
+
+val tree_has_hash:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
+  #l:nat -> #i:tree_index l ->
+  treesync bytes tkt l i -> bytes ->
+  prop
+let tree_has_hash #bytes #cb #tkt #l #i t h =
+  Success h == tree_hash t

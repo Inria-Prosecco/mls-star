@@ -8,6 +8,7 @@ open MLS.TreeKEM.API.KeySchedule.Types
 open MLS.TreeKEM.KeySchedule
 open MLS.Result
 
+[@"opaque_to_smt"]
 val create_from_epoch_secret:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes -> group_context_nt bytes ->
@@ -36,6 +37,7 @@ let create_from_epoch_secret #bytes #cb epoch_secret group_context =
     init_secret;
   } <: treekem_keyschedule_state bytes), (encryption_secret <: bytes))
 
+[@"opaque_to_smt"]
 val create_from_joiner_secret:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   bytes -> list (pre_shared_key_id_nt bytes & bytes) -> group_context_nt bytes ->
@@ -49,6 +51,7 @@ type secrets_for_welcome (bytes:Type0) = {
   welcome_secret: bytes;
 }
 
+[@"opaque_to_smt"]
 val commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   treekem_keyschedule_state bytes ->
@@ -66,6 +69,7 @@ let commit #bytes #cb st opt_commit_secret psks new_group_context =
     welcome_secret;
   })
 
+[@"opaque_to_smt"]
 val export:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   treekem_keyschedule_state bytes ->

@@ -17,6 +17,7 @@ type add_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_add_nt] (gen_parser (`add_nt))
+%splice [ps_add_nt_is_well_formed] (gen_is_well_formed_lemma (`add_nt))
 
 /// struct {
 ///     LeafNode leaf_node;
@@ -27,6 +28,7 @@ type update_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_update_nt] (gen_parser (`update_nt))
+%splice [ps_update_nt_is_well_formed] (gen_is_well_formed_lemma (`update_nt))
 
 /// struct {
 ///     uint32 removed;
@@ -37,6 +39,7 @@ type remove_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_remove_nt] (gen_parser (`remove_nt))
+%splice [ps_remove_nt_is_well_formed] (gen_is_well_formed_lemma (`remove_nt))
 
 /// struct {
 ///     PreSharedKeyID psk;
@@ -47,6 +50,7 @@ type pre_shared_key_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_pre_shared_key_nt] (gen_parser (`pre_shared_key_nt))
+%splice [ps_pre_shared_key_nt_is_well_formed] (gen_is_well_formed_lemma (`pre_shared_key_nt))
 
 /// struct {
 ///     opaque group_id<V>;
@@ -63,6 +67,7 @@ type reinit_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_reinit_nt] (gen_parser (`reinit_nt))
+%splice [ps_reinit_nt_is_well_formed] (gen_is_well_formed_lemma (`reinit_nt))
 
 /// struct {
 ///   opaque kem_output<V>;
@@ -73,6 +78,7 @@ type external_init_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_external_init_nt] (gen_parser (`external_init_nt))
+%splice [ps_external_init_nt_is_well_formed] (gen_is_well_formed_lemma (`external_init_nt))
 
 /// struct {
 ///   Extension extensions<V>;
@@ -83,6 +89,7 @@ type group_context_extensions_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_group_context_extensions_nt] (gen_parser (`group_context_extensions_nt))
+%splice [ps_group_context_extensions_nt_is_well_formed] (gen_is_well_formed_lemma (`group_context_extensions_nt))
 
 (*** Refs ***)
 
@@ -108,6 +115,7 @@ type proposal_nt (bytes:Type0) {|bytes_like bytes|} =
   | [@@@ with_tag PT_group_context_extensions] P_group_context_extensions: group_context_extensions_nt bytes -> proposal_nt bytes
 
 %splice [ps_proposal_nt] (gen_parser (`proposal_nt))
+%splice [ps_proposal_nt_is_well_formed] (gen_is_well_formed_lemma (`proposal_nt))
 
 instance parseable_serializeable_proposal_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (proposal_nt bytes) = mk_parseable_serializeable ps_proposal_nt
 
@@ -131,6 +139,7 @@ type proposal_or_ref_nt (bytes:Type0) {|bytes_like bytes|} =
   | [@@@ with_num_tag 1 2] POR_reference: proposal_ref_nt bytes -> proposal_or_ref_nt bytes
 
 %splice [ps_proposal_or_ref_nt] (gen_parser (`proposal_or_ref_nt))
+%splice [ps_proposal_or_ref_nt_is_well_formed] (gen_is_well_formed_lemma (`proposal_or_ref_nt))
 
 /// struct {
 ///     ProposalOrRef proposals<V>;
@@ -144,6 +153,7 @@ type commit_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_commit_nt] (gen_parser (`commit_nt))
+%splice [ps_commit_nt_is_well_formed] (gen_is_well_formed_lemma (`commit_nt))
 
 /// enum {
 ///     reserved(0),
@@ -161,6 +171,7 @@ type sender_type_nt =
   | [@@@ with_num_tag 1 4] ST_new_member_commit: sender_type_nt
 
 %splice [ps_sender_type_nt] (gen_parser (`sender_type_nt))
+%splice [ps_sender_type_nt_is_well_formed] (gen_is_well_formed_lemma (`sender_type_nt))
 
 /// struct {
 ///     SenderType sender_type;
@@ -182,6 +193,7 @@ type sender_nt (bytes:Type0) {|bytes_like bytes|} =
   | [@@@ with_tag ST_new_member_commit] S_new_member_commit: sender_nt bytes
 
 %splice [ps_sender_nt] (gen_parser (`sender_nt))
+%splice [ps_sender_nt_is_well_formed] (gen_is_well_formed_lemma (`sender_nt))
 
 /// // See IANA registry for registered values
 /// uint16 WireFormat;
@@ -211,6 +223,7 @@ type content_type_nt =
   | [@@@ with_num_tag 1 3] CT_commit: content_type_nt
 
 %splice [ps_content_type_nt] (gen_parser (`content_type_nt))
+%splice [ps_content_type_nt_is_well_formed] (gen_is_well_formed_lemma (`content_type_nt))
 
 /// struct {
 ///     opaque group_id<V>;
@@ -244,6 +257,7 @@ type mls_tagged_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_mls_tagged_content_nt] (gen_parser (`mls_tagged_content_nt))
+%splice [ps_mls_tagged_content_nt_is_well_formed] (gen_is_well_formed_lemma (`mls_tagged_content_nt))
 
 type framed_content_nt (bytes:Type0) {|bytes_like bytes|} = {
   group_id: mls_bytes bytes;
@@ -254,6 +268,7 @@ type framed_content_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_framed_content_nt] (gen_parser (`framed_content_nt))
+%splice [ps_framed_content_nt_is_well_formed] (gen_is_well_formed_lemma (`framed_content_nt))
 
 /// struct {
 ///     ProtocolVersion version = mls10;
@@ -482,6 +497,7 @@ type confirmed_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_confirmed_transcript_hash_input_nt] (gen_parser (`confirmed_transcript_hash_input_nt))
+%splice [ps_confirmed_transcript_hash_input_nt_is_well_formed] (gen_is_well_formed_lemma (`confirmed_transcript_hash_input_nt))
 
 instance parseable_serializeable_confirmed_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (confirmed_transcript_hash_input_nt bytes) = mk_parseable_serializeable ps_confirmed_transcript_hash_input_nt
 
@@ -494,6 +510,7 @@ type interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_interim_transcript_hash_input_nt] (gen_parser (`interim_transcript_hash_input_nt))
+%splice [ps_interim_transcript_hash_input_nt_is_well_formed] (gen_is_well_formed_lemma (`interim_transcript_hash_input_nt))
 
 instance parseable_serializeable_interim_transcript_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (interim_transcript_hash_input_nt bytes) = mk_parseable_serializeable ps_interim_transcript_hash_input_nt
 

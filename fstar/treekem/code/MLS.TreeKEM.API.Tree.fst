@@ -16,6 +16,7 @@ open MLS.TreeKEM.API.Tree.Types
 
 (*** Create ***)
 
+[@"opaque_to_smt"]
 val create:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   hpke_private_key bytes -> bytes ->
@@ -29,6 +30,7 @@ let create #bytes #cb dec_key enc_key =
 
 (*** Welcome ***)
 
+[@"opaque_to_smt"]
 val welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat ->
@@ -57,6 +59,7 @@ let welcome #bytes #cb #l t leaf_decryption_key opt_path_secret_and_inviter_ind 
 
 (*** Add ***)
 
+[@"opaque_to_smt"]
 val add:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   treekem_tree_state bytes leaf_ind -> treekem_leaf bytes ->
@@ -87,14 +90,31 @@ let add #bytes #cb #leaf_ind st kp =
 
 (*** Update ***)
 
-val update:
+[@"opaque_to_smt"]
+val update_myself:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
-  st:treekem_tree_state bytes leaf_ind -> treekem_leaf bytes -> treekem_index st ->
+  st:treekem_tree_state bytes leaf_ind -> treekem_leaf bytes -> hpke_private_key bytes ->
   treekem_tree_state bytes leaf_ind
-let update #bytes #cb #leaf_ind st lp i =
+let update_myself #bytes #cb #leaf_ind st lp leaf_decryption_key =
+  treekem_invariant_update st.tree leaf_ind lp;
+  treekem_priv_invariant_update st.tree st.priv leaf_ind lp;
+  { st with
+    tree = tree_update st.tree leaf_ind lp;
+    priv = create_empty_priv leaf_decryption_key;
+  }
+
+[@"opaque_to_smt"]
+val update_other:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  st:treekem_tree_state bytes leaf_ind -> treekem_leaf bytes -> i:treekem_index st{i <> leaf_ind} ->
+  treekem_tree_state bytes leaf_ind
+let update_other #bytes #cb #leaf_ind st lp i =
   treekem_invariant_update st.tree i lp;
   treekem_priv_invariant_update st.tree st.priv i lp;
-  { st with tree = tree_update st.tree i lp; }
+  { st with
+    tree = tree_update st.tree i lp;
+    priv = path_blank st.priv i;
+  }
 
 (*** Remove ***)
 
@@ -140,6 +160,7 @@ let remove_aux #bytes #cb #leaf_ind st i =
     priv = path_blank st.priv i;
   }
 
+[@"opaque_to_smt"]
 val remove:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_tree_state bytes leaf_ind -> i:treekem_index st{i <> leaf_ind} ->
@@ -149,6 +170,7 @@ let remove #bytes #cb #leaf_ind st i =
 
 (*** Process Commit ***)
 
+[@"opaque_to_smt"]
 val commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_tree_state bytes leaf_ind -> #li:treekem_index st{li <> leaf_ind} -> p:pathkem bytes st.levels 0 li{path_filtering_ok st.tree p} -> excluded_leaves:list nat{~(List.Tot.memP leaf_ind excluded_leaves)} -> group_context_nt bytes ->
@@ -186,6 +208,7 @@ type pending_commit (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) (st:tr
   commit_secret: bytes;
 }
 
+[@"opaque_to_smt"]
 val prepare_create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_tree_state bytes leaf_ind ->
@@ -218,6 +241,7 @@ type create_commit_result (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) 
   added_leaves_path_secrets: list bytes;
 }
 
+[@"opaque_to_smt"]
 val finalize_create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   #st:treekem_tree_state bytes leaf_ind ->

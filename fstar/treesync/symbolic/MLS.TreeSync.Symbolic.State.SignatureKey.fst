@@ -58,7 +58,7 @@ let is_signature_key_sk #cinvs tr prin signature_sk =
 
 val is_signature_key_vk: {|crypto_invariants|} -> trace -> principal -> bytes -> prop
 let is_signature_key_vk #cinvs tr prin signature_vk =
-  bytes_invariant tr signature_vk /\
+  is_publishable tr signature_vk /\
   get_signkey_label tr signature_vk == signature_key_label prin signature_vk /\
   signature_vk `has_signkey_usage tr` mk_mls_sigkey_usage prin
 
@@ -84,11 +84,12 @@ val signature_sk_to_signature_key_label:
 let signature_sk_to_signature_key_label prin signature_sk =
   signature_key_label prin (vk signature_sk)
 
+[@@"opaque_to_smt"]
 val mk_signature_key:
   principal ->
   traceful state_id
 let mk_signature_key prin =
-  let* sk = my_mk_rand (mk_mls_sigkey_usage prin) (signature_sk_to_signature_key_label prin) 32 in
+  let* sk = my_mk_rand (const (mk_mls_sigkey_usage prin)) (signature_sk_to_signature_key_label prin) 32 in
   let* sid = new_session_id prin in
   set_state prin sid { signature_sk = sk; };*
   return sid
@@ -108,8 +109,10 @@ val mk_signature_key_invariant:
   ))
   [SMTPat (mk_signature_key prin tr);
    SMTPat (trace_invariant tr)]
-let mk_signature_key_invariant #invs prin tr = ()
+let mk_signature_key_invariant #invs prin tr =
+  reveal_opaque (`%mk_signature_key) (mk_signature_key)
 
+[@@"opaque_to_smt"]
 val get_signature_key_sk:
   principal -> state_id ->
   traceful (option bytes)
@@ -136,8 +139,10 @@ val get_signature_key_sk_invariant:
   ))
   [SMTPat (get_signature_key_sk prin sid tr);
    SMTPat (trace_invariant tr)]
-let get_signature_key_sk_invariant #invs prin sid tr = ()
+let get_signature_key_sk_invariant #invs prin sid tr =
+  reveal_opaque (`%get_signature_key_sk) (get_signature_key_sk)
 
+[@@"opaque_to_smt"]
 val get_signature_key_vk:
   principal -> state_id ->
   traceful (option bytes)
@@ -164,4 +169,5 @@ val get_signature_key_vk_invariant:
   ))
   [SMTPat (get_signature_key_vk prin sid tr);
    SMTPat (trace_invariant tr)]
-let get_signature_key_vk_invariant #invs prin sid tr = ()
+let get_signature_key_vk_invariant #invs prin sid tr =
+  reveal_opaque (`%get_signature_key_vk) (get_signature_key_vk)

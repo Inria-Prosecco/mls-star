@@ -36,6 +36,7 @@ type update_path_node_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_update_path_node_nt] (gen_parser (`update_path_node_nt))
+%splice [ps_update_path_node_nt_is_well_formed] (gen_is_well_formed_lemma (`update_path_node_nt))
 
 /// struct {
 ///     LeafNode leaf_node;
@@ -48,6 +49,7 @@ type update_path_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_update_path_nt] (gen_parser (`update_path_nt))
+%splice [ps_update_path_nt_is_well_formed] (gen_is_well_formed_lemma (`update_path_nt))
 
 (*** PSKs ***)
 
@@ -63,6 +65,7 @@ type psk_type_nt =
   | [@@@ with_num_tag 1 2] PSKT_resumption: psk_type_nt
 
 %splice [ps_psk_type_nt] (gen_parser (`psk_type_nt))
+%splice [ps_psk_type_nt_is_well_formed] (gen_is_well_formed_lemma (`psk_type_nt))
 
 /// enum {
 ///   reserved(0),
@@ -78,6 +81,7 @@ type resumption_psk_usage_nt =
   | [@@@ with_num_tag 1 3] RPSKU_branch: resumption_psk_usage_nt
 
 %splice [ps_resumption_psk_usage_nt] (gen_parser (`resumption_psk_usage_nt))
+%splice [ps_resumption_psk_usage_nt_is_well_formed] (gen_is_well_formed_lemma (`resumption_psk_usage_nt))
 
 /// struct {
 ///   PSKType psktype;
@@ -98,6 +102,10 @@ type pre_shared_key_id_nt (bytes:Type0) {|bytes_like bytes|} =
   | [@@@ with_tag PSKT_resumption] PSKI_resumption: usage: resumption_psk_usage_nt -> psk_group_id:mls_bytes bytes -> psk_epoch:nat_lbytes 8 -> psk_nonce:mls_bytes bytes -> pre_shared_key_id_nt bytes
 
 %splice [ps_pre_shared_key_id_nt] (gen_parser (`pre_shared_key_id_nt))
+%splice [ps_pre_shared_key_id_nt_is_well_formed] (gen_is_well_formed_lemma (`pre_shared_key_id_nt))
+
+// instance useful for "is well formed"
+instance parseable_serializeable_pre_shared_key_id_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (pre_shared_key_id_nt bytes) = mk_parseable_serializeable ps_pre_shared_key_id_nt
 
 /// struct {
 ///     PreSharedKeyID id;
@@ -112,6 +120,7 @@ type psk_label_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_psk_label_nt] (gen_parser (`psk_label_nt))
+%splice [ps_psk_label_nt_is_well_formed] (gen_is_well_formed_lemma (`psk_label_nt))
 
 instance parseable_serializeable_psk_label_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (psk_label_nt bytes) = mk_parseable_serializeable ps_psk_label_nt
 

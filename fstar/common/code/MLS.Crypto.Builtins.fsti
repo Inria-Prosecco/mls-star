@@ -24,6 +24,9 @@ class crypto_bytes (bytes:Type0) = {
   hash_hash_pre: buf:bytes -> Lemma (requires length buf < hash_max_input_length) (ensures Success? (hash_hash buf));
   // Condition necessary for TreeSync's security theorem
   hash_output_length_bound: buf:bytes -> Lemma (hash_hash buf <> Success empty);
+  // Condition necessary to prove injectivity of confirmed transcript hash
+  hash_output_length: nat;
+  hash_output_length_lemma: buf:bytes -> Lemma (requires Success? (hash_hash buf)) (ensures length (Success?.v (hash_hash buf)) == hash_output_length);
 
   kdf_length: nat;
   kdf_extract: key:bytes -> data:bytes -> result (lbytes bytes kdf_length);
@@ -107,3 +110,8 @@ val dest_randomness:
   #head_size:nat -> #tail_size:list nat ->
   randomness bytes (head_size::tail_size) ->
   (lbytes bytes head_size & randomness bytes tail_size)
+val dest_mk_randomness:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  #head_size:nat -> #tail_size:list nat ->
+  x:(lbytes bytes head_size & randomness bytes tail_size) ->
+  Lemma (dest_randomness (mk_randomness x) == x)

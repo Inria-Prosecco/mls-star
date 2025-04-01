@@ -248,26 +248,49 @@ let treekem_priv_invariant_remove #bytes #cb #l #i #my_li t p li =
 
 (*** Un-add invariants ***)
 
-val unmerged_leaf_exists_un_add:
+val unmerged_leaf_exists_un_addP:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l ->
-  t:treekem bytes l i -> excluded_leaves:list nat ->
+  t:treekem bytes l i -> pre:(nat -> bool) ->
   x:nat ->
   Lemma
   (requires
     unmerged_leaf_exists t x /\
-    ~(List.Tot.mem x excluded_leaves)
+    pre x
   )
-  (ensures unmerged_leaf_exists (un_add t excluded_leaves) x)
-let rec unmerged_leaf_exists_un_add #bytes #cb #l #i t excluded_leaves x =
+  (ensures unmerged_leaf_exists (un_addP t pre) x)
+let rec unmerged_leaf_exists_un_addP #bytes #cb #l #i t pre x =
   match t with
   | TLeaf _ -> ()
   | TNode _ left right -> (
     let x: leaf_index l i = x in
     if is_left_leaf x then (
-      unmerged_leaf_exists_un_add left excluded_leaves x
+      unmerged_leaf_exists_un_addP left pre x
     ) else (
-      unmerged_leaf_exists_un_add right excluded_leaves x
+      unmerged_leaf_exists_un_addP right pre x
+    )
+  )
+
+val treekem_invariant_un_addP:
+  #bytes:Type0 -> {|crypto_bytes bytes|} ->
+  #l:nat -> #i:tree_index l ->
+  t:treekem bytes l i -> pre:(nat -> bool) ->
+  Lemma
+  (requires treekem_invariant t)
+  (ensures treekem_invariant (un_addP t pre))
+let rec treekem_invariant_un_addP #bytes #cb #l #i t pre =
+  match t with
+  | TLeaf _ -> ()
+  | TNode opn left right -> (
+    treekem_invariant_un_addP left pre;
+    treekem_invariant_un_addP right pre;
+    match opn with
+    | None -> ()
+    | Some pn -> (
+      Comparse.for_allP_eq (unmerged_leaf_exists t) pn.unmerged_leaves;
+      Comparse.for_allP_eq (unmerged_leaf_exists (un_addP t pre)) (List.Tot.filter pre pn.unmerged_leaves);
+      FStar.Classical.forall_intro (mem_filter pre pn.unmerged_leaves);
+      FStar.Classical.forall_intro (FStar.Classical.move_requires (unmerged_leaf_exists_un_addP t pre))
     )
   )
 
@@ -278,21 +301,8 @@ val treekem_invariant_un_add:
   Lemma
   (requires treekem_invariant t)
   (ensures treekem_invariant (un_add t excluded_leaves))
-let rec treekem_invariant_un_add #bytes #cb #l #i t excluded_leaves =
-  match t with
-  | TLeaf _ -> ()
-  | TNode opn left right -> (
-    treekem_invariant_un_add left excluded_leaves;
-    treekem_invariant_un_add right excluded_leaves;
-    match opn with
-    | None -> ()
-    | Some pn -> (
-      Comparse.for_allP_eq (unmerged_leaf_exists t) pn.unmerged_leaves;
-      Comparse.for_allP_eq (unmerged_leaf_exists (un_add t excluded_leaves)) (List.Tot.filter (excluded_pre excluded_leaves) pn.unmerged_leaves);
-      FStar.Classical.forall_intro (mem_filter (excluded_pre excluded_leaves) pn.unmerged_leaves);
-      FStar.Classical.forall_intro (FStar.Classical.move_requires (unmerged_leaf_exists_un_add t excluded_leaves))
-    )
-  )
+let treekem_invariant_un_add #bytes #cb #l #i t excluded_leaves =
+  treekem_invariant_un_addP t (excluded_pre excluded_leaves)
 
 val leaf_at_un_add:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->

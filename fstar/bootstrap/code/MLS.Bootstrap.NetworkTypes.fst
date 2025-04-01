@@ -24,6 +24,7 @@ type key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types by
 }
 
 %splice [ps_key_package_tbs_nt] (gen_parser (`key_package_tbs_nt))
+%splice [ps_key_package_tbs_nt_is_well_formed] (gen_is_well_formed_lemma (`key_package_tbs_nt))
 
 instance parseable_serializeable_key_package_tbs_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_tbs_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_tbs_nt tkt)
 
@@ -43,6 +44,7 @@ type key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes)
 }
 
 %splice [ps_key_package_nt] (gen_parser (`key_package_nt))
+%splice [ps_key_package_nt_is_well_formed] (gen_is_well_formed_lemma (`key_package_nt))
 
 instance parseable_serializeable_key_package_nt (bytes:Type0) {|bytes_like bytes|} (tkt:treekem_types bytes): parseable_serializeable bytes (key_package_nt bytes tkt) = mk_parseable_serializeable (ps_key_package_nt tkt)
 
@@ -73,6 +75,7 @@ type group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_group_info_tbs_nt] (gen_parser (`group_info_tbs_nt))
+%splice [ps_group_info_tbs_nt_is_well_formed] (gen_is_well_formed_lemma (`group_info_tbs_nt))
 
 instance parseable_serializeable_group_info_tbs_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_info_tbs_nt bytes) = mk_parseable_serializeable ps_group_info_tbs_nt
 
@@ -91,6 +94,7 @@ type group_info_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_group_info_nt] (gen_parser (`group_info_nt))
+%splice [ps_group_info_nt_is_well_formed] (gen_is_well_formed_lemma (`group_info_nt))
 
 instance parseable_serializeable_group_info_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_info_nt bytes) = mk_parseable_serializeable ps_group_info_nt
 
@@ -103,6 +107,7 @@ type path_secret_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_path_secret_nt] (gen_parser (`path_secret_nt))
+%splice [ps_path_secret_nt_is_well_formed] (gen_is_well_formed_lemma (`path_secret_nt))
 
 /// struct {
 ///   opaque joiner_secret<V>;

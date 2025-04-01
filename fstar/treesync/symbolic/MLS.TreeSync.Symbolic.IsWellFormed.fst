@@ -18,6 +18,7 @@ open MLS.Result
 
 (*** Definitions ***)
 
+[@"opaque_to_smt"]
 val pre_is_hash_compatible:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   pre:(bytes -> prop) ->
@@ -137,6 +138,7 @@ val pre_tree_hash:
   (requires is_well_formed _ pre t /\ Success? (tree_hash t))
   (ensures pre (Success?.v (tree_hash t)))
 let rec pre_tree_hash #bytes #cb pre #tkt #l #i t =
+  reveal_opaque (`%pre_is_hash_compatible) (pre_is_hash_compatible pre);
   match t with
   | TLeaf oln -> (
     serialize_wf_lemma (tree_hash_input_nt bytes tkt) pre (LeafTreeHashInput ({
@@ -171,6 +173,7 @@ val pre_compute_parent_hash:
   )
   (ensures pre (Success?.v (compute_parent_hash content parent_hash original_sibling)))
 let pre_compute_parent_hash #bytes #cb pre #tkt #l #i content parent_hash original_sibling =
+  reveal_opaque (`%pre_is_hash_compatible) (pre_is_hash_compatible pre);
   pre_tree_hash pre original_sibling;
   let Success original_sibling_tree_hash = tree_hash original_sibling in
   serialize_wf_lemma (parent_hash_input_nt bytes tkt) pre ({
@@ -273,19 +276,44 @@ let rec is_well_formed_set_path_leaf #bytes #bl pre #tkt #l #i #li p ln =
   | PLeaf _ -> ()
   | PNode _ p_next -> is_well_formed_set_path_leaf pre p_next ln
 
+val is_well_formed_leaf_at:
+  #bytes:Type0 -> {|bytes_like bytes|} ->
+  pre:bytes_compatible_pre bytes ->
+  #tkt:treekem_types bytes -> #l:nat -> #i:tree_index l ->
+  t:treesync bytes tkt l i -> li:leaf_index l i ->
+  Lemma
+  (requires is_well_formed _ pre t)
+  (ensures is_well_formed_prefix (ps_option (ps_leaf_node_nt tkt)) pre (leaf_at t li))
+let rec is_well_formed_leaf_at #bytes #bl pre #tkt #l #i t li =
+  if l = 0 then ()
+  else (
+    let (child, _) = get_child_sibling t li in
+    is_well_formed_leaf_at pre child li
+  )
+
 open DY.Core
 open MLS.Symbolic
+
+val pre_is_hash_compatible_is_publishable:
+  {|crypto_invariants|} -> tr:trace ->
+  Lemma
+  (pre_is_hash_compatible (is_publishable tr))
+  [SMTPat (pre_is_hash_compatible (is_publishable tr))]
+let pre_is_hash_compatible_is_publishable tr =
+  reveal_opaque (`%pre_is_hash_compatible) (pre_is_hash_compatible (is_publishable tr))
 
 val pre_is_hash_compatible_is_knowable_by:
   {|crypto_invariants|} -> l:label -> tr:trace ->
   Lemma
   (pre_is_hash_compatible (is_knowable_by l tr))
   [SMTPat (pre_is_hash_compatible (is_knowable_by l tr))]
-let pre_is_hash_compatible_is_knowable_by #ci l tr = ()
+let pre_is_hash_compatible_is_knowable_by #ci l tr =
+  reveal_opaque (`%pre_is_hash_compatible) (pre_is_hash_compatible (is_knowable_by l tr))
 
 val pre_is_hash_compatible_bytes_invariant:
   {|crypto_invariants|} -> tr:trace ->
   Lemma
   (pre_is_hash_compatible (bytes_invariant tr))
   [SMTPat (pre_is_hash_compatible (bytes_invariant tr))]
-let pre_is_hash_compatible_bytes_invariant tr = ()
+let pre_is_hash_compatible_bytes_invariant tr =
+  reveal_opaque (`%pre_is_hash_compatible) (pre_is_hash_compatible (bytes_invariant tr))

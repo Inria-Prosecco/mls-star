@@ -122,10 +122,11 @@ val mk_global_mls_sign_pred_later:
   )
   (ensures mk_global_mls_sign_pred tagged_local_preds tr2 sk_usg vk msg)
 let mk_global_mls_sign_pred_later tagged_local_preds tr1 tr2 sk_usg vk msg =
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr1, sk_usg, vk, msg);
-  mk_global_fun_eq split_signwithlabel_crypto_pred_params (mk_dependent_tagged_local_funs tagged_local_preds) (tr2, sk_usg, vk, msg);
-  FStar.Classical.move_requires (parse_wf_lemma (sign_content_nt bytes) (bytes_well_formed tr1)) msg;
-  introduce forall tag_set lpred content. bytes_well_formed tr1 content /\ split_signwithlabel_crypto_pred_params.apply_local_fun lpred (tr1, sk_usg, vk, content) ==> split_signwithlabel_crypto_pred_params.apply_local_fun #tag_set lpred (tr2, sk_usg, vk, content) with (
+  let params = split_signwithlabel_crypto_pred_params in
+  mk_global_fun_eq params (mk_dependent_tagged_local_funs tagged_local_preds) (tr1, sk_usg, vk, msg);
+  mk_global_fun_eq params (mk_dependent_tagged_local_funs tagged_local_preds) (tr2, sk_usg, vk, msg);
+  parse_wf_lemma (sign_content_nt bytes) (bytes_well_formed tr1) msg;
+  introduce forall tag_set lpred content. bytes_well_formed tr1 content /\ params.apply_local_fun lpred (tr1, sk_usg, vk, content) ==> params.apply_local_fun #tag_set lpred (tr2, sk_usg, vk, content) with (
     introduce _ ==> _ with _. (
       lpred.pred_later tr1 tr2 sk_usg vk content
     )

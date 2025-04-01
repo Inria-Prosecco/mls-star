@@ -468,7 +468,7 @@ let commit_proof #invs #tkt #l #li p as_session gmgr_session group_id path tr =
             | None -> ()
             | Some new_st -> (
               is_well_formed_finalize_commit (is_publishable tr) commit_pend token;
-              finalize_commit_valid #bytes #crypto_bytes_bytes #_ #(dy_asp tr) commit_pend token;
+              finalize_commit_valid #_ #_ #_ #(dy_asp tr) commit_pend token;
               ()
             )
           )
@@ -867,9 +867,11 @@ val external_path_has_event_pre:
   trace -> principal -> treesync bytes tkt l 0 -> external_pathsync bytes tkt l 0 li -> mls_bytes bytes ->
   prop
 let external_path_has_event_pre #tkt #l #li leaf_node_has_event_pred group_has_event_pred tr prin t p group_id =
-  (get_path_leaf p).source == LNS_update /\
-  li < pow2 32 /\
-  Success? (external_path_to_path_nosig t p) /\ (
+  (
+    (get_path_leaf p).source == LNS_update /\
+    li < pow2 32 /\
+    Success? (external_path_to_path_nosig t p)
+  ) ==> (
     path_is_parent_hash_valid_external_path_to_path_nosig t p ;
     let Success auth_p = external_path_to_path_nosig t p in
     let auth_ln = get_path_leaf auth_p in
@@ -916,23 +918,33 @@ val trigger_external_path_events_proof:
   )
   (ensures (
     let (res, tr_out) = trigger_external_path_events prin t p group_id tr in
-    trace_invariant tr_out /\
-    res == Some () /\
-    external_path_has_event prin tr_out t p group_id
+    trace_invariant tr_out /\ (
+      match res with
+      | None -> True
+      | Some () ->
+        external_path_has_event prin tr_out t p group_id
+    )
   ))
 let trigger_external_path_events_proof #invs #tkt #l #li leaf_node_has_event_pred group_has_event_pred prin t p group_id tr =
   let tr_in = tr in
-  path_is_parent_hash_valid_external_path_to_path_nosig t p;
-  let Success auth_p = external_path_to_path_nosig t p in
-  let auth_ln = get_path_leaf auth_p in
-  compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
-  apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
+  if not (
+    ((get_path_leaf p).source = LNS_update) &&
+    (li < pow2 32) &&
+    (Success? (external_path_to_path_nosig #bytes #crypto_bytes_bytes t p))
+  ) then ()
+  else (
+    path_is_parent_hash_valid_external_path_to_path_nosig t p;
+    let Success auth_p = external_path_to_path_nosig t p in
+    let auth_ln = get_path_leaf auth_p in
+    compute_leaf_parent_hash_from_path_set_path_leaf t p auth_ln (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
+    apply_path_aux_compute_leaf_parent_hash_from_path_both_succeed t auth_p (MLS.TreeSync.ParentHash.root_parent_hash #bytes);
 
-  trigger_leaf_node_event_proof leaf_node_has_event_pred prin {data = auth_ln.data; group_id; leaf_index = li;} tr;
-  let ((), tr) = trigger_leaf_node_event prin {data = auth_ln.data; group_id; leaf_index = li;} tr in
-  path_to_tree_list_pre_weaken #bytes #crypto_bytes_bytes (tree_event_pre tr_in group_has_event_pred prin group_id li) (tree_event_pre tr group_has_event_pred prin group_id li) t auth_p;
-  path_to_tree_list_pre_lemma #bytes #crypto_bytes_bytes (tree_event_pre tr group_has_event_pred prin group_id li) t auth_p;
-  trigger_tree_list_event_proof group_has_event_pred prin group_id li (path_to_tree_list t auth_p) tr;
-  let ((), tr) = trigger_tree_list_event prin group_id li (path_to_tree_list t auth_p) tr in
-  for_allP_eq (tree_has_event prin tr group_id li) (path_to_tree_list t auth_p);
-  path_to_tree_list_pre_lemma (tree_has_event prin tr group_id li) t auth_p
+    trigger_leaf_node_event_proof leaf_node_has_event_pred prin {data = auth_ln.data; group_id; leaf_index = li;} tr;
+    let ((), tr) = trigger_leaf_node_event prin {data = auth_ln.data; group_id; leaf_index = li;} tr in
+    path_to_tree_list_pre_weaken #bytes #crypto_bytes_bytes (tree_event_pre tr_in group_has_event_pred prin group_id li) (tree_event_pre tr group_has_event_pred prin group_id li) t auth_p;
+    path_to_tree_list_pre_lemma #bytes #crypto_bytes_bytes (tree_event_pre tr group_has_event_pred prin group_id li) t auth_p;
+    trigger_tree_list_event_proof group_has_event_pred prin group_id li (path_to_tree_list t auth_p) tr;
+    let ((), tr) = trigger_tree_list_event prin group_id li (path_to_tree_list t auth_p) tr in
+    for_allP_eq (tree_has_event prin tr group_id li) (path_to_tree_list t auth_p);
+    path_to_tree_list_pre_lemma (tree_has_event prin tr group_id li) t auth_p
+  )

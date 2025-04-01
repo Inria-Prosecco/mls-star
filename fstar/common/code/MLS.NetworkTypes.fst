@@ -80,6 +80,7 @@ type protocol_version_nt =
   | [@@@ open_tag] PV_unknown: n:nat_lbytes 2{~(n <= 1)} -> protocol_version_nt
 
 %splice [ps_protocol_version_nt] (gen_parser (`protocol_version_nt))
+%splice [ps_protocol_version_nt_is_well_formed] (gen_is_well_formed_lemma (`protocol_version_nt))
 
 /// uint16 CipherSuite;
 
@@ -95,6 +96,7 @@ type cipher_suite_nt =
   | [@@@ open_tag] CS_unknown: n:nat_lbytes 2{~(n <= 7)} -> cipher_suite_nt
 
 %splice [ps_cipher_suite_nt] (gen_parser (`cipher_suite_nt))
+%splice [ps_cipher_suite_nt_is_well_formed] (gen_is_well_formed_lemma (`cipher_suite_nt))
 
 /// // See IANA registry for registered values
 /// uint16 ExtensionType;
@@ -224,6 +226,7 @@ type group_context_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_group_context_nt] (gen_parser (`group_context_nt))
+%splice [ps_group_context_nt_is_well_formed] (gen_is_well_formed_lemma (`group_context_nt))
 
 instance parseable_serializeable_group_context_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (group_context_nt bytes) = mk_parseable_serializeable ps_group_context_nt
 
@@ -245,6 +248,7 @@ type proposal_type_nt =
   | [@@@ open_tag] PT_unknown: n:nat_lbytes 2{~(n <= 7)} -> proposal_type_nt
 
 %splice [ps_proposal_type_nt] (gen_parser (`proposal_type_nt))
+%splice [ps_proposal_type_nt_is_well_formed] (gen_is_well_formed_lemma (`proposal_type_nt))
 
 /// opaque SignaturePublicKey<V>;
 
@@ -261,6 +265,7 @@ type credential_type_nt =
   | [@@@ open_tag] CT_unknown: n:nat_lbytes 2{~(n <= 2)} -> credential_type_nt
 
 %splice [ps_credential_type_nt] (gen_parser (`credential_type_nt))
+%splice [ps_credential_type_nt_is_well_formed] (gen_is_well_formed_lemma (`credential_type_nt))
 
 /// struct {
 ///     opaque cert_data<V>;
@@ -285,4 +290,4 @@ type credential_nt (bytes:Type0) {|bytes_like bytes|} =
   | [@@@ with_tag CT_x509] C_x509: chain: mls_list bytes ps_certificate_nt -> credential_nt bytes
 
 %splice [ps_credential_nt] (gen_parser (`credential_nt))
-
+%splice [ps_credential_nt_is_well_formed] (gen_is_well_formed_lemma (`credential_nt))

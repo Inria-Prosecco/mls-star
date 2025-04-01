@@ -257,6 +257,7 @@ type encrypt_context_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice[ps_encrypt_context_nt] (gen_parser (`encrypt_context_nt))
+%splice[ps_encrypt_context_nt_is_well_formed] (gen_is_well_formed_lemma (`encrypt_context_nt))
 
 instance parseable_serializeable_encrypt_context_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (encrypt_context_nt bytes) = mk_parseable_serializeable ps_encrypt_context_nt
 
@@ -302,6 +303,7 @@ type ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|} = {
 }
 
 %splice [ps_ref_hash_input_nt] (gen_parser (`ref_hash_input_nt))
+%splice [ps_ref_hash_input_nt_is_well_formed] (gen_is_well_formed_lemma (`ref_hash_input_nt))
 
 instance parseable_serializeable_ref_hash_input_nt (bytes:Type0) {|bytes_like bytes|}: parseable_serializeable bytes (ref_hash_input_nt bytes) = mk_parseable_serializeable ps_ref_hash_input_nt
 

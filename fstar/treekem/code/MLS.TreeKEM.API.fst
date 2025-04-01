@@ -22,6 +22,7 @@ module KS = MLS.TreeKEM.API.KeySchedule
 
 (*** Create ***)
 
+[@"opaque_to_smt"]
 val create:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   hpke_private_key bytes -> bytes ->
@@ -37,6 +38,7 @@ let create #bytes #cb dec_key enc_key epoch_secret group_context =
 
 (*** Welcome ***)
 
+[@"opaque_to_smt"]
 val welcome:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat ->
@@ -53,6 +55,7 @@ let welcome #bytes #cb #l t leaf_decryption_key opt_path_secret_and_inviter_ind 
 
 (*** Add ***)
 
+[@"opaque_to_smt"]
 val add:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   treekem_state bytes leaf_ind -> treekem_leaf bytes ->
@@ -63,15 +66,25 @@ let add #bytes #cb #leaf_ind st kp =
 
 (*** Update ***)
 
-val update:
+[@"opaque_to_smt"]
+val update_myself:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
-  st:treekem_state bytes leaf_ind -> treekem_leaf bytes -> treekem_index st ->
+  st:treekem_state bytes leaf_ind -> treekem_leaf bytes -> hpke_private_key bytes ->
   treekem_state bytes leaf_ind
-let update #bytes #cb #leaf_ind st lp i =
-  { st with tree_state = T.update st.tree_state lp i }
+let update_myself #bytes #cb #leaf_ind st lp leaf_decryption_key =
+  { st with tree_state = T.update_myself st.tree_state lp leaf_decryption_key }
+
+[@"opaque_to_smt"]
+val update_other:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  st:treekem_state bytes leaf_ind -> treekem_leaf bytes -> i:treekem_index st{i <> leaf_ind} ->
+  treekem_state bytes leaf_ind
+let update_other #bytes #cb #leaf_ind st lp i =
+  { st with tree_state = T.update_other st.tree_state lp i }
 
 (*** Remove ***)
 
+[@"opaque_to_smt"]
 val remove:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_state bytes leaf_ind -> i:treekem_index st{i <> leaf_ind} ->
@@ -93,6 +106,7 @@ type pending_process_commit (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat
   opt_commit_secret: option bytes;
 }
 
+[@"opaque_to_smt"]
 val prepare_process_full_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_state bytes leaf_ind -> full_commit_args st.tree_state ->
@@ -104,6 +118,7 @@ let prepare_process_full_commit #bytes #cb #leaf_ind st args =
     opt_commit_secret = Some commit_secret;
   })
 
+[@"opaque_to_smt"]
 val prepare_process_add_only_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_state bytes leaf_ind ->
@@ -114,6 +129,7 @@ let prepare_process_add_only_commit #bytes #cb #leaf_ind st =
     opt_commit_secret = None;
   })
 
+[@"opaque_to_smt"]
 val finalize_process_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat -> #st:treekem_state bytes leaf_ind ->
   pending_process_commit st -> list (pre_shared_key_id_nt bytes & bytes) -> group_context_nt bytes ->
@@ -137,6 +153,7 @@ type pending_create_commit (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat)
   pend: MLS.TreeKEM.API.Tree.pending_commit st.tree_state;
 }
 
+[@"opaque_to_smt"]
 val prepare_create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   st:treekem_state bytes leaf_ind ->
@@ -155,7 +172,7 @@ let continue_create_commit_entropy_lengths #bytes #cb #leaf_ind st added_leaves 
 
 type pending_create_commit_2 (bytes:Type0) {|crypto_bytes bytes|} (leaf_ind:nat) = {
   new_state: treekem_state bytes leaf_ind;
-  commit_secret: bytes;
+  commit_secret: option bytes;
 }
 
 type continue_create_commit_result (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_ind:nat) (st:treekem_state bytes leaf_ind) = {
@@ -163,6 +180,7 @@ type continue_create_commit_result (#bytes:Type0) {|crypto_bytes bytes|} (#leaf_
   added_leaves_path_secrets: list bytes;
 }
 
+[@"opaque_to_smt"]
 val continue_create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   #st:treekem_state bytes leaf_ind ->
@@ -177,10 +195,21 @@ let continue_create_commit #bytes #cb #leaf_ind #st pending added_leaves provisi
   } in
   return ({
     new_state;
-    commit_secret = tree_commit_result.commit_secret;
+    commit_secret = Some tree_commit_result.commit_secret;
   }, {
     update_path = tree_commit_result.update_path;
     added_leaves_path_secrets = tree_commit_result.added_leaves_path_secrets;
+  })
+
+[@"opaque_to_smt"]
+val prepare_create_add_only_commit:
+  #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
+  st:treekem_state bytes leaf_ind ->
+  result (pending_create_commit_2 bytes leaf_ind)
+let prepare_create_add_only_commit #bytes #cb st =
+  return ({
+    new_state = st;
+    commit_secret = None
   })
 
 type create_commit_result (bytes:Type0) {|crypto_bytes bytes|} (leaf_ind: nat) = {
@@ -191,13 +220,14 @@ type create_commit_result (bytes:Type0) {|crypto_bytes bytes|} (leaf_ind: nat) =
   joiner_secret: bytes;
 }
 
+[@"opaque_to_smt"]
 val finalize_create_commit:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #leaf_ind:nat ->
   pending_create_commit_2 bytes leaf_ind  ->
   group_context_nt bytes -> list (pre_shared_key_id_nt bytes & bytes) ->
   result (create_commit_result bytes leaf_ind)
 let finalize_create_commit #bytes #cb #leaf_ind pending new_group_context psks =
-  let? (keyschedule_state, encryption_secret, additional_secrets) = KS.commit pending.new_state.keyschedule_state (Some pending.commit_secret) psks new_group_context in
+  let? (keyschedule_state, encryption_secret, additional_secrets) = KS.commit pending.new_state.keyschedule_state pending.commit_secret psks new_group_context in
   return {
     new_state = {
       pending.new_state with

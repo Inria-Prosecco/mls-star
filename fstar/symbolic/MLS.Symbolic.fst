@@ -24,28 +24,43 @@ let bytes_has_crypto_bytes acs = {
   hash_max_input_length = pow2 256; //infinity!
   hash_hash_pre = (fun buf -> ());
   hash_output_length_bound = (fun buf -> assume(DY.Core.hash buf <> empty));
+  hash_output_length = 32;
+  hash_output_length_lemma = (fun buf -> assume(length (hash buf) == 32));
 
-  kdf_length = magic();
-  kdf_extract = (fun key data ->
-    admit()
+  kdf_length = 32;
+  kdf_extract = (fun salt ikm ->
+    assume(DY.Core.length (DY.Core.kdf_extract salt ikm) == 32);
+    return (DY.Core.kdf_extract salt ikm)
   );
   kdf_expand = (fun prk info len ->
-    admit()
+    if len = 0 then
+      internal_failure "kdf_expand: len cannot be zero"
+    else (
+      assume(DY.Core.length (DY.Core.kdf_expand prk info len) == len);
+      return (DY.Core.kdf_expand prk info len)
+    )
   );
 
-  hpke_public_key_length = magic();
-  hpke_public_key_length_bound = magic();
-  hpke_private_key_length = magic();
-  hpke_private_key_length_bound = magic();
-  hpke_kem_output_length = magic();
+  hpke_public_key_length = 32;
+  hpke_public_key_length_bound = ();
+  hpke_private_key_length = 32;
+  hpke_private_key_length_bound = ();
+  hpke_kem_output_length = 32;
   hpke_gen_keypair = (fun ikm ->
-    admit()
+    if not (length ikm = 32) then
+      error "hpke_gen_keypair: ikm too big"
+    else (
+      assume(length (DY.Lib.HPKE.hpke_pk ikm) == 32);
+      return (ikm, DY.Lib.HPKE.hpke_pk ikm)
+    )
   );
   hpke_encrypt = (fun pkR info ad plaintext rand ->
-    admit()
+    let (enc, cipher) = DY.Lib.HPKE.hpke_enc pkR rand plaintext info ad in
+    assume(length enc == 32);
+    return (enc, cipher)
   );
   hpke_decrypt = (fun enc skR info ad ciphertext ->
-    admit()
+    from_option "hpke_decrypt failed" (DY.Lib.HPKE.hpke_dec skR (enc, ciphertext) info ad)
   );
 
   sign_gen_keypair_min_entropy_length = magic();
@@ -72,10 +87,14 @@ let bytes_has_crypto_bytes acs = {
     | None -> error "aead_decrypt: couldn't decrypt"
   );
 
-  hmac_length = magic();
-  hmac_length_bound = magic();
+  hmac_length = 32;
+  hmac_length_bound = ();
   hmac_hmac = (fun key data ->
-    admit()
+    let result = DY.Core.mac_compute key data in
+    if length result <> 32 then
+      internal_failure "bad hmac length"
+    else
+      return result
   );
 
   string_to_bytes = (fun s ->

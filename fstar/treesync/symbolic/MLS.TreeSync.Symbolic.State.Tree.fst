@@ -18,7 +18,7 @@ open MLS.TreeSync.Symbolic.IsWellFormed
 open MLS.TreeSync.Symbolic.AuthService
 open MLS.TreeSync.Symbolic.LeafNodeSignature
 
-#set-options "--fuel 1 --ifuel 1"
+#set-options "--fuel 0 --ifuel 0"
 
 (*** Session predicate for public state ***)
 
@@ -26,7 +26,7 @@ val ps_dy_as_tokens: l:nat -> i:tree_index l -> parser_serializer bytes (as_toke
 let ps_dy_as_tokens l i =
   ps_as_tokens ps_dy_as_token l i
 
-#push-options "--z3rlimit 25"
+#push-options "--z3rlimit 25 --fuel 1 --ifuel 1"
 val ps_dy_as_tokens_is_well_formed:
   #l:nat -> #i:tree_index l ->
   pre:bytes_compatible_pre bytes -> tokens:as_tokens bytes dy_as_token l i ->
@@ -216,7 +216,7 @@ val get_public_treesync_state_proof:
       | Some (|group_id, st|) -> (
         is_publishable tr_out group_id /\
         is_well_formed _ (is_publishable tr_out) (st.tree <: treesync bytes tkt _ _) /\
-        treesync_state_valid #bytes #crypto_bytes_bytes (dy_asp tr) st
+        treesync_state_valid (dy_asp tr) st
       )
     )
   ))

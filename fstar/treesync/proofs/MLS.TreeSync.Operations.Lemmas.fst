@@ -16,9 +16,12 @@ val leaf_at_tree_add:
   #bytes:Type0 -> {|bytes_like bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l ->
   t:treesync bytes tkt l i -> li:leaf_index l i -> ln:leaf_node_nt bytes tkt -> li':leaf_index l i ->
-  Lemma
-  (requires Success? (tree_add t li ln))
-  (ensures leaf_at (Success?.v (tree_add t li ln)) li' == (if li = li' then Some ln else leaf_at t li'))
+  Lemma (
+    match tree_add t li ln with
+    | Success res ->
+      leaf_at res li' == (if li = li' then Some ln else leaf_at t li')
+    | _ -> True
+  )
 let rec leaf_at_tree_add #bytes #bl #tkt #l #i t li ln li' =
   match t with
   | TLeaf _ -> ()
@@ -33,27 +36,36 @@ val leaf_at_apply_path_aux:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
   t:treesync bytes tkt l i -> p:pathsync bytes tkt l i li -> parent_parent_hash:bytes -> li':leaf_index l i ->
-  Lemma
-  (requires Success? (apply_path_aux t p parent_parent_hash))
-  (ensures leaf_at (Success?.v (apply_path_aux t p parent_parent_hash)) li' == (if li = li' then Some (get_path_leaf p) else leaf_at t li'))
+  Lemma (
+    match apply_path_aux t p parent_parent_hash with
+    | Success res ->
+      leaf_at res li' == (if li = li' then Some (get_path_leaf p) else leaf_at t li')
+    | _ -> True
+  )
 let rec leaf_at_apply_path_aux #bytes #cb #tkt #l #i #li t p parent_parent_hash li' =
-  match t, p with
-  | TLeaf _, PLeaf _-> ()
-  | TNode _ left right, PNode opt_ext_content p_next -> (
-    let (child, sibling) = get_child_sibling t li in
-    let Success (new_opt_content, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
-    match is_left_leaf li, is_left_leaf li' with
-    | true, true -> leaf_at_apply_path_aux left p_next new_parent_parent_hash li'
-    | false, false -> leaf_at_apply_path_aux right p_next new_parent_parent_hash li'
-    | _, _ -> ()
+  if not (Success? (apply_path_aux t p parent_parent_hash)) then ()
+  else (
+    match t, p with
+    | TLeaf _, PLeaf _-> ()
+    | TNode _ left right, PNode opt_ext_content p_next -> (
+      let (child, sibling) = get_child_sibling t li in
+      let Success (new_opt_content, new_parent_parent_hash) = compute_new_np_and_ph opt_ext_content sibling parent_parent_hash in
+      match is_left_leaf li, is_left_leaf li' with
+      | true, true -> leaf_at_apply_path_aux left p_next new_parent_parent_hash li'
+      | false, false -> leaf_at_apply_path_aux right p_next new_parent_parent_hash li'
+      | _, _ -> ()
+    )
   )
 
 val leaf_at_apply_path:
   #bytes:Type0 -> {|crypto_bytes bytes|} -> #tkt:treekem_types bytes ->
   #l:nat -> #li:leaf_index l 0 ->
   t:treesync bytes tkt l 0 -> p:pathsync bytes tkt l 0 li -> li':leaf_index l 0 ->
-  Lemma
-  (requires Success? (apply_path t p))
-  (ensures leaf_at (Success?.v (apply_path t p)) li' = (if li = li' then Some (get_path_leaf p) else leaf_at t li'))
+  Lemma (
+    match apply_path t p with
+    | Success res ->
+      leaf_at res li' = (if li = li' then Some (get_path_leaf p) else leaf_at t li')
+    | _ -> True
+  )
 let leaf_at_apply_path #bytes #cb #tkt #l #li t p li' =
   leaf_at_apply_path_aux t p (root_parent_hash #bytes) li'

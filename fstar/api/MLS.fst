@@ -115,7 +115,8 @@ let process_proposal sender_id (st, added_leaves) p =
       let treesync_state = MLS.TreeSync.API.finalize_update pend_update () in
       assume (length #bytes leaf_node.data.content = hpke_public_key_length #bytes);
       assume(st.treesync_state.levels == st.treekem_state.tree_state.levels);
-      let treekem_state = MLS.TreeKEM.API.update st.treekem_state ({public_key = leaf_node.data.content}) sender_id in
+      assume(sender_id <> st.leaf_index);
+      let treekem_state = MLS.TreeKEM.API.update_other st.treekem_state ({public_key = leaf_node.data.content}) sender_id in
       return ({ st with treesync_state; treekem_state }, added_leaves)
     )
   | P_remove {removed} ->
