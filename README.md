@@ -5,11 +5,12 @@ A formal specification of IETF MLS in F\*
 ## Papers linked to this repository
 
 - TreeSync: Authenticated Group Management for Messaging Layer Security, USENIX Security '23 ([usenix](https://www.usenix.org/conference/usenixsecurity23/presentation/wallez)) ([eprint](https://eprint.iacr.org/2022/1732))
+- TreeKEM: A Modular Machine-Checked Symbolic Security Analysis of Group Key Agreement in Messaging Layer Security, ([eprint](https://eprint.iacr.org/2025/410))
 
 ## What is verified?
 
-Currently, only the TreeSync sub-protocol is verified.
-Other components (such as TreeKEM, TreeDEM or the high-level API) are not yet verified.
+Currently, we prove security properties on the sub-protocols TreeSync and TreeKEM.
+TreeDEM is not yet verified.
 
 ## How to build
 
