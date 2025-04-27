@@ -11,7 +11,7 @@ INNER_SOURCE_DIRS = api bootstrap/code common/code common/proofs common/symbolic
 HACL_SNAPSHOT_DIR = $(MLS_HOME)/hacl-star-snapshot
 SOURCE_DIRS = $(addprefix $(MLS_HOME)/fstar/, $(INNER_SOURCE_DIRS))
 
-DY_INCLUDE_DIRS = core lib lib/comparse lib/crypto lib/event lib/hpke lib/state lib/utils
+DY_INCLUDE_DIRS = core lib lib/communication lib/comparse lib/crypto lib/event lib/hpke lib/state lib/utils
 INCLUDE_DIRS = $(SOURCE_DIRS) $(HACL_SNAPSHOT_DIR)/lib $(HACL_SNAPSHOT_DIR)/specs $(COMPARSE_HOME)/src $(if $(USE_DY), $(addprefix $(DY_HOME)/src/, $(DY_INCLUDE_DIRS)))
 FSTAR_INCLUDE_DIRS = $(addprefix --include , $(INCLUDE_DIRS))
 
