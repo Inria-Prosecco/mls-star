@@ -1,5 +1,6 @@
 module MLS.TreeKEM.Symbolic.SecurityTheorem
 
+open FStar.List.Tot { for_allP_eq }
 open Comparse
 open DY.Core
 open DY.Lib

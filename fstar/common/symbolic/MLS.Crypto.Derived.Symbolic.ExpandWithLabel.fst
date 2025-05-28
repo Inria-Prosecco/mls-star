@@ -1,5 +1,6 @@
 module MLS.Crypto.Derived.Symbolic.ExpandWithLabel
 
+open FStar.List.Tot { for_allP, for_allP_eq }
 open Comparse
 open DY.Core
 open DY.Lib

@@ -1,5 +1,6 @@
 module MLS.TreeKEM.Invariants
 
+open FStar.List.Tot { for_allP }
 open Comparse
 open MLS.Crypto
 open MLS.Tree
@@ -26,7 +27,7 @@ let rec treekem_invariant #bytes #cb #l #i t =
     let node_ok =
       match opn with
       | Some pn ->
-        Comparse.for_allP (unmerged_leaf_exists t) pn.unmerged_leaves
+        for_allP (unmerged_leaf_exists t) pn.unmerged_leaves
       | None -> True
     in
     node_ok /\ treekem_invariant left /\ treekem_invariant right

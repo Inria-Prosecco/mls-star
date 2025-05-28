@@ -1,5 +1,6 @@
 module MLS.TreeKEM.Symbolic.Tree.Operations
 
+open FStar.List.Tot { for_allP, for_allP_eq }
 open Comparse
 open DY.Core
 open DY.Lib
@@ -625,7 +626,7 @@ let rec leaf_at_un_addP #l #i t pre li =
 val for_allP_unmerged_leaves_resolution_un_addP:
   #l:nat -> #i:tree_index l ->
   p:(bytes -> prop) ->
-  t:treekem bytes l i -> unmerged_leaves:list nat{Comparse.for_allP (unmerged_leaf_exists t) unmerged_leaves} ->
+  t:treekem bytes l i -> unmerged_leaves:list nat{for_allP (unmerged_leaf_exists t) unmerged_leaves} ->
   pre:(nat -> bool) ->
   Lemma
   (requires
@@ -634,7 +635,7 @@ val for_allP_unmerged_leaves_resolution_un_addP:
     treekem_invariant (un_addP t pre)
   )
   (ensures
-    Comparse.for_allP (unmerged_leaf_exists (un_addP t pre)) (List.Tot.filter pre unmerged_leaves) /\
+    for_allP (unmerged_leaf_exists (un_addP t pre)) (List.Tot.filter pre unmerged_leaves) /\
     for_allP p (unmerged_leaves_resolution (un_addP t pre) (List.Tot.filter pre unmerged_leaves))
   )
 let rec for_allP_unmerged_leaves_resolution_un_addP #l #i p t ul pre =

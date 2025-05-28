@@ -1,5 +1,6 @@
 module MLS.TreeSyncTreeKEMBinder.Proofs
 
+open FStar.List.Tot { for_allP_eq }
 open Comparse
 open MLS.TreeSyncTreeKEMBinder
 open MLS.TreeSyncTreeKEMBinder.Properties

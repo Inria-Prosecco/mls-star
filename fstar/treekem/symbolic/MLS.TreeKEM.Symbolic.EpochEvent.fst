@@ -1,5 +1,6 @@
 module MLS.TreeKEM.Symbolic.EpochEvent
 
+open FStar.List.Tot { for_allP }
 open Comparse
 open DY.Core
 open DY.Lib

@@ -1,5 +1,6 @@
 module MLS.TreeKEM.Invariants.Proofs
 
+open FStar.List.Tot { for_allP, for_allP_eq }
 open Comparse
 open MLS.Crypto
 open MLS.Tree
@@ -146,8 +147,8 @@ let rec treekem_invariant_add #bytes #cb #l #i t li lp =
     match opn with
     | None -> ()
     | Some pn -> (
-      Comparse.for_allP_eq (unmerged_leaf_exists t) pn.unmerged_leaves;
-      Comparse.for_allP_eq (unmerged_leaf_exists (tree_add t li lp)) (insert_sorted li pn.unmerged_leaves);
+      for_allP_eq (unmerged_leaf_exists t) pn.unmerged_leaves;
+      for_allP_eq (unmerged_leaf_exists (tree_add t li lp)) (insert_sorted li pn.unmerged_leaves);
       FStar.Classical.forall_intro (mem_insert_sorted li pn.unmerged_leaves);
       FStar.Classical.forall_intro (leaf_at_tree_add t li lp)
     )
@@ -287,8 +288,8 @@ let rec treekem_invariant_un_addP #bytes #cb #l #i t pre =
     match opn with
     | None -> ()
     | Some pn -> (
-      Comparse.for_allP_eq (unmerged_leaf_exists t) pn.unmerged_leaves;
-      Comparse.for_allP_eq (unmerged_leaf_exists (un_addP t pre)) (List.Tot.filter pre pn.unmerged_leaves);
+      for_allP_eq (unmerged_leaf_exists t) pn.unmerged_leaves;
+      for_allP_eq (unmerged_leaf_exists (un_addP t pre)) (List.Tot.filter pre pn.unmerged_leaves);
       FStar.Classical.forall_intro (mem_filter pre pn.unmerged_leaves);
       FStar.Classical.forall_intro (FStar.Classical.move_requires (unmerged_leaf_exists_un_addP t pre))
     )

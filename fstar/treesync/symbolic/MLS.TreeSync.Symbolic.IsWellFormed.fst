@@ -1,5 +1,6 @@
 module MLS.TreeSync.Symbolic.IsWellFormed
 
+open FStar.List.Tot { for_allP, for_allP_eq }
 open Comparse
 open MLS.Crypto
 open MLS.Tree

@@ -1,5 +1,6 @@
 module MLS.TreeSync.Symbolic.API
 
+open FStar.List.Tot { for_allP, for_allP_eq }
 open Comparse
 open MLS.Result
 open MLS.Crypto

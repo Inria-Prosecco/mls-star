@@ -1,5 +1,6 @@
 module MLS.TreeSync.Proofs.ParentHashGuarantees
 
+open FStar.List.Tot { for_allP, for_allP_eq }
 open Comparse
 open MLS.Crypto
 open MLS.NetworkTypes

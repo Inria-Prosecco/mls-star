@@ -140,7 +140,7 @@ let un_add #bytes #cb #l #i t excluded_leaves =
 val unmerged_leaves_resolution:
   #bytes:Type0 -> {|crypto_bytes bytes|} ->
   #l:nat -> #i:tree_index l ->
-  t:treekem bytes l i -> unmerged_leaves:list nat{Comparse.for_allP (unmerged_leaf_exists t) unmerged_leaves}  ->
+  t:treekem bytes l i -> unmerged_leaves:list nat{for_allP (unmerged_leaf_exists t) unmerged_leaves}  ->
   res:list bytes{List.Tot.length res == List.Tot.length unmerged_leaves}
 let rec unmerged_leaves_resolution #bytes #cb #l #i t unmerged_leaves =
   match unmerged_leaves with
