@@ -18,10 +18,6 @@ open MLS.TreeSync.Symbolic.AuthService
 open MLS.TreeSync.Symbolic.State.SignatureKey
 open MLS.TreeKEM.NetworkTypes
 open MLS.Symbolic
-open MLS.Symbolic.Lemmas
-open MLS.Symbolic.Labels.Guard
-open MLS.Symbolic.Labels.Event
-open MLS.Symbolic.Labels.Big
 open MLS.Bootstrap.Symbolic.KeyPackage
 open MLS.TreeKEM.Symbolic.State.NodeKey
 open MLS.TreeSync.Proofs.ParentHashGuarantees { canonicalize_unmerged_leaves }
@@ -88,7 +84,7 @@ let guarded_signature_key_label leaf_node group_id leaf_index =
   match credential_to_principal leaf_node.data.credential with
   | None -> DY.Core.Label.Unknown.unknown_label
   | Some prin ->
-    guard
+    guarded
       (signature_key_label prin leaf_node.data.signature_key)
       (leaf_node_has_been_verified_label leaf_node group_id leaf_index)
 
@@ -203,8 +199,8 @@ let guarded_signature_key_label_is_corrupt tr me leaf_node group_id leaf_index =
   introduce forall tr. (leaf_node_has_been_verified_label leaf_node group_id leaf_index) `can_flow tr` (principal_leaf_node_has_been_verified_label leaf_node group_id leaf_index me) with (
     big_join_flow_to_component tr (principal_leaf_node_has_been_verified_label leaf_node group_id leaf_index) me
   );
-  guard_can_flow tr (signature_key_label prin leaf_node.data.signature_key) (signature_key_label prin leaf_node.data.signature_key) (principal_leaf_node_has_been_verified_label leaf_node group_id leaf_index me) (leaf_node_has_been_verified_label leaf_node group_id leaf_index);
-  is_corrupt_guard_event tr (signature_key_label prin leaf_node.data.signature_key) me {leaf_node; group_id; leaf_index}
+  guarded_can_flow tr (signature_key_label prin leaf_node.data.signature_key) (signature_key_label prin leaf_node.data.signature_key) (principal_leaf_node_has_been_verified_label leaf_node group_id leaf_index me) (leaf_node_has_been_verified_label leaf_node group_id leaf_index);
+  is_corrupt_guarded_event tr (signature_key_label prin leaf_node.data.signature_key) me {leaf_node; group_id; leaf_index}
 
 (*** Event invariants (link with TreeSync) ***)
 
@@ -549,7 +545,7 @@ let all_tree_keys_good_parent_hash_case #invs #l #i tr me t ast group_id =
   node_sk_label_flows_to_node_sk_label_without_committer t group_id authentifier_leaf_index tr;
   authentifier_index_is_in_canonicalization t;
   node_sk_label_aux_flows_to_node_sk_label_aux_leaf (canonicalize_unmerged_leaves t) group_id YesCommitter authentifier_leaf_index tr;
-  guard_authentication_lemma tr (signature_key_label authentifier authentifier_leaf_node.data.signature_key) (leaf_node_has_been_verified_label authentifier_leaf_node group_id authentifier_leaf_index)
+  guarded_authentication_lemma tr (signature_key_label authentifier authentifier_leaf_node.data.signature_key) (leaf_node_has_been_verified_label authentifier_leaf_node group_id authentifier_leaf_index)
     (fun tr_ev -> exists p. leaf_node_has_been_verified_pred tr_ev p authentifier_has_been_verified_event)
     (fun tr_ev ->
       trace_invariant_before tr_ev tr
@@ -607,7 +603,7 @@ let all_tree_keys_good_leaf_node_update_case #invs tr me ln group_id li =
   let t = (TLeaf (Some ln) <: treesync bytes tkt 0 li) in
   node_sk_label_flows_to_node_sk_label_without_committer t group_id li tr;
   node_sk_label_aux_flows_to_node_sk_label_aux_leaf (canonicalize_unmerged_leaves t) group_id YesCommitter li tr;
-  guard_authentication_lemma tr (signature_key_label prin ln.data.signature_key) (leaf_node_has_been_verified_label ln group_id li)
+  guarded_authentication_lemma tr (signature_key_label prin ln.data.signature_key) (leaf_node_has_been_verified_label ln group_id li)
     (fun tr_ev -> exists p. leaf_node_has_been_verified_pred tr_ev p leaf_node_has_been_verified_event)
     (fun tr_ev ->
       trace_invariant_before tr_ev tr
@@ -658,7 +654,7 @@ let all_tree_keys_good_leaf_node_key_package_case #invs tr me ln group_id li =
   let t = (TLeaf (Some ln) <: treesync bytes tkt 0 li) in
   node_sk_label_flows_to_node_sk_label_without_committer t group_id li tr;
   node_sk_label_aux_flows_to_node_sk_label_aux_leaf (canonicalize_unmerged_leaves t) group_id YesCommitter li tr;
-  guard_authentication_lemma tr (signature_key_label prin ln.data.signature_key) (leaf_node_has_been_verified_label ln group_id li)
+  guarded_authentication_lemma tr (signature_key_label prin ln.data.signature_key) (leaf_node_has_been_verified_label ln group_id li)
     (fun tr_ev -> exists p. leaf_node_has_been_verified_pred tr_ev p leaf_node_has_been_verified_event)
     (fun tr_ev ->
       trace_invariant_before tr_ev tr

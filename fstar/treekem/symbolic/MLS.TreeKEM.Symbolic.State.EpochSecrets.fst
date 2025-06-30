@@ -12,8 +12,6 @@ open MLS.TreeKEM.API.KeySchedule.Types
 open MLS.TreeSync.TreeHash
 open MLS.TreeSync.TreeHash.Proofs
 open MLS.Symbolic
-open MLS.Symbolic.Labels.Big
-open MLS.Symbolic.Labels.Prop
 open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
 open MLS.TreeKEM.Symbolic.ConfirmationTag
 

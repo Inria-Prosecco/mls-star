@@ -537,10 +537,10 @@ val joiner_is_in_tree_and_path_secret_good_for_joiner_implies_one_opt_path_secre
 let joiner_is_in_tree_and_path_secret_good_for_joiner_implies_one_opt_path_secret_good #invs #group_id tr me st_ts joiner path_secret =
   let (key_package, leaf_ind) = joiner in
   let prin = Some?.v (key_package_to_principal key_package) in
-  MLS.Symbolic.Labels.Big.big_join_flow_to_component tr (init_key_associated_with_aux key_package.tbs.leaf_node) key_package;
-  MLS.Symbolic.Labels.Prop.prop_to_label_true (key_package_has_leaf_node key_package key_package.tbs.leaf_node);
-  MLS.Symbolic.Labels.Event.is_corrupt_event_triggered_label tr me { key_package };
-  MLS.Symbolic.Labels.Big.big_join_flow_to_component tr (principal_key_package_has_been_verified_label key_package) me
+  big_join_flow_to_component tr (init_key_associated_with_aux key_package.tbs.leaf_node) key_package;
+  prop_to_label_true (key_package_has_leaf_node key_package key_package.tbs.leaf_node);
+  assert((key_package_has_been_verified_label key_package) `can_flow tr` public);
+  big_join_flow_to_component tr (principal_key_package_has_been_verified_label key_package) me
 
 #push-options "--fuel 1 --ifuel 1"
 val joiners_are_in_tree_and_path_secrets_good_for_joiners_implies_all_opt_path_secret_good:

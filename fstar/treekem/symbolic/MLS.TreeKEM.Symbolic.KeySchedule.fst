@@ -13,8 +13,6 @@ open MLS.NetworkTypes
 open MLS.Bootstrap.NetworkTypes
 open MLS.Bootstrap.Welcome
 open MLS.Symbolic
-open MLS.Symbolic.Labels.Big
-open MLS.Symbolic.Labels.Prop
 open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
 open MLS.Bootstrap.Symbolic.KeyPackage
 open MLS.Crypto.Derived.Symbolic.EncryptWithLabel

@@ -1276,6 +1276,7 @@ let rec committer_exists_tree_apply_path #bytes #cb #l #i #li t p =
   )
 
 #push-options "--z3rlimit 200"
+#restart-solver
 val path_apply_path_commit_secret_proof:
   {|crypto_invariants|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->

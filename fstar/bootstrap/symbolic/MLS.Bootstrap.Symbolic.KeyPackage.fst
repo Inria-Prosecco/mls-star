@@ -5,11 +5,6 @@ open Comparse
 open DY.Core
 open DY.Lib
 open MLS.Symbolic
-open MLS.Symbolic.Lemmas
-open MLS.Symbolic.Labels.Big
-open MLS.Symbolic.Labels.Event
-open MLS.Symbolic.Labels.Guard
-open MLS.Symbolic.Labels.Prop
 open MLS.Crypto
 open MLS.Bootstrap.Symbolic.State.InitKey
 open MLS.Crypto.Derived.Symbolic.SignWithLabel
@@ -155,7 +150,7 @@ let key_package_to_init_label kp =
   | None ->
     public
   | Some prin ->
-    (guard (signature_key_label prin kp.tbs.leaf_node.data.signature_key) (key_package_has_been_verified_label kp))
+    (guarded (signature_key_label prin kp.tbs.leaf_node.data.signature_key) (key_package_has_been_verified_label kp))
     `join`
     (init_key_label prin kp.tbs.init_key)
 
@@ -181,7 +176,7 @@ let key_package_to_init_label_lemma #invs tr me key_package =
   let Some prin = key_package_to_principal key_package in
   is_corrupt_event_triggered_label tr me {key_package};
   big_join_flow_to_component tr (principal_key_package_has_been_verified_label key_package) me;
-  guard_authentication_lemma tr (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) (key_package_has_been_verified_label key_package)
+  guarded_authentication_lemma tr (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) (key_package_has_been_verified_label key_package)
     (fun tr_ev -> exists p. key_package_has_been_verified_pred tr_ev p {key_package})
     (fun tr_ev ->
       trace_invariant_before tr_ev tr
@@ -217,8 +212,8 @@ let key_package_to_init_label_is_corrupt tr me key_package =
   introduce forall tr. (key_package_has_been_verified_label key_package) `can_flow tr` (principal_key_package_has_been_verified_label key_package me) with (
     big_join_flow_to_component tr (principal_key_package_has_been_verified_label key_package) me
   );
-  guard_can_flow tr (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) (principal_key_package_has_been_verified_label key_package me) (key_package_has_been_verified_label key_package);
-  is_corrupt_guard_event tr (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) me {key_package}
+  guarded_can_flow tr (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) (principal_key_package_has_been_verified_label key_package me) (key_package_has_been_verified_label key_package);
+  is_corrupt_guarded_event tr (signature_key_label prin key_package.tbs.leaf_node.data.signature_key) me {key_package}
 
 (*** Init key associated to leaf node ***)
 
@@ -267,7 +262,7 @@ let init_key_associated_with_lemma #invs tr me key_package =
   big_join_flow_to_component tr (principal_key_package_has_been_verified_label key_package) me;
   big_join_flow_to_component tr (init_key_associated_with_aux key_package.tbs.leaf_node) key_package;
   prop_to_label_true (key_package_has_leaf_node key_package key_package.tbs.leaf_node);
-  is_corrupt_event_triggered_label tr me {key_package};
+  assert((key_package_has_been_verified_label key_package) `can_flow tr` public);
   key_package_to_init_label_lemma tr me key_package
 
 val init_key_associated_with_is_corrupt:

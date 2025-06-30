@@ -25,6 +25,7 @@ open MLS.TreeKEM.Symbolic.Traceful.GenerateKeyPackage
 
 (*** Generate key package, proof ***)
 
+#push-options "--z3rlimit 25"
 val _generate_leaf_node_proof:
   {|protocol_invariants|} ->
   tr:trace ->
@@ -88,6 +89,7 @@ let _generate_leaf_node_proof #invs tr me leaf_node_skeleton signature_key_sid =
       )
     )
   )
+#pop-options
 
 val _sign_key_package_proof:
   {|protocol_invariants|} ->
