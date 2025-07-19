@@ -203,7 +203,7 @@ let initialize_key_package_store_proof #invs tr me =
   assert(is_well_formed _ (is_publishable tr) store)
 #pop-options
 
-#push-options "--fuel 1 --ifuel 1 --z3rlimit 25"
+#push-options "--fuel 1 --ifuel 1 --z3rlimit 50"
 val extend_key_package_store_proof:
   {|protocol_invariants|} ->
   tr:trace ->
