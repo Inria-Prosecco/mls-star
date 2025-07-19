@@ -8,4 +8,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run `nix flake check`
-        run: nix --access-tokens "github.com=${{ secrets.NIX_GITHUB_TOKEN }}" flake check -L
+        run: nix flake check -L
