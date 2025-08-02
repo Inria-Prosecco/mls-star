@@ -296,7 +296,7 @@ let is_corrupt_leaf_label_implies #invs tr me group_id leaf_node leaf_index =
 
 (*** Security theorem ***)
 
-#push-options "--ifuel 1 --z3rlimit 200"
+#push-options "--ifuel 0 --z3rlimit 50"
 val treekem_security_theorem:
   {|protocol_invariants|} ->
   tr:trace ->
@@ -309,6 +309,7 @@ val treekem_security_theorem:
     has_treekem_invariants
   )
   (ensures (
+    allow_inversion how_am_i_in_group;
     match ev.how with
     | ProcessedCommit last_epoch_link -> (
       // (1) the attacker compromised the epoch secret state
@@ -393,6 +394,7 @@ let treekem_security_theorem #invs tr me ev =
   let tr_at_event = prefix tr (find_event_triggered_at_timestamp tr me ev) in
   reveal_opaque (`%i_am_in_group_pred) (i_am_in_group_pred tr_at_event me ev);
   allow_inversion how_am_i_in_group;
+  allow_inversion commit_type;
   match ev.how with
   | ProcessedCommit last_epoch_link -> (
     let commit_secret_label =

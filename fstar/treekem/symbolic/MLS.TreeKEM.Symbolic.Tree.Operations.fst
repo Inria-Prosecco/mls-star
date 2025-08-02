@@ -808,7 +808,7 @@ let rec get_path_secret_of_added_leaves_proof #cinvs #l #li me ts p leaf_indices
   )
 #pop-options
 
-#push-options "--z3rlimit 500"
+#push-options "--fuel 1 --ifuel 0 --z3rlimit 100"
 val encrypt_path_secrets_pub_proof:
   {|crypto_invariants|} ->
   #l:nat -> #i:tree_index l -> #li:leaf_index l i ->
@@ -835,6 +835,7 @@ val encrypt_path_secrets_pub_proof:
     | _ -> True
   ))
 let rec encrypt_path_secrets_pub_proof #cinvs #l #i #li me is_at_root ts tk p group_context group_id pre rand tr =
+  allow_inversion (path_secrets bytes l i li);
   match p with
   | PLeaf leaf_sk -> ()
   | PNode opt_ps p_next -> (
