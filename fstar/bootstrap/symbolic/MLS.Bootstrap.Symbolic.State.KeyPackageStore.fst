@@ -151,8 +151,8 @@ val initialize_key_package_store:
   principal ->
   traceful state_id
 let initialize_key_package_store me =
-  let* sid = new_session_id me in
   let store: key_package_store_pre = { elems = [] } in
+  let* sid = new_session_id me in
   set_state me sid store;*
   return sid
 
@@ -197,7 +197,6 @@ val initialize_key_package_store_proof:
   ))
 let initialize_key_package_store_proof #invs tr me =
   reveal_opaque (`%initialize_key_package_store) (initialize_key_package_store);
-  let (sid, tr) = new_session_id me tr in
   let store: key_package_store_pre = { elems = [] } in
   assert(for_allP (is_well_formed_prefix ps_key_package_store_elem_pre (is_publishable tr)) []);
   assert(is_well_formed _ (is_publishable tr) store)

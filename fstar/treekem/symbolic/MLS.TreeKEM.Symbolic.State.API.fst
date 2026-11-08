@@ -142,7 +142,6 @@ val store_treesync_treekem_state:
   principal -> treesync_treekem_state ->
   traceful state_id
 let store_treesync_treekem_state me st =
-  let* sid = new_session_id me in
   let confirmation_tag = st.treekem.keyschedule_state.epoch_keys.confirmation_tag in
   let* sender_data_secret_sid = store_epoch_secret me SenderDataSecret st.group_context confirmation_tag st.treekem.keyschedule_state.epoch_keys.sender_data_secret in
   let* exporter_secret_sid = store_epoch_secret me ExporterSecret st.group_context confirmation_tag st.treekem.keyschedule_state.epoch_keys.exporter_secret in
@@ -176,6 +175,7 @@ let store_treesync_treekem_state me st =
       init_secret_sid;
     }
   } in
+  let* sid = new_session_id me in
   set_state me sid bare_st;*
   return sid
 
@@ -390,7 +390,6 @@ let store_treesync_treekem_state_proof #invs tr me st =
   reveal_opaque (`%treesync_treekem_state_very_coarse_invariant) (treesync_treekem_state_very_coarse_invariant);
   reveal_opaque (`%treekem_keyschedule_state_good) (treekem_keyschedule_state_good);
   intro_i_am_in_group_context me st.group_context st.treesync.tree st.leaf_index;
-  let sid, tr = new_session_id me tr in
   let confirmation_tag = st.treekem.keyschedule_state.epoch_keys.confirmation_tag in
   treekem_keyschedule_state_auth_weak_exists_implies_key_is_authenticated_by_confirmation_tag st.treekem.keyschedule_state;
   store_epoch_secret_proof tr me SenderDataSecret st.group_context confirmation_tag st.treekem.keyschedule_state.epoch_keys.sender_data_secret;
@@ -433,6 +432,7 @@ let store_treesync_treekem_state_proof #invs tr me st =
       init_secret_sid;
     }
   } in
+  let sid, tr = new_session_id me tr in
   assert(treesync_treekem_state_pred.pred tr me sid bare_st)
 #pop-options
 
