@@ -14,8 +14,10 @@ open MLS.TreeSync.Symbolic.State.SignatureKey
 open MLS.TreeSync.Symbolic.AuthService
 open MLS.TreeSync.Symbolic.Event.LeafNodeHasBeenVerified
 open MLS.Bootstrap.Symbolic.State.KeyPackageStore
+open MLS.TreeKEM.API
 open MLS.TreeKEM.Symbolic.State.EpochSecrets
 open MLS.TreeKEM.Symbolic.State.NodeKey
+open MLS.TreeKEM.Symbolic.State.OnePSKStore
 open MLS.TreeKEM.Symbolic.State.PSKStore
 open MLS.TreeKEM.Symbolic.State.API
 open MLS.TreeKEM.Symbolic.EpochEvent
@@ -161,6 +163,8 @@ let _process_welcome me key_package_store_sid auth_service_sid psk_store_sid wel
     psks;
     epoch_keys = treekem_st.keyschedule_state;
   };*
+
+  remember_psk me psk_store_sid (PSKID_ResumptionPSK group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch) (get_epoch_keys treekem_st).resumption_psk;*?
 
   let* sid = store_treesync_treekem_state me {
     leaf_index = my_leaf_index;

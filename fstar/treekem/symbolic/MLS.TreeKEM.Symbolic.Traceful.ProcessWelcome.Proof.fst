@@ -20,8 +20,10 @@ open MLS.Bootstrap.Symbolic.KeyPackage
 open MLS.Bootstrap.Symbolic.GroupInfo
 open MLS.Bootstrap.Symbolic.State.KeyPackageStore
 open MLS.Bootstrap.Symbolic.Welcome
+open MLS.TreeKEM.API
 open MLS.TreeKEM.Symbolic.State.EpochSecrets
 open MLS.TreeKEM.Symbolic.State.NodeKey
+open MLS.TreeKEM.Symbolic.State.OnePSKStore
 open MLS.TreeKEM.Symbolic.State.PSKStore
 open MLS.TreeKEM.Symbolic.State.API
 open MLS.TreeKEM.Symbolic.PSK
@@ -122,7 +124,7 @@ let _process_welcome_verify_group_info_proof #invs #group_id tr me treesync_st g
   )
   | _ -> ()
 
-#push-options "--z3rlimit 50"
+#push-options "--z3rlimit 200"
 val _process_welcome_treekem_proof:
   {|protocol_invariants|} ->
   #group_id:mls_bytes bytes ->
@@ -157,7 +159,8 @@ val _process_welcome_treekem_proof:
         treekem_priv_state_pred tr_out me treekem_st.tree_state.priv /\
         treesync_st.levels == treekem_st.tree_state.levels /\
         MLS.TreeSyncTreeKEMBinder.treesync_to_treekem treesync_st.tree == treekem_st.tree_state.tree /\
-        i_am_in_tree_at me treesync_st.tree my_leaf_index
+        i_am_in_tree_at me treesync_st.tree my_leaf_index /\
+        is_knowable_by (mk_epoch_secret_label ResumptionPSK group_info.tbs.group_context) tr_out (get_epoch_keys treekem_st).resumption_psk
       )
       | None -> True
     )
@@ -199,7 +202,7 @@ let _process_welcome_treekem_proof #invs #group_id tr me treesync_st kp_store_va
   )
 #pop-options
 
-#push-options "--fuel 0 --ifuel 0 --z3rlimit 100"
+#push-options "--fuel 0 --ifuel 0 --z3rlimit 1500"
 val _process_welcome_proof:
   {|protocol_invariants|} ->
   tr:trace ->
@@ -240,6 +243,7 @@ let _process_welcome_proof tr me key_package_store_sid auth_service_sid psk_stor
         match opt_group_info with
         | None -> ()
         | Some group_info -> (
+          assert(is_well_formed _ (is_publishable tr ) group_info.tbs.group_context);
           _process_welcome_treesync_proof tr me auth_service_sid ratchet_tree group_info.tbs.group_context.group_id;
           let opt_treesync_st, tr = _process_welcome_treesync me auth_service_sid ratchet_tree group_info.tbs.group_context.group_id tr in
           match opt_treesync_st with
@@ -265,6 +269,12 @@ let _process_welcome_proof tr me key_package_store_sid auth_service_sid psk_stor
               match opt_treekem_res with
               | None -> ()
               | Some (|my_leaf_index, treekem_st|) -> (
+                assert(treekem_keyschedule_state_good tr treekem_st.keyschedule_state group_info.tbs.group_context);
+                let pf (): squash (
+                  is_epoch_secret tr ResumptionPSK group_info.tbs.group_context treekem_st.keyschedule_state.epoch_keys.resumption_psk
+                ) = (
+                  reveal_opaque (`%treekem_keyschedule_state_good) (treekem_keyschedule_state_good)
+                ) in pf ();
                 let Some inviter_leaf_node = MLS.Tree.leaf_at treesync_st.tree group_info.tbs.signer in
                 MLS.TreeSync.Invariants.AuthService.Proofs.elim_all_credentials_ok #_ #_ #_ #(dy_asp tr) treesync_st.tree treesync_st.tokens group_info.tbs.signer;
                 let Some inviter_id = credential_to_principal inviter_leaf_node.data.credential in
@@ -285,26 +295,41 @@ let _process_welcome_proof tr me key_package_store_sid auth_service_sid psk_stor
                 trigger_event_trace_invariant i_am_in_group_pred me ev tr;
                 let (), tr = trigger_event me ev tr in
                 assert(trace_invariant tr);
-                let st: treesync_treekem_state = {
-                  leaf_index = my_leaf_index;
-                  group_context = group_info.tbs.group_context;
-                  my_signature_key_sid = key_package_store_value.signature_key_sid;
-                  treesync = treesync_st;
-                  treekem = treekem_st;
-                } in
-                reveal_opaque (`%treesync_treekem_state_invariant_aux) (treesync_treekem_state_invariant_aux tr me group_info.tbs.group_context treesync_st treekem_st.tree_state);
-                reveal_opaque (`%treesync_treekem_state_invariant) (treesync_treekem_state_invariant tr me st);
-                reveal_opaque (`%treesync_treekem_state_coarse_invariant) (treesync_treekem_state_coarse_invariant tr_after_treekem me st);
-                treekem_keyschedule_state_auth_exists_strong_to_weak st.treekem.keyschedule_state;
-                assert(treesync_treekem_state_coarse_invariant tr me st);
-                reveal_opaque (`%treesync_treekem_state_very_coarse_invariant) (treesync_treekem_state_very_coarse_invariant tr me st);
-                assert(i_have_previous_epoch_event_with_witness tr me st.group_context st.treekem.keyschedule_state.init_secret st.treesync.tree ev);
-                assert(i_have_previous_epoch_event tr me st.group_context st.treekem.keyschedule_state.init_secret st.treesync.tree);
-                store_treesync_treekem_state_proof tr me st;
-                assert(trace_invariant tr);
-                let _, tr = store_treesync_treekem_state me st tr in
-                assert(trace_invariant tr);
-                ()
+                let pf (): squash (
+                  is_well_formed_prefix ps_pre_shared_key_id_short (is_publishable tr) (PSKID_ResumptionPSK group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch) /\
+                  is_knowable_by (psk_label me (PSKID_ResumptionPSK group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch)) tr (get_epoch_keys treekem_st).resumption_psk
+                ) = (
+                  intro_i_am_in_group_context me group_info.tbs.group_context treesync_st.tree my_leaf_index;
+                  mk_group_secret_label_can_flow_my_label tr me mk_resumption_psk_label group_info.tbs.group_context;
+                  assert(is_knowable_by (mk_epoch_secret_label ResumptionPSK group_info.tbs.group_context) tr (get_epoch_keys treekem_st).resumption_psk)
+                ) in pf ();
+                remember_psk_proof me psk_store_sid (PSKID_ResumptionPSK group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch) (get_epoch_keys treekem_st).resumption_psk tr;
+                let opt_unit, tr = remember_psk me psk_store_sid (PSKID_ResumptionPSK group_info.tbs.group_context.group_id group_info.tbs.group_context.epoch) (get_epoch_keys treekem_st).resumption_psk tr in
+                match opt_unit with
+                | None -> ()
+                | Some () -> (
+                  assert(trace_invariant tr);
+                  let st: treesync_treekem_state = {
+                    leaf_index = my_leaf_index;
+                    group_context = group_info.tbs.group_context;
+                    my_signature_key_sid = key_package_store_value.signature_key_sid;
+                    treesync = treesync_st;
+                    treekem = treekem_st;
+                  } in
+                  reveal_opaque (`%treesync_treekem_state_invariant_aux) (treesync_treekem_state_invariant_aux tr me group_info.tbs.group_context treesync_st treekem_st.tree_state);
+                  reveal_opaque (`%treesync_treekem_state_invariant) (treesync_treekem_state_invariant tr me st);
+                  reveal_opaque (`%treesync_treekem_state_coarse_invariant) (treesync_treekem_state_coarse_invariant tr_after_treekem me st);
+                  treekem_keyschedule_state_auth_exists_strong_to_weak st.treekem.keyschedule_state;
+                  assert(treesync_treekem_state_coarse_invariant tr me st);
+                  reveal_opaque (`%treesync_treekem_state_very_coarse_invariant) (treesync_treekem_state_very_coarse_invariant tr me st);
+                  assert(i_have_previous_epoch_event_with_witness tr me st.group_context st.treekem.keyschedule_state.init_secret st.treesync.tree ev);
+                  assert(i_have_previous_epoch_event tr me st.group_context st.treekem.keyschedule_state.init_secret st.treesync.tree);
+                  store_treesync_treekem_state_proof tr me st;
+                  assert(trace_invariant tr);
+                  let _, tr = store_treesync_treekem_state me st tr in
+                  assert(trace_invariant tr);
+                  ()
+                )
               )
             )
           )

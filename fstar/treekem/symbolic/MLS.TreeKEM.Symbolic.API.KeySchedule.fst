@@ -205,7 +205,8 @@ val create_from_joiner_secret_proof:
     match create_from_joiner_secret joiner_secret psks group_context with
     | Success (st, _) -> (
       treekem_keyschedule_state_good tr st group_context /\
-      treekem_keyschedule_state_auth_strong st joiner_secret psks group_context
+      treekem_keyschedule_state_auth_strong st joiner_secret psks group_context /\
+      is_knowable_by (mk_epoch_secret_label ResumptionPSK group_context) tr st.epoch_keys.resumption_psk
     )
     | _ -> True
   ))
@@ -215,7 +216,8 @@ let create_from_joiner_secret_proof #cinvs tr joiner_secret psks group_context =
   | Success (st, _) -> (
     secret_joiner_to_epoch_proof tr joiner_secret psks group_context;
     let Success epoch_secret = secret_joiner_to_epoch joiner_secret psks group_context in
-    create_from_epoch_secret_proof tr epoch_secret group_context
+    create_from_epoch_secret_proof tr epoch_secret group_context;
+    reveal_opaque (`%treekem_keyschedule_state_good) (treekem_keyschedule_state_good)
   )
   | _ -> ()
 
