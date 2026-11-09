@@ -31,7 +31,7 @@ let dy_asp #ci tr = {
     match credential_to_principal cred with
     | None -> False
     | Some who ->
-      token.time `on_trace` tr /\
+      token.time <= trace_length tr /\
       is_signature_key_vk (prefix tr token.time) who vk
   );
   valid_successor = (fun (vk_old, cred_old) (vk_new, cred_new) ->

@@ -4,9 +4,12 @@ open Comparse
 open DY.Core
 open DY.Lib
 open MLS.NetworkTypes
+open MLS.Crypto.Derived
 open MLS.TreeSync.NetworkTypes
 open MLS.TreeSync.Symbolic.AuthService
 open MLS.Symbolic
+open MLS.TreeSync.Symbolic.State.SignatureKey
+open MLS.TreeSync.Symbolic.AuthService.CredentialInterpretation
 
 #set-options "--fuel 0 --ifuel 0"
 
@@ -60,3 +63,64 @@ let as_cache_tag_and_invariant #ci = (|as_cache_types.tag, local_state_predicate
 let initialize_as_cache = initialize_map as_cache_key as_cache_value
 let add_verified_credential = add_key_value #as_cache_key #as_cache_value
 let find_verified_credential = find_value #as_cache_key #as_cache_value
+
+val verify_credential: principal -> state_id -> principal -> state_id -> traceful (option unit)
+let verify_credential me as_cache_sid who who_sig_sid =
+  let*? verification_key = get_signature_key_vk who who_sig_sid in
+  let*? verification_key = extract_result (mk_mls_bytes verification_key "verify_credential" "verification_key") in
+  let*? credential = return (principal_to_credential who) in
+  let* time = get_time in
+  add_verified_credential me as_cache_sid { verification_key; credential; } { token = { time } }
+
+val initialize_as_cache_proof:
+  {|protocol_invariants|} ->
+  tr:trace ->
+  me:principal ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_as_cache_invariant
+  )
+  (ensures (
+    let (_, tr_out) = initialize_as_cache me tr in
+    trace_invariant tr_out
+  ))
+let initialize_as_cache_proof #invs tr me =
+  initialize_map_invariant as_cache_pred me tr
+
+val verify_credential_proof:
+  {|protocol_invariants|} ->
+  tr:trace ->
+  me:principal -> as_cache_sid:state_id ->
+  who:principal -> who_sig_sid:state_id ->
+  Lemma
+  (requires
+    trace_invariant tr /\
+    has_treesync_signature_key_state_invariant /\
+    has_as_cache_invariant
+  )
+  (ensures (
+    let (_, tr_out) = verify_credential me as_cache_sid who who_sig_sid tr in
+    trace_invariant tr_out
+  ))
+let verify_credential_proof #invs tr me as_cache_sid who who_sig_sid =
+  let (opt_verification_key, tr) = get_signature_key_vk who who_sig_sid tr in
+  match opt_verification_key with
+  | None -> ()
+  | Some verification_key -> (
+    let (opt_verification_key, tr) = extract_result (mk_mls_bytes verification_key "verify_credential" "verification_key") tr in
+    match opt_verification_key with
+    | None -> ()
+    | Some verification_key -> (
+      match principal_to_credential who with
+      | None -> ()
+      | Some credential -> (
+        principal_to_credential_to_principal who;
+        is_publishable_principal_to_credential tr who;
+        let key = { verification_key; credential; } in
+        let value = { token = { time = trace_length tr } } in
+        add_key_value_invariant as_cache_pred me as_cache_sid key value tr
+      )
+    )
+    | _ -> ()
+  )
