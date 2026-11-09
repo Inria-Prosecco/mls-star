@@ -3,6 +3,24 @@
 /// This is a simplified version that does not expose a notion of commit.
 /// Furthermore, we assume that the user is online for all of the group
 /// modifications.
+///
+/// /!\ This API was written early in the life of MLS*,
+/// on a draft of MLS before it was standardized,
+/// and has many known issues and deviations with respect to MLS (RFC 9420).
+///
+/// For example:
+/// - key package generation uses the same key for init key and encryption key
+/// - in group creation, the transcript hash computation is wrong,
+///   because the interim transcript hash is empty
+///   (it should be computed from confirmed transcript hash + confirmation tag)
+/// - add-only commits compute a new group context with the old tree hash
+///   (which is then fed into the key schedule)
+/// - many features are missing, e.g. proposal by reference
+///
+/// A better (and more RFC-compliant) API has been designed
+/// in the branch `revised_api_please_rebase_before_merging`,
+/// but has never been merged.
+
 module MLS
 
 open MLS.Result
